@@ -420,3 +420,28 @@ checks, 1,606 unit tests in each Android variant and both lint checks. The corre
 were regenerated on the phone; refreshed guides contain the corrected flats, tie
 and grace groups and survive cache round trips. These are targeted device checks,
 not a claim that every library page or recorded performance is accurate.
+
+## Dotted rests touching thick staff rules
+
+A rest augmentation dot can merge with the antialiased edge of a staff line.
+The dot component then spans the search window and was rejected as unrelated ink,
+shortening a dotted quarter rest from 1.5 beats to 1 beat. Dot tracing now excludes
+long horizontal rows at the expected staff-rule height, retaining the existing
+size, position, distance and note-ownership checks.
+
+Six original synthetic regressions cover dots touching either rule, two dots,
+plain thick rules, crossing stems and large noteheads. All 511 standalone Java
+tests, 13 Python tests and PNG/PDF-to-MIDI smoke checks pass. The Android detector's
+17 dotted-rest tests also pass. No weights or licensing changed.
+
+A fresh private phone capture recovers five dotted rests and the printed onset
+sequence in two affected measures. An hourly revisit of 22 earlier pages preserves
+all pitches and note counts, with 188 prior expectations passing; 21 complete
+outputs are unchanged. The remaining older raster recovers three rest dots but
+still misses other rest bodies, so its complete timing remains unresolved. One
+plain quarter rest also remains missing in the fresh capture. Private source
+images are excluded from this repository.
+
+The app invalidates guide and generated-audio caches for the next build. This is
+a source update; the installed phone remains on 1.18.110. Whole-library review is
+still in progress.

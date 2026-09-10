@@ -243,6 +243,17 @@ final class SixteenthRestDetector {
         int bottom=Math.min(height-1,Math.round(staff.top()+gap*1.97f));
         if(left>=right||top>=bottom)return List.of();
         int w=right-left+1,h=bottom-top+1;boolean[] seen=new boolean[w*h];int[] stack=new int[w*h];
+        // A dot can touch the antialiased edge of a thick staff rule. Exclude
+        // only long rows at the expected rule height before tracing components;
+        // otherwise that small round mark becomes a crop-wide rejected component.
+        for(int y=top;y<=bottom;y++) {
+            float nearestLine=staff.top()+Math.round((y-staff.top())/gap)*gap;
+            if(Math.abs(y-nearestLine)>gap*.2f)continue;
+            int dark=0;
+            for(int x=0;x<width;x++)if((gray[y*width+x]&255)<170)dark++;
+            if(dark>width*.25f)
+                java.util.Arrays.fill(seen,(y-top)*w,(y-top+1)*w,true);
+        }
         List<InkDot> dots=new ArrayList<>();
         for(int seed=0;seed<seen.length;seed++) {
             int sx=seed%w,sy=seed/w;

@@ -83,4 +83,36 @@ public class DottedRestTest {
     @Test public void dottedSixteenthRestUsesThreeEighthBeats() {
         byte[] g=flaggedRest(true);dot(g,197,104,3);duration(g,List.of(),.375);
     }
+    private static byte[] thickStaffDot(boolean lower) {
+        byte[] g=page();
+        for(int y=80;y<=144;y+=16)for(int dy=-1;dy<=1;dy++)
+            for(int x=20;x<380;x++)g[(y+dy)*400+x]=0;
+        dot(g,194,lower?106:102,4);
+        return g;
+    }
+    @Test public void dotTouchingUpperThickRuleStillAugmentsRest() {
+        duration(thickStaffDot(false),List.of(),1.5);
+    }
+    @Test public void dotTouchingLowerThickRuleStillAugmentsRest() {
+        duration(thickStaffDot(true),List.of(),1.5);
+    }
+    @Test public void twoDotsTouchingThickRuleBothAugmentRest() {
+        byte[] g=thickStaffDot(false);dot(g,207,102,4);
+        duration(g,List.of(),1.75);
+    }
+    @Test public void thickRulesAloneDoNotAugmentRest() {
+        byte[] g=page();
+        for(int y=80;y<=144;y+=16)for(int dy=-1;dy<=1;dy++)
+            for(int x=20;x<380;x++)g[(y+dy)*400+x]=0;
+        duration(g,List.of(),1);
+    }
+    @Test public void staffCrossingStemIsStillNotADot() {
+        byte[] g=thickStaffDot(false);
+        for(int y=84;y<=128;y++)for(int x=192;x<=196;x++)g[y*400+x]=0;
+        duration(g,List.of(),1);
+    }
+    @Test public void staffCrossingLargeHeadIsStillNotADot() {
+        byte[] g=thickStaffDot(false);dot(g,194,104,7);
+        duration(g,List.of(),1);
+    }
 }
