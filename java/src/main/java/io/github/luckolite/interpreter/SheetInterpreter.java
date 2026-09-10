@@ -53,6 +53,12 @@ public final class SheetInterpreter {
         for(byte label:labels)if(label<0||label>5)throw new IllegalArgumentException("Labels must be in 0..5");
         Objects.requireNonNull(annotations);
         var measures=OmrMeasurePostProcessor.process(labels,gray,width,height);
+        byte[] prepared=OmrScoreInterpreter.normalizeHeaderSymbols(labels,gray,width,height,measures);
+        // Removing a header head can move the playable edge and the rest-count OCR crop.
+        if(prepared!=labels) {
+            measures=OmrMeasurePostProcessor.process(labels,gray,width,height,prepared);
+            labels=prepared;
+        }
         var numbers=annotations.measureNumbers.stream().map(NumberToken::internal).toList();
         var rests=MultiMeasureRestDetector.detect(labels,gray,width,height,measures,
                 annotations.restCounts.stream().map(NumberToken::internal).toList());

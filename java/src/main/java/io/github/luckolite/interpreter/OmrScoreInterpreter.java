@@ -47,6 +47,8 @@ final class OmrScoreInterpreter {
                 OmrMeasurePostProcessor.CLEF_OR_KEY);
         rawHeadComponents.removeIf(head->isRoundedHeaderMeter(labels,gray,width,height,
                 head,staffs,clefOrKeyComponents));
+        rawHeadComponents.removeIf(head -> commonTimeGlyphBounds(labels, gray, width, height,
+                head, staffs, clefOrKeyComponents) != null);
         List<Component> headComponents = splitStackedHeads(labels, gray, width, height,
                 rawHeadComponents, staffs);
         List<Component> symbolComponents = findComponents(labels, width, height,
@@ -266,6 +268,120 @@ final class OmrScoreInterpreter {
         }
         return new Analysis(withRests, keyChanges, rests);
     }
+
+    /** Excludes proven non-note header ink before OCR rest reconciliation, without modifying input masks. */
+    static byte[] normalizeHeaderSymbols(byte[] labels, byte[] gray, int width, int height,
+                                         List<MeasureRegion> measures) {
+        if (labels == null || gray == null || width <= 0 || height <= 0
+                || labels.length != (long) width * height || gray.length != labels.length
+                || measures == null || measures.isEmpty()) return labels;
+        List<Staff> staffs = findStaffs(labels, gray, width, height, measures);
+        List<Component> heads = findComponents(labels, width, height, OmrMeasurePostProcessor.NOTEHEAD);
+        List<Component> glyphs = findComponents(labels, width, height, OmrMeasurePostProcessor.CLEF_OR_KEY);
+        byte[] result = labels;
+        for (Component head : heads) {
+            int[] bounds = commonTimeGlyphBounds(labels, gray, width, height, head, staffs, glyphs);
+            if (bounds == null && isRoundedHeaderMeter(labels, gray, width, height, head, staffs, glyphs))
+                bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
+            if (bounds == null) continue;
+            for (int y = bounds[2]; y <= bounds[3]; y++) for (int x = bounds[0]; x <= bounds[1]; x++) {
+                int at = y * width + x;
+                if (result[at] == OmrMeasurePostProcessor.NOTEHEAD) {
+                    if (result == labels) result = labels.clone();
+                    // Keep source ink for OCR; do not promote removed fragments to accidental candidates.
+                    result[at] = 0;
+                }
+            }
+        }
+        return result;
+    }
+
+    /** The tall open-right C can contribute tiny false heads at its curved terminals. */
+    private static int[] commonTimeGlyphBounds(byte[] labels, byte[] gray, int width, int height,
+                                              Component head, List<Staff> staffs, List<Component> glyphs) {
+        if (gray == null) return null;
+        Staff staff = nearestHeadStaff(staffs, head.centerY);
+        if (staff == null) return null;
+        float gap = staff.pitchGap, bottom = staff.pitchBottom, top = bottom - gap * 4;
+        float mid = (top + bottom) * .5f;
+        if (head.area > gap * gap * .5f || head.maxX - head.minX > gap * .8f
+                || head.maxY - head.minY > gap * .8f || Math.abs(head.centerY - mid) > gap * 1.15f)
+            return null;
+        boolean header = false;
+        for (Component glyph : glyphs) {
+            if (glyph.maxX < head.minX && head.minX - glyph.maxX < gap * 9
+                    && glyph.maxY - glyph.minY > gap * 4.5f && glyph.maxX - glyph.minX > gap * 1.1f
+                    && Math.abs(glyph.centerY - mid) < gap * 3) header = true;
+        }
+        if (!header) return null;
+        int[] stem = attachedRawStem(gray, width, height, head, gap);
+        if (stem != null && (stem[1] < top - gap * .25f || stem[1] > bottom + gap * .25f)) return null;
+
+        // Follow the printed glyph across narrow antialiasing gaps, ignoring the five staff rules.
+        int searchLeft = Math.max(0, Math.round(head.minX - gap * 2.5f));
+        int searchRight = Math.min(width - 1, Math.round(head.maxX + gap * 2.5f));
+        int[] columns = new int[searchRight - searchLeft + 1];
+        int scanTop = Math.max(0, Math.round(top)), scanBottom = Math.min(height - 1, Math.round(bottom));
+        for (int x = searchLeft; x <= searchRight; x++) for (int y = scanTop; y <= scanBottom; y++) {
+            if (offHeaderStaffLine(y, top, gap) && (gray[y * width + x] & 255) < 155)
+                columns[x - searchLeft]++;
+        }
+        int left = head.minX, right = head.maxX, blank = 0;
+        int maxBlank = Math.max(1, Math.round(gap * .15f));
+        for (int x = left - 1; x >= searchLeft; x--) {
+            if (columns[x - searchLeft] > 0) { left = x; blank = 0; }
+            else if (++blank > maxBlank) break;
+        }
+        blank = 0;
+        for (int x = right + 1; x <= searchRight; x++) {
+            if (columns[x - searchLeft] > 0) { right = x; blank = 0; }
+            else if (++blank > maxBlank) break;
+        }
+        if (left == searchLeft || right == searchRight || right - left < gap * .9f
+                || right - left > gap * 2.5f) return null;
+        int noteInk = 0, minY = height, maxY = -1;
+        for (int y = scanTop; y <= scanBottom; y++) for (int x = left; x <= right; x++) {
+            if (labels[y * width + x] == OmrMeasurePostProcessor.NOTEHEAD) noteInk++;
+            if (offHeaderStaffLine(y, top, gap) && (gray[y * width + x] & 255) < 155) {
+                minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+            }
+        }
+        if (noteInk > gap * gap * .55f || maxY - minY < gap * 2.2f || maxY - minY > gap * 3.8f)
+            return null;
+        int span = right - left;
+        int[] open = headerInkBand(gray, width, height, Math.round(left + span * .65f), right,
+                Math.round(mid - gap * .25f), Math.round(mid + gap * .25f), top, gap);
+        int[] upper = headerInkBand(gray, width, height, Math.round(left + span * .60f), right,
+                Math.round(mid - gap * 1.05f), Math.round(mid - gap * .35f), top, gap);
+        int[] lower = headerInkBand(gray, width, height, Math.round(left + span * .60f), right,
+                Math.round(mid + gap * .35f), Math.round(mid + gap * 1.05f), top, gap);
+        int[] leftUp = headerInkBand(gray, width, height, left, Math.round(left + span * .35f),
+                Math.round(mid - gap * .65f), Math.round(mid - gap * .15f), top, gap);
+        int[] leftDown = headerInkBand(gray, width, height, left, Math.round(left + span * .35f),
+                Math.round(mid + gap * .15f), Math.round(mid + gap * .65f), top, gap);
+        // Require both curved terminals and the left arc, with a genuinely open middle at the right.
+        if (open[1] == 0 || open[0] > open[1] * .2f || upper[0] < gap * .7f || lower[0] < gap * .7f
+                || leftUp[0] < gap * .7f || leftDown[0] < gap * .7f) return null;
+        return new int[]{left, right, scanTop, scanBottom};
+    }
+
+    private static boolean offHeaderStaffLine(int y, float top, float gap) {
+        return Math.abs((y - top) / gap - Math.round((y - top) / gap)) * gap > Math.max(1, gap * .15f);
+    }
+
+    private static int[] headerInkBand(byte[] gray, int width, int height, int left, int right,
+                                      int top, int bottom, float staffTop, float gap) {
+        int ink = 0, total = 0;
+        for (int y = Math.max(0, top); y <= Math.min(height - 1, bottom); y++) {
+            if (!offHeaderStaffLine(y, staffTop, gap)) continue;
+            for (int x = Math.max(0, left); x <= Math.min(width - 1, right); x++) {
+                total++;
+                if ((gray[y * width + x] & 255) < 155) ink++;
+            }
+        }
+        return new int[]{ink, total};
+    }
+
 
     /** Stacked rounded meter digits can arrive as one tall semantic head blob.
      * Inspect their printed counters before splitting that blob into chord tones. */

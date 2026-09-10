@@ -176,3 +176,37 @@ with identical sounding events. One previously missed dotted-rest duration was
 confirmed against its printed source. The full library and performance audit
 remains incomplete. Private scans, model weights and packaged releases are
 unchanged by this source update.
+
+## Header symbols and opening multimeasure rests
+
+Small fragments of common-time and cut-time signs could become sounding notes.
+Header notehead labels also prevented multimeasure-rest recognition or widened
+the opening measure enough to select the wrong OCR crop. The decoder now checks
+the printed open-right shape and clef context, protects real filled and hollow
+heads and grace stems, and removes only confirmed non-note labels from a copied
+mask. Rounded meter denominators use the same preparation before rest detection.
+
+The app and standalone API refresh playable header edges after normalization.
+They retain the original segmentation for staff and barline geometry, so a
+cleared numeral bowl cannot turn its vertical stroke into a new barline.
+Original caller masks and grayscale pixels remain unchanged.
+
+Twelve original synthetic regressions cover header shapes, negative cases,
+input preservation, repeated normalization, rest expansion and stable geometry.
+Both API regressions fail with the preceding published decoder. A 48-page
+comparison preserves all 421 saved pitch/presence expectations and 41 selected
+pitch/onset/duration expectations; all matched pitches are unchanged. With
+source-transcribed rest counts, two opening rests expand to eight and three
+bars respectively, and 482 real-note pitches remain unchanged. The unannotated
+comparison changes one page by removing a false time-signature note; the other
+47 page outputs are identical.
+
+Validation passed 325 standalone Java tests, 13 Python tests, PNG/PDF
+inference-to-MIDI smoke checks, and 1,430 app tests plus Android lint. The app
+check used the reviewed production core and its corresponding committed tests;
+unpublished experiments were preserved separately.
+
+These are selected source and regression checks, not a complete library accuracy
+claim or live phone validation. OCR inputs remain the caller's responsibility in
+the standalone API. Private scans and diagnostic fixtures are excluded, and
+model weights, licensing and packaged releases are unchanged.

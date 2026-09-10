@@ -165,3 +165,14 @@ passage still needs its printed triplet/rest timing repaired; some other shared-
 chords have inconsistent duration classifications. A later-page audit now uses the
 printed 12/8 meter instead of an old 4/4 fallback. Private scans and score fixtures
 remain excluded, and model weights, dependencies, and licensing are unchanged.
+
+
+## Header normalization and rest preparation
+
+The shared header geometry and measure postprocessor were reviewed from app
+commit `2b1179f16232ec149957255f780f2e06248634e0`. The Android `OmrMeasureAnalyzer` adapter
+and standalone `SheetInterpreter` API both prepare header labels before rest
+recognition and refresh the playable edge using the original staff/barline
+segmentation. The standalone adapter continues to accept caller-supplied OCR;
+no Android OCR service, private page fixture or device log was copied. Ten
+shared synthetic cases and two standalone API cases cover the change.

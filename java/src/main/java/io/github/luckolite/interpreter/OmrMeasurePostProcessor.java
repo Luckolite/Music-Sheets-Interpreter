@@ -31,14 +31,22 @@ final class OmrMeasurePostProcessor {
     }
 
     static List<MeasureRegion> process(byte[] labels, byte[] gray, int width, int height) {
+        return process(labels, gray, width, height, labels);
+    }
+
+    /** Reframe playable headers without reclassifying numeral stems as barlines.
+     * Geometry keeps the original segmentation; only header trimming uses the cleaned labels. */
+    static List<MeasureRegion> process(byte[] labels, byte[] gray, int width, int height,
+                                       byte[] headerLabels) {
         if (labels == null || width <= 0 || height <= 0 || labels.length != width * height)
             return List.of();
+        if (headerLabels == null || headerLabels.length != labels.length) return List.of();
         if (gray != null && gray.length != labels.length) gray = null;
         List<StaffRun> staffs = findStaffs(labels, gray, width, height);
         if (staffs.isEmpty()) return List.of();
         List<SystemRun> systems = mergeAlignedStaffs(staffs, gray, width, height);
         List<MeasureRegion> result = new ArrayList<>();
-        for (SystemRun system : systems) addMeasures(labels, width, height, system, result);
+        for (SystemRun system : systems) addMeasures(headerLabels, width, height, system, result);
         // Systems already run top to bottom and their boundaries left to right.
         // Sorting tilted measure boxes by their top edge reverses an uphill row.
         return List.copyOf(result);
