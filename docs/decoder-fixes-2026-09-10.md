@@ -630,3 +630,34 @@ synthetic fixtures and reviewed code are mirrored to the public interpreter;
 mixed experiments, rollback snapshots, weights and license terms are preserved.
 Guide106/audio22 invalidate caches in the next Android build. No phone, APK,
 Sync Hub or Desktop executable update is included in this source batch.
+
+## Tie endpoint clearance
+
+An engraved tie can leave a small blank clearance beside either notehead. The
+existing continuous-curve check expected ink across almost the entire space,
+so some clearly printed ties became separate attacks. If the original check
+fails, a bounded inset search now allows those clearances while retaining the
+same-pitch, minimum-span, complete returning-curve and staff/beam safeguards.
+
+Nine original synthetic tests cover upper, lower and asymmetric clearances,
+already attached ties, straight/sloped/stepped strokes, a half curve and an arc
+too far from the heads. Three fail with the preceding algorithm. All 594 Java
+tests, 13 Python tests, PNG/PDF/MIDI smoke checks and 23 focused Android tests pass.
+
+Every changed real-score result was inspected against private printed source:
+16 recovered ties across seven of 15 targeted pages are genuine ties. These
+include A Beautiful Distraction, Run, I Saw Three Ships, Boulevard of Broken
+Dreams, Arcade and Dearly Beloved. The other eight complete page outputs are
+identical. Only tie-continuation flags change; pitches, attacks' nominal onsets
+and written durations do not change. The held-note behavior is not phone-tested.
+
+All 1,828 currently passing pitch/presence assertions remain green. Three known
+open errors among 1,831 assertions remain: one missing grace and two false short
+grace slurs. Sixteen new private tie expectations are saved for later checks.
+Hourly rotation remains separate, without repeating it after every patch.
+
+Only reviewed shared code and original synthetic tests are published. Private
+scans, crops and transcriptions stay private; mixed experiments and rollback
+snapshots remain intact. Weights, dependencies and license terms are unchanged.
+Guide107/audio23 refresh derived caches in the next Android build. No APK,
+phone, Sync Hub or Desktop executable update is included in this source batch.

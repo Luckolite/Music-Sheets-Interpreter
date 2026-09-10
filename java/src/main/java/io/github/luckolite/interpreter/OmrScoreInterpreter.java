@@ -3723,7 +3723,7 @@ final class OmrScoreInterpreter {
         if (right <= left || right - left < gap * 1.3f) return false;
         float centerY = (previous.head.centerY + current.head.centerY) * .5f;
         if (gray != null && gray.length == labels.length) {
-            if (hasContinuousTieArc(labels, gray, width, height, left, right, centerY, gap))return true;
+            if (hasPrintedTieArc(labels, gray, width, height, left, right, centerY, gap))return true;
             if (!ScoreNoteTiming.hasIndependentSustain(previous.event))return false;
         }
         ArcStats above = arcStats(labels, gray, width, height, left, right,
@@ -3731,6 +3731,20 @@ final class OmrScoreInterpreter {
         ArcStats below = arcStats(labels, gray, width, height, left, right,
                 Math.round(centerY + gap * .12f), Math.round(centerY + gap * 3f));
         return plausibleArc(above, left, right, gap) || plausibleArc(below, left, right, gap);
+    }
+
+    /** Small blank clearances can separate an engraved tie from either head. */
+    private static boolean hasPrintedTieArc(byte[] labels,byte[] gray,int width,int height,
+            int left,int right,float centerY,float gap) {
+        if(hasContinuousTieArc(labels,gray,width,height,left,right,centerY,gap))return true;
+        int step=Math.max(1,Math.round(gap*.2f));
+        for(int first=0;first<=2;first++)for(int last=0;last<=2;last++) {
+            if(first==0&&last==0)continue;
+            int a=left+first*step,b=right-last*step;
+            if(b-a<gap*1.3f)continue;
+            if(hasContinuousTieArc(labels,gray,width,height,a,b,centerY,gap))return true;
+        }
+        return false;
     }
 
     /** Follow one returning curve; averaging nearby slurs, stems and ledger lines loses short ties. */
