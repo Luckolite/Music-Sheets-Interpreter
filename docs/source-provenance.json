@@ -1,0 +1,136 @@
+{
+  "source_commit": "eb6e9ed8a607225aea0f448e870ae039e72314b1",
+  "source_project": "Music Sheets",
+  "source_authors": [
+    "Luckolite"
+  ],
+  "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
+  "files": {
+    "ActiveScoreNotes.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ActiveScoreNotes.java",
+      "source_sha256": "7a87fd00c91a12f3f69af5f3f5b4c00e001efd80b328679e6ad088ca6086caa7"
+    },
+    "CrossStaffBeamDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/CrossStaffBeamDetector.java",
+      "source_sha256": "274268e667a42ba2c417d2ba9f5e22cac2d6c9545b21e37d9b10c0fc35d085e9"
+    },
+    "GrandStaffDynamics.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/GrandStaffDynamics.java",
+      "source_sha256": "2d1c0c6a7b8ea5b30f2a51d9cde5b18c2ed08528c2b16ca7fb73ece122e07e91"
+    },
+    "MeasureNumberReconciler.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureNumberReconciler.java",
+      "source_sha256": "fda379b9d58f2bf809dff4725335213fc0d0d41c48cc2edc679d4977404e8a93"
+    },
+    "MeasureRegion.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureRegion.java",
+      "source_sha256": "ae17f8cd3eab964214cf791e5ba136896e7ad5d626713201838fcfcf30028a62"
+    },
+    "MeterChangeDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
+      "source_sha256": "417dee778052d43168fba36371f2c4e0781936eebbb0f833aee739fd0377657a"
+    },
+    "MultiMeasureRestDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
+      "source_sha256": "8a9287798f9d2c5d2d1d48b59adbe599aa8ddd7a31715d70cdc06b0c46ccce69"
+    },
+    "NoteArticulation.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulation.java",
+      "source_sha256": "c637816c21e75b940104281aa526033a64228ef967d4b7ace3f2938372a1feb5"
+    },
+    "NoteArticulationDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
+      "source_sha256": "f36bdbd97e7c02b56e171df35b3b1d49d93d4ae17ea140ccdba1059fc0902ead"
+    },
+    "NoteOrnament.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",
+      "source_sha256": "bbed2fe26a882e63fd073c664b1aff6707c669c973efb5a9878d2267e39e1cde"
+    },
+    "OmrMeasurePostProcessor.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
+      "source_sha256": "a5ed422ac40834b2de1ec5b4e12836aeb6116c23e2a92702da21d9dd39191c99"
+    },
+    "OmrScoreInterpreter.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
+      "source_sha256": "580d72609361ec4efae150e94089025006056ab18f0087dbeb4e2e6a7ac9994f"
+    },
+    "PlayingTechniqueDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
+      "source_sha256": "fc4fb6baffafdfaf7f27520af61f5b28ebeb556e212ffeff84900dd4abe7ac60"
+    },
+    "RawStaffLineDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/RawStaffLineDetector.java",
+      "source_sha256": "ed302ac6d7e045df2f1208fb3b6dea2c250920a8bbcc0d26ab28d6ef862aff1b"
+    },
+    "ScoreDynamicChange.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicChange.java",
+      "source_sha256": "55e6d34a34f9d4dc4520933ee6467ebb57c34658006abfd5530541c0e065e8b7"
+    },
+    "ScoreDynamicsDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
+      "source_sha256": "ddfe6d5eeee508ac97e677bf96de2109ca65da3bdb9476e77d0eded638619634"
+    },
+    "ScoreKeyChange.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreKeyChange.java",
+      "source_sha256": "9c82ba319df0c2c8e7e54a2fe063229f21e7634a4fae467581e4f3edb5a4cd53"
+    },
+    "ScoreMeterChange.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreMeterChange.java",
+      "source_sha256": "b0914e9667a81ea9c791f3f6fd60d5b6cd94dcff8600c5374a2fd8079040a8c8"
+    },
+    "ScoreNoteEvent.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteEvent.java",
+      "source_sha256": "a24f5283b544a535c4e21238cc845a7478ccca3d3aa915aef7a239c1189e4351"
+    },
+    "ScoreNoteTiming.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
+      "source_sha256": "ddf18dfafed66bcf276881dc4245dcdd23fe8ecc82b82fd74bd55e1c0878d472"
+    },
+    "ScorePageInterpretation.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
+      "source_sha256": "c8c8a74ccbea3a978511b9b96a0a445bc211a05d960a5d9a9f0b77d5355df5f8"
+    },
+    "ScoreRestEvent.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreRestEvent.java",
+      "source_sha256": "4bf7595846d9fd609aec35f8ca362e71e427e413ac09cb5e4311090c0e120ee2"
+    },
+    "ScoreTechniqueChange.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTechniqueChange.java",
+      "source_sha256": "9490b2c8d43eb8e98fba1512d56178eb0e041c897c76b5235b998ed8eea3b502"
+    },
+    "ScoreTempoChange.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTempoChange.java",
+      "source_sha256": "01c827fc215a0be55e8e47d245f763398b625609bc2ed7e15de87d11880ef853"
+    },
+    "SixteenthRestDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
+      "source_sha256": "c5b90ac1fabfb6ec4cc867996a63de9b2cfd4e6948998ccb36928b1e78ce2765"
+    },
+    "TempoChangeDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
+      "source_sha256": "a2c8d40a1fadee65bde2cf67101a6cde86b1ae79c95c043f6cb39fe67f11d0a7"
+    },
+    "TripletRhythmDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
+      "source_sha256": "e89392712217a64ccca0a4381bae14a8d73e4830b869e6fb7393509a4b41e031"
+    },
+    "training/model.py": {
+      "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
+    },
+    "training/generate.py": {
+      "source_sha256": "0110ddd2a03ebc5ebe840cd11260bd759a9a3d2f3f520ad5475b6252d0071c7b"
+    },
+    "training/audit_corpus.py": {
+      "source_sha256": "81a44fb7018b6170cd1b19e1e3838cf6c5f11e845d7e75e3110a9effb98591b5"
+    },
+    "training/train.py": {
+      "source_sha256": "eb21694c1e1785bd55224772f7d952d920a5d75f81b20aa776523e69f4f03b34"
+    },
+    "training/evaluate_pages.py": {
+      "source_sha256": "bb6778380016527dc651bf212009a46fb8bf4c368e1d85de2820abd22e28cd9c"
+    },
+    "training/export_tflite.py": {
+      "source_sha256": "92302964415951617bd15f7cb838988c41a1480949a30a97a831d7a0546f9582"
+    }
+  }
+}

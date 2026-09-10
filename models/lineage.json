@@ -1,0 +1,65 @@
+{
+  "external_pretrained_sources": [],
+  "stages": [
+    {
+      "stage": "run-v1",
+      "checkpoint_sha256": "93ba2fdb6007283b0a2e910f34efa77d9c11822e430e6de670af7ae0a6891a6e",
+      "architecture": "musicsheets-tiny-unet-v1",
+      "parameters": 487094,
+      "best_step": 2500,
+      "steps_run": 3000,
+      "initialization": null,
+      "corpus_sha256": "d36397b9a08e0defeb07943b26497b50d8955adf3ca6eee16bac497c29fdcba8",
+      "pages": {
+        "train": 320,
+        "validation": 40,
+        "test": 40
+      },
+      "test_scope": "six fixed foreground-biased crops per held-out Leland page; not real-score or phone accuracy"
+    },
+    {
+      "stage": "run-v2",
+      "checkpoint_sha256": "aa2dd1594847d7a3756a0f9bbc3c6c88f9f8c1ac9a0146e7ebc761d83c13b6a2",
+      "architecture": "musicsheets-tiny-unet-v1",
+      "parameters": 487094,
+      "best_step": 1500,
+      "steps_run": 1500,
+      "initialization": {
+        "type": "continued_own_pilot",
+        "checkpoint_sha256": "93ba2fdb6007283b0a2e910f34efa77d9c11822e430e6de670af7ae0a6891a6e",
+        "parent_corpus_sha256": "d36397b9a08e0defeb07943b26497b50d8955adf3ca6eee16bac497c29fdcba8",
+        "parent_step": 2500
+      },
+      "corpus_sha256": "3fbe433150815cc59f40382cacdd5522bb59954735c47bae21abfc0774c3e24d",
+      "pages": {
+        "train": 320,
+        "validation": 40,
+        "test": 40
+      },
+      "test_scope": "six fixed foreground-biased crops per held-out Leland page; not real-score or phone accuracy"
+    },
+    {
+      "stage": "run-v3",
+      "checkpoint_sha256": "44a79c2d4d63742945c288dd9287167e9f918de669184bfd13679b372adc8d85",
+      "architecture": "musicsheets-tiny-unet-v1",
+      "parameters": 487094,
+      "best_step": 1000,
+      "steps_run": 3000,
+      "initialization": {
+        "type": "continued_own_pilot",
+        "checkpoint_sha256": "aa2dd1594847d7a3756a0f9bbc3c6c88f9f8c1ac9a0146e7ebc761d83c13b6a2",
+        "parent_corpus_sha256": "3fbe433150815cc59f40382cacdd5522bb59954735c47bae21abfc0774c3e24d",
+        "parent_step": 1500
+      },
+      "corpus_sha256": "a996100dfa84b4c16bc9ed26aeae329e0ae940333afdddea17f1f9d01eeb9483",
+      "pages": {
+        "train": 480,
+        "validation": 60,
+        "test": 60
+      },
+      "test_scope": "six fixed foreground-biased crops per held-out Leland page; not real-score or phone accuracy"
+    }
+  ],
+  "v1_synthetic_metrics_withdrawn": true,
+  "weights_license": "Apache-2.0"
+}

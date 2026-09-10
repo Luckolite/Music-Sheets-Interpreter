@@ -1,0 +1,125 @@
+// Copyright 2026 Luckolite
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
+package io.github.luckolite.interpreter;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/** Reads the two left-facing bulbs and descending diagonal tail from raw score ink.
+ * the model often labels this entire glyph as background, so semantic symbol components cannot seed it. */
+final class SixteenthRestDetector {
+    record Staff(float top, float bottom, float gap, int index, int count) { }
+
+    static List<ScoreRestEvent> detect(byte[] gray, int width, int height,
+            List<MeasureRegion> measures, List<Staff> staffs, List<ScoreNoteEvent> notes) {
+        if (gray == null || gray.length != width * height) return List.of();
+        List<ScoreRestEvent> result = new ArrayList<>();
+        List<Staff> placements=new ArrayList<>(staffs);
+        // In polyphonic engraving rests for the upper voice move one space above their
+        // usual centre to clear the simultaneously held lower voice.
+        for(Staff s:staffs)placements.add(new Staff(s.top()-s.gap(),s.bottom()-s.gap(),s.gap(),s.index(),s.count()));
+        for (Staff staff : placements) {
+            float gap = staff.gap();
+            int top = Math.max(0, Math.round(staff.top() + gap * .7f));
+            int bottom = Math.min(height - 1, Math.round(staff.bottom() + gap * .3f));
+            boolean[] line = new boolean[bottom - top + 1];
+            // Remove only long horizontal ink rows, including a line's antialiased edge.
+            for (int y = top; y <= bottom; y++) {
+                int dark = 0;
+                for (int x = 0; x < width; x++) if ((gray[y * width + x] & 255) < 170) dark++;
+                float nearestLine = staff.top() + Math.round((y - staff.top()) / gap) * gap;
+                line[y - top] = Math.abs(y - nearestLine) <= gap * .2f && dark > width * .25f;
+            }
+            int start = -1;
+            for (int x = 0; x <= width; x++) {
+                int ink = 0;
+                if (x < width) for (int y = top; y <= bottom; y++)
+                    if (!line[y - top] && (gray[y * width + x] & 255) < 170) ink++;
+                if (ink >= 2) { if (start < 0) start = x; }
+                else if (start >= 0) {
+                    inspect(gray, width, height, measures, notes, staff, top, bottom,
+                            line, start, x - 1, result);
+                    start = -1;
+                }
+            }
+        }
+        result.sort(java.util.Comparator.comparingInt(ScoreRestEvent::measureIndex)
+                .thenComparingDouble(ScoreRestEvent::positionInMeasure));
+        List<ScoreRestEvent> unique=new ArrayList<>();
+        for(ScoreRestEvent rest:result)if(unique.stream().noneMatch(r->r.measureIndex()==rest.measureIndex()
+                &&r.staffIndex()==rest.staffIndex()&&Math.abs(r.positionInMeasure()-rest.positionInMeasure())<.018f))unique.add(rest);
+        return List.copyOf(unique);
+    }
+
+    private static void inspect(byte[] gray, int width, int height, List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes, Staff staff, int top, int bottom, boolean[] line,
+            int left, int right, List<ScoreRestEvent> result) {
+        float gap = staff.gap();
+        if (right - left + 1 < gap * .7f || right - left + 1 > gap * 1.6f) return;
+        int minY = bottom + 1, maxY = top - 1;
+        int[] ink = new int[bottom - top + 1];
+        for (int y = top; y <= bottom; y++) if (!line[y - top]) {
+            for (int x = left; x <= right; x++) if ((gray[y * width + x] & 255) < 170)
+                ink[y - top]++;
+            if (ink[y - top] > 0) { minY = Math.min(minY, y); maxY = y; }
+        }
+        boolean eighth = maxY-minY>=gap*1.3f && maxY-minY<=gap*2.2f
+                && Math.abs(maxY-(staff.bottom()-gap))<=gap*.4f;
+        boolean sixteenth = maxY-minY>=gap*2.35f && maxY-minY<=gap*3.25f
+                && Math.abs(maxY-staff.bottom())<=gap*.35f;
+        if ((!eighth && !sixteenth)
+                || minY < staff.top() + gap * .85f || minY > staff.top() + gap * 1.55f) return;
+        // Interpolate removed staff rows before counting bulb lobes, so staff crossings do not
+        // split a single bulb into several flags.
+        for (int y = minY; y <= maxY; y++) if (line[y - top]) {
+            int before = y - 1, after = y + 1;
+            while (before >= minY && line[before - top]) before--;
+            while (after <= maxY && line[after - top]) after++;
+            if (before >= minY && after <= maxY)
+                ink[y - top] = Math.round((ink[before - top] + ink[after - top]) * .5f);
+        }
+        List<Integer> lobes = new ArrayList<>();
+        int run = 0, runStart = 0;
+        for (int y = minY; y <= maxY + 1; y++) {
+            if (y <= maxY && ink[y - top] >= gap * .58f) {
+                if (run++ == 0) runStart = y;
+            } else {
+                if (run >= Math.max(2, gap * .22f)) lobes.add((runStart + y - 1) / 2);
+                run = 0;
+            }
+        }
+        if (eighth ? lobes.size()!=1 || maxY-lobes.get(0)<gap*.8f
+                : lobes.size() != 2 || lobes.get(1) - lobes.get(0) < gap * .7f
+                || lobes.get(1) - lobes.get(0) > gap * 1.3f
+                || maxY - lobes.get(1) < gap * .8f) return;
+        // Below the second bulb only a narrow tail remains. Its foot slopes left of the tip;
+        // accidentals, paired dots and isolated note flags do not have this geometry.
+        int footRight = -1;
+        for (int y = maxY - Math.round(gap * .45f); y <= maxY; y++) if (!line[y - top]) {
+            if (ink[y - top] > gap * .50f) return;
+            for (int x = left; x <= right; x++) if ((gray[y * width + x] & 255) < 170)
+                footRight = Math.max(footRight, x);
+        }
+        if (footRight < 0 || right - footRight < gap * .15f) return;
+        float centerX = (left + right) * .5f / width;
+        float centerY = (minY + maxY) * .5f / height;
+        for (int m = 0; m < measures.size(); m++) {
+            MeasureRegion region = measures.get(m);
+            if (centerX <= region.left() || centerX >= region.right()
+                    || centerY < region.top() || centerY > region.bottom()) continue;
+            if ((m > 0 && region.equals(measures.get(m - 1)))
+                    || (m + 1 < measures.size() && region.equals(measures.get(m + 1)))) return;
+            for (ScoreNoteEvent note : notes) if (note.measureIndex() == m
+                    && note.staffIndex() == staff.index() && note.staffCount() == staff.count()) {
+                float noteX = (region.left() + note.positionInMeasure() * (region.right() - region.left())) * width;
+                if (noteX >= left - gap * .65f && noteX <= right + gap * .65f) return;
+                if(note.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                        &&noteX>right&&noteX<right+gap*1.8f)return;
+            }
+            result.add(new ScoreRestEvent(m, (centerX - region.left()) / (region.right() - region.left()),
+                    centerY, (maxY - minY + 1f) / height, staff.index(), staff.count(),eighth?.5:.25));
+            return;
+        }
+    }
+}

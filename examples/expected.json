@@ -1,0 +1,31 @@
+{
+  "source": "Original generated scale, not used in model training",
+  "license": "Apache-2.0",
+  "midi": [
+    67,
+    69,
+    71,
+    72,
+    74,
+    76,
+    77,
+    79
+  ],
+  "durationsQuarterBeats": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "measures": 2,
+  "meter": [
+    4,
+    4
+  ],
+  "verovio": "6.3.0[undefined]",
+  "pngSha256": "3e9205cc2223f79f421b668d228aed5c501cb3ca136ab05eb09afc24d2a47cbd"
+}

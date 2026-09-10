@@ -1,0 +1,13 @@
+.venv*/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+src/sheet_interpreter/interpreter.jar
+src/sheet_interpreter/data/
+training/runs/
+training/corpus*/
+*.log
+.DS_Store
+.idea/

@@ -1,0 +1,31 @@
+// Copyright 2026 Luckolite
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
+package io.github.luckolite.interpreter;
+
+/** Per-note performance metadata stored alongside articulation; never part of written rhythm. */
+public final class NoteOrnament {
+    public static final int NONE=0, TRILL=1<<5, TURN=2<<5, INVERTED_TURN=3<<5,
+            MORDENT=4<<5, INVERTED_MORDENT=5<<5, SLIDE=6<<5;
+    public static final int TYPE_MASK=7<<5, DELAYED=1<<8;
+    public static final int FROM_ABOVE=1<<13, FROM_PREVIOUS=1<<14;
+    private static final int UPPER_SHIFT=9, LOWER_SHIFT=11;
+    public static final int ALL=TYPE_MASK|DELAYED|FROM_ABOVE|FROM_PREVIOUS|(3<<UPPER_SHIFT)|(3<<LOWER_SHIFT);
+    private NoteOrnament() { }
+    public static int type(int marks) { return marks&TYPE_MASK; }
+    public static int accidental(int marks,boolean upper) {
+        int value=(marks>>(upper?UPPER_SHIFT:LOWER_SHIFT))&3;
+        return value==0?ScoreNoteEvent.ACCIDENTAL_FROM_KEY:value-2;
+    }
+    public static int withAccidental(int marks,boolean upper,int accidental) {
+        int shift=upper?UPPER_SHIFT:LOWER_SHIFT;
+        int value=accidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY?0:Math.max(1,Math.min(3,accidental+2));
+        return (marks&~(3<<shift))|(value<<shift);
+    }
+    public static String name(int marks) {
+        return switch(type(marks)) {
+            case TRILL->"trill";case TURN->"turn";case INVERTED_TURN->"inverted_turn";
+            case MORDENT->"mordent";case INVERTED_MORDENT->"inverted_mordent";case SLIDE->"slide";default->"none";
+        };
+    }
+}

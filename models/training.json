@@ -1,0 +1,68 @@
+{
+  "architecture": "musicsheets-tiny-unet-v1",
+  "parameters": 487094,
+  "best_step": 1000,
+  "steps_run": 3000,
+  "elapsed_seconds": 1105.8328381000028,
+  "device": "cuda",
+  "pretrained_model_sources": [],
+  "initialization": {
+    "type": "continued_own_pilot",
+    "checkpoint_sha256": "aa2dd1594847d7a3756a0f9bbc3c6c88f9f8c1ac9a0146e7ebc761d83c13b6a2",
+    "parent_corpus_sha256": "3fbe433150815cc59f40382cacdd5522bb59954735c47bae21abfc0774c3e24d",
+    "parent_step": 1500
+  },
+  "corpus_sha256": "a996100dfa84b4c16bc9ed26aeae329e0ae940333afdddea17f1f9d01eeb9483",
+  "pages": {
+    "train": 480,
+    "validation": 60,
+    "test": 60
+  },
+  "validation_best_foreground_iou": 0.7273355775149005,
+  "heldout_font_test": {
+    "mean_iou": 0.7791607708393995,
+    "foreground_mean_iou": 0.7402895363226065,
+    "per_class": {
+      "background": {
+        "iou": 0.9735169434233636,
+        "recall": 0.9807852671222094,
+        "precision": 0.9924451934989694,
+        "pixels": 33952905
+      },
+      "stems_rests_barlines": {
+        "iou": 0.6566560966385521,
+        "recall": 0.8226652499250042,
+        "precision": 0.7649319096577757,
+        "pixels": 356687
+      },
+      "noteheads": {
+        "iou": 0.8699194571172757,
+        "recall": 0.9630667280178549,
+        "precision": 0.89994253612589,
+        "pixels": 465082
+      },
+      "clefs_keys_accidentals": {
+        "iou": 0.7914798206278026,
+        "recall": 0.8997198446858258,
+        "precision": 0.8680563082592673,
+        "pixels": 142421
+      },
+      "staff": {
+        "iou": 0.562883790526853,
+        "recall": 0.8246648669046998,
+        "precision": 0.6394058805152901,
+        "pixels": 861225
+      },
+      "other_symbols": {
+        "iou": 0.8205085167025497,
+        "recall": 0.9365411539311768,
+        "precision": 0.8688115004836301,
+        "pixels": 1085680
+      }
+    },
+    "evaluated_crops": 360
+  },
+  "test_scope": "six fixed foreground-biased crops per held-out Leland page; not real-score or phone accuracy",
+  "quality_approved": false,
+  "production_install_allowed": false
+}

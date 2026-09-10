@@ -1,0 +1,73 @@
+{
+  "release": "v0.1.0",
+  "date": "2026-09-09",
+  "platform": "Windows x64",
+  "python": "3.10.5",
+  "java_target": 17,
+  "java_unit_tests": {
+    "passed": 180
+  },
+  "python_unit_tests": {
+    "passed": 9
+  },
+  "installed_wheel_smoke": {
+    "inputs": [
+      "original scale PNG",
+      "original scale PDF"
+    ],
+    "expected_and_observed_midi": [
+      67,
+      69,
+      71,
+      72,
+      74,
+      76,
+      77,
+      79
+    ],
+    "expected_and_observed_quarter_durations": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "timing_fallbacks": 0,
+    "midi_written": true
+  },
+  "generator_audit": {
+    "generator": "independent-exercises-v3",
+    "exercises": 10,
+    "pages": {
+      "train": 8,
+      "validation": 1,
+      "test": 1
+    },
+    "noteheads": 1783,
+    "hollow_noteheads": 143,
+    "max_head_width": 30,
+    "max_head_height": 18,
+    "error_count": 0,
+    "errors": [],
+    "passed": true
+  },
+  "training_smoke": {
+    "steps": 2,
+    "initialization": "random",
+    "purpose": "exercise the published training path, not train a useful replacement",
+    "published_weights_replaced": false
+  },
+  "reexport": {
+    "tensorflow": "2.15.1",
+    "source_weights_sha256": "8940b22a20e3ace01e8cd7701d11380281d2132d8c1a4d731bf233def91504b8",
+    "keras_torch_max_abs_logit_error": 2.47955322265625e-05,
+    "float16_sha256": "1287f50f769e8f96164636941fa3c5f61ba9debe357130a5c45642dac207bd07",
+    "byte_identical_to_published_model": true,
+    "synthetic_parity_crops": 32,
+    "minimum_float16_label_agreement": 0.9999609375
+  },
+  "scope": "Packaging, selected geometry regressions and original synthetic smoke checks. Not a real-score accuracy benchmark, phone validation, or a new training-quality result."
+}

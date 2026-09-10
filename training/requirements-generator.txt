@@ -1,0 +1,5 @@
+verovio==6.3.0
+resvg-py==0.3.0
+numpy==1.26.4
+Pillow==12.2.0
+opencv-python==4.10.0.84
