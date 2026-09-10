@@ -61,9 +61,57 @@ final class TripletRhythmDetector {
         return List.copyOf(result);
     }
 
+    /** A numeral predicted as a long note can interrupt the triple that would identify it.
+     * Require its complete raw 3 glyph and a coherent surrounding short-note triple. */
+    static List<ScoreNoteEvent> withoutNumeralHeads(List<ScoreNoteEvent> notes,
+            List<MeasureRegion> measures,byte[] gray,int width,int height) {
+        if(notes==null||notes.size()<4||measures==null||gray==null||width<1||height<1
+                ||gray.length!=width*height)return notes;
+        List<ScoreNoteEvent> result=new ArrayList<>(notes);
+        for(ScoreNoteEvent candidate:notes) {
+            if(candidate.beamCount()!=0||candidate.tiedFromPrevious()
+                    ||candidate.measureIndex()<0||candidate.measureIndex()>=measures.size())continue;
+            List<ScoreNoteEvent> voice=new ArrayList<>();
+            for(ScoreNoteEvent n:result)if(n!=candidate&&n.measureIndex()==candidate.measureIndex()
+                    &&n.staffIndex()==candidate.staffIndex()&&n.staffCount()==candidate.staffCount())voice.add(n);
+            voice.sort(Comparator.comparingDouble(ScoreNoteEvent::positionInMeasure));
+            MeasureRegion region=measures.get(candidate.measureIndex());
+            float gap=Math.max(4,(region.bottom()-region.top())*height/(8*candidate.staffCount()));
+            float candidateX=(region.left()+candidate.positionInMeasure()*(region.right()-region.left()))*width;
+            float candidateY=candidate.pageY()*height;
+            for(int i=0;i+2<voice.size();i++) {
+                ScoreNoteEvent a=voice.get(i),b=voice.get(i+1),c=voice.get(i+2);
+                if(a.beamCount()<1||a.beamCount()!=b.beamCount()||a.beamCount()!=c.beamCount()
+                        ||a.augmentationDots()!=0||b.augmentationDots()!=0||c.augmentationDots()!=0
+                        ||a.tupletDivisor()!=1||b.tupletDivisor()!=1||c.tupletDivisor()!=1
+                        ||((a.articulations()|b.articulations()|c.articulations())&NoteOrnament.GRACE)!=0)continue;
+                float ab=b.positionInMeasure()-a.positionInMeasure(),bc=c.positionInMeasure()-b.positionInMeasure();
+                if(ab<.022f||bc<.022f||Math.max(ab,bc)>Math.min(ab,bc)*1.5f)continue;
+                float x1=(region.left()+a.positionInMeasure()*(region.right()-region.left()))*width;
+                float x3=(region.left()+c.positionInMeasure()*(region.right()-region.left()))*width;
+                float y1=Math.min(a.pageY(),Math.min(b.pageY(),c.pageY()))*height;
+                float y2=Math.max(a.pageY(),Math.max(b.pageY(),c.pageY()))*height;
+                if(x3-x1<gap*2||x3-x1>gap*18||candidateX<x1-gap||candidateX>x3+gap
+                        ||candidateY>=y1-gap&&candidateY<=y2+gap)continue;
+                if(findPrintedThree(gray,width,height,x1,x3,y1,y2,gap,true,candidateX,candidateY)!=null) {
+                    result.remove(candidate);break;
+                }
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private record Glyph(int left,int top,int right,int bottom) { }
+
     private static boolean hasPrintedThree(byte[] gray, int width, int height, float firstX,
                                             float lastX, float firstY, float lastY, float gap,
                                             boolean shortNotes) {
+        return findPrintedThree(gray,width,height,firstX,lastX,firstY,lastY,gap,shortNotes,
+                Float.NaN,Float.NaN)!=null;
+    }
+
+    private static Glyph findPrintedThree(byte[] gray,int width,int height,float firstX,
+            float lastX,float firstY,float lastY,float gap,boolean shortNotes,float headX,float headY) {
         float centerX = (firstX + lastX) * .5f;
         // Numerals align with the beam/stems, which can sit to one side of the
         // oval centres. Include that offset without clipping an italic 3.
@@ -72,7 +120,7 @@ final class TripletRhythmDetector {
         int top = Math.max(0, Math.round(firstY - gap * 7));
         int bottom = Math.min(height - 1, Math.round(lastY + gap * 7));
         int localWidth = right - left + 1, localHeight = bottom - top + 1;
-        if (localWidth < 3 || localHeight < 3) return false;
+        if (localWidth < 3 || localHeight < 3) return null;
         boolean[] visited = new boolean[localWidth * localHeight];
         int[] queue = new int[visited.length];
         for (int origin = 0; origin < visited.length; origin++) {
@@ -99,15 +147,17 @@ final class TripletRhythmDetector {
                     || gh < gap * .7f || gh > gap * 2.3f || gw < gh * .30f || gw > gh * .95f
                     || count < gw * gh * .15f || count > gw * gh * .70f
                     || !(maxY < firstY - gap || minY > lastY + gap)) continue;
+            if(Float.isFinite(headX)&&(headX<minX-gap*.1f||headX>maxX+gap*.1f
+                    ||headY<minY-gap*.1f||headY>maxY+gap*.1f))continue;
             if (!looksLikeThree(gray, width, minX, minY, gw, gh)) continue;
             // Quarter-note tuplets need the two bracket arms. For beamed/flagged short notes,
             // publishers routinely print only the numeral, so its shape/group alignment suffices.
             if (shortNotes || bracketArm(gray, width, height, Math.round(firstX - gap * .3f),
                     minX - 2, minY, maxY, gap)
                     && bracketArm(gray, width, height, maxX + 2, Math.round(lastX + gap * .3f),
-                    minY, maxY, gap)) return true;
+                    minY, maxY, gap)) return new Glyph(minX,minY,maxX,maxY);
         }
-        return false;
+        return null;
     }
 
     private static boolean looksLikeThree(byte[] gray, int width, int left, int top, int w, int h) {

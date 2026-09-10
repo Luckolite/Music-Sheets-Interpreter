@@ -1,0 +1,92 @@
+// Copyright 2026 Luckolite
+// SPDX-License-Identifier: Apache-2.0
+package io.github.luckolite.interpreter;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+/** Original curled numeral outlines and independently constructed note events. */
+public class TripletNumeralHeadTest {
+    private static String[] three() {
+        return new String[]{"..#######...", ".##########.", "###......###", "####.....###",
+                "####.....###", "####.....###", ".##.....####", ".......####.",
+                "......####..", "....#####...", "....#####...", "....#####...",
+                "......####..", ".......####.", "##.....####.", "###....####.",
+                "###....####.", "###....####.", ".###....###.", "..########..",
+                "..########..", "....####...."};
+    }
+    private static byte[] image(String[] shape,int top) {
+        byte[] gray=new byte[400*240];Arrays.fill(gray,(byte)255);
+        for(int y=0;y<shape.length;y++)for(int x=0;x<shape[y].length();x++)
+            if(shape[y].charAt(x)=='#')gray[(top+y)*400+119+x]=0;
+        return gray;
+    }
+    private static ScoreNoteEvent moving(float x,int beams) {
+        return new ScoreNoteEvent(0,x,2,0,1,.4f,false,0,beams,2,0,1);
+    }
+    private static ScoreNoteEvent numeral(int top) {
+        return new ScoreNoteEvent(0,.3125f,-3,0,1,(top+16)/240f,false,0,0,2,2,1);
+    }
+    private static List<ScoreNoteEvent> notes(int top) {
+        return List.of(moving(.25f,2),numeral(top),moving(.3125f,2),moving(.375f,2));
+    }
+    private static List<ScoreNoteEvent> clean(List<ScoreNoteEvent> notes,byte[] gray) {
+        return TripletRhythmDetector.withoutNumeralHeads(notes,List.of(new MeasureRegion(0,1,.1f,.8f)),gray,400,240);
+    }
+    @Test public void aThreeHeadNoLongerInterruptsItsOwnTriplet() {
+        var gray=image(three(),145);var cleaned=clean(notes(145),gray);assertEquals(3,cleaned.size());
+        var timed=TripletRhythmDetector.apply(cleaned,List.of(new MeasureRegion(0,1,.1f,.8f)),gray,400,240);
+        assertTrue(timed.stream().allMatch(n->n.tupletDivisor()==3));
+    }
+    @Test public void anAboveStaffNumeralCanAlsoBeRemoved() {assertEquals(3,clean(notes(30),image(three(),30)).size());}
+    @Test public void aClosedEightDoesNotSupplyTheThreeEvidence() {
+        String[] glyph=three();for(int y=2;y<glyph.length-2;y++)glyph[y]="##"+glyph[y].substring(2);
+        assertEquals(4,clean(notes(145),image(glyph,145)).size());
+    }
+    @Test public void aSolidFiveStemDoesNotSupplyTheThreeEvidence() {
+        String[] glyph=three();for(int y=2;y<10;y++)glyph[y]="###.........";
+        assertEquals(4,clean(notes(145),image(glyph,145)).size());
+    }
+    @Test public void theAllegedHeadMustOverlapTheNumeralItself() {
+        var n=new ArrayList<>(notes(145));n.set(1,new ScoreNoteEvent(0,.3125f,-3,0,1,.8f,false,0,0,2,2,1));
+        assertEquals(4,clean(n,image(three(),145)).size());
+    }
+    @Test public void aGenuineInterveningQuarterCannotBeSkippedToMakeAGroup() {
+        var n=new ArrayList<>(notes(145));n.add(new ScoreNoteEvent(0,.28f,3,0,1,.4f,false,0,0,2,1,1));
+        assertEquals(5,clean(n,image(three(),145)).size());
+    }
+    @Test public void unevenBeamValuesDoNotAuthorizeRemoval() {
+        var n=new ArrayList<>(notes(145));n.set(2,moving(.3125f,1));assertEquals(4,clean(n,image(three(),145)).size());
+    }
+    @Test public void graceNotesDoNotCreateAMetricalTriplet() {
+        var n=new ArrayList<>(notes(145));n.set(0,n.get(0).withArticulations(NoteOrnament.GRACE));
+        assertEquals(4,clean(n,image(three(),145)).size());
+    }
+    @Test public void twoNotesAreInsufficientEvidence() {
+        var n=new ArrayList<>(notes(145));n.remove(3);assertEquals(3,clean(n,image(three(),145)).size());
+    }
+    @Test public void sourceNotesAndPixelsRemainUnchanged() {
+        var n=notes(145);byte[] g=image(three(),145),saved=g.clone();clean(n,g);
+        assertEquals(4,n.size());assertArrayEquals(saved,g);
+    }
+    @Test public void rawScoreExtractionRemovesTheNumeralBeforeRestAndTupletTiming() {
+        byte[] gray=image(three(),155),labels=new byte[gray.length];
+        for(int y=80;y<=144;y+=16)for(int x=20;x<380;x++){gray[y*400+x]=0;labels[y*400+x]=4;}
+        for(int cx:new int[]{100,125,150}) {
+            for(int y=99;y<=109;y++)for(int x=cx-8;x<=cx+8;x++)
+                if(Math.pow((x-cx)/8.0,2)+Math.pow((y-104)/5.0,2)<=1){gray[y*400+x]=0;labels[y*400+x]=2;}
+            for(int y=54;y<=104;y++){gray[y*400+cx+8]=0;labels[y*400+cx+8]=1;}
+        }
+        for(int y:new int[]{54,55,56,57,58,64,65,66,67,68})for(int x=108;x<=158;x++){gray[y*400+x]=0;labels[y*400+x]=1;}
+        for(int y=167;y<=177;y++)for(int x=118;x<=131;x++)
+            if(Math.pow((x-125)/7.0,2)+Math.pow((y-172)/5.0,2)<=1)labels[y*400+x]=2;
+        var regions=List.of(new MeasureRegion(0,1,.1f,.8f));
+        var score=OmrScoreInterpreter.analyze(labels,gray,400,240,regions);
+        assertEquals(score.notes().toString(),3,score.notes().size());
+        var timed=TripletRhythmDetector.apply(score.notes(),regions,gray,400,240);
+        assertTrue(timed.stream().allMatch(n->n.tupletDivisor()==3));
+    }
+}

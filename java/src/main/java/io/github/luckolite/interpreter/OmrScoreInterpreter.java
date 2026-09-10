@@ -174,6 +174,12 @@ final class OmrScoreInterpreter {
         logHeadCoverage(staffs, rawHeadComponents, headComponents, heads, demotedDotHeads, joined);
         List<ScoreNoteEvent> result = new ArrayList<>(joined.size());
         for (DetectedNote note : joined) result.add(note.event);
+        List<ScoreNoteEvent> notation=TripletRhythmDetector.withoutNumeralHeads(result,measures,gray,width,height);
+        if(notation.size()!=result.size()) {
+            for(DetectedNote note:joined)if(!notation.contains(note.event))heads.remove(note.head);
+            joined.removeIf(note->!notation.contains(note.event));
+            result.clear();result.addAll(notation);
+        }
         List<SixteenthRestDetector.Staff> restStaffs = new ArrayList<>();
         for (Staff staff : staffs) restStaffs.add(new SixteenthRestDetector.Staff(
                 staff.pitchBottom - staff.pitchGap * 4, staff.pitchBottom, staff.pitchGap,

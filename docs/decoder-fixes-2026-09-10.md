@@ -264,3 +264,29 @@ their complete outputs, including a targeted follow-up after the cross-staff cha
 This does not certify every note or rhythm on those pages. The wider short-staff
 candidate and remaining recognition errors in damaged voices are still under
 review. No model weights, dependencies, licenses or packaged releases change.
+
+## Triplet numerals predicted as notes
+
+A printed triplet numeral could be segmented as an extra long note. That false
+pitch interrupted the three consecutive short notes needed to recognize the
+triplet, so it also distorted their timing. The decoder now checks an unbeamed
+candidate against a complete raw numeral 3 and a coherent adjacent triple on
+the same staff. The candidate must overlap the numeral itself, outside the real
+noteheads. Removal happens before rest ownership and rhythmic reconstruction.
+The same glyph checks reject closed eights and solid-stem fives; intervening
+ordinary notes, unequal beams and grace groups cannot manufacture a triplet.
+
+Eleven original synthetic regressions cover the rule and full score extraction.
+The full extraction regression fails on the preceding published decoder and
+passes with this repair. Validation passed 360 Java tests, 13 Python tests,
+PNG/PDF inference-to-MIDI smoke checks, and 1,464 app tests plus Android lint.
+A targeted comparison of 14 pages from eight songs removes one confirmed false
+pitch and corrects its neighboring triplet timing. The other 13 complete page
+outputs are unchanged. Source inspection verifies 190 pitches across ten newly
+reviewed pages, including all 83 pitches in one complete song, and ten note
+timings in the repaired passage. This is selected source validation, not a
+claim that all pitches and rhythms in the library are correct. One separate
+false note on a multimeasure rest remains under investigation.
+
+No song-specific rules, source scans, private logs, model weights, dependencies,
+license changes or packaged release updates are included.
