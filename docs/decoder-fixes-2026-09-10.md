@@ -125,3 +125,30 @@ not encode every internal meter change, and rest/voice timing errors remain.
 This is a pitch and presence improvement, not full-performance validation.
 The broader library review continues; private scans are not included. Model
 weights, packaged releases, and the existing rollback checkpoint are unchanged.
+
+## Dotted rests
+
+The raw rest detector recognized quarter, eighth, and sixteenth rests but did
+not include their augmentation dots. A dotted quarter therefore contributed
+one beat instead of one and a half, which could shift surrounding chord attacks
+when the timing resolver tried to fit the incomplete rhythm to a bar.
+
+Recognized rests now inspect compact adjacent ink in the upper staff space for
+one or two dots. Components crossing the search boundary, large noteheads,
+distant marks, and marks aligned with another note are excluded. Raised voice
+rests use their own placement. Eleven original synthetic regressions cover
+ordinary, dotted and double-dotted rests, flagged rests, and negative controls;
+five fail against the preceding published decoder.
+
+Validation passed 309 Java tests, 13 Python tests, PNG/PDF inference-to-MIDI
+smoke tests, and 1,420 app tests plus lint. Across 38 private pages, all note
+pitches and counts remain unchanged, with 350 saved pitch/presence checks passing.
+Source review confirmed the dots on all 26 changed rests across five pages.
+Thirty-five selected note events pass exact source-derived pitch, onset and
+duration expectations, including paired chord notes separated by dotted rests.
+The other 33 page outputs are unchanged.
+
+This does not establish complete timing or pitch accuracy for those songs or
+the full library. Cut-time glyphs, some rest shapes and other previously recorded
+issues still need work. Private source images are not included; weights and
+packaged releases are unchanged.

@@ -129,11 +129,67 @@ final class SixteenthRestDetector {
                 if(note.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                         &&noteX>right&&noteX<right+gap*1.8f)return;
             }
+            int dots=augmentationDots(gray,width,height,staff,right,region,notes,m);
+            double duration=(quarter?1:eighth?.5:.25)*(dots==2?1.75:dots==1?1.5:1);
             result.add(new ScoreRestEvent(m, (centerX - region.left()) / (region.right() - region.left()),
-                    centerY, (maxY - minY + 1f) / height, staff.index(), staff.count(),quarter?1:eighth?.5:.25));
+                    centerY, (maxY - minY + 1f) / height, staff.index(), staff.count(),duration));
             return;
         }
     }
+    /** Dots belong to a recognized rest only in the adjacent upper staff space. */
+    private static int augmentationDots(byte[] gray,int width,int height,Staff staff,
+            int restRight,MeasureRegion region,List<ScoreNoteEvent> notes,int measure) {
+        float gap=staff.gap();
+        int left=Math.max(0,restRight+Math.max(2,Math.round(gap*.12f)));
+        int right=Math.min(width-1,Math.min(Math.round(region.right()*width)-1,
+                restRight+Math.round(gap*2.4f)));
+        int top=Math.max(0,Math.round(staff.top()+gap*1.03f));
+        int bottom=Math.min(height-1,Math.round(staff.top()+gap*1.97f));
+        if(left>=right||top>=bottom)return 0;
+        int w=right-left+1,h=bottom-top+1;boolean[] seen=new boolean[w*h];int[] stack=new int[w*h];
+        List<Float> dots=new ArrayList<>();
+        for(int seed=0;seed<seen.length;seed++) {
+            int sx=seed%w,sy=seed/w;
+            if(seen[seed]||(gray[(top+sy)*width+left+sx]&255)>=170)continue;
+            int size=0;stack[size++]=seed;seen[seed]=true;
+            int area=0,minX=w,maxX=-1,minY=h,maxY=-1;
+            while(size>0) {
+                int at=stack[--size],x=at%w,y=at/w;area++;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int nx=x+dx,ny=y+dy;
+                    if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                    int next=ny*w+nx;
+                    if(!seen[next]&&(gray[(top+ny)*width+left+nx]&255)<170) {
+                        seen[next]=true;stack[size++]=next;
+                    }
+                }
+            }
+            int dw=maxX-minX+1,dh=maxY-minY+1;
+            if(minX==0||maxX==w-1||minY==0||maxY==h-1
+                    ||dw<gap*.16f||dh<gap*.16f||dw>gap*.7f||dh>gap*.7f
+                    ||dw>dh*2||dh>dw*2||area<gap*gap*.025f||area>gap*gap*.32f
+                    ||area<dw*dh*.5f)continue;
+            float x=left+(minX+maxX)*.5f,y=top+(minY+maxY)*.5f;
+            if(Math.abs(y-(staff.top()+gap*1.5f))>gap*.25f)continue;
+            boolean ownedByNote=false;
+            for(ScoreNoteEvent note:notes)if(note.measureIndex()==measure
+                    &&note.staffIndex()==staff.index()&&note.staffCount()==staff.count()) {
+                float nx=(region.left()+note.positionInMeasure()*(region.right()-region.left()))*width;
+                if(Math.abs(nx-x)<gap*.65f) {ownedByNote=true;break;}
+            }
+            if(!ownedByNote)dots.add(x);
+        }
+        dots.sort(Float::compare);int count=0;float previous=restRight;
+        for(float x:dots) {
+            float distance=x-previous;
+            if(count==0 ? distance<gap*.25f||distance>gap*1.3f
+                    : distance<gap*.4f||distance>gap*1.1f)continue;
+            count++;previous=x;if(count==2)break;
+        }
+        return count;
+    }
+
     /** Quarter rests have a narrow zigzag above a left-facing lower hook. */
     private static boolean quarterRest(byte[] gray,int width,Staff staff,int top,boolean[] line,
             int left,int right,int minY,int maxY) {
