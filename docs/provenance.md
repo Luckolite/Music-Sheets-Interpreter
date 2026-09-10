@@ -91,3 +91,20 @@ The source hashes for `OmrMeasurePostProcessor`, `RawStaffLineDetector`, and
 `ScoreNoteTiming` were reconciled with the committed app snapshot after checking
 their complete source. Their published implementations already match that snapshot
 apart from the documented package, attribution, and terminology adaptations.
+
+## September 10 curved-staff pitch repair
+
+The decoder follows complete five-line groups across curved paper and uses local
+line contrast on shaded scans. A sloped local check requires wider evidence of
+curvature, so dense beams on a flat staff do not move the pitch reference.
+`StaffPitchTrack` is original code extracted from the reviewed app snapshot;
+`StaffPitchTrackTest` supplies seven original synthetic regressions.
+
+Validation passed 258 standalone Java tests, 13 Python tests, and the model-to-MIDI
+PNG/PDF smoke checks. Private source review verified 210 printed pitches, including
+all 109 detected notes on one previously troublesome page. Targeted comparisons
+covered 14 pages, and an earlier eight-page regression rotation preserved all
+notes and pitches. These are selected checks, not whole-library accuracy results.
+Artwork false detections, some remaining pitch errors, and duplicated staff groups
+are still under investigation. Commercial fixtures remain private; model weights
+and dependencies are unchanged.

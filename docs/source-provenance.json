@@ -1,5 +1,5 @@
 {
-  "source_commit": "499b2da768d8176791d89da8641189d4bf3c6fc1",
+  "source_commit": "4623dbb88ad16c7722d4d6d8edcedd4e476af6de",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -52,7 +52,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "135fcf46b9af441899dda00ce0581795decb2f7cee27b910a5b77bb7fd100127"
+      "source_sha256": "ea0afd6b6bb4c41f8a9a5c556ab956409b7055720bad5c6b9e081ef215e13603"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -131,6 +131,10 @@
     },
     "training/export_tflite.py": {
       "source_sha256": "92302964415951617bd15f7cb838988c41a1480949a30a97a831d7a0546f9582"
+    },
+    "StaffPitchTrack.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
+      "source_sha256": "ee84733a78705bd6f63f191100ddeb67fe47f513c6847233001c36825b3e582d"
     }
   }
 }

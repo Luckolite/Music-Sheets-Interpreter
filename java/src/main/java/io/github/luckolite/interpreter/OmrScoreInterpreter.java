@@ -1,6 +1,5 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -1161,6 +1160,7 @@ final class OmrScoreInterpreter {
             if (!representedStaff(recovered, staffs, height)) staffs.add(recovered);
         }
         staffs.sort(Comparator.comparingDouble(staff -> staff.top));
+        for(Staff staff:staffs)staff.pitchTrack=StaffPitchTrack.detect(gray,width,height,staff.top,staff.bottom,staff.pitchGap);
         assignSystemPositions(staffs, measures, height);
         return staffs;
     }
@@ -2198,6 +2198,10 @@ final class OmrScoreInterpreter {
     private static float[] localStaffPitch(byte[] labels, byte[] gray, int width, int height, Staff staff,
                                          Component head) {
         float gap=staff.pitchGap, referenceBottom=staff.pitchBottom+staff.pitchSlope*(head.centerX-width*.5f);
+        if(staff.pitchTrack!=null){float[] local=staff.pitchTrack.at(head.centerX);referenceBottom=local[0];gap=local[1];}
+        boolean shaded=StaffPitchTrack.needsContrast(gray,width,height,head.centerX,referenceBottom,gap);
+        float[] complete=shaded?StaffPitchTrack.localRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap,staff.pitchTrack!=null):null;
+        if(complete!=null)return complete;
         int radius = Math.max(4, Math.round(gap * 3.5f));
         int left = Math.max(0, Math.round(head.centerX) - radius);
         int right = Math.min(width - 1, Math.round(head.centerX) + radius);
@@ -2221,7 +2225,10 @@ final class OmrScoreInterpreter {
                         int dark=0,samples=0;
                         if(y<=last)for(int x=left;x<=right;x++) {
                             if(x>=head.minX-exclusion&&x<=head.maxX+exclusion)continue;
-                            samples++;if((gray[y*width+x]&255)<=(support<.7f?205:165))dark++;
+                            samples++;int ink=gray[y*width+x]&255,flank=Math.max(2,Math.round(gap*.32f));
+                            if(ink<=(support<.7f?205:165)&&(!shaded||(y>=flank&&y+flank<height
+                                    &&(gray[(y-flank)*width+x]&255)>=ink+12
+                                    &&(gray[(y+flank)*width+x]&255)>=ink+12)))dark++;
                         }
                         boolean rule=samples>=8&&dark>=samples*support;
                         if(rule&&start<0)start=y;
@@ -3038,6 +3045,7 @@ final class OmrScoreInterpreter {
     private static final class Staff {
         final float top, bottom, gap;
         float pitchBottom, pitchGap, pitchSlope;
+        StaffPitchTrack pitchTrack;
         int index, count = 1;
         Staff(float top, float bottom, float gap) {
             this.top = top; this.bottom = bottom; this.gap = gap;
