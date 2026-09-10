@@ -49,6 +49,7 @@ final class OmrScoreInterpreter {
                 head,staffs,clefOrKeyComponents));
         rawHeadComponents.removeIf(head -> commonTimeGlyphBounds(labels, gray, width, height,
                 head, staffs, clefOrKeyComponents) != null);
+        rawHeadComponents.removeIf(head -> isTempoUnitHead(gray, width, height, head, staffs));
         List<Component> headComponents = splitStackedHeads(labels, gray, width, height,
                 rawHeadComponents, staffs);
         List<Component> symbolComponents = findComponents(labels, width, height,
@@ -281,6 +282,8 @@ final class OmrScoreInterpreter {
         byte[] result = labels;
         for (Component head : heads) {
             int[] bounds = commonTimeGlyphBounds(labels, gray, width, height, head, staffs, glyphs);
+            if (bounds == null && isTempoUnitHead(gray, width, height, head, staffs))
+                bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null && isRoundedHeaderMeter(labels, gray, width, height, head, staffs, glyphs))
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null) continue;
@@ -292,6 +295,85 @@ final class OmrScoreInterpreter {
                     result[at] = 0;
                 }
             }
+        }
+        return result;
+    }
+
+    /** A note followed by an equals sign and text above the staff is a tempo beat unit. */
+    private static boolean isTempoUnitHead(byte[] gray, int width, int height,
+                                           Component head, List<Staff> staffs) {
+        if (gray == null) return false;
+        Staff staff = nearestHeadStaff(staffs, head.centerY);
+        if (staff == null) return false;
+        float gap = staff.pitchGap, top = staff.pitchBottom - gap * 4;
+        float y = head.centerY, x = head.maxX;
+        if (head.maxY > top + gap * .15f || y < top - gap * 3.5f) return false;
+        int[] stem = attachedRawStem(gray, width, height, head, gap);
+        if (stem == null || stem[1] > y - gap * 1.5f) return false;
+        List<TempoInk> glyphs = tempoInk(gray, width, height,
+                Math.round(x + gap * .1f), Math.round(x + gap * 5.5f),
+                Math.round(y - gap * 2), Math.round(y + gap * .3f));
+        for (TempoInk upper : glyphs) for (TempoInk lower : glyphs) {
+            if (upper.top >= lower.top || upper.width() < gap * .5f || upper.width() > gap * 1.6f
+                    || lower.width() < gap * .5f || lower.width() > gap * 1.6f
+                    || upper.height() > gap * .25f || lower.height() > gap * .25f
+                    || upper.area < upper.width() * upper.height() * .7f
+                    || lower.area < lower.width() * lower.height() * .7f
+                    || Math.abs(upper.left - lower.left) > gap * .15f
+                    || Math.abs(upper.right - lower.right) > gap * .2f
+                    || lower.top - upper.bottom < gap * .08f
+                    || lower.top - upper.bottom > gap * .5f
+                    || lower.bottom - upper.top > gap * .8f
+                    || upper.left - x > gap * 2.5f || lower.bottom > y + gap * .1f) continue;
+            // This is shape evidence for following text, not OCR of the BPM value.
+            // Ordinary ledger rules are farther apart; connected beams are not two isolated strokes.
+            for (TempoInk text : glyphs) {
+                if (text.left > lower.right + gap * .15f && text.left < lower.right + gap * 1.5f
+                        && text.height() > gap * .75f && text.height() < gap * 2
+                        && text.area > gap * gap * .18f
+                        && text.top < upper.top && text.bottom > lower.bottom) return true;
+            }
+        }
+        return false;
+    }
+
+    private record TempoInk(int left, int right, int top, int bottom, int area) {
+        int width() { return right - left + 1; }
+        int height() { return bottom - top + 1; }
+    }
+
+    /** Complete printed components only; clipping a letter must not manufacture an equals stroke. */
+    private static List<TempoInk> tempoInk(byte[] gray, int width, int height,
+                                          int left, int right, int top, int bottom) {
+        left = Math.max(0, left); right = Math.min(width - 1, right);
+        top = Math.max(0, top); bottom = Math.min(height - 1, bottom);
+        int rw = right - left + 1, rh = bottom - top + 1;
+        if (rw <= 0 || rh <= 0) return List.of();
+        boolean[] seen = new boolean[rw * rh];
+        int[] queue = new int[seen.length];
+        List<TempoInk> result = new ArrayList<>();
+        for (int start = 0; start < seen.length; start++) {
+            if (seen[start] || (gray[(top + start / rw) * width + left + start % rw] & 255) >= 155)
+                continue;
+            int take = 0, size = 1, minX = rw, maxX = -1, minY = rh, maxY = -1;
+            boolean edge = false;
+            queue[0] = start; seen[start] = true;
+            while (take < size) {
+                int pos = queue[take++], x = pos % rw, y = pos / rw;
+                minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+                edge |= x == 0 || y == 0 || x == rw - 1 || y == rh - 1;
+                for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                    int nx = x + dx, ny = y + dy;
+                    if (nx < 0 || nx >= rw || ny < 0 || ny >= rh) continue;
+                    int next = ny * rw + nx;
+                    if (!seen[next] && (gray[(top + ny) * width + left + nx] & 255) < 155) {
+                        seen[next] = true; queue[size++] = next;
+                    }
+                }
+            }
+            if (!edge) result.add(new TempoInk(left + minX, left + maxX,
+                    top + minY, top + maxY, size));
         }
         return result;
     }

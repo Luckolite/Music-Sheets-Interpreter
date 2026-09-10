@@ -210,3 +210,30 @@ These are selected source and regression checks, not a complete library accuracy
 claim or live phone validation. OCR inputs remain the caller's responsibility in
 the standalone API. Private scans and diagnostic fixtures are excluded, and
 model weights, licensing and packaged releases are unchanged.
+
+## Tempo beat units must not sound
+
+A quarter-note symbol in a printed tempo equation could be interpreted as a
+high melody note. Besides adding an unwanted pitch, it displaced the following
+rest and distorted duration resolution in the opening bar. Header preparation
+and direct note extraction now exclude a beat-unit head only when it sits above
+the staff with an upward stem, two complete aligned equals-sign strokes, and
+following text. This uses geometric text evidence; it does not OCR or change the
+tempo value.
+
+Twelve synthetic regressions cover quarter and hollow beat units, ordinary high
+notes, ledger spacing, incomplete equations, clipped text, input preservation,
+repeated preparation and the standalone API. Five fail on the preceding
+published decoder. A 60-page comparison preserves all 460 saved pitch/presence
+expectations and 45 selected pitch/onset/duration checks. Only the confirmed
+tempo-note page changes: one false event is removed, all 220 real pitches remain
+unchanged, and the first bar's printed rests and durations resolve correctly.
+The other 59 complete page outputs and four annotated regression outputs are
+unchanged.
+
+Validation passed 337 Java tests, 13 Python tests, PNG/PDF inference-to-MIDI
+smoke checks, and 1,441 app tests plus Android lint using the reviewed core.
+
+This remains selected validation, not whole-library accuracy or live phone
+verification. Source scans stay private. Model weights, dependencies, licensing
+and packaged releases are unchanged.

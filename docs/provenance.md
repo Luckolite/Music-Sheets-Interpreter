@@ -176,3 +176,11 @@ recognition and refresh the playable edge using the original staff/barline
 segmentation. The standalone adapter continues to accept caller-supplied OCR;
 no Android OCR service, private page fixture or device log was copied. Ten
 shared synthetic cases and two standalone API cases cover the change.
+
+
+## Tempo beat-unit recognition
+
+The shared decoder was reviewed from app commit `8ec875f80d8632942135a40541ad4353daf35d08`.
+Only printed geometry and copied-mask preparation changed. Eleven original
+shared tests and one standalone API test cover tempo symbols and negative
+cases; no OCR service, private scan or model asset was imported.
