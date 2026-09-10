@@ -8,9 +8,11 @@ public final class NoteOrnament {
     public static final int NONE=0, TRILL=1<<5, TURN=2<<5, INVERTED_TURN=3<<5,
             MORDENT=4<<5, INVERTED_MORDENT=5<<5, SLIDE=6<<5;
     public static final int TYPE_MASK=7<<5, DELAYED=1<<8;
+    /** Small printed grace heads borrow playback time from their principal note. */
+    public static final int GRACE=1<<15;
     public static final int FROM_ABOVE=1<<13, FROM_PREVIOUS=1<<14;
     private static final int UPPER_SHIFT=9, LOWER_SHIFT=11;
-    public static final int ALL=TYPE_MASK|DELAYED|FROM_ABOVE|FROM_PREVIOUS|(3<<UPPER_SHIFT)|(3<<LOWER_SHIFT);
+    public static final int ALL=GRACE|TYPE_MASK|DELAYED|FROM_ABOVE|FROM_PREVIOUS|(3<<UPPER_SHIFT)|(3<<LOWER_SHIFT);
     private NoteOrnament() { }
     public static int type(int marks) { return marks&TYPE_MASK; }
     public static int accidental(int marks,boolean upper) {

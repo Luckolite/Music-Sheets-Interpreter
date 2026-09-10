@@ -28,6 +28,7 @@ final class TripletRhythmDetector {
                     || a.measureIndex() != b.measureIndex() || a.measureIndex() != c.measureIndex()
                     || a.staffIndex() != b.staffIndex() || a.staffIndex() != c.staffIndex()
                     || a.staffCount() != b.staffCount() || a.staffCount() != c.staffCount()
+                    || ((a.articulations()|b.articulations()|c.articulations())&NoteOrnament.GRACE)!=0
                     || a.tupletDivisor() != 1 || b.tupletDivisor() != 1 || c.tupletDivisor() != 1
                     || a.augmentationDots() != 0 || b.augmentationDots() != 0 || c.augmentationDots() != 0
                     || a.beamCount() != b.beamCount() || a.beamCount() != c.beamCount()) continue;
@@ -64,8 +65,10 @@ final class TripletRhythmDetector {
                                             float lastX, float firstY, float lastY, float gap,
                                             boolean shortNotes) {
         float centerX = (firstX + lastX) * .5f;
-        int left = Math.max(0, Math.round(centerX - gap * 1.05f));
-        int right = Math.min(width - 1, Math.round(centerX + gap * 1.05f));
+        // Numerals align with the beam/stems, which can sit to one side of the
+        // oval centres. Include that offset without clipping an italic 3.
+        int left = Math.max(0, Math.round(centerX - gap * 1.65f));
+        int right = Math.min(width - 1, Math.round(centerX + gap * 1.65f));
         int top = Math.max(0, Math.round(firstY - gap * 7));
         int bottom = Math.min(height - 1, Math.round(lastY + gap * 7));
         int localWidth = right - left + 1, localHeight = bottom - top + 1;

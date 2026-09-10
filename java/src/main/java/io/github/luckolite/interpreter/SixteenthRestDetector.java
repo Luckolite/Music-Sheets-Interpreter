@@ -21,7 +21,7 @@ final class SixteenthRestDetector {
         for(Staff s:staffs)placements.add(new Staff(s.top()-s.gap(),s.bottom()-s.gap(),s.gap(),s.index(),s.count()));
         for (Staff staff : placements) {
             float gap = staff.gap();
-            int top = Math.max(0, Math.round(staff.top() + gap * .7f));
+            int top = Math.max(0, Math.round(staff.top() + gap * .25f));
             int bottom = Math.min(height - 1, Math.round(staff.bottom() + gap * .3f));
             boolean[] line = new boolean[bottom - top + 1];
             // Remove only long horizontal ink rows, including a line's antialiased edge.
@@ -64,44 +64,47 @@ final class SixteenthRestDetector {
                 ink[y - top]++;
             if (ink[y - top] > 0) { minY = Math.min(minY, y); maxY = y; }
         }
+        boolean quarter = quarterRest(gray,width,staff,top,line,left,right,minY,maxY);
         boolean eighth = maxY-minY>=gap*1.3f && maxY-minY<=gap*2.2f
                 && Math.abs(maxY-(staff.bottom()-gap))<=gap*.4f;
         boolean sixteenth = maxY-minY>=gap*2.35f && maxY-minY<=gap*3.25f
                 && Math.abs(maxY-staff.bottom())<=gap*.35f;
-        if ((!eighth && !sixteenth)
-                || minY < staff.top() + gap * .85f || minY > staff.top() + gap * 1.55f) return;
-        // Interpolate removed staff rows before counting bulb lobes, so staff crossings do not
-        // split a single bulb into several flags.
-        for (int y = minY; y <= maxY; y++) if (line[y - top]) {
-            int before = y - 1, after = y + 1;
-            while (before >= minY && line[before - top]) before--;
-            while (after <= maxY && line[after - top]) after++;
-            if (before >= minY && after <= maxY)
-                ink[y - top] = Math.round((ink[before - top] + ink[after - top]) * .5f);
-        }
-        List<Integer> lobes = new ArrayList<>();
-        int run = 0, runStart = 0;
-        for (int y = minY; y <= maxY + 1; y++) {
-            if (y <= maxY && ink[y - top] >= gap * .58f) {
-                if (run++ == 0) runStart = y;
-            } else {
-                if (run >= Math.max(2, gap * .22f)) lobes.add((runStart + y - 1) / 2);
-                run = 0;
+        if (!quarter) {
+            if ((!eighth && !sixteenth)
+                    || minY < staff.top() + gap * .85f || minY > staff.top() + gap * 1.55f) return;
+            // Interpolate removed staff rows before counting bulb lobes, so staff crossings do not
+            // split a single bulb into several flags.
+            for (int y = minY; y <= maxY; y++) if (line[y - top]) {
+                int before = y - 1, after = y + 1;
+                while (before >= minY && line[before - top]) before--;
+                while (after <= maxY && line[after - top]) after++;
+                if (before >= minY && after <= maxY)
+                    ink[y - top] = Math.round((ink[before - top] + ink[after - top]) * .5f);
             }
+            List<Integer> lobes = new ArrayList<>();
+            int run = 0, runStart = 0;
+            for (int y = minY; y <= maxY + 1; y++) {
+                if (y <= maxY && ink[y - top] >= gap * .58f) {
+                    if (run++ == 0) runStart = y;
+                } else {
+                    if (run >= Math.max(2, gap * .22f)) lobes.add((runStart + y - 1) / 2);
+                    run = 0;
+                }
+            }
+            if (eighth ? lobes.size()!=1 || maxY-lobes.get(0)<gap*.8f
+                    : lobes.size() != 2 || lobes.get(1) - lobes.get(0) < gap * .7f
+                    || lobes.get(1) - lobes.get(0) > gap * 1.3f
+                    || maxY - lobes.get(1) < gap * .8f) return;
+            // Below the second bulb only a narrow tail remains. Its foot slopes left of the tip;
+            // accidentals, paired dots and isolated note flags do not have this geometry.
+            int footRight = -1;
+            for (int y = maxY - Math.round(gap * .45f); y <= maxY; y++) if (!line[y - top]) {
+                if (ink[y - top] > gap * .50f) return;
+                for (int x = left; x <= right; x++) if ((gray[y * width + x] & 255) < 170)
+                    footRight = Math.max(footRight, x);
+            }
+            if (footRight < 0 || right - footRight < gap * .15f) return;
         }
-        if (eighth ? lobes.size()!=1 || maxY-lobes.get(0)<gap*.8f
-                : lobes.size() != 2 || lobes.get(1) - lobes.get(0) < gap * .7f
-                || lobes.get(1) - lobes.get(0) > gap * 1.3f
-                || maxY - lobes.get(1) < gap * .8f) return;
-        // Below the second bulb only a narrow tail remains. Its foot slopes left of the tip;
-        // accidentals, paired dots and isolated note flags do not have this geometry.
-        int footRight = -1;
-        for (int y = maxY - Math.round(gap * .45f); y <= maxY; y++) if (!line[y - top]) {
-            if (ink[y - top] > gap * .50f) return;
-            for (int x = left; x <= right; x++) if ((gray[y * width + x] & 255) < 170)
-                footRight = Math.max(footRight, x);
-        }
-        if (footRight < 0 || right - footRight < gap * .15f) return;
         float centerX = (left + right) * .5f / width;
         float centerY = (minY + maxY) * .5f / height;
         for (int m = 0; m < measures.size(); m++) {
@@ -118,8 +121,46 @@ final class SixteenthRestDetector {
                         &&noteX>right&&noteX<right+gap*1.8f)return;
             }
             result.add(new ScoreRestEvent(m, (centerX - region.left()) / (region.right() - region.left()),
-                    centerY, (maxY - minY + 1f) / height, staff.index(), staff.count(),eighth?.5:.25));
+                    centerY, (maxY - minY + 1f) / height, staff.index(), staff.count(),quarter?1:eighth?.5:.25));
             return;
         }
     }
+    /** Quarter rests have a narrow zigzag above a left-facing lower hook. */
+    private static boolean quarterRest(byte[] gray,int width,Staff staff,int top,boolean[] line,
+            int left,int right,int minY,int maxY) {
+        float gap=staff.gap();int h=maxY-minY+1;
+        if(h<gap*2.6f || h>gap*3.6f
+                ||minY<staff.top()+gap*.2f ||minY>staff.top()+gap*.9f
+                ||maxY<staff.bottom()-gap*.7f ||maxY>staff.bottom()-gap*.1f)return false;
+        double[] centers=new double[h];java.util.Arrays.fill(centers,Double.NaN);
+        int widest=0;
+        for(int y=minY;y<=maxY;y++)if(!line[y-top]) {
+            int n=0;double sum=0;
+            for(int x=left;x<=right;x++)if((gray[y*width+x]&255)<170){n++;sum+=x-left;}
+            if(n>0)centers[y-minY]=sum/n;
+            widest=Math.max(widest,n);
+        }
+        if(widest<gap*.65f)return false;
+        for(int i=0;i<h;i++)if(!Double.isFinite(centers[i])) {
+            int a=i-1,b=i+1;
+            while(a>=0&&!Double.isFinite(centers[a]))a--;
+            while(b<h&&!Double.isFinite(centers[b]))b++;
+            if(a<0||b>=h)return false;
+            centers[i]=centers[a]+(centers[b]-centers[a])*(i-a)/(b-a);
+        }
+        double a=bandCenter(centers,0,.18),b=bandCenter(centers,.22,.38),
+                c=bandCenter(centers,.43,.58),d=bandCenter(centers,.62,.73),
+                e=bandCenter(centers,.80,.91),f=bandCenter(centers,.94,1);
+        return b-a>gap*.10 && b-c>gap*.055 && d-c>gap*.055
+                && d-e>gap*.12 && f-e>gap*.10;
+    }
+
+    private static double bandCenter(double[] rows,double from,double to) {
+        double sum=0;int n=0;
+        for(int i=(int)(from*(rows.length-1));i<=Math.min(rows.length-1,(int)(to*(rows.length-1)));i++){
+            sum+=rows[i];n++;
+        }
+        return sum/Math.max(1,n);
+    }
+
 }

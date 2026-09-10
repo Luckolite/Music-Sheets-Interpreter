@@ -94,13 +94,49 @@ public final class ScoreNoteTiming {
         return Math.max(0, note.measureIndex()) * safeBeats + beatInMeasure(note, beatsPerMeasure);
     }
 
+    private static boolean grace(ScoreNoteEvent note) {
+        return note != null && (note.articulations() & NoteOrnament.GRACE) != 0;
+    }
+
+    private record GracePlayback(List<ScoreNoteEvent> metrical, ScoreNoteEvent principal,
+                                 int index, int count) { }
+
+    private static GracePlayback gracePlayback(ScoreNoteEvent target, List<ScoreNoteEvent> notes) {
+        if(target==null || notes==null || notes.stream().noneMatch(ScoreNoteTiming::grace))return null;
+        List<ScoreNoteEvent> metrical=notes.stream().filter(n->!grace(n)).collect(java.util.stream.Collectors.toList());
+        List<ScoreNoteEvent> prefix=new ArrayList<>();
+        for(ScoreNoteEvent note:measureVoice(target,notes)) {
+            if(grace(note)) { prefix.add(note);continue; }
+            if(!prefix.isEmpty() && (Math.abs(note.positionInMeasure()-target.positionInMeasure())<=SAME_ONSET_POSITION && !grace(target)
+                    ||prefix.contains(target)))
+                return new GracePlayback(metrical,note,prefix.indexOf(target),prefix.size());
+            prefix.clear();
+        }
+        return new GracePlayback(metrical,null,-1,0);
+    }
+
+    private static double graceBudget(GracePlayback context, float beats) {
+        double principal=resolvedWrittenDurationBeats(context.principal,context.metrical,beats);
+        return Double.isFinite(principal)&&principal>0 ? Math.min(.25,principal*.25) : .125;
+    }
+
     /** Uses written beam/dot values to correct close onsets that spatial spacing compresses. */
     public static double beatInMeasure(ScoreNoteEvent target, List<ScoreNoteEvent> notes,
                                        float beatsPerMeasure) {
         if (target == null || notes == null || notes.isEmpty()) return beatInMeasure(target, beatsPerMeasure);
+        GracePlayback grace=gracePlayback(target,notes);
+        if(grace!=null) {
+            if(grace.principal==null)return beatInMeasure(target,grace.metrical,beatsPerMeasure);
+            double onset=beatInMeasure(grace.principal,grace.metrical,beatsPerMeasure);
+            double budget=graceBudget(grace,beatsPerMeasure);
+            return onset+(grace.index<0?budget:budget*grace.index/grace.count);
+        }
         double safeBeats = Math.max(.125, Math.min(128, beatsPerMeasure));
         if (hasIndependentSustain(target) && target.leadingRestBeats()==0
-                && target.positionInMeasure()<=MAX_LEARNABLE_MEASURE_INSET
+                && (target.positionInMeasure()<=MAX_LEARNABLE_MEASURE_INSET
+                    || notes.stream().noneMatch(n -> n.measureIndex() == target.measureIndex()
+                    && n.staffIndex() == target.staffIndex() && n.staffCount() == target.staffCount()
+                    && n.positionInMeasure() < target.positionInMeasure() - SAME_ONSET_POSITION))
                 && Math.abs(writtenDurationBeats(target)-safeBeats)<.001) return 0;
         List<ScoreNoteEvent> crossStaff = crossStaffPhrase(target, notes, safeBeats);
         if (!crossStaff.isEmpty()) {
@@ -350,6 +386,13 @@ public final class ScoreNoteTiming {
     public static double resolvedWrittenDurationBeats(ScoreNoteEvent target,
                                                       List<ScoreNoteEvent> notes,
                                                       float beatsPerMeasure) {
+        GracePlayback grace=gracePlayback(target,notes);
+        if(grace!=null) {
+            if(grace.principal==null)return resolvedWrittenDurationBeats(target,grace.metrical,beatsPerMeasure);
+            double budget=graceBudget(grace,beatsPerMeasure);
+            return grace.index<0?resolvedWrittenDurationBeats(target,grace.metrical,beatsPerMeasure)-budget
+                    :budget/grace.count;
+        }
         // A hollow notehead may share an onset/staff with a faster independent voice.
         // Group rhythm repairs describe the attack clock, not that note's sounding length.
         if(hasIndependentSustain(target))return writtenDurationBeats(target);

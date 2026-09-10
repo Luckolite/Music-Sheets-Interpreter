@@ -42,6 +42,13 @@ clef was not established. `durationFallback` means the duration was unresolved a
 the preview used half a quarter-note beat. These are not calibrated confidence scores.
 Absent written accidentals are resolved using the detected or fallback key.
 
+Recognized small grace heads carry `NoteOrnament.GRACE` (`32768`) in the raw
+note's `articulations` mask. Preview timing omits them from the metrical clock,
+then plays the grace group on the principal beat, borrowing at most 0.25 quarter
+beats or one quarter of the principal's duration, whichever is smaller. The
+principal chord moves together; accompaniment and later beats keep their timing.
+This is a preview convention, not a claim that every ornament style is recognized.
+
 ## Optional OCR annotations
 
 The CLI does not bundle an OCR engine. `--annotations file.json` accepts a list with

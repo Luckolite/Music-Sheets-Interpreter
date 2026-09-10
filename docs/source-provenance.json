@@ -1,5 +1,5 @@
 {
-  "source_commit": "eb6e9ed8a607225aea0f448e870ae039e72314b1",
+  "source_commit": "fe28c5f7f30d08099d6d85ebd891ccf5aef70485",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -44,7 +44,7 @@
     },
     "NoteOrnament.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",
-      "source_sha256": "bbed2fe26a882e63fd073c664b1aff6707c669c973efb5a9878d2267e39e1cde"
+      "source_sha256": "fbce21a6297213bddaaa895a447ced516c32f3f3ba6a0f5974ede269aa08f594"
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
@@ -52,7 +52,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "580d72609361ec4efae150e94089025006056ab18f0087dbeb4e2e6a7ac9994f"
+      "source_sha256": "326124a78b70515f4c5009d0a85ac923a48e9a5308907b42b84625eef02e45c5"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -84,7 +84,7 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "ddf18dfafed66bcf276881dc4245dcdd23fe8ecc82b82fd74bd55e1c0878d472"
+      "source_sha256": "50a5dcf6b8e0d8e3c7bb357bc51cd524ea1cdb6af7d0242cb4ae8ab4c275374a"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
@@ -104,7 +104,7 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "c5b90ac1fabfb6ec4cc867996a63de9b2cfd4e6948998ccb36928b1e78ce2765"
+      "source_sha256": "581dc569a5eb68400b67996905269ff1585797766bc2785f0f817a266a171822"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -112,7 +112,7 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "e89392712217a64ccca0a4381bae14a8d73e4830b869e6fb7393509a4b41e031"
+      "source_sha256": "91109406207ce565d9f2f48435a19102f38753e52c43c40d870985e2dfaf00de"
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
