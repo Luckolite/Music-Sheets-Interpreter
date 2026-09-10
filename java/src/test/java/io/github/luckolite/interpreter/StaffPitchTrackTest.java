@@ -92,4 +92,15 @@ public class StaffPitchTrackTest {
         // A4 is the space three diatonic steps above the treble bottom rule.
         assertEquals(3,Math.round((pitch[0]-120)*2/pitch[1]));
     }
+
+    @Test public void beamsBesideFadedOuterRulesCannotMakeAFlatStaffCurve() {
+        int width=1200,height=280;byte[] gray=new byte[width*height],labels=new byte[width*height];Arrays.fill(gray,(byte)255);
+        for(int x=30;x<width-30;x++)for(int line=0;line<5;line++) {
+            int row=100+line*10;labels[row*width+x]=4;
+            gray[row*width+x]=(byte)((x<390&&line==0||x>850&&line==4)?200:60);
+        }
+        for(int x=30;x<390;x++){gray[150*width+x]=0;labels[150*width+x]=5;}
+        for(int x=850;x<width-30;x++){gray[90*width+x]=0;labels[90*width+x]=5;}
+        assertNull("All five faded straight rules outweigh nearby darker beams",StaffPitchTrack.detect(gray,width,height,100,140,10));
+    }
 }

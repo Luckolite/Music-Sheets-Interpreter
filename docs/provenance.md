@@ -96,15 +96,19 @@ apart from the documented package, attribution, and terminology adaptations.
 
 The decoder follows complete five-line groups across curved paper and uses local
 line contrast on shaded scans. A sloped local check requires wider evidence of
-curvature, so dense beams on a flat staff do not move the pitch reference.
+curvature, so dense beams on a flat staff do not move the pitch reference. Broad
+evidence from all five straight rules also rejects false curves made by darker
+beams beside faded outer rules, without requiring complete segmentation labels.
 `StaffPitchTrack` is original code extracted from the reviewed app snapshot;
-`StaffPitchTrackTest` supplies seven original synthetic regressions.
+`StaffPitchTrackTest` supplies eight original synthetic regressions. Collection
+operations preserve compatibility with the app's Android 8 minimum version.
 
-Validation passed 258 standalone Java tests, 13 Python tests, and the model-to-MIDI
-PNG/PDF smoke checks. Private source review verified 210 printed pitches, including
+Validation passed 259 standalone Java tests, 13 Python tests, and the model-to-MIDI
+PNG/PDF smoke checks. Private source review verified 216 printed pitches, including
 all 109 detected notes on one previously troublesome page. Targeted comparisons
-covered 14 pages, and an earlier eight-page regression rotation preserved all
-notes and pitches. These are selected checks, not whole-library accuracy results.
+covered 14 pages. A wider check of 25 earlier pages passed 344 archived assertions;
+an earlier eight-page regression rotation preserved all notes and pitches.
+These are selected checks, not whole-library accuracy results.
 Artwork false detections, some remaining pitch errors, and duplicated staff groups
 are still under investigation. Commercial fixtures remain private; model weights
 and dependencies are unchanged.
