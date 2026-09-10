@@ -25,9 +25,13 @@ final class StaffPitchTrack {
             for(int y=first;y<last;y++)System.arraycopy(gray,y*width+left,local,(y-first)*stripWidth,stripWidth);
             RawStaffLineDetector.StaffLines best=null;float distance=Float.MAX_VALUE;
             for(var lines:RawStaffLineDetector.detect(local,stripWidth,last-first)) {
-                if(lines.gap()<gap*.88f||lines.gap()>gap*1.12f)continue;
+                if(lines.gap()<gap*.8f||lines.gap()>gap*1.25f)continue;
                 if(!completeRules(local,stripWidth,last-first,lines))continue;
                 float d=Math.abs(lines.bottom()+first-bottom);
+                // Incomplete semantic stripes can compress or widen the seed's
+                // spacing. A complete raw group may recalibrate that seed only
+                // while its outer rule remains close to the same physical staff.
+                if((lines.gap()<gap*.88f||lines.gap()>gap*1.12f)&&d>gap*1.5f)continue;
                 if(d<distance){distance=d;best=lines;}
             }
             if(best!=null)samples.add(new float[]{left+stripWidth*.5f,best.bottom()+first,best.gap()});

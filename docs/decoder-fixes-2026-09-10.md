@@ -317,3 +317,30 @@ This resolves the multimeasure-rest false-note case identified in the preceding
 batch. Other library pages and remaining partial-measure issues still require
 review. Model weights, dependencies, licenses and packaged releases are unchanged;
 commercial source pages and private diagnostics are not included here.
+
+## Pitch calibration from an imperfect staff seed
+
+Incomplete semantic staff stripes could estimate the wrong spacing, then reject
+the complete raw five-line group because it differed too much from that estimate.
+The decoder fell back to incorrect pitch geometry across a sloping system. A
+complete, well-supported printed staff can now recalibrate a moderately compressed
+or expanded seed while remaining close to the same physical staff. Existing
+checks for five complete rules, consistent spacing, broad page coverage and a
+coherent trajectory remain in force; a distant staff cannot supply the wider
+spacing correction.
+
+Seven original synthetic tests cover compressed and expanded seeds, physical
+staff separation, incomplete rules, sparse fragments, implausible scales and
+input preservation. Two fail on the preceding published decoder. Validation
+passed 379 Java tests, 13 Python tests, PNG/PDF inference-to-MIDI smoke checks,
+and 1,483 app tests plus Android lint. In 71 page inputs, 70 complete outputs are
+unchanged; only 17 independently verified pitch substitutions change on the
+remaining page. Its 189 real pitches now match a full visual transcription.
+A separate false event from a quarter-rest fragment remains under investigation.
+
+The regression pass preserves 655 earlier pitch/presence expectations, 45 selected
+note timing checks and 19 printed-rest onset checks, plus the recently reviewed
+source pitches. The hourly revisit of 22 earlier pages preserves all 177 saved
+pitch/presence checks and every complete output. Four OCR/meter-annotated page
+outputs are also unchanged. These scoped checks do not certify the whole library.
+No model, license, dependency or packaged release changes are included.
