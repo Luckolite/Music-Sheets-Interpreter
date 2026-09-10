@@ -56,10 +56,13 @@ final class OmrScoreInterpreter {
         List<Component> symbolComponents = findComponents(labels, width, height,
                 OmrMeasurePostProcessor.SYMBOL);
         List<Component> heads = new ArrayList<>();
+        List<Component> rejectedSlurHeads = new ArrayList<>();
         for (Component head : headComponents) {
             Staff staff = staffForHead(labels, gray, width, height, staffs, head);
-            if (staff != null && plausibleHead(head, staff.gap)
-                    && !flatStemlessFragment(gray, width, height, head, staff.gap)) heads.add(head);
+            if (staff != null && plausibleHead(head, staff.gap)) {
+                if(flatStemlessFragment(gray,width,height,head,staff.gap))rejectedSlurHeads.add(head);
+                else heads.add(head);
+            }
         }
         // A bright paper halo can enlarge a printed augmentation dot enough for the model to label it
         // as a second plausible notehead. Demote only small, stemless components immediately to
@@ -89,6 +92,7 @@ final class OmrScoreInterpreter {
                     || isSharpGlyph(labels,width,height,candidate,staff.gap)))
                 accidentalInk.add(candidate.component);
         }
+        List<Component> roundedLedgerGraces=roundedLedgerGraceHeads(labels,gray,width,height,heads,staffs);
         List<DetectedNote> detected = new ArrayList<>();
         for (Component head : heads) {
             Staff staff = staffForHead(labels, gray, width, height, staffs, head);
@@ -102,8 +106,8 @@ final class OmrScoreInterpreter {
             if (gray != null && physicalStaff != null
                     && (head.centerY < physicalStaff.top-physicalStaff.gap*1.8f
                     || head.centerY > physicalStaff.bottom+physicalStaff.gap*1.8f)
-                    && (!hasLedgerInk(gray,width,height,head,physicalStaff.gap)
-                    || !hasInnerLedgerInk(gray,width,height,head,physicalStaff))) continue;
+                    && (!hasLedgerInk(gray,width,height,head,physicalStaff.gap,roundedLedgerGraces.contains(head))
+                    || !hasInnerLedgerInk(gray,width,height,head,physicalStaff,roundedLedgerGraces.contains(head)))) continue;
             float normalizedX = head.centerX() / width;
             float normalizedY = head.centerY() / height;
             int measureIndex = containingMeasureForStaff(measures, normalizedX, normalizedY,
@@ -173,7 +177,7 @@ final class OmrScoreInterpreter {
                 .thenComparingDouble(note -> note.event.positionInMeasure())
                 .thenComparingInt(note -> note.event.staffIndex())
                 .thenComparingInt(note -> note.event.staffStep()));
-        List<DetectedNote> joined = applyAccidentalState(markTieContinuations(labels, gray,
+        List<DetectedNote> joined = applyAccidentalState(markTieContinuations(tieLabelsWithoutSlurHeads(labels,width,rejectedSlurHeads,heads), gray,
                 width, height, removeSplitDuplicates(detected)));
         logHeadCoverage(staffs, rawHeadComponents, headComponents, heads, demotedDotHeads, joined);
         List<ScoreNoteEvent> result = new ArrayList<>(joined.size());
@@ -1981,9 +1985,9 @@ final class OmrScoreInterpreter {
         return best != null && distance <= best.gap * maximumGapDistance ? best : null;
     }
 
-    private static boolean hasLedgerInk(byte[] gray,int width,int height,Component head,float gap) {
+    private static boolean hasLedgerInk(byte[] gray,int width,int height,Component head,float gap,boolean roundedGrace) {
         boolean stemless=attachedRawStem(gray,width,height,head,gap)==null;
-        boolean reduced=reducedLedgerHead(gray,width,height,head,gap);
+        boolean reduced=roundedGrace||reducedLedgerHead(gray,width,height,head,gap);
         float minimum=ledgerRunMinimum(head,gap,reduced);
         int left=Math.max(0,Math.round(head.centerX-gap*1.2f));
         int right=Math.min(width-1,Math.round(head.centerX+gap*1.2f));
@@ -2003,6 +2007,69 @@ final class OmrScoreInterpreter {
         return false;
     }
 
+    /** Rounded grace heads must survive ledger validation before ornament grouping.
+     * Require a short, beamed prefix and a substantially larger following principal. */
+    private static List<Component> roundedLedgerGraceHeads(byte[] labels,byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> result=new ArrayList<>();
+        if(gray==null)return result;
+        List<Component> ordered=new ArrayList<>(heads);ordered.sort(Comparator.comparingDouble(h->h.centerX));
+        for(int i=0;i<ordered.size();i++) {
+            Component first=ordered.get(i);Staff staff=nearestHeadStaff(staffs,first.centerY);
+            if(staff==null||!roundedRawGraceHead(labels,gray,width,height,first,staff))continue;
+            List<Component> prefix=new ArrayList<>();prefix.add(first);Component previous=first;
+            for(int j=i+1;j<ordered.size();j++) {
+                Component next=ordered.get(j);
+                if(nearestHeadStaff(staffs,next.centerY)!=staff)continue;
+                float dx=next.centerX-previous.centerX;
+                if(dx<staff.gap*.65f||dx>staff.gap*2.8f||Math.abs(next.centerY-previous.centerY)>staff.gap*2.5f)break;
+                if(roundedRawGraceHead(labels,gray,width,height,next,staff)
+                        &&graceStemsShareBeam(labels,gray,width,height,previous,next,staff.gap)) {
+                    prefix.add(next);previous=next;continue;
+                }
+                if(prefix.size()>=2&&next.maxX-next.minX+1>staff.gap*1.05f
+                        &&prefix.stream().allMatch(head->next.area>head.area*1.65f))result.addAll(prefix);
+                break;
+            }
+        }
+        return result;
+    }
+
+    private static boolean graceStemsShareBeam(byte[] labels,byte[] gray,int width,int height,
+            Component first,Component next,float gap) {
+        int[] a=attachedRawStem(gray,width,height,first,gap*.65f),b=attachedRawStem(gray,width,height,next,gap*.65f);
+        if(a==null||b==null||a[2]!=b[2]||b[0]-a[0]<gap*.6f)return false;
+        for(int offset=0;offset<=Math.round(gap*.8f);offset++) {
+            int hits=0,clear=0,samples=0;
+            for(int x=a[0]+2;x<=b[0]-2;x++) {
+                float t=(x-a[0])/(float)(b[0]-a[0]);
+                int y=Math.round(a[1]+t*(b[1]-a[1])-a[2]*offset);
+                boolean ink=false,nonStaff=false;
+                for(int dy=-1;dy<=1;dy++)if(y+dy>=0&&y+dy<height) {
+                    int at=(y+dy)*width+x;
+                    if((gray[at]&255)<=165) {
+                        ink=true;
+                        if(labels[at]!=OmrMeasurePostProcessor.STAFF&&labels[at]!=OmrMeasurePostProcessor.NOTEHEAD)nonStaff=true;
+                    }
+                }
+                samples++;if(ink)hits++;if(nonStaff)clear++;
+            }
+            if(samples>=6&&hits>=samples*.85f&&clear>=samples*.65f)return true;
+        }
+        return false;
+    }
+
+    private static boolean roundedRawGraceHead(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff) {
+        if(head.maxX-head.minX+1>Math.round(staff.gap*1.10f)
+                ||head.maxY-head.minY+1>Math.round(staff.gap)
+                ||head.area>staff.gap*staff.gap*.80f)return false;
+        int[] stem=attachedRawStem(gray,width,height,head,staff.gap*.65f);
+        if(stem==null||Math.abs(stem[1]-head.centerY)>staff.gap*3.1f)return false;
+        int beams=detectBeamCount(labels,gray,width,height,head,staff);
+        return beams>0&&detectUnbeamedDuration(labels,gray,width,height,head,staff.gap,beams)<ScoreNoteEvent.DURATION_HALF;
+    }
+
     /** Grace-sized heads use shorter ledger rules but retain the normal staff spacing. */
     private static boolean reducedLedgerHead(byte[] gray,int width,int height,Component head,float gap) {
         return head.maxX-head.minX+1<=Math.round(gap*.95f)&&head.maxY-head.minY+1<=Math.round(gap*.78f)
@@ -2014,10 +2081,10 @@ final class OmrScoreInterpreter {
         return reduced?Math.max(gap,head.maxX-head.minX+1+2*Math.max(1,Math.round(gap*.1f))):gap*1.5f;
     }
 
-    private static boolean hasInnerLedgerInk(byte[] gray,int width,int height,Component head,Staff staff) {
+    private static boolean hasInnerLedgerInk(byte[] gray,int width,int height,Component head,Staff staff,boolean roundedGrace) {
         // Beyond two staff spaces, real notation needs another ledger toward
         // the staff. One instruction arrow or underline is insufficient.
-        boolean reduced=reducedLedgerHead(gray,width,height,head,staff.gap);
+        boolean reduced=roundedGrace||reducedLedgerHead(gray,width,height,head,staff.gap);
         float minimum=ledgerRunMinimum(head,staff.gap,reduced);
         float direction=head.centerY<staff.top?1:-1;
         float distance=head.centerY<staff.top?staff.top-head.centerY:head.centerY-staff.bottom;
@@ -2048,13 +2115,87 @@ final class OmrScoreInterpreter {
         return true;
     }
 
+    /** Rejected slur islands must not continue masking a real tie's curve.
+     * Keep the caller's segmentation and every retained head unchanged. */
+    private static byte[] tieLabelsWithoutSlurHeads(byte[] labels,int width,
+            List<Component> rejected,List<Component> retained) {
+        if(rejected.isEmpty())return labels;
+        byte[] result=labels.clone();
+        for(Component head:rejected)for(int y=head.minY;y<=head.maxY;y++)for(int x=head.minX;x<=head.maxX;x++) {
+            if(result[y*width+x]!=OmrMeasurePostProcessor.NOTEHEAD)continue;
+            boolean protectedHead=false;
+            for(Component other:retained)if(x>=other.minX&&x<=other.maxX&&y>=other.minY&&y<=other.maxY) {
+                protectedHead=true;break;
+            }
+            if(!protectedHead)result[y*width+x]=OmrMeasurePostProcessor.SYMBOL;
+        }
+        return result;
+    }
+
     /** A thin slur fragment joined to a staff line can form a false semantic oval.
      * Require a stem for this unusually flat shape; normal whole notes are taller. */
     private static boolean flatStemlessFragment(byte[] gray, int width, int height,
                                                 Component head, float gap) {
+        if(gray==null)return false;
         float w = head.maxX - head.minX + 1f, h = head.maxY - head.minY + 1f;
-        return gray != null && h < gap * .65f && w > h * 2.2f
-                && attachedRawStem(gray, width, height, head, gap) == null;
+        if(h < gap*.65f && w > h*2.2f
+                && attachedRawStem(gray,width,height,head,gap)==null)return true;
+        if(w>gap*1.2f || h>gap*.8f || head.area>gap*gap*.5f
+                || attachedRawStem(gray,width,height,head,gap*.65f)!=null)return false;
+        return rawSlurBowl(gray,width,height,head,gap);
+    }
+
+    /** A segmentation island can cover only the roundest part of a longer slur.
+     * Inspect its complete raw component after removing thin, continuous staff rules. */
+    private static boolean rawSlurBowl(byte[] gray,int width,int height,Component head,float gap) {
+        int left=Math.max(0,Math.round(head.centerX-gap*2)),right=Math.min(width-1,Math.round(head.centerX+gap*2));
+        int top=Math.max(0,Math.round(head.centerY-gap*1.2f)),bottom=Math.min(height-1,Math.round(head.centerY+gap*1.2f));
+        int w=right-left+1,h=bottom-top+1;
+        boolean[] rules=new boolean[h];
+        for(int y=0;y<h;y++) {
+            int count=0;for(int x=left;x<=right;x++)if((gray[(top+y)*width+x]&255)<=165)count++;
+            rules[y]=count>=w*.9f;
+        }
+        for(int y=0;y<h;) {
+            int start=y;while(y<h&&rules[y])y++;
+            if(y-start>Math.max(2,Math.round(gap*.3f)))java.util.Arrays.fill(rules,start,y,false);
+            if(y==start)y++;
+        }
+        boolean[] visited=new boolean[w*h];int[] stack=new int[w*h];
+        for(int origin=0;origin<visited.length;origin++) {
+            int ox=origin%w,oy=origin/w;
+            if(visited[origin]||rules[oy]||(gray[(top+oy)*width+left+ox]&255)>165)continue;
+            int size=0;stack[size++]=origin;visited[origin]=true;
+            int minX=w,maxX=-1,minY=h,maxY=-1,overlap=0;
+            int[] counts=new int[w],sums=new int[w];
+            while(size>0) {
+                int at=stack[--size],x=at%w,y=at/w;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+                counts[x]++;sums[x]+=y;
+                if(x+left>=head.minX&&x+left<=head.maxX&&y+top>=head.minY&&y+top<=head.maxY)overlap++;
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int xx=x+dx,yy=y+dy;
+                    if(xx<0||xx>=w||yy<0||yy>=h||rules[yy])continue;
+                    int next=yy*w+xx;
+                    if(!visited[next]&&(gray[(top+yy)*width+left+xx]&255)<=165) {
+                        visited[next]=true;stack[size++]=next;
+                    }
+                }
+            }
+            int span=maxX-minX+1,rise=maxY-minY+1;
+            if(minX==0||maxX==w-1||minY==0||maxY==h-1||overlap<head.area*.55f
+                    ||span<gap*1.4f||span<(head.maxX-head.minX+1)*1.5f||rise>gap*.85f||span<rise*2.4f)continue;
+            float[] centers=new float[3];int[] bins=new int[3];
+            for(int x=minX;x<=maxX;x++)if(counts[x]>0) {
+                int bin=Math.min(2,(x-minX)*3/span);centers[bin]+=sums[x]/(float)counts[x];bins[bin]++;
+            }
+            if(bins[0]==0||bins[1]==0||bins[2]==0)continue;
+            for(int i=0;i<3;i++)centers[i]/=bins[i];
+            // Straight ledger extensions and small intact ovals lack this returning bend.
+            if(Math.abs(centers[1]-(centers[0]+centers[2])*.5f)>=Math.max(1.25f,gap*.1f)
+                    &&Math.abs(centers[0]-centers[2])<=gap*.65f)return true;
+        }
+        return false;
     }
 
     /** Tremolo strokes cross both sides of a stem. A fragmented mask may join

@@ -518,3 +518,32 @@ The app port and standalone source were compared directly. Pre-existing mixed
 experiments remain outside this commit. No weights, dependencies or license terms
 change, and no private scores or phone logs are included. Cache revisions advance
 for the next app build; this source-only change has not been installed on a phone.
+
+## Slur islands, masked ties and rounded ledger graces
+
+A small semantic notehead can actually be the rounded part of a longer slur.
+The decoder now inspects the full raw component after removing thin continuous
+staff rules, requiring a wider thin returning curve. Real stems, intact ovals
+and straight ledger extensions are protected. Rejected slur labels are cleared
+only in a private tie-analysis copy, preserving the caller's mask and retained
+heads so the false islands no longer hide printed ties.
+
+Rounded grace heads could qualify for ornament grouping but fail the earlier
+ledger check. The shorter-ledger allowance now also covers a short beamed prefix
+followed by a substantially larger principal. Adjacent grace stems must share
+actual beam ink; a staff rule or unconnected short stems does not qualify.
+
+Twenty-one original synthetic regressions cover the new cases and safeguards;
+seven fail on the prior decoder. All 563 Java tests, 13 Python tests,
+PNG/PDF-to-MIDI smoke checks and 47 focused Android tests pass. All 1,270 saved
+private pitch/presence checks pass. Eleven of 12 targeted pages have identical
+complete outputs. In the changed page, two false slur notes disappear, a missing
+grace is recovered, and a printed tie between repeated F notes is restored.
+
+The two-page private score now matches all 489 printed pitches. A missed barline
+and separate rhythm/tie issues remain open, so this is not a full playback
+certification. No private scans, transcriptions or logs are distributed. App and
+standalone code were compared directly; pre-existing mixed experiments were
+excluded. Weights, dependencies and Apache-2.0 terms are unchanged. This source
+batch has not been installed on a phone; cache revisions advance for the next
+Android build.
