@@ -335,6 +335,26 @@ public final class OmrMeasurePostProcessorTest {
         assertEquals(1, measures.stream().filter(item -> item.top() > .70f).count());
     }
 
+    @Test public void pageEdgeCreaseCannotConnectDistantPrintedStaffs() {
+        int width=600,height=400;byte[] labels=page(width,height),gray=page(width,height);
+        java.util.Arrays.fill(gray,(byte)210);
+        for(int top:new int[]{100,200}) {
+            for(int line=0;line<5;line++)for(int x=20;x<=540;x++) {
+                labels[(top+line*8)*width+x]=OmrMeasurePostProcessor.STAFF;
+                if(x>=160)gray[(top+line*8)*width+x]=0;
+            }
+            for(int x:new int[]{160,340,540})for(int y=top-3;y<=top+35;y++) {
+                labels[y*width+x]=OmrMeasurePostProcessor.STEM_OR_REST;gray[y*width+x]=0;
+            }
+        }
+        for(int y=90;y<=240;y++)gray[y*width+20]=0;
+        var separate=OmrMeasurePostProcessor.process(labels,gray,width,height);
+        assertTrue("The crease cannot combine the two rows",separate.get(0).bottom()<.5f);
+        for(int y=97;y<=235;y++)gray[y*width+160]=0;
+        var joined=OmrMeasurePostProcessor.process(labels,gray,width,height);
+        assertTrue("A bracket next to printed rules still combines the duet",joined.get(0).bottom()>.5f);
+    }
+
     private static byte[] page(int width, int height) { return new byte[width * height]; }
 
     private static void staff(byte[] page, int width, int top, boolean bars) {

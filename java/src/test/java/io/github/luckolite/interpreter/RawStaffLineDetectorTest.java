@@ -11,6 +11,21 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class RawStaffLineDetectorTest {
+    @Test public void periodicBroadShadingDoesNotInventFiveLineStaffs() {
+        int width=600,height=240;byte[] gray=new byte[width*height];
+        for(int y=0;y<height;y++)for(int x=0;x<width;x++)
+            gray[y*width+x]=(byte)(155+x/20+(y%8)/2);
+        assertEquals(0,RawStaffLineDetector.detect(gray,width,height).size());
+    }
+
+    @Test public void faintShortStaffSurvivesOnShadedPaper() {
+        int width=2048,height=240;byte[] gray=new byte[width*height];Arrays.fill(gray,(byte)175);
+        int[] rows={80,94,108,121,135};
+        for(int row:rows)for(int x=275;x<810;x++)gray[row*width+x]=(byte)150;
+        var staffs=RawStaffLineDetector.detect(gray,width,height);
+        assertEquals(1,staffs.size());assertArrayEquals(rows,staffs.get(0).rows());
+    }
+
     @Test public void shortStaffWithFractionalPixelSpacingStillHasFiveRules() {
         int width=2048,height=240;byte[] gray=new byte[width*height];Arrays.fill(gray,(byte)255);
         int[] rows={80,94,108,121,135}; // 13.75-pixel engraving rounded to the raster grid.

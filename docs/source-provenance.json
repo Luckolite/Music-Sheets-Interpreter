@@ -1,5 +1,5 @@
 {
-  "source_commit": "bc5b7f7c0138252d23a1b7f19c9ab5fa206e5889",
+  "source_commit": "499b2da768d8176791d89da8641189d4bf3c6fc1",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -48,7 +48,7 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "82520ab5d36a93c9b6cd2d60a3a9aa7ffe566e0e9166e5d787d70c1f02f4a684"
+      "source_sha256": "5bab0823aeb1b2797089bf43de7e53e5428f9a82450cc349a34ac1d13bc61b41"
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
@@ -60,7 +60,7 @@
     },
     "RawStaffLineDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RawStaffLineDetector.java",
-      "source_sha256": "fedfdde99a773703ac865f771660d957c1826fa7925be2b7934afe7c4e1393de"
+      "source_sha256": "5d4f576c61d9597de2f364ac17dd3592922db08b9278b4bad49f3ef468a2a1f4"
     },
     "ScoreDynamicChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicChange.java",

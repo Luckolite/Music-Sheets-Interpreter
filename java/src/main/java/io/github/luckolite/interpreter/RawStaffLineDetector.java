@@ -32,11 +32,8 @@ final class RawStaffLineDetector {
                 rowStrength[y]++;
         }
 
-        // This is deliberately a high bar: it is a fallback for page-spanning score staffs, not
-        // a generic horizontal-line detector. Text, beams, and artwork rarely remain dark across
-        // a quarter of the page width on five evenly spaced rows.
         int minimumStrength = Math.max(24, Math.round(width * .25f));
-        List<StaffLines> result=new ArrayList<>(detectFromStrength(rowStrength,minimumStrength,height,false));
+        List<StaffLines> result=new ArrayList<>(detectFromStrength(rowStrength,minimumStrength,height,false,gray,width));
         retainDominantStaffScale(result,gray,width,height);
         return List.copyOf(result);
     }
@@ -49,6 +46,11 @@ final class RawStaffLineDetector {
     }
 
     private static List<StaffLines> detectFromStrength(int[] rowStrength,int minimumStrength,int height,boolean filterScale) {
+        return detectFromStrength(rowStrength,minimumStrength,height,filterScale,null,0);
+    }
+
+    private static List<StaffLines> detectFromStrength(int[] rowStrength,int minimumStrength,int height,
+                                                      boolean filterScale,byte[] gray,int width) {
         if (rowStrength == null || rowStrength.length != height || minimumStrength <= 0)
             return List.of();
         List<Integer> peaks = localPeaks(rowStrength, minimumStrength);
@@ -60,6 +62,7 @@ final class RawStaffLineDetector {
         candidates.sort(Comparator.comparingDouble(Candidate::score).reversed());
         List<StaffLines> result = new ArrayList<>();
         for (Candidate candidate : candidates) {
+            if(gray!=null&&!hasPrintedRules(candidate,gray,width,height))continue;
             boolean overlaps = false;
             for (StaffLines accepted : result) {
                 float margin = Math.min(candidate.gap(), accepted.gap()) * .75f;
@@ -74,6 +77,25 @@ final class RawStaffLineDetector {
         if(filterScale)retainDominantStaffScale(result,null,0,0);
         result.sort(Comparator.comparingInt(StaffLines::top));
         return List.copyOf(result);
+    }
+
+    /** Shadows can form periodic dark projection peaks without any thin printed rules.
+     * Validate before resolving overlaps so an invalid high-scoring group cannot hide a staff.
+     * Partial support is sufficient when a beam obscures the middle rules. */
+    private static boolean hasPrintedRules(Candidate candidate,byte[] gray,int width,int height) {
+        int probe=Math.max(2,Math.round(candidate.gap()*.32f));
+        int minimum=Math.max(24,Math.round(width*.12f));
+        for(int y:candidate.rows()) {
+            if(y<probe||y>=height-probe)return false;
+            int count=0;
+            for(int x=0;x<width;x++) {
+                int ink=gray[y*width+x]&255;
+                if(ink<=DARK&&(gray[(y-probe)*width+x]&255)>=ink+12
+                        &&(gray[(y+probe)*width+x]&255)>=ink+12)count++;
+            }
+            if(count<minimum)return false;
+        }
+        return true;
     }
 
     /**

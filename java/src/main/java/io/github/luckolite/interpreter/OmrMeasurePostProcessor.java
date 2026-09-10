@@ -213,10 +213,7 @@ final class OmrMeasurePostProcessor {
         int radius = Math.max(2, Math.round(gap * .30f));
         for (int x = 0; x < width; x++) for (int row : rows) {
             int printedRow=Math.round(row+slope*(x-width*.5f));
-            boolean dark = false;
-            for (int y = Math.max(0, printedRow-radius); y <= Math.min(height-1, printedRow+radius); y++)
-                if ((gray[y * width + x] & 0xff) <= 170) { dark = true; break; }
-            if (dark) columns[x]++;
+            if(thinHorizontalInk(gray,width,height,x,printedRow,radius,gap))columns[x]++;
         }
         return columns;
     }
@@ -554,8 +551,43 @@ final class OmrMeasurePostProcessor {
             for (int x = left; x <= right; x++) {
                 if (checked[x]) continue;
                 checked[x] = true;
-                if (verticalRuleAt(gray, width, x, top, bottom, gap)) return true;
+                if (verticalRuleAt(gray, width, x, top, bottom, gap)
+                        && horizontalStaffBeside(gray,width,height,x,upper.bottom-upper.gap*4,
+                            upper.gap,upper.slope)
+                        && horizontalStaffBeside(gray,width,height,x,lower.top,lower.gap,lower.slope))return true;
             }
+        }
+        return false;
+    }
+
+    /** A crease can cross every system, but it does not join their five printed rules. */
+    private static boolean horizontalStaffBeside(byte[] gray,int width,int height,int x,
+                                                 float top,float gap,float slope) {
+        int radius=Math.max(2,Math.round(gap*.25f));
+        for(int side:new int[]{-1,1}) {
+            int supported=0;
+            for(int line=0;line<5;line++) {
+                int samples=0,hits=0;
+                for(int offset=Math.round(gap*2);offset<=Math.round(gap*6);offset++) {
+                    int xx=x+side*offset;if(xx<0||xx>=width)continue;
+                    samples++;
+                    int yy=Math.round(top+line*gap+slope*(xx-width*.5f));
+                    if(thinHorizontalInk(gray,width,height,xx,yy,radius,gap))hits++;
+                }
+                if(samples>=gap*2&&hits>=samples*.35f)supported++;
+            }
+            if(supported>=3)return true;
+        }
+        return false;
+    }
+
+    private static boolean thinHorizontalInk(byte[] gray,int width,int height,int x,int row,
+                                             int radius,float gap) {
+        int flank=Math.max(2,Math.round(gap*.32f));
+        for(int y=Math.max(flank,row-radius);y<=Math.min(height-1-flank,row+radius);y++) {
+            int ink=gray[y*width+x]&255;
+            if(ink<=170&&(gray[(y-flank)*width+x]&255)>=ink+12
+                    &&(gray[(y+flank)*width+x]&255)>=ink+12)return true;
         }
         return false;
     }
