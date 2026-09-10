@@ -33,3 +33,18 @@ and license material are staged for publication.
 
 The source Music Sheets working directory and rollback snapshots are preserved.
 Changes to this repository do not alter or install an application on the user's phone.
+
+## September 10 staff and voice repair
+
+The decoder now corroborates local pitch offsets across the printed staff rules,
+uses ledger chains to resolve ambiguous grand-staff ownership, recognizes sharp
+glyphs with a small staff fringe, and aligns separated seconds only when a shared
+printed stem proves their common attack. Mixed-duration chords preserve the
+quarter voice while another voice plays eighths. `StablePitchGeometryTest` uses
+original generated geometry and note events. No score scans were added.
+
+The app's synthesizer also carries independent sustain through tied barlines.
+That Android playback class remains outside this package; the standalone MIDI
+writer already retains tied durations across intervening pitches and has an
+additional original regression for a short attack continuing into a held voice.
+Weights and training lineage are unchanged.
