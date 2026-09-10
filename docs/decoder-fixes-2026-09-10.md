@@ -344,3 +344,42 @@ source pitches. The hourly revisit of 22 earlier pages preserves all 177 saved
 pitch/presence checks and every complete output. Four OCR/meter-annotated page
 outputs are also unchanged. These scoped checks do not certify the whole library.
 No model, license, dependency or packaged release changes are included.
+
+
+## Rest bodies, beam separation and rest-containing triplets
+
+Stemless predictions over a complete quarter-rest body are now removed using
+independent raw rest geometry, including when an augmentation dot was also
+mistaken for a notehead. A separate bound keeps this body check from broadening
+the ordinary augmentation-dot rule. Attached stems and nearby real noteheads
+remain protected. A complete deskewed five-line staff can also replace a nested
+half-spacing alias when all five rules are strong and no halfway rules exist.
+
+Ordinary half rests are recognized from a filled rectangle resting on the middle
+staff rule. Explicit leading and interior rests retain their written silence in
+incomplete optical measures. Beam reading separates two similarly thick dark
+cores when lighter ink has fused the beams; thin slur terminals, noteheads and
+single beams remain protected. A printed triplet may contain notes, chords and
+rests. Its silence and note durations scale together, while each independent
+voice retains ownership of its own leading or following rests. Tuplet processing
+runs once at the page-interpretation boundary, after raw note/rest extraction.
+
+The 55 original synthetic regressions cover these cases, including silent-only
+triplets, rest positions, unsupported-value barriers, repeated application,
+independent sustains and unchanged input pixels. Of the 41 new tests that use the
+previous decoder API, 21 fail on the preceding published implementation. Private
+source review covers 17 eligible pages: six false quarter-rest notes disappear,
+seven ordinary half rests are recovered, and 38 changed existing note events
+match the printed timing. No existing MIDI pitch substitutions occur in this
+batch. Nine complete page outputs remain identical. Generated audio-to-sheet
+sources are excluded from song-accuracy validation and are not accepted as
+unverified training labels. These results do not certify the whole library.
+
+No weights, model lineage, license, or third-party dependencies changed. The
+public implementation and regressions remain Apache-2.0; private scans and
+library metadata are not included.
+
+Validation passed 485 standalone Java tests, 13 Python tests, PNG/PDF-to-MIDI
+smoke checks, and 1,584 app tests in each Android variant with debug/release lint.
+The corresponding Music Sheets 1.18.109 phone update preserves all 396 recorded
+song identities. Whole-library listening validation remains in progress.

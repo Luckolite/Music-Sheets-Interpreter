@@ -65,7 +65,8 @@ public final class SheetInterpreter {
         if(!numbers.isEmpty()||!rests.isEmpty())
             measures=MeasureNumberReconciler.reconcile(measures,numbers,rests);
         var score=OmrScoreInterpreter.analyze(labels,gray,width,height,measures);
-        var notes=TripletRhythmDetector.apply(score.notes(),measures,gray,width,height);
+        var rhythm=TripletRhythmDetector.withRests(score.notes(),score.rests(),measures,gray,width,height);
+        var notes=rhythm.notes();
         var staffs=ScoreDynamicsDetector.alignStaffs(
                 OmrScoreInterpreter.techniqueStaffs(labels,gray,width,height,measures),notes,height);
         var words=annotations.words.stream().map(Word::internal).toList();
@@ -75,7 +76,7 @@ public final class SheetInterpreter {
                 MeasureNumberReconciler.firstMeasureNumber(measures,numbers),score.keyChanges(),
                 TempoChangeDetector.detect(annotations.tempoNumbers.stream().map(NumberToken::internal).toList(),
                         gray,width,height,measures),
-                annotations.meters,score.rests(),
+                annotations.meters,rhythm.rests(),
                 PlayingTechniqueDetector.detect(words,staffs,measures,notes,width,height),
                 ScoreDynamicsDetector.detect(words,staffs,measures,notes,gray,width,height));
     }

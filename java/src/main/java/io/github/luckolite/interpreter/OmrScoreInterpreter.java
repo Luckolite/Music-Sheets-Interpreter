@@ -190,22 +190,29 @@ final class OmrScoreInterpreter {
         // recognized rest. Re-read those dots without letting the mistaken head
         // claim ownership, but require the same rest to have survived the first pass.
         List<DetectedNote> compactDots=new ArrayList<>();
+        List<DetectedNote> restBodyHeads=new ArrayList<>();
         for(DetectedNote note:joined) {
             Component h=note.head;float gap=note.staffGap;
+            if(gray==null||attachedRawStem(gray,width,height,h,gap)!=null)continue;
             if(h.maxX-h.minX+1<=gap*.7f&&h.maxY-h.minY+1<=gap*.7f
-                    &&h.area<=gap*gap*.32f&&gray!=null
-                    &&attachedRawStem(gray,width,height,h,gap)==null)compactDots.add(note);
+                    &&h.area<=gap*gap*.32f)compactDots.add(note);
+            // The zigzag body can generate a larger prediction than an
+            // augmentation dot. Its complete raw shape supplies separate
+            // evidence, so do not make it pass the tiny-dot size gate.
+            if(h.maxX-h.minX+1<=gap*1.05f&&h.maxY-h.minY+1<=gap*1.05f
+                    &&h.area<=gap*gap*.65f)restBodyHeads.add(note);
         }
-        if(!compactDots.isEmpty()) {
+        if(!compactDots.isEmpty()||!restBodyHeads.isEmpty()) {
             List<ScoreNoteEvent> owners=new ArrayList<>(result);
             for(DetectedNote note:compactDots)owners.remove(note.event);
+            for(DetectedNote note:restBodyHeads)owners.remove(note.event);
             var evidence=SixteenthRestDetector.detectWithDots(gray,width,height,measures,restStaffs,owners);
             List<DetectedNote> removed=new ArrayList<>();
-            // The same compact prediction may be inside the rest's zigzag, not
-            // beside it. A complete independently recognized quarter-rest body
-            // can establish that ownership even when the false head blocked the
-            // original rest pass. Actual stemmed heads never enter compactDots.
-            for(DetectedNote note:compactDots)for(ScoreRestEvent rest:evidence.rests()) {
+            List<ScoreRestEvent> verifiedBodies=new ArrayList<>();
+            // An independently recognized complete quarter-rest body can
+            // establish ownership even when its false head blocked the first
+            // pass. Stemmed heads are excluded from both candidate lists.
+            for(DetectedNote note:restBodyHeads)for(ScoreRestEvent rest:evidence.rests()) {
                 if(rest.durationBeats()<1||rest.durationBeats()>1.75
                         ||rest.measureIndex()!=note.event.measureIndex()
                         ||rest.staffIndex()!=note.event.staffIndex()
@@ -214,7 +221,7 @@ final class OmrScoreInterpreter {
                 float x=(region.left()+rest.positionInMeasure()*(region.right()-region.left()))*width;
                 if(Math.abs(x-note.head.centerX)<=note.staffGap*.4f
                         &&Math.abs(rest.pageY()*height-note.head.centerY)<=rest.pageHeight()*height*.5f) {
-                    removed.add(note);break;
+                    removed.add(note);verifiedBodies.add(rest);break;
                 }
             }
             for(DetectedNote note:compactDots)for(var dot:evidence.dots()) {
@@ -223,7 +230,7 @@ final class OmrScoreInterpreter {
                         ||parent.staffCount()!=note.event.staffCount()
                         ||Math.abs(dot.x()-note.head.centerX)>note.staffGap*.3f
                         ||Math.abs(dot.y()-note.head.centerY)>note.staffGap*.3f)continue;
-                boolean verified=rests.stream().anyMatch(rest->rest.measureIndex()==parent.measureIndex()
+                boolean verified=verifiedBodies.contains(parent)||rests.stream().anyMatch(rest->rest.measureIndex()==parent.measureIndex()
                         &&rest.staffIndex()==parent.staffIndex()&&rest.staffCount()==parent.staffCount()
                         &&Math.abs(rest.positionInMeasure()-parent.positionInMeasure())<.005f
                         &&Math.abs(rest.pageY()-parent.pageY())<.005f);
@@ -1602,7 +1609,25 @@ final class OmrScoreInterpreter {
             for(var lines:RawStaffLineDetector.detectFromStrength(deskewed,Math.max(10,width/80),height)) {
                 Staff recovered=new Staff(lines.top(),lines.bottom(),lines.gap());
                 recovered.pitchSlope=semanticSlope;
-                if(alignedWithMeasureRow(recovered,measures,height)&&compatibleStaffScale(recovered,staffs)
+                // A tilted rule can produce two peaks in the uncorrected row
+                // projection, inventing a half-spacing staff. A complete,
+                // strong deskewed five-rule group with no intervening rules
+                // resolves that alias before the page-scale gate can reject it.
+                boolean replaced=false;
+                if(alignedWithMeasureRow(recovered,measures,height)
+                        &&unambiguousDeskewedRules(deskewed,lines,width)) {
+                    for(int i=staffs.size()-1;i>=0;i--) {
+                        Staff prior=staffs.get(i);
+                        float center=(prior.top+prior.bottom)*.5f;
+                        if(recovered.gap>=prior.gap*1.8f&&recovered.gap<=prior.gap*2.2f
+                                &&Math.abs(center-(recovered.top+recovered.bottom)*.5f)<=recovered.gap
+                                &&prior.top>=recovered.top-recovered.gap*.25f
+                                &&prior.bottom<=recovered.bottom+recovered.gap*.25f) {
+                            staffs.remove(i);replaced=true;
+                        }
+                    }
+                }
+                if(replaced||alignedWithMeasureRow(recovered,measures,height)&&compatibleStaffScale(recovered,staffs)
                         &&isolatedMissingSystem(recovered,staffs)&&!representedStaff(recovered,staffs,height))staffs.add(recovered);
             }
         }
@@ -1628,6 +1653,22 @@ final class OmrScoreInterpreter {
         for(Staff staff:staffs)staff.pitchTrack=StaffPitchTrack.detect(gray,width,height,staff.top,staff.bottom,staff.pitchGap);
         assignSystemPositions(staffs, measures, height);
         return staffs;
+    }
+
+    private static boolean unambiguousDeskewedRules(int[] strength,
+            RawStaffLineDetector.StaffLines staff,int width) {
+        int radius=Math.max(1,Math.round(staff.gap()*.15f));
+        for(int row:staff.rows()) {
+            int peak=0;
+            for(int y=Math.max(0,row-radius);y<=Math.min(strength.length-1,row+radius);y++)peak=Math.max(peak,strength[y]);
+            if(peak<width*.25f)return false;
+        }
+        for(int i=0;i<4;i++) {
+            int middle=Math.round((staff.rows()[i]+staff.rows()[i+1])*.5f);
+            for(int y=Math.max(0,middle-radius);y<=Math.min(strength.length-1,middle+radius);y++)
+                if(strength[y]>=width*.20f)return false;
+        }
+        return true;
     }
 
     /** Center complete printed rule bands instead of using whichever edge pixel wins a peak. */
@@ -3053,19 +3094,56 @@ final class OmrScoreInterpreter {
     }
 
     private static int thickNonHeadBands(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff) {
+        int normal=thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,165);
+        if(normal!=1||x<1||x>=width-1)return normal;
+        // A lighter antialiased staff rule can fill the gap between two dark beams.
+        // Require two full-thickness dark cores before splitting that connected ink;
+        // a single beam crossed by a rule still has only one core.
+        int darkest=165;
+        for(int y=top;y<=bottom;y++)darkest=Math.min(darkest,gray[y*width+x]&255);
+        int coreThreshold=(darkest+165)/2;
+        int cores=thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,coreThreshold);
+        return cores==2&&separateBeamCores(gray,labels,width,x,top,bottom,staff,coreThreshold)?2:normal;
+    }
+
+    private static boolean separateBeamCores(byte[] gray,byte[] labels,int width,int x,int top,int bottom,Staff staff,int threshold) {
+        int start=-1,previousEnd=-1,previousStart=-1;
+        int minimum=Math.max(3,(int)Math.ceil(staff.gap*.30f));
+        for(int y=top;y<=bottom+1;y++) {
+            boolean ink=y<=bottom&&(gray[y*width+x-1]&255)<threshold
+                    &&(gray[y*width+x]&255)<threshold&&(gray[y*width+x+1]&255)<threshold
+                    &&labels[y*width+x]!=OmrMeasurePostProcessor.NOTEHEAD;
+            if(ink&&start<0)start=y;
+            if(!ink&&start>=0) {
+                if(y-start>=minimum) {
+                    if(previousEnd>=0) {
+                        int first=previousEnd-previousStart+1,second=y-start;
+                        float separation=(start+y-1-previousStart-previousEnd)*.5f;
+                        if(Math.max(first,second)<=Math.min(first,second)*1.8f
+                                &&separation>=staff.gap*.4f&&separation<=staff.gap*1.1f)return true;
+                    }
+                    previousEnd=y-1;previousStart=start;
+                }
+                start=-1;
+            }
+        }
+        return false;
+    }
+
+    private static int thickNonHeadBands(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff,int threshold) {
         float gap=staff.gap;
         if(x<1||x>=width-1)return 0;
         int bands=0,strongBands=0,run=0,staffRows=0,staffEdges=0;
         for(int y=top;y<=bottom+1;y++) {
-            boolean ink=y<=bottom && (gray[y*width+x-1]&255)<165
-                    &&(gray[y*width+x]&255)<165&&(gray[y*width+x+1]&255)<165
+            boolean ink=y<=bottom && (gray[y*width+x-1]&255)<threshold
+                    &&(gray[y*width+x]&255)<threshold&&(gray[y*width+x+1]&255)<threshold
                     &&labels[y*width+x]!=OmrMeasurePostProcessor.NOTEHEAD;
             if(ink) {
                 run++;
                 int span=Math.round(gap*2),leftInk=0,rightInk=0;
                 for(int dx=Math.round(gap);dx<Math.round(gap)+span;dx++) {
-                    if(x-dx>=0&&(gray[y*width+x-dx]&255)<165)leftInk++;
-                    if(x+dx<width&&(gray[y*width+x+dx]&255)<165)rightInk++;
+                    if(x-dx>=0&&(gray[y*width+x-dx]&255)<threshold)leftInk++;
+                    if(x+dx<width&&(gray[y*width+x+dx]&255)<threshold)rightInk++;
                 }
                 if(leftInk>=span*.85f&&rightInk>=span*.85f)staffRows++;
                 else if(Math.max(leftInk,rightInk)>=span*.8f)staffEdges++;

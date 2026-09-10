@@ -11,6 +11,70 @@ import java.util.List;
 final class TripletRhythmDetector {
     private TripletRhythmDetector() { }
 
+    record Rhythm(List<ScoreNoteEvent> notes,List<ScoreRestEvent> rests) { }
+
+    /** A printed rest occupies one rhythmic slot just as a chord attack does.
+     * Virtual events are used only for grouping and never returned as sounding notes. */
+    static Rhythm withRests(List<ScoreNoteEvent> notes,List<ScoreRestEvent> rests,
+            List<MeasureRegion> measures,byte[] gray,int width,int height) {
+        if(rests==null||rests.isEmpty())return new Rhythm(apply(notes,measures,gray,width,height),rests);
+        List<ScoreNoteEvent> slots=new ArrayList<>(notes);
+        List<Integer> restIndices=new ArrayList<>();
+        for(int restIndex=0;restIndex<rests.size();restIndex++) {
+            ScoreRestEvent rest=rests.get(restIndex);
+            double value=rest.durationBeats();
+            int beams=value==.25?2:value==.5?1:value==1?0:-1;
+            restIndices.add(restIndex);
+            // Unsupported or already scaled rest values remain barriers between
+            // attack columns; omitting them could join notes across real silence.
+            slots.add(new ScoreNoteEvent(rest.measureIndex(),rest.positionInMeasure(),0,
+                    rest.staffIndex(),rest.staffCount(),rest.pageY(),false,0,Math.max(0,beams),2,
+                    beams<=0?(float)value:0,beams<0?2:1));
+        }
+        List<ScoreNoteEvent> marked=apply(slots,measures,gray,width,height);
+        List<ScoreRestEvent> scaled=new ArrayList<>(rests);
+        for(int i=0;i<restIndices.size();i++) {
+            int index=restIndices.get(i);ScoreRestEvent rest=rests.get(index);
+            if(marked.get(notes.size()+i).tupletDivisor()!=3)continue;
+            scaled.set(index,new ScoreRestEvent(rest.measureIndex(),rest.positionInMeasure(),
+                    rest.pageY(),rest.pageHeight(),rest.staffIndex(),rest.staffCount(),
+                    rest.durationBeats()*2/3));
+        }
+        List<ScoreNoteEvent> result=new ArrayList<>();
+        for(int i=0;i<notes.size();i++) {
+            ScoreNoteEvent original=notes.get(i),note=marked.get(i);
+            float next=1.01f;
+            for(ScoreNoteEvent other:notes)if(sameVoice(original,other)
+                    &&other.positionInMeasure()>original.positionInMeasure()+.018f)
+                next=Math.min(next,other.positionInMeasure());
+            boolean first=notes.stream().noneMatch(other->sameVoice(original,other)
+                    &&other.positionInMeasure()<original.positionInMeasure()-.018f);
+            double before=0,after=0;
+            for(int j=0;j<rests.size();j++) {
+                ScoreRestEvent rest=rests.get(j);
+                double delta=rest.durationBeats()-scaled.get(j).durationBeats();
+                if(delta==0||rest.measureIndex()!=note.measureIndex()||rest.staffIndex()!=note.staffIndex()
+                        ||rest.staffCount()!=note.staffCount())continue;
+                if(rest.positionInMeasure()<note.positionInMeasure()
+                        &&(first||!ScoreNoteTiming.hasIndependentSustain(original)
+                        &&notes.stream().anyMatch(other->sameVoice(original,other)
+                        &&ScoreNoteTiming.hasIndependentSustain(other)
+                        &&Math.abs(other.positionInMeasure()-rest.positionInMeasure())<=.018f))
+                        &&original.leadingRestBeats()+.001>=rest.durationBeats())before+=delta;
+                if(rest.positionInMeasure()>note.positionInMeasure()&&rest.positionInMeasure()<next
+                        &&(!ScoreNoteTiming.hasIndependentSustain(original)
+                        ||rest.positionInMeasure()>note.positionInMeasure()+.018f)
+                        &&original.followingRestBeats()+.001>=rest.durationBeats())after+=delta;
+            }
+            result.add(new ScoreNoteEvent(note.measureIndex(),note.positionInMeasure(),note.staffStep(),
+                    note.staffIndex(),note.staffCount(),note.pageY(),note.tiedFromPrevious(),note.augmentationDots(),
+                    note.beamCount(),note.writtenAccidental(),note.unbeamedDurationBeats(),note.tupletDivisor(),
+                    (float)Math.max(0,note.followingRestBeats()-after),note.articulations(),note.clefBottomDiatonic(),
+                    note.crossStaffBeam(),(float)Math.max(0,note.leadingRestBeats()-before)));
+        }
+        return new Rhythm(List.copyOf(result),List.copyOf(scaled));
+    }
+
     /** A chord contributes one attack column, regardless of how many heads it contains. */
     private record Onset(List<Integer> indices,float position,float top,float bottom) { }
 

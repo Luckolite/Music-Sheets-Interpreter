@@ -223,12 +223,17 @@ public final class ScoreNoteTiming {
             // An optically incomplete bar can still have a confidently read leading rest.
             double leading=leadingRest(groups);
             double onset = index==0 && leading<safeBeats ? Math.max(spatial,leading) : spatial;
+            // A read leading rest already accounts for its silence. Small
+            // engraving insets must not add a second, invented rest slot.
+            if(index==0&&leading>0&&leading<safeBeats
+                    &&spatial-leading<=safeBeats*MAX_ORDINARY_MEASURE_INSET)onset=leading;
             if (index > 0 && Double.isFinite(previousDuration)) {
-                double predicted = previousOnset + previousDuration;
+                double writtenRest=followingRest(groups.get(index-1));
+                double predicted = previousOnset + previousDuration + writtenRest;
                 double positionGap = Double.isFinite(previousPosition)
                         ? groupPosition - previousPosition : Double.POSITIVE_INFINITY;
                 double expectedPositionGap = previousDuration * positionPerBeat;
-                double restBeats = !fillsMeasure ? inferredShortRest(positionGap,
+                double restBeats = !fillsMeasure&&writtenRest<=0 ? inferredShortRest(positionGap,
                         previousDuration, positionPerBeat, grid) : 0;
                 boolean clearWrittenRest = restBeats > 0
                         && predicted + restBeats <= safeBeats + grid * .5;
@@ -244,7 +249,8 @@ public final class ScoreNoteTiming {
                     // retain strict reading order even when quantization lands twice on a slot.
                     double separation = Math.min(grid, safeBeats / groups.size());
                     onset = Math.max(spatial, previousOnset + separation);
-                } else if (underDetectedMeasure) onset = Math.max(predicted, spatial);
+                } else if(writtenRest>0)onset=predicted;
+                else if (underDetectedMeasure) onset = Math.max(predicted, spatial);
                 else if (clearWrittenRest) onset = predicted + restBeats;
                 else if (predicted < safeBeats
                         && (fillsMeasure || spatial < predicted || positionGap <= 0

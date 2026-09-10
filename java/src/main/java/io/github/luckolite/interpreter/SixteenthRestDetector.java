@@ -65,8 +65,10 @@ final class SixteenthRestDetector {
                     if (!line[y - top] && (gray[y * width + x] & 255) < 170) ink++;
                 if (ink >= 2) { if (start < 0) start = x; }
                 else if (start >= 0) {
+                    boolean ordinary=staffs.stream().anyMatch(s->s.index()==staff.index()
+                            &&s.count()==staff.count()&&Math.abs(s.top()-staff.top())<gap*.1f);
                     inspect(gray, width, height, measures, notes, staff, top, bottom,
-                            line, start, x - 1, result,restDots);
+                            line, start, x - 1, result,restDots,ordinary);
                     start = -1;
                 }
             }
@@ -148,7 +150,7 @@ final class SixteenthRestDetector {
 
     private static void inspect(byte[] gray, int width, int height, List<MeasureRegion> measures,
             List<ScoreNoteEvent> notes, Staff staff, int top, int bottom, boolean[] line,
-            int left, int right, List<ScoreRestEvent> result,List<RestDot> restDots) {
+            int left, int right, List<ScoreRestEvent> result,List<RestDot> restDots,boolean ordinary) {
         float gap = staff.gap();
         if (right - left + 1 < gap * .7f || right - left + 1 > gap * 1.6f) return;
         int minY = bottom + 1, maxY = top - 1;
@@ -158,12 +160,13 @@ final class SixteenthRestDetector {
                 ink[y - top]++;
             if (ink[y - top] > 0) { minY = Math.min(minY, y); maxY = y; }
         }
+        boolean half=ordinary&&halfRest(staff,top,line,ink,left,right,minY,maxY);
         boolean quarter = quarterRest(gray,width,staff,top,line,left,right,minY,maxY);
         boolean eighth = maxY-minY>=gap*1.3f && maxY-minY<=gap*2.2f
                 && Math.abs(maxY-(staff.bottom()-gap))<=gap*.4f;
         boolean sixteenth = maxY-minY>=gap*2.35f && maxY-minY<=gap*3.25f
                 && Math.abs(maxY-staff.bottom())<=gap*.35f;
-        if (!quarter) {
+        if (!quarter&&!half) {
             if ((!eighth && !sixteenth)
                     || minY < staff.top() + gap * .85f || minY > staff.top() + gap * 1.55f) return;
             // Interpolate removed staff rows before counting bulb lobes, so staff crossings do not
@@ -221,7 +224,7 @@ final class SixteenthRestDetector {
                         &&noteX>right&&noteX<right+gap*1.8f)return;
             }
             List<InkDot> dots=augmentationDots(gray,width,height,staff,right,region,notes,m);
-            double duration=(quarter?1:eighth?.5:.25)*(dots.size()==2?1.75:dots.size()==1?1.5:1);
+            double duration=(half?2:quarter?1:eighth?.5:.25)*(dots.size()==2?1.75:dots.size()==1?1.5:1);
             ScoreRestEvent rest=new ScoreRestEvent(m, (centerX - region.left()) / (region.right() - region.left()),
                     centerY, (maxY - minY + 1f) / height, staff.index(), staff.count(),duration);
             result.add(rest);
@@ -282,6 +285,22 @@ final class SixteenthRestDetector {
             accepted.add(dot);previous=dot.x();if(accepted.size()==2)break;
         }
         return List.copyOf(accepted);
+    }
+
+    /** A half-rest is a filled rectangle sitting on the middle staff rule.
+     * Require flat, wide rows: an oval head or thin articulation is not a rest. */
+    private static boolean halfRest(Staff staff,int top,boolean[] line,int[] ink,
+            int left,int right,int minY,int maxY) {
+        float gap=staff.gap(),middle=staff.top()+2*gap;
+        int h=maxY-minY+1,w=right-left+1;
+        if(h<gap*.25f||h>gap*.65f||minY<middle-gap*.7f
+                ||maxY>middle||middle-maxY>gap*.25f)return false;
+        int rows=0;
+        for(int y=minY;y<=maxY;y++)if(!line[y-top]) {
+            if(ink[y-top]<w*.80f)return false;
+            rows++;
+        }
+        return rows>=Math.max(3,Math.round(gap*.25f));
     }
 
     /** Quarter rests have a narrow zigzag above a left-facing lower hook. */
