@@ -9,7 +9,9 @@ import java.util.List;
 /** Reads the two left-facing bulbs and descending diagonal tail from raw score ink.
  * the model often labels this entire glyph as background, so semantic symbol components cannot seed it. */
 final class SixteenthRestDetector {
-    record Staff(float top, float bottom, float gap, int index, int count) { }
+    record Staff(float top, float bottom, float gap, int index, int count, StaffPitchTrack pitchTrack) {
+        Staff(float top,float bottom,float gap,int index,int count){this(top,bottom,gap,index,count,null);}
+    }
 
     record RestDot(float x,float y,ScoreRestEvent rest) { }
     record Detection(List<ScoreRestEvent> rests,List<RestDot> dots) { }
@@ -23,6 +25,18 @@ final class SixteenthRestDetector {
     static Detection detectWithDots(byte[] gray, int width, int height,
             List<MeasureRegion> measures, List<Staff> staffs, List<ScoreNoteEvent> notes) {
         if (gray == null || gray.length != width * height) return new Detection(List.of(),List.of());
+        if(staffs.stream().anyMatch(staff->staff.pitchTrack()!=null)) {
+            List<Staff> straight=new ArrayList<>();
+            for(Staff staff:staffs)if(staff.pitchTrack()==null)straight.add(staff);
+            Detection plain=detectWithDots(gray,width,height,measures,straight,notes);
+            List<ScoreRestEvent> combined=new ArrayList<>(plain.rests());
+            List<RestDot> dots=new ArrayList<>(plain.dots());
+            for(Staff staff:staffs)if(staff.pitchTrack()!=null) {
+                Detection curved=detectOnPrintedStaff(gray,width,height,measures,staff,notes);
+                combined.addAll(curved.rests());dots.addAll(curved.dots());
+            }
+            return collected(combined,dots);
+        }
         List<ScoreRestEvent> result = new ArrayList<>();
         List<RestDot> restDots=new ArrayList<>();
         List<Staff> placements=new ArrayList<>(staffs);
@@ -57,12 +71,79 @@ final class SixteenthRestDetector {
                 }
             }
         }
+        return collected(result,restDots);
+    }
+
+    private static Detection collected(List<ScoreRestEvent> result,List<RestDot> restDots) {
         result.sort(java.util.Comparator.comparingInt(ScoreRestEvent::measureIndex)
                 .thenComparingDouble(ScoreRestEvent::positionInMeasure));
         List<ScoreRestEvent> unique=new ArrayList<>();
         for(ScoreRestEvent rest:result)if(unique.stream().noneMatch(r->r.measureIndex()==rest.measureIndex()
                 &&r.staffIndex()==rest.staffIndex()&&Math.abs(r.positionInMeasure()-rest.positionInMeasure())<.018f))unique.add(rest);
         return new Detection(List.copyOf(unique),List.copyOf(restDots));
+    }
+
+    /** Translate columns in a narrow staff band; map results back to the source page.
+     * Keep glyph height intact: small local spacing errors must not stretch the
+     * rest and leave partial staff rules connected to its hook. */
+    private static Detection detectOnPrintedStaff(byte[] gray,int width,int height,
+            List<MeasureRegion> measures,Staff staff,List<ScoreNoteEvent> notes) {
+        int first=Math.max(0,(int)Math.floor(staff.top()-staff.gap()*3));
+        int last=Math.min(height,(int)Math.ceil(staff.bottom()+staff.gap()));
+        if(last<=first)return new Detection(List.of(),List.of());
+        int bandHeight=last-first;
+        byte[] flat=new byte[width*bandHeight];
+        for(int x=0;x<width;x++) {
+            float[] local=staff.pitchTrack().at(x);
+            for(int y=0;y<bandHeight;y++) {
+                int sourceY=Math.round(local[0]+(first+y-staff.bottom()));
+                flat[y*width+x]=sourceY>=0&&sourceY<height?gray[sourceY*width+x]:(byte)255;
+            }
+        }
+        List<MeasureRegion> mappedMeasures=new ArrayList<>();
+        for(MeasureRegion region:measures) {
+            float x=(region.left()+region.right())*.5f*width;
+            mappedMeasures.add(new MeasureRegion(region.left(),region.right(),
+                    (flatY(staff,x,region.top()*height)-first)/bandHeight,
+                    (flatY(staff,x,region.bottom()*height)-first)/bandHeight));
+        }
+        List<ScoreNoteEvent> mappedNotes=new ArrayList<>();
+        for(ScoreNoteEvent n:notes) {
+            MeasureRegion region=measures.get(n.measureIndex());
+            float x=(region.left()+n.positionInMeasure()*(region.right()-region.left()))*width;
+            float y=(flatY(staff,x,n.pageY()*height)-first)/bandHeight;
+            mappedNotes.add(new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
+                    n.staffIndex(),n.staffCount(),y,n.tiedFromPrevious(),n.augmentationDots(),n.beamCount(),
+                    n.writtenAccidental(),n.unbeamedDurationBeats(),n.tupletDivisor(),n.followingRestBeats(),
+                    n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats()));
+        }
+        Staff rectified=new Staff(staff.top()-first,staff.bottom()-first,staff.gap(),staff.index(),staff.count());
+        Detection detected=detectWithDots(flat,width,bandHeight,mappedMeasures,List.of(rectified),mappedNotes);
+        List<ScoreRestEvent> rests=new ArrayList<>();List<RestDot> dots=new ArrayList<>();
+        for(ScoreRestEvent rest:detected.rests())rests.add(sourceRest(rest,staff,measures,width,height,first,bandHeight));
+        for(RestDot dot:detected.dots())dots.add(new RestDot(dot.x(),
+                sourceY(staff,dot.x(),first+dot.y()),sourceRest(dot.rest(),staff,measures,width,height,first,bandHeight)));
+        return new Detection(List.copyOf(rests),List.copyOf(dots));
+    }
+
+    private static float flatY(Staff staff,float x,float sourceY) {
+        float[] local=staff.pitchTrack().at(x);
+        return staff.bottom()+(sourceY-local[0]);
+    }
+
+    private static float sourceY(Staff staff,float x,float flatY) {
+        float[] local=staff.pitchTrack().at(x);
+        return local[0]+(flatY-staff.bottom());
+    }
+
+    private static ScoreRestEvent sourceRest(ScoreRestEvent rest,Staff staff,List<MeasureRegion> measures,
+            int width,int height,int first,int bandHeight) {
+        MeasureRegion region=measures.get(rest.measureIndex());
+        float x=(region.left()+rest.positionInMeasure()*(region.right()-region.left()))*width;
+        float y=sourceY(staff,x,first+rest.pageY()*bandHeight)/height;
+        float h=rest.pageHeight()*bandHeight/height;
+        return new ScoreRestEvent(rest.measureIndex(),rest.positionInMeasure(),y,h,
+                rest.staffIndex(),rest.staffCount(),rest.durationBeats());
     }
 
     private static void inspect(byte[] gray, int width, int height, List<MeasureRegion> measures,

@@ -184,7 +184,7 @@ final class OmrScoreInterpreter {
         List<SixteenthRestDetector.Staff> restStaffs = new ArrayList<>();
         for (Staff staff : staffs) restStaffs.add(new SixteenthRestDetector.Staff(
                 staff.pitchBottom - staff.pitchGap * 4, staff.pitchBottom, staff.pitchGap,
-                staff.index, staff.count));
+                staff.index, staff.count, staff.pitchTrack));
         List<ScoreRestEvent> rests = SixteenthRestDetector.detect(gray, width, height, measures, restStaffs, result);
         // Small stemless model heads can be augmentation dots of an independently
         // recognized rest. Re-read those dots without letting the mistaken head
@@ -196,11 +196,27 @@ final class OmrScoreInterpreter {
                     &&h.area<=gap*gap*.32f&&gray!=null
                     &&attachedRawStem(gray,width,height,h,gap)==null)compactDots.add(note);
         }
-        if(!compactDots.isEmpty()&&!rests.isEmpty()) {
+        if(!compactDots.isEmpty()) {
             List<ScoreNoteEvent> owners=new ArrayList<>(result);
             for(DetectedNote note:compactDots)owners.remove(note.event);
             var evidence=SixteenthRestDetector.detectWithDots(gray,width,height,measures,restStaffs,owners);
             List<DetectedNote> removed=new ArrayList<>();
+            // The same compact prediction may be inside the rest's zigzag, not
+            // beside it. A complete independently recognized quarter-rest body
+            // can establish that ownership even when the false head blocked the
+            // original rest pass. Actual stemmed heads never enter compactDots.
+            for(DetectedNote note:compactDots)for(ScoreRestEvent rest:evidence.rests()) {
+                if(rest.durationBeats()<1||rest.durationBeats()>1.75
+                        ||rest.measureIndex()!=note.event.measureIndex()
+                        ||rest.staffIndex()!=note.event.staffIndex()
+                        ||rest.staffCount()!=note.event.staffCount())continue;
+                MeasureRegion region=measures.get(rest.measureIndex());
+                float x=(region.left()+rest.positionInMeasure()*(region.right()-region.left()))*width;
+                if(Math.abs(x-note.head.centerX)<=note.staffGap*.4f
+                        &&Math.abs(rest.pageY()*height-note.head.centerY)<=rest.pageHeight()*height*.5f) {
+                    removed.add(note);break;
+                }
+            }
             for(DetectedNote note:compactDots)for(var dot:evidence.dots()) {
                 ScoreRestEvent parent=dot.rest();
                 if(parent.measureIndex()!=note.event.measureIndex()||parent.staffIndex()!=note.event.staffIndex()

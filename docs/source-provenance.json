@@ -1,5 +1,5 @@
 {
-  "source_commit": "a7a02b58e6d2079dce2f3bdf52296f3def6f9b91",
+  "source_commit": "4620b2cf3cf770f2d8faf4d465cf9077905e4aef",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -52,7 +52,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "c3a00997372ffd9c1e4bb2539dbc7e0129676a7c1fa2fbd75023116e8ecfd158"
+      "source_sha256": "30758bf9c26976250ce549a36eaab3664f5b530eebe928835c79f525af184c65"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -104,7 +104,7 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "afe3c72c241e2f6f4a156ed1d6b7b7fa4395315995097f9dae4c0514d5b6795f"
+      "source_sha256": "d74c5775b2776d957819f6b12d0bafc4d665956358531f9d5c8b50dc12e0ab60"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",

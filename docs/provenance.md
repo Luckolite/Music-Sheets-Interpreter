@@ -184,3 +184,22 @@ The shared decoder was reviewed from app commit `8ec875f80d8632942135a40541ad435
 Only printed geometry and copied-mask preparation changed. Eleven original
 shared tests and one standalone API test cover tempo symbols and negative
 cases; no OCR service, private scan or model asset was imported.
+
+
+## Curved staff quarter rests
+
+Rest detection now follows the accepted printed staff trajectory in a small image
+band. Column translation preserves glyph height, note ownership and source-page
+coordinates. A compact, stemless segmentation prediction inside an independently
+recognized quarter-rest body is removed before playback timing. No production
+rule refers to a song, title or fixture.
+
+Thirteen original synthetic regressions cover both slope directions, raised rests,
+held-note ownership, augmentation dots, coordinate mapping, input preservation,
+false rest-body heads and real-head negatives. Validation passed 392 standalone
+Java tests, 13 Python tests, PNG/PDF model-to-MIDI smoke checks, and 1,496 app tests
+with Android lint. Nine targeted private pages were compared: eight complete
+outputs stayed identical; one false sounding note was removed from the affected
+page, whose 189 printed pitches and final sounding-bar durations were checked.
+These are selected checks, not a whole-library accuracy claim. Model weights,
+licenses and dependencies are unchanged; commercial images remain private.
