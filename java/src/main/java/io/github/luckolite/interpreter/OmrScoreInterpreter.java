@@ -43,12 +43,14 @@ final class OmrScoreInterpreter {
         if (staffs.isEmpty()) return new Analysis(List.of(), List.of());
         List<Component> rawHeadComponents = findComponents(labels, width, height,
                 OmrMeasurePostProcessor.NOTEHEAD);
+        List<Component> clefOrKeyComponents = findComponents(labels, width, height,
+                OmrMeasurePostProcessor.CLEF_OR_KEY);
+        rawHeadComponents.removeIf(head->isRoundedHeaderMeter(labels,gray,width,height,
+                head,staffs,clefOrKeyComponents));
         List<Component> headComponents = splitStackedHeads(labels, gray, width, height,
                 rawHeadComponents, staffs);
         List<Component> symbolComponents = findComponents(labels, width, height,
                 OmrMeasurePostProcessor.SYMBOL);
-        List<Component> clefOrKeyComponents = findComponents(labels, width, height,
-                OmrMeasurePostProcessor.CLEF_OR_KEY);
         List<Component> heads = new ArrayList<>();
         for (Component head : headComponents) {
             Staff staff = staffForHead(labels, gray, width, height, staffs, head);
@@ -263,6 +265,58 @@ final class OmrScoreInterpreter {
             }
         }
         return new Analysis(withRests, keyChanges, rests);
+    }
+
+    /** Stacked rounded meter digits can arrive as one tall semantic head blob.
+     * Inspect their printed counters before splitting that blob into chord tones. */
+    private static boolean isRoundedHeaderMeter(byte[] labels,byte[] gray,int width,int height,
+            Component head,List<Staff> staffs,List<Component> glyphs) {
+        if(gray==null)return false;
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
+        float gap=staff.gap;
+        if(head.maxY-head.minY<gap*3 || head.maxY-head.minY>gap*4.3f
+                ||head.maxX-head.minX>gap*1.9f ||head.maxX-head.minX<gap*.65f
+                ||head.minY<staff.top-gap*.2f ||head.maxY>staff.bottom+gap*.3f)return false;
+        boolean header=false;
+        for(Component glyph:glyphs)if(glyph.maxX<head.minX&&head.minX-glyph.maxX<gap*7
+                &&glyph.maxY-glyph.minY>gap*4.5f&&glyph.maxX-glyph.minX>gap*1.1f
+                &&glyph.centerY>staff.top-gap&&glyph.centerY<staff.bottom+gap)header=true;
+        if(!header)return false;
+        int[] stem=attachedRawStem(gray,width,height,head,gap);
+        if(stem!=null&&(stem[1]<staff.top-gap*.25f||stem[1]>staff.bottom+gap*.25f))return false;
+        int left=Math.max(0,Math.round(head.minX-gap*.3f));
+        int right=Math.min(width-1,Math.round(head.maxX+gap*.3f));
+        int top=Math.max(0,Math.round(staff.top-gap*.2f));
+        int bottom=Math.min(height-1,Math.round(staff.bottom+gap*.2f));
+        int w=right-left+1,h=bottom-top+1,upper=0,lower=0;
+        boolean[] visited=new boolean[w*h];int[] queue=new int[w*h];
+        for(int seed=0;seed<w*h;seed++) {
+            if(visited[seed]||(gray[(top+seed/w)*width+left+seed%w]&255)<=155)continue;
+            int take=0,size=1,minX=w,maxX=-1,minY=h,maxY=-1;boolean edge=false;
+            queue[0]=seed;visited[seed]=true;
+            while(take<size) {
+                int index=queue[take++],x=index%w,y=index/w;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+                edge|=x==0||y==0||x==w-1||y==h-1;
+                for(int direction=0;direction<4;direction++) {
+                    int nx=x+(direction==0?-1:direction==1?1:0);
+                    int ny=y+(direction==2?-1:direction==3?1:0);
+                    if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                    int next=ny*w+nx;
+                    if(!visited[next]&&(gray[(top+ny)*width+left+nx]&255)>155) {
+                        visited[next]=true;queue[size++]=next;
+                    }
+                }
+            }
+            int cw=maxX-minX+1,ch=maxY-minY+1;
+            // Numeral counters are upright. The broad, shallow holes of real hollow
+            // chord heads do not become digits merely because they share a column.
+            if(edge||size<gap*gap*.07f||cw<gap*.2f||cw>gap*1.1f
+                    ||ch<gap*.35f||ch>gap*1.1f||ch<cw*.75f)continue;
+            float cy=top+(minY+maxY)*.5f;
+            if(cy<staff.top+gap*2)upper++;else lower++;
+        }
+        return upper>=1&&lower>=2;
     }
 
     /** A tall, rounded lower meter digit can be painted as a hollow notehead. */

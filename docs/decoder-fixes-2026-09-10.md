@@ -81,3 +81,24 @@ some dotted overlapping voices still need further work. Private scores remain
 outside this repository. This is a source update with unchanged model weights;
 it does not replace the existing packaged release or constitute phone listening
 validation.
+
+## Merged meter glyphs
+
+The semantic mask could merge a stacked meter such as 6/8 into one tall head
+region. Chord splitting then turned its rounded portions into three sounding
+notes. The decoder now checks that region before splitting: it requires clef
+context, the stacked numeral's upright enclosed counters, and no protective
+stem extending beyond the stave. Broad, shallow counters in hollow chord heads
+remain negative controls. This does not attempt to recognize every meter glyph.
+
+`RoundedMeterGlyphTest` adds six original synthetic cases, including two full
+extraction tests that fail in the preceding decoder. Validation passed 291 Java
+tests, 13 Python tests, the PNG/PDF inference-to-MIDI smoke tests, and 1,402 app
+tests plus lint. A 23-page targeted comparison and an hourly revisit of 22 earlier
+pages passed 467 saved pitch/presence expectations. The only removed events were
+three source-confirmed meter fragments; all real note pitches, onsets and
+durations were unchanged. The 22 revisited page outputs were entirely unchanged.
+
+The broader library audit remains ongoing; these checks do not imply every note
+has been manually transcribed or listened to. Model weights and packaged releases
+are unchanged, and the private score fixtures are not distributed here.
