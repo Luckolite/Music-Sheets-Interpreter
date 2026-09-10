@@ -118,23 +118,43 @@ final class TripletRhythmDetector {
                 min[y] = Math.min(min[y], x); max[y] = x;
             }
         }
-        int upperOpen = 0, lowerOpen = 0;
+        int upperOpen = 0, lowerOpen = 0, upperPocket = 0, lowerPocket = 0;
         int upperLobe = -1, lowerLobe = -1, waist = w;
         for (int y = 0; y < h; y++) {
             float fraction = y / (float) h;
             if (fraction >= .15f && fraction <= .36f) {
                 upperLobe = Math.max(upperLobe, max[y]);
                 if (min[y] >= w * .40f) upperOpen++;
+                if (hasLobePocket(gray, width, left, top + y, w)) upperPocket++;
             }
             if (fraction >= .60f && fraction <= .82f) {
                 lowerLobe = Math.max(lowerLobe, max[y]);
                 if (min[y] >= w * .40f) lowerOpen++;
+                if (hasLobePocket(gray, width, left, top + y, w)) lowerPocket++;
             }
             if (fraction >= .37f && fraction <= .55f) waist = Math.min(waist, max[y]);
         }
-        return upperOpen >= Math.max(2, h / 12) && lowerOpen >= Math.max(2, h / 12)
-                && upperLobe - waist >= Math.max(1, w * .08f)
-                && lowerLobe - waist >= Math.max(1, w * .08f);
+        int required = Math.max(2, h / 12);
+        // Curled terminals put ink on the left of an otherwise open lobe. Allow
+        // that ink only with a wide interior pocket and a truly open row in each
+        // lobe: a closed 8 and the solid upper-left stem of a 5 still fail.
+        boolean upper = upperOpen >= required || upperOpen >= 1 && upperPocket >= required;
+        boolean lower = lowerOpen >= required || lowerOpen >= 1 && lowerPocket >= required;
+        int indentation = Math.max(1, Math.round(w * .08f));
+        return upper && lower && upperLobe - waist >= indentation
+                && lowerLobe - waist >= indentation;
+    }
+
+    private static boolean hasLobePocket(byte[] gray, int width, int left, int y, int w) {
+        int run = 0;
+        for (int x = Math.round(w * .25f); x < w; x++) {
+            if (!dark(gray, width, left + x, y)) run++;
+            else {
+                if (run >= Math.max(2, Math.round(w * .22f)) && x >= w * .55f) return true;
+                run = 0;
+            }
+        }
+        return false;
     }
 
     private static boolean bracketArm(byte[] gray, int width, int height, int left, int right,

@@ -76,6 +76,14 @@ final class OmrScoreInterpreter {
                     OmrMeasurePostProcessor.SYMBOL));
         List<AccidentalCandidate> localAccidentals = joinLocalAccidentalFragments(
                 labels, gray, width, height, accidentalCandidates, staffs);
+        List<Component> accidentalInk = new ArrayList<>();
+        for (AccidentalCandidate candidate : localAccidentals) {
+            Staff staff = nearestHeadStaff(staffs, candidate.component.centerY);
+            if (staff != null && (isFlatGlyph(labels,width,height,candidate,staff.gap)
+                    || isNaturalGlyph(labels,width,height,candidate,staff.gap)
+                    || isSharpGlyph(labels,width,height,candidate,staff.gap)))
+                accidentalInk.add(candidate.component);
+        }
         List<DetectedNote> detected = new ArrayList<>();
         for (Component head : heads) {
             Staff staff = staffForHead(labels, width, height, staffs, head);
@@ -113,7 +121,7 @@ final class OmrScoreInterpreter {
             // evidence instead of collapsing the sustained passage into eighths/sixteenths.
             if (unbeamedDuration >= ScoreNoteEvent.DURATION_HALF) beamCount = 0;
             int augmentationDots = countAugmentationDots(dotCandidates, head, staff.gap,
-                    gray, width, height,unbeamedDuration>=ScoreNoteEvent.DURATION_HALF);
+                    gray, width, height,unbeamedDuration>=ScoreNoteEvent.DURATION_HALF,accidentalInk);
             int writtenAccidental = detectWrittenAccidental(labels, width, height,
                     localAccidentals, head, staff.gap);
             ScoreNoteEvent event = new ScoreNoteEvent(measureIndex, clamp(position),
@@ -158,7 +166,8 @@ final class OmrScoreInterpreter {
                 staffs, accidentalCandidates, heads);
         List<SixteenthRestDetector.Staff> restStaffs = new ArrayList<>();
         for (Staff staff : staffs) restStaffs.add(new SixteenthRestDetector.Staff(
-                staff.top, staff.bottom, staff.gap, staff.index, staff.count));
+                staff.pitchBottom - staff.pitchGap * 4, staff.pitchBottom, staff.pitchGap,
+                staff.index, staff.count));
         List<ScoreRestEvent> rests = SixteenthRestDetector.detect(gray, width, height, measures, restStaffs, result);
         List<ScoreNoteEvent> withRests = new ArrayList<>();
         for (DetectedNote note : joined) {
@@ -190,7 +199,7 @@ final class OmrScoreInterpreter {
             }
             withRests.add(new ScoreNoteEvent(event.measureIndex(), event.positionInMeasure(), event.staffStep(),
                     event.staffIndex(), event.staffCount(), event.pageY(), event.tiedFromPrevious(),
-                    dotsOutsideRests(dotCandidates, note, rests, measures, gray, width, height),
+                    dotsOutsideRests(dotCandidates, note, rests, measures, gray, width, height, accidentalInk),
                     beams, event.writtenAccidental(),
                     beams != event.beamCount() ? 0 : event.unbeamedDurationBeats(), event.tupletDivisor(), silence,
                     event.articulations(), event.clefBottomDiatonic()).withLeadingRest(leading));
@@ -722,6 +731,11 @@ final class OmrScoreInterpreter {
                 result.addAll(regular);
                 continue;
             }
+            List<Component> hollow = splitHollowStack(labels, gray, width, height, component, staff);
+            if (!hollow.isEmpty()) {
+                result.addAll(hollow);
+                continue;
+            }
             if (staff == null || componentHeight < staff.gap * 1.45f
                     || componentHeight > staff.gap * 3.2f) {
                 result.add(component);
@@ -858,6 +872,34 @@ final class OmrScoreInterpreter {
         return parts;
     }
 
+    /** Ledger paint can hide a middle lobe of a hollow triad in the mask. Accept
+     * equal slices only when every slice contains an independently printed open oval. */
+    private static List<Component> splitHollowStack(byte[] labels, byte[] gray, int width, int height,
+                                                    Component head, Staff staff) {
+        if (gray == null || staff == null) return List.of();
+        float gap = staff.pitchGap;
+        int span = head.maxY - head.minY + 1;
+        int count = Math.round(span / gap);
+        if (count < 3 || count > 4 || span < gap * (count - .25f)
+                || span > gap * (count + .4f)
+                || head.maxX - head.minX + 1 > gap * 1.8f) return List.of();
+        List<Component> parts = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            int top = head.minY + Math.round(i * span / (float)count);
+            int bottom = head.minY + Math.round((i + 1) * span / (float)count) - 1;
+            Component part = componentSlice(labels, width, head, top, bottom);
+            if (part == null || !plausibleHead(part, gap)
+                    || part.maxX - part.minX + 1 < gap * .75f
+                    || !hasOpenCenter(labels, gray, width, height, part, gap)) return List.of();
+            if (!parts.isEmpty()) {
+                float separation = part.centerY - parts.get(parts.size() - 1).centerY;
+                if (separation < gap * .75f || separation > gap * 1.4f) return List.of();
+            }
+            parts.add(part);
+        }
+        return parts;
+    }
+
     private static List<Component> sideBySideUnison(byte[] labels,byte[] gray,int width,int height,
                                                    Component head,float gap) {
         float w=head.maxX-head.minX+1,h=head.maxY-head.minY+1;
@@ -954,8 +996,11 @@ final class OmrScoreInterpreter {
             // error accumulates on ledger notes and moves them to a different printed pitch.
             // Keep semantic geometry for symbol ownership, but calibrate pitch to a matching
             // complete five-line staff measured directly from the page.
-            for (Staff staff : staffs) if (pitch!=null && Math.abs(staff.top-raw.top()) <= staff.gap*.6f
-                    && Math.abs(staff.bottom-raw.bottom()) <= staff.gap*.6f
+            // A missing semantic outer rule can admit a ledger line and shift the
+            // entire five-line group by one gap. A complete printed staff also
+            // calibrates that case; the nearby group must still overlap four rules.
+            for (Staff staff : staffs) if (pitch!=null && Math.abs(staff.top-raw.top()) <= staff.gap*1.2f
+                    && Math.abs(staff.bottom-raw.bottom()) <= staff.gap*1.2f
                     && raw.gap() >= staff.gap*.85f && raw.gap() <= staff.gap*1.18f) {
                 staff.pitchGap=pitch[1];staff.pitchBottom=pitch[0];
             }
@@ -1532,6 +1577,18 @@ final class OmrScoreInterpreter {
     private static List<AccidentalCandidate> joinLocalAccidentalFragments(byte[] labels,
             byte[] gray, int width, int height, List<AccidentalCandidate> candidates,
             List<Staff> staffs) {
+        List<AccidentalCandidate> sameLabel = joinAccidentalFragments(labels,gray,width,height,candidates,staffs,false);
+        List<AccidentalCandidate> result = new ArrayList<>(sameLabel);
+        // Keep the original glyphs: a cross-label union can also include a
+        // nearby rule fragment and must not replace an already legible natural.
+        for (AccidentalCandidate candidate : joinAccidentalFragments(labels,gray,width,height,sameLabel,staffs,true))
+            if (candidate.label == 0) result.add(candidate);
+        return result;
+    }
+
+    private static List<AccidentalCandidate> joinAccidentalFragments(byte[] labels,
+            byte[] gray, int width, int height, List<AccidentalCandidate> candidates,
+            List<Staff> staffs, boolean mixedLabels) {
         if (gray == null || gray.length != labels.length) return candidates;
         List<AccidentalCandidate> joined = new ArrayList<>(candidates);
         for (int i=0;i<joined.size();i++) {
@@ -1541,7 +1598,7 @@ final class OmrScoreInterpreter {
             float gap=staff.gap;
             for(int j=i+1;j<joined.size();j++) {
                 AccidentalCandidate b=joined.get(j);
-                if(a.label!=b.label)continue;
+                if (!mixedLabels && a.label != b.label) continue;
                 Component ac=a.component,bc=b.component;
                 int left=Math.min(ac.minX,bc.minX),right=Math.max(ac.maxX,bc.maxX);
                 int top=Math.min(ac.minY,bc.minY),bottom=Math.max(ac.maxY,bc.maxY);
@@ -1552,10 +1609,10 @@ final class OmrScoreInterpreter {
                 boolean connected=false;
                 for(int y=ac.minY;y<=ac.maxY&&!connected;y++)
                     for(int x=ac.minX;x<=ac.maxX&&!connected;x++) {
-                        if(labels[y*width+x]!=a.label)continue;
+                        if(!a.matches(labels[y*width+x]))continue;
                         for(int by=Math.max(bc.minY,y-reach);by<=Math.min(bc.maxY,y+reach)&&!connected;by++)
                             for(int bx=Math.max(bc.minX,x-reach);bx<=Math.min(bc.maxX,x+reach);bx++) {
-                                if(labels[by*width+bx]!=b.label)continue;
+                                if(!b.matches(labels[by*width+bx]))continue;
                                 int steps=Math.max(Math.abs(bx-x),Math.abs(by-y));
                                 if(steps==0)continue;
                                 boolean ink=true;
@@ -1570,7 +1627,7 @@ final class OmrScoreInterpreter {
                 int area=ac.area+bc.area;
                 a=new AccidentalCandidate(new Component(area,left,right,top,bottom,
                         (ac.centerX*ac.area+bc.centerX*bc.area)/area,
-                        (ac.centerY*ac.area+bc.centerY*bc.area)/area),a.label);
+                        (ac.centerY*ac.area+bc.centerY*bc.area)/area),(byte)(a.label==b.label?a.label:0));
                 joined.set(i,a);joined.remove(j);j=i;
             }
         }
@@ -1625,7 +1682,7 @@ final class OmrScoreInterpreter {
         int spine = 0;
         for (int y = Math.max(0, glyph.minY); y <= Math.min(height - 1, glyph.maxY); y++)
             for (int x = Math.max(0, glyph.minX); x <= Math.min(width - 1, glyph.maxX); x++)
-                if (labels[y * width + x] == candidate.label) columns[x - glyph.minX]++;
+                if (candidate.matches(labels[y * width + x])) columns[x - glyph.minX]++;
         for (int column = 1; column < columns.length; column++)
             if (columns[column] > columns[spine]) spine = column;
         if (spine > Math.round((glyphWidth - 1) * .48f)
@@ -1637,7 +1694,7 @@ final class OmrScoreInterpreter {
             int rowMin = glyph.maxX + 1, rowMax = glyph.minX - 1;
             for (int x = Math.max(glyph.minX, rightStart); x <= glyph.maxX; x++) {
                 if (x < 0 || x >= width || y < 0 || y >= height
-                        || labels[y * width + x] != candidate.label) continue;
+                        || !candidate.matches(labels[y * width + x])) continue;
                 if (y < splitY) upperRight++; else lowerRight++;
                 rowMin = Math.min(rowMin, x); rowMax = Math.max(rowMax, x);
             }
@@ -1679,7 +1736,7 @@ final class OmrScoreInterpreter {
         java.util.Arrays.fill(rowMax, -1);
         for (int y = Math.max(0, glyph.minY); y <= Math.min(height - 1, glyph.maxY); y++)
             for (int x = Math.max(0, glyph.minX); x <= Math.min(width - 1, glyph.maxX); x++)
-                if (labels[y * width + x] == candidate.label) {
+                if (candidate.matches(labels[y * width + x])) {
                     int localX = x - glyph.minX, localY = y - glyph.minY;
                     columns[localX]++;
                     rowMin[localY] = Math.min(rowMin[localY], localX);
@@ -1701,14 +1758,12 @@ final class OmrScoreInterpreter {
         for (int row = 0; row < glyphHeight; row++) {
             for (int column = Math.max(0, leftSpine - radius);
                  column <= Math.min(glyphWidth - 1, leftSpine + radius); column++)
-                if (labels[(glyph.minY + row) * width + glyph.minX + column]
-                        == candidate.label) {
+                if (candidate.matches(labels[(glyph.minY + row) * width + glyph.minX + column])) {
                     leftTop = Math.min(leftTop, row); leftBottom = Math.max(leftBottom, row);
                 }
             for (int column = Math.max(0, rightSpine - radius);
                  column <= Math.min(glyphWidth - 1, rightSpine + radius); column++)
-                if (labels[(glyph.minY + row) * width + glyph.minX + column]
-                        == candidate.label) {
+                if (candidate.matches(labels[(glyph.minY + row) * width + glyph.minX + column])) {
                     rightTop = Math.min(rightTop, row); rightBottom = Math.max(rightBottom, row);
                 }
         }
@@ -1744,7 +1799,7 @@ final class OmrScoreInterpreter {
         int[] rows = new int[glyphHeight];
         for (int y = Math.max(0, glyph.minY); y <= Math.min(height - 1, glyph.maxY); y++)
             for (int x = Math.max(0, glyph.minX); x <= Math.min(width - 1, glyph.maxX); x++)
-                if (labels[y * width + x] == candidate.label) {
+                if (candidate.matches(labels[y * width + x])) {
                     columns[x - glyph.minX]++;
                     rows[y - glyph.minY]++;
                 }
@@ -1776,7 +1831,7 @@ final class OmrScoreInterpreter {
             for (int row = 0; row < glyphHeight; row++) {
                 boolean ink = false;
                 for (int col = Math.max(0, spine - radius); col <= Math.min(glyphWidth - 1, spine + radius); col++)
-                    if (labels[(glyph.minY + row) * width + glyph.minX + col] == candidate.label) ink = true;
+                    if (candidate.matches(labels[(glyph.minY + row) * width + glyph.minX + col])) ink = true;
                 if (ink) { if (top < 0) top = row; bottom = row; }
                 if (ink && row < firstCrossbar) above++;
                 if (ink && row > lastCrossbar) below++;
@@ -1838,9 +1893,10 @@ final class OmrScoreInterpreter {
     /** The round bulbs of a recognized rest belong to that rest, even if a staff
      * crossing separates their darkest pixels into a dot-shaped island. */
     private static int dotsOutsideRests(List<Component> candidates, DetectedNote note,
-            List<ScoreRestEvent> rests, List<MeasureRegion> measures, byte[] gray, int width, int height) {
+            List<ScoreRestEvent> rests, List<MeasureRegion> measures, byte[] gray, int width, int height,
+            List<Component> accidentalInk) {
         if(note.event.augmentationDots()==0 || rests.isEmpty())return note.event.augmentationDots();
-        List<Component> excluded=new ArrayList<>();
+        List<Component> excluded=new ArrayList<>(accidentalInk);
         for(ScoreRestEvent rest:rests)if(rest.measureIndex()==note.event.measureIndex()
                 &&rest.staffIndex()==note.event.staffIndex()&&rest.staffCount()==note.event.staffCount()) {
             MeasureRegion bar=measures.get(rest.measureIndex());
@@ -1886,7 +1942,7 @@ final class OmrScoreInterpreter {
             if (dot.centerX - head.centerX < gap) continue;
             // Augmentation dots sit beside the head (with at most the usual line-to-space
             // engraving offset). A detached bowing/staccato mark near the next note is not a dot.
-            if (Math.abs(dot.centerY - head.centerY) > gap * .62f) continue;
+            if (Math.abs(dot.centerY - head.centerY) > gap * .65f) continue;
             if (dotWidth < Math.max(1f, gap * .10f) || dotHeight < Math.max(1f, gap * .10f)
                     || dotWidth > gap * .68f || dotHeight > gap * .68f
                     || dot.area < Math.max(1, Math.round(gap * gap * .018f))
@@ -2103,7 +2159,7 @@ final class OmrScoreInterpreter {
     private static int thickNonHeadBands(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff) {
         float gap=staff.gap;
         if(x<1||x>=width-1)return 0;
-        int bands=0,run=0,staffRows=0,staffEdges=0;
+        int bands=0,strongBands=0,run=0,staffRows=0,staffEdges=0;
         for(int y=top;y<=bottom+1;y++) {
             boolean ink=y<=bottom && (gray[y*width+x-1]&255)<165
                     &&(gray[y*width+x]&255)<165&&(gray[y*width+x+1]&255)<165
@@ -2128,10 +2184,13 @@ final class OmrScoreInterpreter {
                 boolean onlyStaff=onStaff&&(staffRows==run||(staffRows>=3&&staffEdges==1&&staffRows+1==run))
                         &&run<=gap*.55f;
                 if(run>=Math.max(3,Math.round(gap*.30f))&&!onlyStaff)bands++;
+                if(run>=Math.max(3,Math.ceil(gap*.30f))&&!onlyStaff)strongBands++;
                 run=0;staffRows=0;staffEdges=0;
             }
         }
-        return bands;
+        // Preserve a single narrow flag. Adding a second beam needs the full
+        // thickness threshold so a thinner slur terminal cannot shorten the note.
+        return bands > 1 ? Math.max(1,strongBands) : bands;
     }
 
     private static int thickBeamBands(byte[] gray,int width,int height,int x,int top,int bottom,float gap) {
@@ -2594,7 +2653,12 @@ final class OmrScoreInterpreter {
     private record SignatureGlyph(float x, int accidental) { }
     private record Component(int area, int minX, int maxX, int minY, int maxY,
                              float centerX, float centerY) { }
-    private record AccidentalCandidate(Component component, byte label) { }
+    private record AccidentalCandidate(Component component, byte label) {
+        boolean matches(byte value) {
+            return label == 0 ? value == OmrMeasurePostProcessor.SYMBOL
+                    || value == OmrMeasurePostProcessor.CLEF_OR_KEY : label == value;
+        }
+    }
     private record AccidentalStateKey(int measureIndex, int staffIndex, int staffCount,
                                       int staffStep) { }
     private record PitchKey(int staffIndex, int staffCount, int staffStep) { }

@@ -320,6 +320,18 @@ public final class ScoreNoteTiming {
         }
         if (aligned.size() < 2) return voiceOnset;
 
+        // A complete written voice establishes beat zero even when grace notes
+        // reserve a wide left inset on another staff. Spatial proximity must not
+        // pull that accompaniment toward an incomplete melody's later guess.
+        if (target.leadingRestBeats() == 0) for (ScoreNoteEvent anchor : aligned) {
+            List<RhythmGroup> groups = rhythmGroups(measureVoice(anchor, allNotes));
+            if (groups.isEmpty() || !groups.get(0).contains(anchor) || leadingRest(groups) > 0) continue;
+            double total = 0;
+            for (RhythmGroup group : groups) total += group.writtenDuration() + followingRest(group);
+            if (Math.abs(total - beatsPerMeasure) < .001
+                    && Math.abs(voiceBeatInMeasure(anchor, allNotes, beatsPerMeasure)) < .001) return 0;
+        }
+
         // Use one representative position per staff so a chord cannot pull the shared slot toward
         // whichever staff happened to expose more noteheads.
         double positionTotal = 0;
