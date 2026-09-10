@@ -66,3 +66,23 @@ change introduced by the repair was checked against the score and confirmed.
 These are disagreement checks, not a full transcription accuracy percentage or
 proof of parity on arbitrary scores. Commercial images and legacy model artifacts
 remain outside this repository. Weights and dependencies are unchanged.
+
+## September 10 accidental font repair
+
+Narrow, tall sharp glyphs now retain their two-spine and crossbar evidence even
+when neighboring ink expands the detected bounds. Fragmented natural signs are
+reconstructed from their printed spines and offset endpoints, preserving those
+endpoints where a thick staff rule crosses the glyph. Accidentals use the locally
+measured staff spacing. These are general geometry repairs with no song rules.
+
+`AccidentalFontRegressionTest` adds five original synthetic drawings. The selected
+publication passed 230 Java tests, 13 Python tests, and PNG/PDF smoke checks.
+Private score review passed 186 pitch assertions across six pages, including 95
+newly adjudicated musical pitches and 11 repeated-key regression checks. These
+checks exclude a separately tracked metronome-symbol false detection and do not
+establish full-score accuracy. Commercial score images remain private. Weights,
+dependencies, and the Apache-2.0 license are unchanged.
+
+The recorded source commit identifies the reviewed app snapshot. Additional
+staff, key-change, and symbol-filter experiments in the development worktree are
+still under evaluation and are excluded from this publication.

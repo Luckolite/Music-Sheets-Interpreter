@@ -126,7 +126,11 @@ final class OmrScoreInterpreter {
             if(augmentationDots>0&&beamCount>0&&hasHollowUnisonToRight(labels,gray,width,height,head,heads,staff.gap))
                 augmentationDots=0;
             int writtenAccidental = detectWrittenAccidental(labels, width, height,
-                    localAccidentals, head, staff.gap);
+                    localAccidentals, head, localPitch[1]);
+            if((writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                    ||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FLAT)
+                    &&rawNaturalFromCrossbars(gray,width,height,localAccidentals,head,localPitch[1]))
+                writtenAccidental=ScoreNoteEvent.ACCIDENTAL_NATURAL;
             ScoreNoteEvent event = new ScoreNoteEvent(measureIndex, clamp(position),
                     Math.max(-32, Math.min(32, step)), staff.index, staff.count,
                     clamp(normalizedY), false, augmentationDots, beamCount,
@@ -1800,6 +1804,95 @@ final class OmrScoreInterpreter {
         return joined;
     }
 
+    /** Two surviving crossbars can locate a faded natural whose thin spines were
+     * labelled as stems. Confirm the offset endpoints in the original pixels. */
+    private static boolean rawNaturalFromCrossbars(byte[] gray,int width,int height,
+            List<AccidentalCandidate> candidates,Component head,float gap) {
+        if(gray==null)return false;
+        for(AccidentalCandidate seed:candidates) {
+            Component glyph=seed.component;
+            if(head.minX-glyph.maxX < gap*.10f || head.minX-glyph.maxX > gap*1.35f
+                    || Math.abs(glyph.centerY-head.centerY)>gap*.9f
+                    || glyph.maxY-glyph.minY<gap*.65f
+                    || glyph.maxX-glyph.minX<gap*.35f
+                    || glyph.maxX-glyph.minX>gap*1.5f)continue;
+            if(rawNaturalAtSeed(gray,width,height,glyph,head,gap))return true;
+        }
+        List<Component> bars=new ArrayList<>();
+        for(var c:candidates) {
+            Component g=c.component;
+            if(g.maxX>head.minX+gap*.1f||head.minX-g.maxX>gap*1.6f
+                    ||Math.abs(g.centerY-head.centerY)>gap*1.3f
+                    ||g.maxY-g.minY>gap*.6f||g.maxX-g.minX<gap*.35f
+                    ||g.maxX-g.minX>gap*1.25f)continue;
+            bars.add(g);
+        }
+        for(Component a:bars)for(Component b:bars) {
+            float dy=b.centerY-a.centerY;
+            if(dy<gap*.65f||dy>gap*1.5f||Math.abs(a.centerX-b.centerX)>gap*.5f)continue;
+            int left=Math.max(0,Math.round(Math.min(a.minX,b.minX)-gap*.2f));
+            int right=Math.min(Math.round(head.minX-gap*.15f),Math.round(Math.max(a.maxX,b.maxX)));
+            int top=Math.max(0,Math.round(a.minY-gap*.8f)),bottom=Math.min(height-1,Math.round(b.maxY+gap*.8f));
+            int w=right-left+1,h=bottom-top+1;if(w<=0||h<=0)continue;
+            byte[] mask=new byte[w*h];int area=0,minX=w,maxX=-1,minY=h,maxY=-1;long sx=0,sy=0;
+            for(int y=top;y<=bottom;y++) {
+                int outside=0,samples=0;
+                for(int x=Math.max(0,left-Math.round(gap));x<=Math.min(width-1,right+Math.round(gap));x++)
+                    if(x<left||x>right){samples++;if((gray[y*width+x]&255)<225)outside++;}
+                if(samples>0&&outside>samples*.80f)continue;
+                for(int x=left;x<=right;x++)if((gray[y*width+x]&255)<225) {
+                    int xx=x-left,yy=y-top;mask[yy*w+xx]=OmrMeasurePostProcessor.SYMBOL;
+                    area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
+                }
+            }
+            if(area<3)continue;
+            Component g=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
+            if(isNaturalGlyph(mask,w,h,new AccidentalCandidate(g,OmrMeasurePostProcessor.SYMBOL),gap))return true;
+        }
+        return false;
+    }
+
+    /** Thin natural spines can be assigned the stem label while their two
+     * connectors retain the accidental label. Reconstruct only that narrow
+     * printed column and require the natural's asymmetric spine endpoints. */
+    private static boolean rawNaturalAtSeed(byte[] gray,int width,int height,
+            Component seed,Component head,float gap) {
+        return rawNaturalAtSeed(gray,width,height,seed,head,gap,0)
+                ||rawNaturalAtSeed(gray,width,height,seed,head,gap,Math.max(1,Math.round(gap*.16f)));
+    }
+
+    private static boolean rawNaturalAtSeed(byte[] gray,int width,int height,
+            Component seed,Component head,float gap,int margin) {
+        int left=Math.max(0,seed.minX-margin);
+        int right=Math.min(Math.min(width-1,seed.maxX+margin),Math.round(head.minX-gap*.15f));
+        int top=Math.max(0,Math.round(head.centerY-gap*1.8f));
+        int bottom=Math.min(height-1,Math.round(head.centerY+gap*1.8f));
+        int w=right-left+1,h=bottom-top+1;
+        byte[] ink=new byte[w*h];
+        int area=0,minX=w,maxX=-1,minY=h,maxY=-1;long sx=0,sy=0;
+        int reach=Math.max(3,Math.round(gap*.6f));
+        int verticalProbe=Math.max(2,Math.round(gap*.2f));
+        for(int y=top;y<=bottom;y++) {
+            int outside=0,dark=0;
+            for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
+                if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=225)dark++;}
+            boolean rule=outside>0&&dark>=outside*.8f;
+            for(int x=left;x<=right;x++) {
+                if((gray[y*width+x]&255)>225)continue;
+                // Preserve a vertical spine where a rule crosses it.
+                if(rule&&(y<verticalProbe||y+verticalProbe>=height
+                        ||(gray[(y-verticalProbe)*width+x]&255)>225
+                        ||(gray[(y+verticalProbe)*width+x]&255)>225))continue;
+                int xx=x-left,yy=y-top;ink[yy*w+xx]=OmrMeasurePostProcessor.SYMBOL;
+                area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);
+                minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
+            }
+        }
+        if(area==0)return false;
+        Component glyph=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
+        return isNaturalGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap);
+    }
+
     /** Returns a local accidental immediately left of this head, or key-signature fallback. */
     private static int detectWrittenAccidental(byte[] labels, int width, int height,
                                                List<AccidentalCandidate> candidates,
@@ -1958,7 +2051,7 @@ final class OmrScoreInterpreter {
         if (glyphHeight < gap * 1.55f || glyphHeight > gap * 3.65f
                 || glyphWidth < gap * .65f || glyphWidth > gap * 1.80f
                 || glyphHeight < glyphWidth * 1.45f
-                || glyphHeight > glyphWidth * 3.35f
+                || glyphHeight > glyphWidth * 4.50f
                 || glyph.area < gap * gap * .42f || glyph.area > gap * gap * 2.45f)
             return false;
 
@@ -1977,15 +2070,25 @@ final class OmrScoreInterpreter {
             if (columns[column] > columns[leftSpine]) leftSpine = column;
         for (int column = Math.max(0, glyphWidth / 2); column < glyphWidth; column++)
             if (columns[column] > columns[rightSpine]) rightSpine = column;
-        if (rightSpine - leftSpine < glyphWidth * .28f
+        int coreLeft=0,coreRight=glyphWidth-1;
+        while(coreLeft<coreRight&&columns[coreLeft]<glyphHeight*.30f)coreLeft++;
+        while(coreRight>coreLeft&&columns[coreRight]<glyphHeight*.30f)coreRight--;
+        if (rightSpine - leftSpine < (coreRight-coreLeft+1) * .28f
                 || columns[leftSpine] < glyphHeight * .46f
                 || columns[rightSpine] < glyphHeight * .46f) return false;
 
-        int wideThreshold = Math.max(2, Math.round(glyphWidth * .68f));
+        // Measure crossbars against the two spines, not stray ink at the glyph edge.
+        int wideThreshold = Math.max(2, Math.round((rightSpine-leftSpine+1) * 1.15f));
         int firstCrossbar = -1, lastCrossbar = -1;
-        for (int row = 0; row < rows.length; row++) if (rows[row] >= wideThreshold) {
-            if (firstCrossbar < 0) firstCrossbar = row;
-            lastCrossbar = row;
+        int terminalMargin=Math.max(2,Math.round(glyphHeight*.10f));
+        for (int row = terminalMargin; row < rows.length-terminalMargin;) {
+            if(rows[row]<wideThreshold){row++;continue;}
+            int first=row;
+            while(row<rows.length-terminalMargin&&rows[row]>=wideThreshold)row++;
+            // A painted staff stripe at a spine tip is not a sharp crossbar.
+            if(row-first<Math.max(2,Math.round(gap*.12f)))continue;
+            if(firstCrossbar<0)firstCrossbar=first;
+            lastCrossbar=row-1;
         }
         if (firstCrossbar < 0 || lastCrossbar - firstCrossbar < glyphHeight * .18f) return false;
         // Both sharp spines protrude through both crossbars. A flat's bowl can
