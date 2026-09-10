@@ -1,5 +1,5 @@
 {
-  "source_commit": "87433085c39a7911b5b4670701533465a9a7bff0",
+  "source_commit": "865848869b8dbe6d5f33c4e0cdb4d13df9e76361",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -48,11 +48,11 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "28b80017ad3a8a71d143888d1428a4d14e41e6297c64a398920fff87c5930f85"
+      "source_sha256": "82520ab5d36a93c9b6cd2d60a3a9aa7ffe566e0e9166e5d787d70c1f02f4a684"
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "4b4963d362132dbc1ec2ec1ccb5c7614559904392c942a75264ad18d0163927b"
+      "source_sha256": "3966f8c065a4d6c079414e632df2f358f42a76241ae2794f8da25a01bd43b9cf"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",

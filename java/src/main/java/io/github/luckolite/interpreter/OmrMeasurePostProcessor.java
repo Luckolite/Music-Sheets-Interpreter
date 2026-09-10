@@ -40,7 +40,8 @@ final class OmrMeasurePostProcessor {
         List<SystemRun> systems = mergeAlignedStaffs(staffs, gray, width, height);
         List<MeasureRegion> result = new ArrayList<>();
         for (SystemRun system : systems) addMeasures(labels, width, height, system, result);
-        result.sort(Comparator.comparing(MeasureRegion::top).thenComparing(MeasureRegion::left));
+        // Systems already run top to bottom and their boundaries left to right.
+        // Sorting tilted measure boxes by their top edge reverses an uphill row.
         return List.copyOf(result);
     }
 
@@ -72,8 +73,8 @@ final class OmrMeasurePostProcessor {
             int total = Arrays.stream(columns).sum();
             int left = percentileColumn(columns, total, 0.012f);
             int right = percentileColumn(columns, total, 0.988f);
-            if(gray!=null&&Math.abs(slope)<.003f) {
-                int[] printed=rawStaffColumns(gray,width,height,rows,gap);
+            if(gray!=null) {
+                int[] printed=rawStaffColumns(gray,width,height,rows,gap,slope);
                 int printedTotal=Arrays.stream(printed).sum();
                 int printedLeft=percentileColumn(printed,printedTotal,.012f);
                 int printedRight=percentileColumn(printed,printedTotal,.988f);
@@ -203,34 +204,62 @@ final class OmrMeasurePostProcessor {
 
     private static int[] rawStaffColumns(byte[] gray, int width, int height, int[] rows,
                                          float gap) {
+        return rawStaffColumns(gray,width,height,rows,gap,0f);
+    }
+
+    private static int[] rawStaffColumns(byte[] gray,int width,int height,int[] rows,
+                                          float gap,float slope) {
         int[] columns = new int[width];
         int radius = Math.max(2, Math.round(gap * .30f));
         for (int x = 0; x < width; x++) for (int row : rows) {
+            int printedRow=Math.round(row+slope*(x-width*.5f));
             boolean dark = false;
-            for (int y = Math.max(0, row - radius); y <= Math.min(height - 1, row + radius); y++)
+            for (int y = Math.max(0, printedRow-radius); y <= Math.min(height-1, printedRow+radius); y++)
                 if ((gray[y * width + x] & 0xff) <= 170) { dark = true; break; }
             if (dark) columns[x]++;
         }
         return columns;
     }
 
-    private static float estimateStaffSlope(byte[] labels, int width, int height) {
+    static float estimateStaffSlope(byte[] labels, int width, int height) {
+        // Sampling alternate rows biases thin rules toward horizontal. Keep every
+        // row, and reuse only staff pixels while testing candidate angles.
+        int count=0;
+        for(int y=0;y<height;y++)for(int x=0;x<width;x+=3)
+            if(labels[y*width+x]==STAFF)count++;
+        if(count==0)return 0f;
+        int[] xs=new int[count],ys=new int[count];int index=0;
+        for(int y=0;y<height;y++)for(int x=0;x<width;x+=3)
+            if(labels[y*width+x]==STAFF){xs[index]=x;ys[index++]=y;}
         float bestSlope = 0f;
-        long bestScore = -1;
         float centerX = width / 2f;
+        long horizontalScore=staffProjectionScore(xs,ys,height,centerX,0f);
+        long bestScore=horizontalScore;
         for (int step = -10; step <= 10; step++) {
             float slope = step * 0.006f;
-            int[] projection = new int[height];
-            for (int y = 0; y < height; y += 2) for (int x = 0; x < width; x += 3)
-                if (labels[y * width + x] == STAFF) {
-                    int deskewedY = Math.round(y - slope * (x - centerX));
-                    if (deskewedY >= 0 && deskewedY < height) projection[deskewedY]++;
-                }
-            long score = 0;
-            for (int value : projection) score += (long) value * value;
+            long score=staffProjectionScore(xs,ys,height,centerX,slope);
             if (score > bestScore) { bestScore = score; bestSlope = slope; }
         }
-        return bestSlope;
+        // A slight photographic tilt can lie halfway between the coarse angles.
+        // At page width it still moves a rule by several pixels and can hide a row.
+        float coarseSlope=bestSlope;
+        for(int step=-5;step<=5;step++) {
+            float slope=coarseSlope+step*.0006f;
+            long score=staffProjectionScore(xs,ys,height,centerX,slope);
+            if(score>bestScore){bestScore=score;bestSlope=slope;}
+        }
+        return bestScore>horizontalScore*1.05 ? bestSlope : 0f;
+    }
+
+    private static long staffProjectionScore(int[] xs,int[] ys,int height,float centerX,float slope) {
+        int[] projection=new int[height];
+        for(int i=0;i<xs.length;i++) {
+            int row=Math.round(ys[i]-slope*(xs[i]-centerX));
+            if(row>=0&&row<height)projection[row]++;
+        }
+        long score=0;
+        for(int value:projection)score+=(long)value*value;
+        return score;
     }
 
     private static int percentileColumn(int[] counts, int total, float percentile) {

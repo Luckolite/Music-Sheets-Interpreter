@@ -677,33 +677,46 @@ final class OmrScoreInterpreter {
     private static int countFlatSpines(byte[] labels, byte[] gray, int width, int height,
                                        float boundary, float right, Staff staff,
                                        boolean doubleBar) {
-        int leftX = Math.max(0, Math.round(boundary + (doubleBar ? staff.gap * .42f : 0f)));
-        int rightX = Math.min(width - 1, Math.round(right));
-        int top = Math.max(0, Math.round(staff.top - staff.gap * 2.25f));
-        int bottom = Math.min(height - 1, Math.round(staff.bottom + staff.gap * 2.25f));
-        int threshold = Math.max(3, Math.round(staff.gap * 1.55f));
-        int groups = 0;
-        boolean active = false;
-        for (int x = leftX; x <= rightX; x++) {
-            int pixels = 0;
-            int run=0,longest=0,blanks=0;
-            for (int y = top; y <= bottom; y++) {
-                byte label = labels[y * width + x];
-                if (label == OmrMeasurePostProcessor.CLEF_OR_KEY
-                        || label == OmrMeasurePostProcessor.SYMBOL) pixels++;
-                if(gray!=null) {
-                    if((gray[y*width+x]&255)<=205){run++;blanks=0;longest=Math.max(longest,run);}
-                    else if(++blanks>1)run=0;
-                }
+        int leftX=Math.max(0,Math.round(boundary+(doubleBar?staff.gap*.42f:0f)));
+        int rightX=Math.min(width-1,Math.round(right));
+        int top=Math.max(0,Math.round(staff.top-staff.gap*2.25f));
+        int bottom=Math.min(height-1,Math.round(staff.bottom+staff.gap*2.25f));
+        int threshold=Math.max(3,Math.round(staff.gap*1.55f));
+        List<float[]> spines=new ArrayList<>();
+        float[] active=null;
+        for(int x=leftX;x<=rightX;x++) {
+            int pixels=0,run=0,longest=0,blanks=0,start=top,bestTop=top,bestBottom=top;
+            for(int y=top;y<=bottom;y++) {
+                byte label=labels[y*width+x];
+                boolean symbol=label==OmrMeasurePostProcessor.CLEF_OR_KEY||label==OmrMeasurePostProcessor.SYMBOL;
+                if(symbol)pixels++;
+                boolean ink=gray==null?symbol:(gray[y*width+x]&255)<=205;
+                if(ink) {
+                    if(run==0)start=y;
+                    run++;blanks=0;
+                    if(run>longest){longest=run;bestTop=start;bestBottom=y;}
+                } else if(++blanks>1)run=0;
             }
-            // A model may label one stroke of a double bar as a generic symbol.
-            // Unlike a flat's spine, a bar crosses all four staff spaces.
-            // A flat's curved bowl plus painted staff pixels can have the same total area as
-            // another spine. A real spine also has a long, continuous vertical stroke in ink.
-            boolean strong = pixels >= threshold && (gray==null||longest>=threshold)
-                    && !fullStaffRule(gray, width, height, x, staff);
-            if (strong && !active) groups++;
-            active = strong;
+            boolean strong=pixels>=threshold&&longest>=threshold
+                    &&!fullStaffRule(gray,width,height,x,staff);
+            if(strong) {
+                if(active==null)active=new float[]{x,(bestTop+bestBottom)*.5f,longest};
+                else if(longest>active[2]){active[0]=x;active[1]=(bestTop+bestBottom)*.5f;active[2]=longest;}
+            } else if(active!=null){spines.add(active);active=null;}
+        }
+        if(active!=null)spines.add(active);
+        if(spines.isEmpty())return 0;
+        int groups=1;float[] previous=spines.get(0);
+        for(int i=1;i<spines.size();i++) {
+            float[] next=spines.get(i);float dx=next[0]-previous[0];
+            // A bowl edge is not another accidental. Keys have separate, closely
+            // spaced spines, alternating a fourth up or a fifth down on the page.
+            if(dx<staff.gap*.5f)continue;
+            if(dx>staff.gap*1.85f)break;
+            float dy=next[1]-previous[1];
+            if(Math.abs(dy+staff.gap*1.5f)>staff.gap*.55f
+                    &&Math.abs(dy-staff.gap*2f)>staff.gap*.55f)continue;
+            groups++;previous=next;
         }
         return groups;
     }
@@ -1112,6 +1125,22 @@ final class OmrScoreInterpreter {
                     && compatibleStaffScale(recovered,staffs)
                     && isolatedMissingSystem(recovered,staffs)
                     && !representedStaff(recovered,staffs,height)) staffs.add(recovered);
+        }
+        // The measure reader already deskews semantic rules. Use that same
+        // evidence for missing pitch staffs so an accepted row cannot go silent.
+        float semanticSlope=OmrMeasurePostProcessor.estimateStaffSlope(labels,width,height);
+        if(Math.abs(semanticSlope)>.001f) {
+            int[] deskewed=new int[height];
+            for(int y=0;y<height;y++)for(int x=0;x<width;x++)if(labels[y*width+x]==OmrMeasurePostProcessor.STAFF) {
+                int row=Math.round(y-semanticSlope*(x-width*.5f));
+                if(row>=0&&row<height)deskewed[row]++;
+            }
+            for(var lines:RawStaffLineDetector.detectFromStrength(deskewed,Math.max(10,width/80),height)) {
+                Staff recovered=new Staff(lines.top(),lines.bottom(),lines.gap());
+                recovered.pitchSlope=semanticSlope;
+                if(alignedWithMeasureRow(recovered,measures,height)&&compatibleStaffScale(recovered,staffs)
+                        &&isolatedMissingSystem(recovered,staffs)&&!representedStaff(recovered,staffs,height))staffs.add(recovered);
+            }
         }
         for (RawStaffLineDetector.StaffLines raw : RawStaffLineDetector.detect(gray, width, height)) {
             Staff recovered = new Staff(raw.top(), raw.bottom(), raw.gap());
@@ -1903,16 +1932,23 @@ final class OmrScoreInterpreter {
         for (AccidentalCandidate candidate : candidates) {
             Component glyph = candidate.component;
             float horizontal = head.minX - glyph.maxX;
-            if (horizontal < -gap * .12f || horizontal > gap * 1.35f) continue;
-            if (Math.abs(glyph.centerY - head.centerY) > gap * .90f) continue;
+            if (horizontal < -gap * .35f || horizontal > gap * 1.35f
+                    ||head.centerX-glyph.centerX<gap*.65f) continue;
+            if (Math.abs(glyph.centerY - head.centerY) > gap * 1.8f) continue;
+            float sharpCenter=sharpPitchCenter(labels,width,height,candidate,gap);
             int accidental = isNaturalGlyph(labels, width, height, candidate, gap)
                     ? ScoreNoteEvent.ACCIDENTAL_NATURAL
-                    : isSharpGlyph(labels, width, height, candidate, gap)
+                    : Float.isFinite(sharpCenter)
                     ? ScoreNoteEvent.ACCIDENTAL_SHARP
                     : isFlatGlyph(labels, width, height, candidate, gap)
                     ? ScoreNoteEvent.ACCIDENTAL_FLAT
                     : ScoreNoteEvent.ACCIDENTAL_FROM_KEY;
             if (accidental == ScoreNoteEvent.ACCIDENTAL_FROM_KEY) continue;
+            // A sharp belongs at the centre of its crossbars. Extra staff ink can
+            // shift its pixel centroid toward another head in the same chord.
+            float pitchCenter=accidental==ScoreNoteEvent.ACCIDENTAL_SHARP?sharpCenter:glyph.centerY;
+            float tolerance=accidental==ScoreNoteEvent.ACCIDENTAL_SHARP?.65f:.90f;
+            if(Math.abs(pitchCenter-head.centerY)>gap*tolerance)continue;
             if (horizontal < bestDistance) {
                 best = candidate;
                 bestAccidental = accidental;
@@ -2043,7 +2079,12 @@ final class OmrScoreInterpreter {
     }
 
     /** A sharp has two full-height vertical spines crossed by two separated wide strokes. */
-    private static boolean isSharpGlyph(byte[] labels, int width, int height,
+    private static boolean isSharpGlyph(byte[] labels,int width,int height,
+                                        AccidentalCandidate candidate,float gap) {
+        return Float.isFinite(sharpPitchCenter(labels,width,height,candidate,gap));
+    }
+
+    private static float sharpPitchCenter(byte[] labels, int width, int height,
                                         AccidentalCandidate candidate, float gap) {
         Component glyph = candidate.component;
         int glyphWidth = glyph.maxX - glyph.minX + 1;
@@ -2053,7 +2094,7 @@ final class OmrScoreInterpreter {
                 || glyphHeight < glyphWidth * 1.45f
                 || glyphHeight > glyphWidth * 4.50f
                 || glyph.area < gap * gap * .42f || glyph.area > gap * gap * 2.45f)
-            return false;
+            return Float.NaN;
 
         int[] columns = new int[glyphWidth];
         int[] rows = new int[glyphHeight];
@@ -2075,7 +2116,7 @@ final class OmrScoreInterpreter {
         while(coreRight>coreLeft&&columns[coreRight]<glyphHeight*.30f)coreRight--;
         if (rightSpine - leftSpine < (coreRight-coreLeft+1) * .28f
                 || columns[leftSpine] < glyphHeight * .46f
-                || columns[rightSpine] < glyphHeight * .46f) return false;
+                || columns[rightSpine] < glyphHeight * .46f) return Float.NaN;
 
         // Measure crossbars against the two spines, not stray ink at the glyph edge.
         int wideThreshold = Math.max(2, Math.round((rightSpine-leftSpine+1) * 1.15f));
@@ -2090,7 +2131,7 @@ final class OmrScoreInterpreter {
             if(firstCrossbar<0)firstCrossbar=first;
             lastCrossbar=row-1;
         }
-        if (firstCrossbar < 0 || lastCrossbar - firstCrossbar < glyphHeight * .18f) return false;
+        if (firstCrossbar < 0 || lastCrossbar - firstCrossbar < glyphHeight * .18f) return Float.NaN;
         // Both sharp spines protrude through both crossbars. A flat's bowl can
         // supply a long second column, but cannot supply its upper extension.
         int radius = Math.max(1, Math.round(glyphWidth * .09f));
@@ -2106,18 +2147,18 @@ final class OmrScoreInterpreter {
                 if (ink && row < firstCrossbar) above++;
                 if (ink && row > lastCrossbar) below++;
             }
-            if (above < required || below < required) return false;
+            if (above < required || below < required) return Float.NaN;
             if (firstTop < 0) { firstTop = top; firstBottom = bottom; }
             else if (Math.abs(top - firstTop) > glyphHeight * .22f
-                    || Math.abs(bottom - firstBottom) > glyphHeight * .22f) return false;
+                    || Math.abs(bottom - firstBottom) > glyphHeight * .22f) return Float.NaN;
         }
-        return true;
+        return glyph.minY+(firstCrossbar+lastCrossbar)*.5f;
     }
 
     /** Uses the staff line beside the note instead of the page-wide average on skewed scans. */
     private static float[] localStaffPitch(byte[] labels, byte[] gray, int width, int height, Staff staff,
                                          Component head) {
-        float gap=staff.pitchGap, referenceBottom=staff.pitchBottom;
+        float gap=staff.pitchGap, referenceBottom=staff.pitchBottom+staff.pitchSlope*(head.centerX-width*.5f);
         int radius = Math.max(4, Math.round(gap * 3.5f));
         int left = Math.max(0, Math.round(head.centerX) - radius);
         int right = Math.min(width - 1, Math.round(head.centerX) + radius);
@@ -2831,24 +2872,36 @@ final class OmrScoreInterpreter {
         for(int side:new int[]{-1,1}) for(float offset=.2f;offset<=1.15f;offset+=.15f)
             for(float bend=-.75f;bend<=1.8f;bend+=.1f) {
                 if(Math.abs(bend)<.24f || offset+bend<.12f)continue;
-                int hits=0;int[] bins=new int[5];float[] centers=new float[50];
+                int hits=0,obscured=0;int[] bins=new int[5],coveredBins=new int[5];
+                float[] centers=new float[50],supportedCenters=new float[50];
                 java.util.Arrays.fill(centers,Float.NaN);
+                java.util.Arrays.fill(supportedCenters,Float.NaN);
                 for(int sample=0;sample<50;sample++) {
                     float t=(sample+.5f)/50f;
                     int x=Math.round(left+t*(right-left));
                     int y=Math.round(centerY+side*gap*(offset+bend*4*t*(1-t)));
-                    boolean ink=false;
+                    boolean ink=false;int obscuredY=-1;
                     for(int search=0;search<=radius*2;search++) {
                         int dy=(search+1)/2*(search%2==0?1:-1);
                         int yy=y+dy;if(yy<0||yy>=height)continue;
                         int at=yy*width+x;
-                        if(!straightRows[yy]&&(gray[at]&255)<=165 &&labels[at]!=OmrMeasurePostProcessor.NOTEHEAD
-                                &&labels[at]!=OmrMeasurePostProcessor.STAFF) {ink=true;centers[sample]=yy;break;}
+                        if((gray[at]&255)>165||labels[at]==OmrMeasurePostProcessor.NOTEHEAD)continue;
+                        if(straightRows[yy]||labels[at]==OmrMeasurePostProcessor.STAFF) {
+                            if(obscuredY<0)obscuredY=yy;
+                        } else {ink=true;centers[sample]=yy;supportedCenters[sample]=yy;break;}
                     }
-                    if(ink){hits++;bins[sample/10]++;}
+                    if(ink){hits++;bins[sample/10]++;coveredBins[sample/10]++;}
+                    else if(obscuredY>=0){obscured++;coveredBins[sample/10]++;supportedCenters[sample]=obscuredY;}
                 }
                 if(hits>=43&&bins[0]>=7&&bins[1]>=7&&bins[2]>=7&&bins[3]>=7&&bins[4]>=7
                         &&arcCurvature(centers,0,0,49)>=Math.max(.8f,gap*.12f))return true;
+                // A short returning arc can cross a staff rule at one end. Treat a
+                // few such pixels as occluded only when the remaining curve and
+                // both endpoints are independently visible away from the rule.
+                if(hits>=40&&obscured>0&&obscured<=6&&hits+obscured>=43
+                        &&bins[0]>=5&&bins[4]>=5&&coveredBins[0]>=7&&coveredBins[1]>=7
+                        &&coveredBins[2]>=7&&coveredBins[3]>=7&&coveredBins[4]>=7
+                        &&arcCurvature(supportedCenters,0,0,49)>=Math.max(1.2f,gap*.15f))return true;
             }
         return false;
     }
@@ -2945,7 +2998,7 @@ final class OmrScoreInterpreter {
 
     private static final class Staff {
         final float top, bottom, gap;
-        float pitchBottom, pitchGap;
+        float pitchBottom, pitchGap, pitchSlope;
         int index, count = 1;
         Staff(float top, float bottom, float gap) {
             this.top = top; this.bottom = bottom; this.gap = gap;

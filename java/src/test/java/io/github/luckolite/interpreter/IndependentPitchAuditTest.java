@@ -71,7 +71,7 @@ public class IndependentPitchAuditTest {
     @Test public void shortBowlStrokeCannotCountAsAnotherKeySignatureSpine()throws Exception {
         Page p=new Page();p.rules(80,16);
         p.rect(100,75,3,32,(byte)3);p.rect(111,91,2,18,(byte)3);
-        p.rect(125,83,3,32,(byte)3);
+        p.rect(125,51,3,32,(byte)3);
         assertEquals(2,call("countFlatSpines",p.labels,p.gray,p.w,p.h,95f,140f,construct("Staff",80f,144f,16f),false));
     }
     @Test public void mixedUnisonAndHeldThirdRemainThreeVoicesWithoutPlayingTheirDots() {
@@ -84,5 +84,23 @@ public class IndependentPitchAuditTest {
         assertEquals(3,notes.size());assertEquals(List.of(0,0,2),notes.stream().map(ScoreNoteEvent::staffStep).sorted().toList());
         assertEquals(2,notes.stream().filter(n->n.unbeamedDurationBeats()==2).count());
         assertTrue(notes.stream().filter(n->n.beamCount()>0).allMatch(n->n.augmentationDots()==0));
+    }
+    @Test public void separatedMeterStrokesCannotIncreaseFlatCount()throws Exception {
+        Page p=new Page();p.rules(80,16);
+        p.rect(100,75,3,32,(byte)3);p.rect(117,51,3,32,(byte)3);
+        p.rect(165,80,5,56,(byte)5);
+        assertEquals(2,call("countFlatSpines",p.labels,p.gray,p.w,p.h,95f,190f,construct("Staff",80f,144f,16f),false));
+    }
+    @Test public void localFlatRepeatingAKeyPitchDoesNotExtendTheSignature()throws Exception {
+        Page p=new Page();p.rules(80,16);
+        p.rect(100,75,3,32,(byte)3);p.rect(120,51,3,32,(byte)3);
+        p.rect(144,107,3,32,(byte)3);
+        assertEquals(2,call("countFlatSpines",p.labels,p.gray,p.w,p.h,95f,160f,construct("Staff",80f,144f,16f),false));
+    }
+    @Test public void sevenSplitFlatSpinesKeepTheirPrintedOrder()throws Exception {
+        Page p=new Page();p.rules(80,16);
+        int[] tops={75,51,83,59,91,67,99};
+        for(int i=0;i<tops.length;i++)p.rect(100+i*18,tops[i],3,32,(byte)3);
+        assertEquals(7,call("countFlatSpines",p.labels,p.gray,p.w,p.h,95f,220f,construct("Staff",80f,144f,16f),false));
     }
 }

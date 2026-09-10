@@ -74,4 +74,18 @@ public class AccidentalFontRegressionTest {
     @Test public void thickStaffRuleCannotExtendBothNaturalSpines()throws Exception {
         assertTrue(rawNatural(true,true));
     }
+
+    @Test public void sharpUsesItsCrossbarCentreInsteadOfAnAdjacentChordHead()throws Exception {
+        Drawing d=new Drawing();
+        d.rect(37,20,2,43,(byte)3);d.rect(45,20,2,43,(byte)3);
+        d.rect(35,33,14,4,(byte)3);d.rect(35,46,14,4,(byte)3);
+        d.rect(30,28,23,1,(byte)3);
+        Object glyph=construct("AccidentalCandidate",component(d,30,20,52,62),(byte)3);
+        Object target=construct("Component",100,61,75,37,45,68f,41f);
+        Object upper=construct("Component",100,61,75,23,31,68f,27f);
+        assertEquals(ScoreNoteEvent.ACCIDENTAL_SHARP,call("detectWrittenAccidental",
+                d.labels,d.w,d.h,java.util.List.of(glyph),target,14f));
+        assertEquals(ScoreNoteEvent.ACCIDENTAL_FROM_KEY,call("detectWrittenAccidental",
+                d.labels,d.w,d.h,java.util.List.of(glyph),upper,14f));
+    }
 }
