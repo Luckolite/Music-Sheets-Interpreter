@@ -32,7 +32,9 @@ final class StaffPitchTrack {
             if(best!=null)samples.add(new float[]{left+stripWidth*.5f,best.bottom()+first,best.gap()});
         }
         if(samples.size()<4)return null;
-        float typicalGap=median(samples.stream().map(a->a[2]).toList());
+        List<Float> gaps=new ArrayList<>();
+        for(float[] sample:samples)gaps.add(sample[2]);
+        float typicalGap=median(gaps);
         samples.removeIf(a->Math.abs(a[2]-typicalGap)>typicalGap*.08f);
         if(samples.size()<4)return null;
         List<Float> slopes=new ArrayList<>();
@@ -42,7 +44,9 @@ final class StaffPitchTrack {
         }
         float slope=median(slopes);
         if(Math.abs(slope)*width>typicalGap*8)return null;
-        float intercept=median(samples.stream().map(a->a[1]-slope*a[0]).toList());
+        List<Float> intercepts=new ArrayList<>();
+        for(float[] sample:samples)intercepts.add(sample[1]-slope*sample[0]);
+        float intercept=median(intercepts);
         samples.removeIf(a->Math.abs(a[1]-intercept-slope*a[0])>typicalGap*.8f);
         if(samples.size()<4)return null;
         samples.sort(Comparator.comparingDouble(a->a[0]));
