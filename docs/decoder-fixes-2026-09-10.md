@@ -495,3 +495,26 @@ and captures remain outside the public repository.
 No weights, license terms or dependencies changed. Guide/audio revisions advance
 for the next Android build; the phone remains on 1.18.110 until a new APK is
 installed. Whole-library review continues on non-generated score sources.
+
+## Additional ledger evidence for remote heads
+
+Instruction text and nearby underlines could pass the first two ledger checks,
+producing a false low note. A head more than three and a half staff gaps outside
+the staff now needs another inward ledger. Nearer notes keep their current
+allowance, including shorter rules for reduced grace heads. The condition uses
+geometry and applies to every score.
+
+Twelve original synthetic tests cover high and low lines/spaces, stemless whole
+notes, small heads, insufficient horizontal strokes and adjacent ordinary notes.
+Four assertions fail on the previous decoder. All 542 Java tests, 13 Python
+tests, PNG/PDF-to-MIDI smoke checks and 27 targeted Android tests pass.
+
+On a privately reviewed page, the one false instruction event is removed and all
+230 real-note pitches remain correct. Eight targeted earlier pages retain
+identical complete decoder outputs. A missed barline and separate timing issues
+remain open; this does not certify whole-page or whole-library playback.
+
+The app port and standalone source were compared directly. Pre-existing mixed
+experiments remain outside this commit. No weights, dependencies or license terms
+change, and no private scores or phone logs are included. Cache revisions advance
+for the next app build; this source-only change has not been installed on a phone.

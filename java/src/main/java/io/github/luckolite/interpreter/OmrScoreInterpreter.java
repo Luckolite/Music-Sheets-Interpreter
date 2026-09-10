@@ -2020,20 +2020,32 @@ final class OmrScoreInterpreter {
         boolean reduced=reducedLedgerHead(gray,width,height,head,staff.gap);
         float minimum=ledgerRunMinimum(head,staff.gap,reduced);
         float direction=head.centerY<staff.top?1:-1;
-        float center=head.centerY+direction*staff.gap;
+        float distance=head.centerY<staff.top?staff.top-head.centerY:head.centerY-staff.bottom;
+        // A remote head needs more than a pair of nearby horizontal strokes.
+        // Keep tolerance for local staff curvature and partly obscured rules;
+        // require a third ledger only beyond three and a half staff spaces.
+        int required=distance>staff.gap*3.5f?2:1;
         int left=Math.max(0,Math.round(head.centerX-staff.gap*1.2f));
         int right=Math.min(width-1,Math.round(head.centerX+staff.gap*1.2f));
-        for(int y=Math.max(1,Math.round(center-staff.gap*.55f));
-                y<=Math.min(height-2,Math.round(center+staff.gap*.55f));y++) {
-            int run=0;
-            for(int x=left;x<=right;x++) {
-                boolean dark=(gray[y*width+x]&255)<160||(gray[(y-1)*width+x]&255)<160
-                        ||(gray[(y+1)*width+x]&255)<160;
-                run=dark?run+1:0;
-                if(run>=minimum&&(!reduced||(x-run+1<head.minX&&x>head.maxX)))return true;
+        for(int inner=1;inner<=required;inner++) {
+            float center=head.centerY+direction*staff.gap*inner;
+            boolean found=false;
+            for(int y=Math.max(1,Math.round(center-staff.gap*.55f));
+                    y<=Math.min(height-2,Math.round(center+staff.gap*.55f))&&!found;y++) {
+                int run=0;
+                for(int x=left;x<=right;x++) {
+                    boolean dark=(gray[y*width+x]&255)<160||(gray[(y-1)*width+x]&255)<160
+                            ||(gray[(y+1)*width+x]&255)<160;
+                    run=dark?run+1:0;
+                    if(run>=minimum&&(!reduced||(x-run+1<head.minX&&x>head.maxX))) {
+                        found=true;
+                        break;
+                    }
+                }
             }
+            if(!found)return false;
         }
-        return false;
+        return true;
     }
 
     /** A thin slur fragment joined to a staff line can form a false semantic oval.
