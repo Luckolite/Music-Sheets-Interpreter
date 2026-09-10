@@ -112,3 +112,29 @@ These are selected checks, not whole-library accuracy results.
 Artwork false detections, some remaining pitch errors, and duplicated staff groups
 are still under investigation. Commercial fixtures remain private; model weights
 and dependencies are unchanged.
+
+## September 10 compact-row and ledger ownership repair
+
+Distinct staves with aligned bars now require a visible system connection when
+source pixels are available. Overlapping raw and semantic estimates of the same
+staff keep their existing merge behavior. Without source pixels, the previous
+alignment fallback remains available. This prevents consecutive solo rows from
+being interpreted as simultaneous parts.
+
+Ambiguous ledger heads between adjacent solo rows use the same ledger-chain and
+stem evidence as connected parts. Heads inside another staff retain their owner.
+Short ledger rules use pixel-rounded margins, including one-pixel margins on small
+staves; long ending brackets and beams do not count as ledger lines. These are
+original geometry repairs with no song-specific rules or model-weight changes.
+
+Eight new synthetic regressions cover separate compact rows, connected pairs,
+overlapping staff estimates, ledger ownership beside an ending bracket, opposing
+stems, middle-staff ownership, and small ledger margins. An existing skew fixture
+now explicitly verifies left-to-right order within each of its three separate rows.
+Validation passed 267 standalone Java tests, 13 Python tests, and PNG/PDF
+model-to-MIDI smoke checks. Private review checked all nine changed or recovered
+pitches across two affected pages and retained 241 saved pitch expectations.
+Eleven additional control pages produced identical complete JSON outputs,
+including note timings and measure regions. These selected checks do not establish
+whole-library accuracy; remaining duplicated staff estimates and other recognition
+errors are still under investigation. Commercial score fixtures remain private.

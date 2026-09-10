@@ -67,8 +67,13 @@ public class StaffSkewRegressionTest {
             }
         }
         var measures=OmrMeasurePostProcessor.process(labels,gray,WIDTH,HEIGHT);
-        assertTrue(measures.size()>=3);
-        for(int i=1;i<measures.size();i++)
-            assertTrue(measures.get(i).left()>measures.get(i-1).left());
+        // The fixture has three unconnected rows, each containing four measures.
+        // Reading order increases in x within a row, then resumes on the next row.
+        assertEquals(12,measures.size());
+        for(int row=0;row<3;row++) {
+            for(int column=1;column<4;column++)
+                assertTrue(measures.get(row*4+column).left()>measures.get(row*4+column-1).left());
+            if(row>0)assertTrue(measures.get(row*4).top()>measures.get((row-1)*4).top());
+        }
     }
 }

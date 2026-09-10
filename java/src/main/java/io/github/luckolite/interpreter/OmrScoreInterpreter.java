@@ -1360,7 +1360,7 @@ final class OmrScoreInterpreter {
     }
 
     /**
-     * Ledger notes between two connected staves can be a fraction of a pixel closer to the
+     * Ledger notes between two adjacent staves can be a fraction of a pixel closer to the
      * wrong stave. Their attached stem normally points back toward the owning stave, so use that
      * topology only for genuinely ambiguous adjacent staves and retain nearest-staff everywhere
      * else. This prevents a high piano note from joining and lengthening a simultaneous violin
@@ -1372,14 +1372,17 @@ final class OmrScoreInterpreter {
         if (nearest == null) return null;
         Staff upper = null, lower = null;
         for (Staff staff : staffs) {
-            if (staff.count <= 1) continue;
             if (staff.bottom < head.centerY
                     && (upper == null || staff.bottom > upper.bottom)) upper = staff;
             if (staff.top > head.centerY
                     && (lower == null || staff.top < lower.top)) lower = staff;
         }
-        if (upper == null || lower == null || upper.count != lower.count
-                || upper.index + 1 != lower.index) return nearest;
+        if (upper == null || lower == null) return nearest;
+        // A head within a third staff is not between these two candidates.
+        if (nearest != upper && nearest != lower) return nearest;
+        boolean adjacentParts=upper.count==lower.count&&upper.index+1==lower.index;
+        boolean adjacentSoloRows=upper.count==1&&lower.count==1;
+        if (!adjacentParts&&!adjacentSoloRows) return nearest;
         float upperDistance = head.centerY - upper.bottom;
         float lowerDistance = lower.top - head.centerY;
         float smaller = Math.max(.001f, Math.min(upperDistance, lowerDistance));
@@ -1418,11 +1421,23 @@ final class OmrScoreInterpreter {
                 for(int x=left;x<=right;x++)if((gray[y*width+x]&255)<165) {
                     ink++;if(x<head.minX)leftInk++;if(x>head.maxX)rightInk++;
                 }
-                if(ink>=(right-left+1)*.85f&&leftInk>=gap*.18f&&rightInk>=gap*.18f)found=true;
+                int margin=Math.max(1,Math.round(gap*.18f));
+                if(ink>=(right-left+1)*.85f&&leftInk>=margin&&rightInk>=margin
+                        &&shortLedgerRule(gray,width,y,head,gap))found=true;
             }
             if(found)count++;
         }
         return count;
+    }
+
+    /** Ending brackets and long beams do not identify a ledger pitch. */
+    private static boolean shortLedgerRule(byte[] gray,int width,int y,Component head,float gap) {
+        int center=Math.max(0,Math.min(width-1,Math.round(head.centerX)));
+        if((gray[y*width+center]&255)>=165)return false;
+        int left=center,right=center,limit=Math.max(4,Math.round(gap*4.5f));
+        while(left>0&&center-left<=limit&&(gray[y*width+left-1]&255)<165)left--;
+        while(right+1<width&&right-center<=limit&&(gray[y*width+right+1]&255)<165)right++;
+        return right-left+1<=limit;
     }
 
     private static int attachedStemReach(byte[] labels, int width, int height,

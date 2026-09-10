@@ -1,6 +1,5 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -515,7 +514,7 @@ final class OmrMeasurePostProcessor {
                 boolean visiblyConnected = gray != null
                         && verticalGap <= gap * MAX_CONNECTED_STAFF_SEPARATION_GAPS
                         && connectedByVerticalRule(gray, width, height, previous, staff, gap);
-                if (compactAligned || visiblyConnected) {
+                if ((compactAligned && (gray == null || verticalGap < 0)) || visiblyConnected) {
                     previous.bottom = staff.bottom;
                     previous.gap = (previous.gap + staff.gap) / 2f;
                     previous.boundaries = mergeBoundaries(previous.boundaries, staff.boundaries,
