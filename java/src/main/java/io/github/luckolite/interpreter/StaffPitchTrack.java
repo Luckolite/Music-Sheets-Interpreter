@@ -58,7 +58,21 @@ final class StaffPitchTrack {
         if(samples.get(samples.size()-1)[0]-samples.get(0)[0]<width*.36f)return null;
         float min=Float.MAX_VALUE,max=-Float.MAX_VALUE;
         for(float[] p:samples){min=Math.min(min,p[1]);max=Math.max(max,p[1]);}
-        if(max-min<typicalGap*.8f)return null;
+        if(max-min<typicalGap*.8f) {
+            // Even a sub-line tilt can move the local search onto the adjacent
+            // rule near a page edge. Accept it only with dense, broadly spaced
+            // five-rule samples agreeing on a smooth trend; sparse ledger ink
+            // or alternating offsets must not create a new pitch reference.
+            if(max-min<typicalGap*.4f||samples.size()<6
+                    ||samples.get(samples.size()-1)[0]-samples.get(0)[0]<width*.6f)return null;
+            float variation=0;
+            for(int i=1;i<samples.size();i++) {
+                float change=Math.abs(samples.get(i)[1]-samples.get(i-1)[1]);
+                if(change>typicalGap*.35f)return null;
+                variation+=change;
+            }
+            if(variation>max-min+typicalGap*.25f)return null;
+        }
         return new StaffPitchTrack(samples);
     }
 

@@ -445,3 +445,29 @@ images are excluded from this repository.
 The app invalidates guide and generated-audio caches for the next build. This is
 a source update; the installed phone remains on 1.18.110. Whole-library review is
 still in progress.
+
+## Mild staff tilt and gradual curvature
+
+The staff tracker previously discarded displacement smaller than 0.8 staff spaces.
+A smaller tilt can still push the local pitch search onto an adjacent rule near
+the page edge. Mild tracks now require at least six complete five-line samples
+spanning 60 percent of the page, consistent spacing, bounded adjacent movement,
+and little backtracking. Straight staffs, sparse ledger groups and alternating
+noise remain excluded.
+
+Seven original geometry tests reproduce uphill and downhill failures, edge-space
+pitch assignment, slight curvature, and misleading sparse or alternating samples.
+All 518 standalone Java tests, 13 Python tests, PNG/PDF-to-MIDI smoke checks and
+15 targeted Android staff tests pass. No weights or license terms changed.
+
+A complete private page pitch/presence review covers 230 real notes and one false
+text component. The candidate corrects 29 source-confirmed pitches. Three other
+pitches at curled edges, the false text component and a missed final barline remain
+open; this page is not certified fully accurate. Two targeted earlier pages retain
+all pitches and note counts. One output is identical; the other recovers a printed
+quarter rest and the following three quarter-note onsets. This focused geometry
+check does not replace the separate hourly library regression rotation.
+
+Guide/audio cache revisions are advanced for the next Android build. This source
+repair has not been installed on the phone, which remains on 1.18.110. Private
+scans, library metadata and diagnostic captures are not distributed.
