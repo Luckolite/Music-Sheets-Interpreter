@@ -150,8 +150,24 @@ final class StaffPitchTrack {
         return null;
     }
 
+    /** White paper can curl beyond the last broad sample. Require all five rules
+     * on both sides of the head before replacing that broad pitch reference. */
+    static float[] localPrintedRules(byte[] labels,byte[] gray,int width,int height,float x,int headLeft,int headRight,
+                                     float referenceBottom,float gap) {
+        for(float slope:new float[]{0,.04f,-.04f,.08f,-.08f,.12f,-.12f,.16f,-.16f}) {
+            float[] found=localRulesWithSlope(labels,gray,width,height,x,headLeft,headRight,referenceBottom,gap,slope,true);
+            if(found!=null)return found;
+        }
+        return null;
+    }
+
     private static float[] localRulesWithSlope(byte[] labels,byte[] gray,int width,int height,float x,int headLeft,int headRight,
                               float referenceBottom,float gap,float slope) {
+        return localRulesWithSlope(labels,gray,width,height,x,headLeft,headRight,referenceBottom,gap,slope,false);
+    }
+
+    private static float[] localRulesWithSlope(byte[] labels,byte[] gray,int width,int height,float x,int headLeft,int headRight,
+                              float referenceBottom,float gap,float slope,boolean bilateral) {
         if(gray==null)return null;
         int radius=Math.max(4,Math.round(gap*3.5f)),exclusion=Math.max(1,Math.round(gap*.45f));
         int left=Math.max(0,Math.round(x)-radius),right=Math.min(width-1,Math.round(x)+radius);
@@ -170,7 +186,7 @@ final class StaffPitchTrack {
             }
         }
         if(samples<8)return null;
-        int minimum=Math.max(8,Math.round(samples*.45f)),band=Math.max(2,Math.round(gap*.25f));
+        int minimum=Math.max(8,Math.round(samples*(bilateral?.60f:.45f))),band=Math.max(2,Math.round(gap*.25f));
         // Reject beam-only peaks before selecting a five-line group, so a stronger beam
         // cannot hide a valid staff group through overlap suppression.
         for(int row=0;row<strength.length;row++)if(strength[row]>=minimum) {
@@ -181,7 +197,7 @@ final class StaffPitchTrack {
                 for(int yy=Math.max(0,shifted-band);yy<=Math.min(height-1,shifted+band);yy++)
                     if(labels[yy*width+xx]==4){supported++;break;}
             }
-            if(supported<Math.max(4,samples*.2f))strength[row]=0;
+            if(supported<Math.max(4,samples*(bilateral?.45f:.2f)))strength[row]=0;
         }
         for(var lines:RawStaffLineDetector.detectFromStrength(strength,minimum,strength.length)) {
             if(lines.gap()<gap*.88f||lines.gap()>gap*1.12f)continue;
@@ -198,9 +214,35 @@ final class StaffPitchTrack {
             for(int i=0;i<5;i++)bottoms.add(centers[i]+(4-i)*spacing);
             float base=median(bottoms);int consistent=0;
             for(float value:bottoms)if(Math.abs(value-base)<=gap*.16f)consistent++;
-            if(consistent==5&&Math.abs(base-referenceBottom)<=gap*1.5f)return new float[]{base,spacing};
+            if(consistent==5&&Math.abs(base-referenceBottom)<=gap*1.5f
+                    &&(!bilateral||supportedOnBothSides(labels,gray,width,height,x,headLeft,headRight,
+                            base,spacing,slope,left,right,exclusion,band,flank)))return new float[]{base,spacing};
         }
         return null;
+    }
+
+    private static boolean supportedOnBothSides(byte[] labels,byte[] gray,int width,int height,
+            float x,int headLeft,int headRight,float base,float gap,float slope,
+            int left,int right,int exclusion,int band,int flank) {
+        for(int side=0;side<2;side++)for(int line=0;line<5;line++) {
+            int first=side==0?left:headRight+exclusion+1;
+            int last=side==0?headLeft-exclusion-1:right;
+            int samples=0,inkColumns=0,labelColumns=0;
+            for(int xx=first;xx<=last;xx++) {
+                if(xx<0||xx>=width)continue;
+                samples++;boolean ink=false,label=false;
+                int center=Math.round(base-line*gap+(xx-x)*slope);
+                for(int yy=Math.max(flank,center-band);yy<=Math.min(height-1-flank,center+band);yy++) {
+                    int value=gray[yy*width+xx]&255;
+                    if(value<=205&&(gray[(yy-flank)*width+xx]&255)>=value+12
+                            &&(gray[(yy+flank)*width+xx]&255)>=value+12)ink=true;
+                    if(labels[yy*width+xx]==4)label=true;
+                }
+                if(ink)inkColumns++;if(label)labelColumns++;
+            }
+            if(samples<8||inkColumns<samples*.5f||labelColumns<samples*.35f)return false;
+        }
+        return true;
     }
 
     private static float median(List<Float> values) {

@@ -2794,7 +2794,9 @@ final class OmrScoreInterpreter {
         float gap=staff.pitchGap, referenceBottom=staff.pitchBottom+staff.pitchSlope*(head.centerX-width*.5f);
         if(staff.pitchTrack!=null){float[] local=staff.pitchTrack.at(head.centerX);referenceBottom=local[0];gap=local[1];}
         boolean shaded=StaffPitchTrack.needsContrast(gray,width,height,head.centerX,referenceBottom,gap);
-        float[] complete=shaded?StaffPitchTrack.localRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap,staff.pitchTrack!=null):null;
+        float[] complete=shaded
+                ?StaffPitchTrack.localRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap,staff.pitchTrack!=null)
+                :StaffPitchTrack.localPrintedRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap);
         if(complete!=null)return complete;
         int radius = Math.max(4, Math.round(gap * 3.5f));
         int left = Math.max(0, Math.round(head.centerX) - radius);

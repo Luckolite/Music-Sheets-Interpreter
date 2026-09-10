@@ -378,3 +378,27 @@ check does not replace the separate hourly library regression rotation.
 Guide/audio cache revisions are advanced for the next Android build. This source
 repair has not been installed on the phone, which remains on 1.18.110. Private
 scans, library metadata and diagnostic captures are not distributed.
+
+## Complete local staff evidence on white curled paper
+
+A page-wide staff reference can miss a curl near the right edge. On white paper,
+the decoder previously used a partial local match that could select the adjacent
+staff line. It now checks a complete five-line group in a small inclined window,
+requiring substantial raw ink and staff labels on both sides of the note before
+replacing the reference. The existing shaded-paper path is preserved.
+
+Twelve original synthetic regressions cover shifted and inclined references,
+flat staffs, beams, one-sided support, missing outer rules, short ledger fragments
+and inconsistent spacing. All 530 standalone Java tests, 13 Python tests,
+PNG/PDF-to-MIDI smoke checks and 27 targeted Android staff tests pass.
+
+The private page reviewed in the preceding batch now matches all 230 real-note
+pitches. Exactly three pitches change; note timing and presence are unchanged.
+One false text-derived note and a missed final barline remain unresolved, so this
+is not a whole-page playback accuracy claim. Five targeted earlier pages have
+identical outputs, with all 548 saved pitch expectations passing. Private scores
+and captures remain outside the public repository.
+
+No weights, license terms or dependencies changed. Guide/audio revisions advance
+for the next Android build; the phone remains on 1.18.110 until a new APK is
+installed. Whole-library review continues on non-generated score sources.
