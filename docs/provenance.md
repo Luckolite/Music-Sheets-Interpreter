@@ -86,3 +86,8 @@ dependencies, and the Apache-2.0 license are unchanged.
 The recorded source commit identifies the reviewed app snapshot. Additional
 staff, key-change, and symbol-filter experiments in the development worktree are
 still under evaluation and are excluded from this publication.
+
+The source hashes for `OmrMeasurePostProcessor`, `RawStaffLineDetector`, and
+`ScoreNoteTiming` were reconciled with the committed app snapshot after checking
+their complete source. Their published implementations already match that snapshot
+apart from the documented package, attribution, and terminology adaptations.

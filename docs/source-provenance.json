@@ -48,7 +48,7 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "a5ed422ac40834b2de1ec5b4e12836aeb6116c23e2a92702da21d9dd39191c99"
+      "source_sha256": "28b80017ad3a8a71d143888d1428a4d14e41e6297c64a398920fff87c5930f85"
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
@@ -60,7 +60,7 @@
     },
     "RawStaffLineDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RawStaffLineDetector.java",
-      "source_sha256": "ed302ac6d7e045df2f1208fb3b6dea2c250920a8bbcc0d26ab28d6ef862aff1b"
+      "source_sha256": "fedfdde99a773703ac865f771660d957c1826fa7925be2b7934afe7c4e1393de"
     },
     "ScoreDynamicChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicChange.java",
@@ -84,7 +84,7 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "01a1a3402dcfc38f2b73755684c08cca0194c809a77f053617174e005a187b1c"
+      "source_sha256": "f6d2028762cb8917cc35e109e25587bac5093e23637a64562284bbab15108c07"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
