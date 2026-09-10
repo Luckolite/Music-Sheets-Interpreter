@@ -18,11 +18,14 @@ final class SixteenthRestDetector {
         List<Staff> placements=new ArrayList<>(staffs);
         // In polyphonic engraving rests for the upper voice move one space above their
         // usual centre to clear the simultaneously held lower voice.
-        for(Staff s:staffs)placements.add(new Staff(s.top()-s.gap(),s.bottom()-s.gap(),s.gap(),s.index(),s.count()));
+        for(Staff s:staffs)for(int offset=1;offset<=2;offset++)
+            placements.add(new Staff(s.top()-offset*s.gap(),s.bottom()-offset*s.gap(),s.gap(),s.index(),s.count()));
         for (Staff staff : placements) {
             float gap = staff.gap();
             int top = Math.max(0, Math.round(staff.top() + gap * .25f));
-            int bottom = Math.min(height - 1, Math.round(staff.bottom() + gap * .3f));
+            boolean highVoice=staffs.stream().anyMatch(s->s.index()==staff.index()
+                    &&s.count()==staff.count()&&Math.abs(s.top()-staff.top()-gap*2)<gap*.1f);
+            int bottom = Math.min(height - 1, Math.round(staff.bottom() + (highVoice?0:gap*.3f)));
             boolean[] line = new boolean[bottom - top + 1];
             // Remove only long horizontal ink rows, including a line's antialiased edge.
             for (int y = top; y <= bottom; y++) {
@@ -116,7 +119,13 @@ final class SixteenthRestDetector {
             for (ScoreNoteEvent note : notes) if (note.measureIndex() == m
                     && note.staffIndex() == staff.index() && note.staffCount() == staff.count()) {
                 float noteX = (region.left() + note.positionInMeasure() * (region.right() - region.left())) * width;
-                if (noteX >= left - gap * .65f && noteX <= right + gap * .65f) return;
+                if (noteX >= left - gap * .65f && noteX <= right + gap * .65f) {
+                    // A rest may share an attack column with a separate held voice. Keep
+                    // rejecting note fragments unless the whole rest is clear of its head.
+                    float noteY=note.pageY()*height;
+                    if(!ScoreNoteTiming.hasIndependentSustain(note)
+                            ||noteY>=minY-gap*.65f&&noteY<=maxY+gap*.65f)return;
+                }
                 if(note.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                         &&noteX>right&&noteX<right+gap*1.8f)return;
             }
@@ -131,7 +140,7 @@ final class SixteenthRestDetector {
         float gap=staff.gap();int h=maxY-minY+1;
         if(h<gap*2.6f || h>gap*3.6f
                 ||minY<staff.top()+gap*.2f ||minY>staff.top()+gap*.9f
-                ||maxY<staff.bottom()-gap*.7f ||maxY>staff.bottom()-gap*.1f)return false;
+                ||maxY+1<staff.bottom()-gap*.7f ||maxY>staff.bottom()-gap*.1f)return false;
         double[] centers=new double[h];java.util.Arrays.fill(centers,Double.NaN);
         int widest=0;
         for(int y=minY;y<=maxY;y++)if(!line[y-top]) {

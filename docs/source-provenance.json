@@ -1,5 +1,5 @@
 {
-  "source_commit": "126e60269d086d7598b46b54f9ece6faef582602",
+  "source_commit": "c0b352ab98b09f8beceef7912039d700450feffa",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -52,7 +52,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "8d1c8bc9c4dac8f71ce7a9cf833006bff0f8b51a9df3517be03034aa5acc4ad5"
+      "source_sha256": "9ea45445831ef3fdd20fe49659f2c0a05ef1f16ffc25a9c59ecfc939d633e444"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -84,7 +84,7 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "f6d2028762cb8917cc35e109e25587bac5093e23637a64562284bbab15108c07"
+      "source_sha256": "924924d55c35d38eee75569c5ab931ec6b79a7ccfb4abdb2088c6d2527c1b82d"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
@@ -104,7 +104,7 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "581dc569a5eb68400b67996905269ff1585797766bc2785f0f817a266a171822"
+      "source_sha256": "37f60ccddb8a9dbfb7652f041a278060f62c476e9f226bf569fd9fde62164f2c"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -112,7 +112,7 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "a5ece96cc89f1b636edef934df37bd1f90760d596d63f09ce1b8ec497ca12688"
+      "source_sha256": "c9ec9d0d9fcd0069e8a3876c0cb5809da5bbf9b66c03e65c455ce99b0c84c0b3"
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"

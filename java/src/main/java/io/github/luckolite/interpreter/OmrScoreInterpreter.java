@@ -188,7 +188,9 @@ final class OmrScoreInterpreter {
             boolean hasSixteenthRest=false;
             for (ScoreRestEvent rest : rests) if (rest.measureIndex() == event.measureIndex()
                     && rest.staffIndex() == event.staffIndex() && rest.staffCount() == event.staffCount()
-                    && rest.positionInMeasure() > event.positionInMeasure() && rest.positionInMeasure() < next) {
+                    && rest.positionInMeasure() > event.positionInMeasure() && rest.positionInMeasure() < next
+                    &&(!ScoreNoteTiming.hasIndependentSustain(event)
+                    ||rest.positionInMeasure()>event.positionInMeasure()+.018f)) {
                 silence += (float)rest.durationBeats();
                 hasSixteenthRest|=rest.durationBeats()==.25;
             }
@@ -198,7 +200,25 @@ final class OmrScoreInterpreter {
                     &&other.positionInMeasure()<event.positionInMeasure()-.018f);
             if(first)for(ScoreRestEvent rest:rests)if(rest.measureIndex()==event.measureIndex()
                     &&rest.staffIndex()==event.staffIndex()&&rest.staffCount()==event.staffCount()
-                    &&rest.positionInMeasure()<event.positionInMeasure())leading+=(float)rest.durationBeats();
+                    &&rest.positionInMeasure()<event.positionInMeasure()
+                    &&(!ScoreNoteTiming.hasIndependentSustain(event)
+                    ||rest.positionInMeasure()<event.positionInMeasure()-.018f))leading+=(float)rest.durationBeats();
+            // The first moving attack can follow a printed rest while another voice
+            // already holds a half note in that rest's column.
+            if(!first&&!ScoreNoteTiming.hasIndependentSustain(event)
+                    &&result.stream().noneMatch(other->other.measureIndex()==event.measureIndex()
+                    &&other.staffIndex()==event.staffIndex()&&other.staffCount()==event.staffCount()
+                    &&other.positionInMeasure()<event.positionInMeasure()-.018f
+                    &&!ScoreNoteTiming.hasIndependentSustain(other))) {
+                for(ScoreRestEvent rest:rests)if(rest.measureIndex()==event.measureIndex()
+                        &&rest.staffIndex()==event.staffIndex()&&rest.staffCount()==event.staffCount()
+                        &&rest.positionInMeasure()<event.positionInMeasure()-.018f
+                        &&result.stream().anyMatch(other->other.measureIndex()==event.measureIndex()
+                        &&other.staffIndex()==event.staffIndex()&&other.staffCount()==event.staffCount()
+                        &&ScoreNoteTiming.hasIndependentSustain(other)
+                        &&Math.abs(other.positionInMeasure()-rest.positionInMeasure())<=.018f))
+                    leading+=(float)rest.durationBeats();
+            }
             int beams = event.beamCount();
             if (hasSixteenthRest && beams <= 2 && !ScoreNoteTiming.hasIndependentSustain(event)) {
                 int flags = rawDetachedFlags(gray, labels, width, height, note.head, note.staffGap);

@@ -52,3 +52,32 @@ inference-to-MIDI smoke tests. Nine private score pages were replayed, with 33
 selected passage checks passing. These checks do not establish an overall note
 accuracy rate or replace listening validation. The model and released weights
 are unchanged; this source update does not overwrite the v0.1.0 release.
+
+## Triplets and rests in overlapping voices
+
+Small curled threes now retain openings that cross a pixel-row boundary. The
+lower curve must turn inward before the baseline, so a two's flat foot cannot
+supply that evidence. A private check of 210 digit, size and font combinations
+found no newly accepted non-threes or lost previously recognized threes; this
+check does not establish complete numeral recognition accuracy.
+
+Explicit triplets use their own duration scale and dots even when the first
+note in an attack group belongs to an ordinary held chord. Ordinary and triplet
+voices preserve their separate written lengths. A positively recognized leading
+rest can now time a moving voice above a sustained note, without delaying or
+inserting silence into that held partner. Rest detection supports the raised
+placement and requires vertical clearance from the held notehead.
+
+`TripletGlyphBoundaryTest` and `PolyphonicLeadingRestTest` add 13 original
+synthetic cases. Eight fail with the preceding published decoder. Validation
+passed 285 standalone Java tests, 13 Python tests, the PNG/PDF model-to-MIDI
+smoke tests, and 1,396 app tests plus app lint. A private 19-page comparison
+preserved all pitches and note counts and passed 250 saved pitch expectations.
+Changed timing passages were checked against their printed notation; the
+overlapping-rest passage also has exact pitch, onset and duration assertions.
+
+The broader library audit remains incomplete. Tuplets containing rests and
+some dotted overlapping voices still need further work. Private scores remain
+outside this repository. This is a source update with unchanged model weights;
+it does not replace the existing packaged release or constitute phone listening
+validation.

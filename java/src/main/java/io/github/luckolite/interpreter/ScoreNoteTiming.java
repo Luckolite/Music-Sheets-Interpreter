@@ -47,6 +47,13 @@ public final class ScoreNoteTiming {
 
         double writtenDuration() {
             int beams = beamCount();
+            if (beams > 0 && hasTuplet()) {
+                double shortest = Double.POSITIVE_INFINITY;
+                for (ScoreNoteEvent note : attacks()) if (rhythmicBeamCount(note) == beams)
+                    shortest = Math.min(shortest,
+                            durationForBeam(beams, note.augmentationDots()) * note.durationScale());
+                return shortest;
+            }
             if (beams > 0) return durationForBeam(beams, augmentationDots()) * notes.get(0).durationScale();
             double result = Double.NaN;
             for (ScoreNoteEvent note : attacks()) {
@@ -162,11 +169,12 @@ public final class ScoreNoteTiming {
         if(!hasIndependentSustain(target)&&groups.get(0).notes.stream().allMatch(ScoreNoteTiming::hasIndependentSustain)) {
             List<RhythmGroup> tail=groups.stream().filter(g->g.notes.stream().noneMatch(ScoreNoteTiming::hasIndependentSustain)).collect(java.util.stream.Collectors.toList());
             double[] written=tail.stream().mapToDouble(RhythmGroup::writtenDuration).toArray();
-            double start=contiguousTailRunStart(tail,written,safeBeats);
+            boolean printedTail=completePrintedRestRhythm(tail,safeBeats);
+            double start=printedTail?leadingRest(tail):contiguousTailRunStart(tail,written,safeBeats);
             if(Double.isFinite(start)&&start<groups.get(0).writtenDuration()-.03125) {
                 for(int i=0;i<tail.size();i++) {
                     if(tail.get(i).contains(target))return start;
-                    start+=written[i];
+                    start+=written[i]+(printedTail?followingRest(tail.get(i)):0);
                 }
             }
         }
@@ -429,7 +437,14 @@ public final class ScoreNoteTiming {
      * Their quarter notes may overlap the other voice's eighth-note attacks too. */
     public static boolean hasIndependentDuration(ScoreNoteEvent note,List<ScoreNoteEvent> notes) {
         if(hasIndependentSustain(note))return true;
-        if(note==null||notes==null||note.beamCount()!=0||note.unbeamedDurationBeats()<1)return false;
+        if(note==null||notes==null)return false;
+        // Explicitly different tuplet values at one attack prove parallel rhythms.
+        // The faster attack clock must not shorten the other voice's written value.
+        for(ScoreNoteEvent other:notes)if(other.measureIndex()==note.measureIndex()
+                &&other.staffIndex()==note.staffIndex()&&other.staffCount()==note.staffCount()
+                &&Math.abs(other.positionInMeasure()-note.positionInMeasure())<=SAME_ONSET_POSITION
+                &&other.tupletDivisor()!=note.tupletDivisor())return true;
+        if(note.beamCount()!=0||note.unbeamedDurationBeats()<1)return false;
         for(ScoreNoteEvent a:notes) {
             if(a.measureIndex()!=note.measureIndex()||a.staffIndex()!=note.staffIndex()
                     ||a.staffCount()!=note.staffCount()||a.beamCount()!=0||a.unbeamedDurationBeats()<1)continue;

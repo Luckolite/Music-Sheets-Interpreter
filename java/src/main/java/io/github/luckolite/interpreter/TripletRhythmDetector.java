@@ -122,13 +122,17 @@ final class TripletRhythmDetector {
         int upperLobe = -1, lowerLobe = -1, waist = w;
         for (int y = 0; y < h; y++) {
             float fraction = y / (float) h;
-            if (fraction >= .15f && fraction <= .36f) {
+            // A row occupies a whole pixel band; include a short opening that
+            // crosses a lobe boundary instead of discarding it at small sizes.
+            float nextFraction = (y + 1) / (float) h;
+            if (nextFraction > .15f && fraction <= .36f) {
                 upperLobe = Math.max(upperLobe, max[y]);
                 if (min[y] >= w * .40f) upperOpen++;
                 if (hasLobePocket(gray, width, left, top + y, w)) upperPocket++;
             }
-            if (fraction >= .60f && fraction <= .82f) {
-                lowerLobe = Math.max(lowerLobe, max[y]);
+            if (nextFraction > .60f && fraction <= .82f) {
+                // The lower curve must bulge before the baseline; a 2 only widens at its foot.
+                if(fraction<=.75f)lowerLobe = Math.max(lowerLobe, max[y]);
                 if (min[y] >= w * .40f) lowerOpen++;
                 if (hasLobePocket(gray, width, left, top + y, w)) lowerPocket++;
             }
@@ -141,7 +145,9 @@ final class TripletRhythmDetector {
         boolean upper = upperOpen >= required || upperOpen >= 1 && upperPocket >= required;
         boolean lower = lowerOpen >= required || lowerOpen >= 1 && lowerPocket >= required;
         int indentation = Math.max(1, Math.round(w * .08f));
-        return upper && lower && upperLobe - waist >= indentation
+        int foot=-1;
+        for(int y=(int)(h*.92);y<h;y++)foot=Math.max(foot,max[y]);
+        return lowerLobe-foot>=indentation && upper && lower && upperLobe - waist >= indentation
                 && lowerLobe - waist >= indentation;
     }
 
