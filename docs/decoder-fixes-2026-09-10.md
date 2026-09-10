@@ -237,3 +237,30 @@ smoke checks, and 1,441 app tests plus Android lint using the reviewed core.
 This remains selected validation, not whole-library accuracy or live phone
 verification. Source scans stay private. Model weights, dependencies, licensing
 and packaged releases are unchanged.
+
+## Rest dots and printed leading silence
+
+A small notehead prediction could actually be an augmentation dot beside a
+quarter rest, adding an unwanted pitch and shortening the rest. The decoder now
+checks compact, stemless candidates against the dots of an independently
+recognized rest. It removes a false head only when the raw dot geometry and the
+same previously detected rest agree, then recomputes the rest's dotted value.
+Real small notes with stems and marks without a proven rest remain eligible notes.
+
+An incomplete optical bar now preserves a recognized leading rest when its
+duration is consistent with the meter. A complete printed note/rest voice also
+provides the onset for aligned cross-staff notes; conflicting complete voices
+retain their independent clocks.
+
+Twelve original synthetic regressions cover these cases; five fail on the
+preceding decoder. Validation passed 349 Java tests, 13 Python tests, PNG/PDF
+inference-to-MIDI smoke checks, and 1,453 app tests plus Android lint. A 60-page
+comparison preserves 655 selected pitch/presence checks, 45 existing note timing
+checks, and 19 newly source-checked onsets. One confirmed rest-dot false note is
+removed, with no other pitch additions, removals or substitutions. The hourly
+revisit of 22 earlier pages preserves all 177 saved pitch/presence checks and
+their complete outputs, including a targeted follow-up after the cross-staff change.
+
+This does not certify every note or rhythm on those pages. The wider short-staff
+candidate and remaining recognition errors in damaged voices are still under
+review. No model weights, dependencies, licenses or packaged releases change.

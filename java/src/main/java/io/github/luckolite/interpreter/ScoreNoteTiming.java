@@ -220,7 +220,9 @@ public final class ScoreNoteTiming {
                 // sides of a grid midpoint.
                 spatial = quantize(Math.max(0, groupPosition - firstPosition) * safeBeats, grid);
             }
-            double onset = spatial;
+            // An optically incomplete bar can still have a confidently read leading rest.
+            double leading=leadingRest(groups);
+            double onset = index==0 && leading<safeBeats ? Math.max(spatial,leading) : spatial;
             if (index > 0 && Double.isFinite(previousDuration)) {
                 double predicted = previousOnset + previousDuration;
                 double positionGap = Double.isFinite(previousPosition)
@@ -327,6 +329,19 @@ public final class ScoreNoteTiming {
             aligned.add(candidate);
         }
         if (aligned.size() < 2) return voiceOnset;
+
+        // A fully written note/rest rhythm supplies a stronger shared onset than
+        // an incomplete neighbouring staff's geometric estimate. Conflicting
+        // complete voices keep their own clocks rather than choosing arbitrarily.
+        Double printedOnset=null;
+        for(ScoreNoteEvent anchor:aligned) {
+            List<RhythmGroup> groups=rhythmGroups(measureVoice(anchor,allNotes));
+            if(!completePrintedRestRhythm(groups,beatsPerMeasure))continue;
+            double onset=voiceBeatInMeasure(anchor,allNotes,beatsPerMeasure);
+            if(printedOnset!=null&&Math.abs(printedOnset-onset)>.0001)return voiceOnset;
+            printedOnset=onset;
+        }
+        if(printedOnset!=null)return printedOnset;
 
         // A complete written voice establishes beat zero even when grace notes
         // reserve a wide left inset on another staff. Spatial proximity must not

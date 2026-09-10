@@ -11,10 +11,20 @@ import java.util.List;
 final class SixteenthRestDetector {
     record Staff(float top, float bottom, float gap, int index, int count) { }
 
+    record RestDot(float x,float y,ScoreRestEvent rest) { }
+    record Detection(List<ScoreRestEvent> rests,List<RestDot> dots) { }
+    private record InkDot(float x,float y) { }
+
     static List<ScoreRestEvent> detect(byte[] gray, int width, int height,
             List<MeasureRegion> measures, List<Staff> staffs, List<ScoreNoteEvent> notes) {
-        if (gray == null || gray.length != width * height) return List.of();
+        return detectWithDots(gray,width,height,measures,staffs,notes).rests();
+    }
+
+    static Detection detectWithDots(byte[] gray, int width, int height,
+            List<MeasureRegion> measures, List<Staff> staffs, List<ScoreNoteEvent> notes) {
+        if (gray == null || gray.length != width * height) return new Detection(List.of(),List.of());
         List<ScoreRestEvent> result = new ArrayList<>();
+        List<RestDot> restDots=new ArrayList<>();
         List<Staff> placements=new ArrayList<>(staffs);
         // In polyphonic engraving rests for the upper voice move one space above their
         // usual centre to clear the simultaneously held lower voice.
@@ -42,7 +52,7 @@ final class SixteenthRestDetector {
                 if (ink >= 2) { if (start < 0) start = x; }
                 else if (start >= 0) {
                     inspect(gray, width, height, measures, notes, staff, top, bottom,
-                            line, start, x - 1, result);
+                            line, start, x - 1, result,restDots);
                     start = -1;
                 }
             }
@@ -52,12 +62,12 @@ final class SixteenthRestDetector {
         List<ScoreRestEvent> unique=new ArrayList<>();
         for(ScoreRestEvent rest:result)if(unique.stream().noneMatch(r->r.measureIndex()==rest.measureIndex()
                 &&r.staffIndex()==rest.staffIndex()&&Math.abs(r.positionInMeasure()-rest.positionInMeasure())<.018f))unique.add(rest);
-        return List.copyOf(unique);
+        return new Detection(List.copyOf(unique),List.copyOf(restDots));
     }
 
     private static void inspect(byte[] gray, int width, int height, List<MeasureRegion> measures,
             List<ScoreNoteEvent> notes, Staff staff, int top, int bottom, boolean[] line,
-            int left, int right, List<ScoreRestEvent> result) {
+            int left, int right, List<ScoreRestEvent> result,List<RestDot> restDots) {
         float gap = staff.gap();
         if (right - left + 1 < gap * .7f || right - left + 1 > gap * 1.6f) return;
         int minY = bottom + 1, maxY = top - 1;
@@ -129,15 +139,17 @@ final class SixteenthRestDetector {
                 if(note.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                         &&noteX>right&&noteX<right+gap*1.8f)return;
             }
-            int dots=augmentationDots(gray,width,height,staff,right,region,notes,m);
-            double duration=(quarter?1:eighth?.5:.25)*(dots==2?1.75:dots==1?1.5:1);
-            result.add(new ScoreRestEvent(m, (centerX - region.left()) / (region.right() - region.left()),
-                    centerY, (maxY - minY + 1f) / height, staff.index(), staff.count(),duration));
+            List<InkDot> dots=augmentationDots(gray,width,height,staff,right,region,notes,m);
+            double duration=(quarter?1:eighth?.5:.25)*(dots.size()==2?1.75:dots.size()==1?1.5:1);
+            ScoreRestEvent rest=new ScoreRestEvent(m, (centerX - region.left()) / (region.right() - region.left()),
+                    centerY, (maxY - minY + 1f) / height, staff.index(), staff.count(),duration);
+            result.add(rest);
+            for(InkDot dot:dots)restDots.add(new RestDot(dot.x(),dot.y(),rest));
             return;
         }
     }
     /** Dots belong to a recognized rest only in the adjacent upper staff space. */
-    private static int augmentationDots(byte[] gray,int width,int height,Staff staff,
+    private static List<InkDot> augmentationDots(byte[] gray,int width,int height,Staff staff,
             int restRight,MeasureRegion region,List<ScoreNoteEvent> notes,int measure) {
         float gap=staff.gap();
         int left=Math.max(0,restRight+Math.max(2,Math.round(gap*.12f)));
@@ -145,9 +157,9 @@ final class SixteenthRestDetector {
                 restRight+Math.round(gap*2.4f)));
         int top=Math.max(0,Math.round(staff.top()+gap*1.03f));
         int bottom=Math.min(height-1,Math.round(staff.top()+gap*1.97f));
-        if(left>=right||top>=bottom)return 0;
+        if(left>=right||top>=bottom)return List.of();
         int w=right-left+1,h=bottom-top+1;boolean[] seen=new boolean[w*h];int[] stack=new int[w*h];
-        List<Float> dots=new ArrayList<>();
+        List<InkDot> dots=new ArrayList<>();
         for(int seed=0;seed<seen.length;seed++) {
             int sx=seed%w,sy=seed/w;
             if(seen[seed]||(gray[(top+sy)*width+left+sx]&255)>=170)continue;
@@ -178,16 +190,17 @@ final class SixteenthRestDetector {
                 float nx=(region.left()+note.positionInMeasure()*(region.right()-region.left()))*width;
                 if(Math.abs(nx-x)<gap*.65f) {ownedByNote=true;break;}
             }
-            if(!ownedByNote)dots.add(x);
+            if(!ownedByNote)dots.add(new InkDot(x,y));
         }
-        dots.sort(Float::compare);int count=0;float previous=restRight;
-        for(float x:dots) {
-            float distance=x-previous;
-            if(count==0 ? distance<gap*.25f||distance>gap*1.3f
+        dots.sort(java.util.Comparator.comparingDouble(InkDot::x));
+        List<InkDot> accepted=new ArrayList<>();float previous=restRight;
+        for(InkDot dot:dots) {
+            float distance=dot.x()-previous;
+            if(accepted.isEmpty() ? distance<gap*.25f||distance>gap*1.3f
                     : distance<gap*.4f||distance>gap*1.1f)continue;
-            count++;previous=x;if(count==2)break;
+            accepted.add(dot);previous=dot.x();if(accepted.size()==2)break;
         }
-        return count;
+        return List.copyOf(accepted);
     }
 
     /** Quarter rests have a narrow zigzag above a left-facing lower hook. */

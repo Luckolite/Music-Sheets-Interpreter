@@ -174,13 +174,46 @@ final class OmrScoreInterpreter {
         logHeadCoverage(staffs, rawHeadComponents, headComponents, heads, demotedDotHeads, joined);
         List<ScoreNoteEvent> result = new ArrayList<>(joined.size());
         for (DetectedNote note : joined) result.add(note.event);
-        List<ScoreKeyChange> keyChanges = detectKeyChanges(labels, gray, width, height, measures,
-                staffs, accidentalCandidates, heads);
         List<SixteenthRestDetector.Staff> restStaffs = new ArrayList<>();
         for (Staff staff : staffs) restStaffs.add(new SixteenthRestDetector.Staff(
                 staff.pitchBottom - staff.pitchGap * 4, staff.pitchBottom, staff.pitchGap,
                 staff.index, staff.count));
         List<ScoreRestEvent> rests = SixteenthRestDetector.detect(gray, width, height, measures, restStaffs, result);
+        // Small stemless model heads can be augmentation dots of an independently
+        // recognized rest. Re-read those dots without letting the mistaken head
+        // claim ownership, but require the same rest to have survived the first pass.
+        List<DetectedNote> compactDots=new ArrayList<>();
+        for(DetectedNote note:joined) {
+            Component h=note.head;float gap=note.staffGap;
+            if(h.maxX-h.minX+1<=gap*.7f&&h.maxY-h.minY+1<=gap*.7f
+                    &&h.area<=gap*gap*.32f&&gray!=null
+                    &&attachedRawStem(gray,width,height,h,gap)==null)compactDots.add(note);
+        }
+        if(!compactDots.isEmpty()&&!rests.isEmpty()) {
+            List<ScoreNoteEvent> owners=new ArrayList<>(result);
+            for(DetectedNote note:compactDots)owners.remove(note.event);
+            var evidence=SixteenthRestDetector.detectWithDots(gray,width,height,measures,restStaffs,owners);
+            List<DetectedNote> removed=new ArrayList<>();
+            for(DetectedNote note:compactDots)for(var dot:evidence.dots()) {
+                ScoreRestEvent parent=dot.rest();
+                if(parent.measureIndex()!=note.event.measureIndex()||parent.staffIndex()!=note.event.staffIndex()
+                        ||parent.staffCount()!=note.event.staffCount()
+                        ||Math.abs(dot.x()-note.head.centerX)>note.staffGap*.3f
+                        ||Math.abs(dot.y()-note.head.centerY)>note.staffGap*.3f)continue;
+                boolean verified=rests.stream().anyMatch(rest->rest.measureIndex()==parent.measureIndex()
+                        &&rest.staffIndex()==parent.staffIndex()&&rest.staffCount()==parent.staffCount()
+                        &&Math.abs(rest.positionInMeasure()-parent.positionInMeasure())<.005f
+                        &&Math.abs(rest.pageY()-parent.pageY())<.005f);
+                if(verified){removed.add(note);break;}
+            }
+            if(!removed.isEmpty()) {
+                joined.removeAll(removed);
+                for(DetectedNote note:removed){result.remove(note.event);heads.remove(note.head);}
+                rests=SixteenthRestDetector.detect(gray,width,height,measures,restStaffs,result);
+            }
+        }
+        List<ScoreKeyChange> keyChanges = detectKeyChanges(labels, gray, width, height, measures,
+                staffs, accidentalCandidates, heads);
         List<ScoreNoteEvent> withRests = new ArrayList<>();
         for (DetectedNote note : joined) {
             ScoreNoteEvent event = note.event;
