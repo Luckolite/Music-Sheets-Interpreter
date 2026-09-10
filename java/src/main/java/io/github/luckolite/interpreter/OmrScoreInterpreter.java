@@ -2145,7 +2145,7 @@ final class OmrScoreInterpreter {
         float w = head.maxX - head.minX + 1f, h = head.maxY - head.minY + 1f;
         if(h < gap*.65f && w > h*2.2f
                 && attachedRawStem(gray,width,height,head,gap)==null)return true;
-        if(w>gap*1.2f || h>gap*.8f || head.area>gap*gap*.5f
+        if(w>gap*1.2f || h>gap*.95f || head.area>gap*gap*.5f
                 || attachedRawStem(gray,width,height,head,gap*.65f)!=null)return false;
         return rawSlurBowl(gray,width,height,head,gap);
     }
@@ -2189,7 +2189,7 @@ final class OmrScoreInterpreter {
             }
             int span=maxX-minX+1,rise=maxY-minY+1;
             if(minX==0||maxX==w-1||minY==0||maxY==h-1||overlap<head.area*.55f
-                    ||span<gap*1.4f||span<(head.maxX-head.minX+1)*1.5f||rise>gap*.85f||span<rise*2.4f)continue;
+                    ||span<gap*1.4f||span<(head.maxX-head.minX+1)*1.5f||rise>gap*1.2f||span<rise*1.6f)continue;
             float[] centers=new float[3];int[] bins=new int[3];
             for(int x=minX;x<=maxX;x++)if(counts[x]>0) {
                 int bin=Math.min(2,(x-minX)*3/span);centers[bin]+=sums[x]/(float)counts[x];bins[bin]++;
@@ -2197,8 +2197,11 @@ final class OmrScoreInterpreter {
             if(bins[0]==0||bins[1]==0||bins[2]==0)continue;
             for(int i=0;i<3;i++)centers[i]/=bins[i];
             // Straight ledger extensions and small intact ovals lack this returning bend.
-            if(Math.abs(centers[1]-(centers[0]+centers[2])*.5f)>=Math.max(1.25f,gap*.1f)
-                    &&Math.abs(centers[0]-centers[2])<=gap*.65f)return true;
+            // Compact grace slurs can be deeper than a shallow tie. Require a stronger
+            // returning bend and closer endpoint heights when admitting that geometry.
+            boolean deep=rise>gap*.85f||span<rise*2.4f;
+            if(Math.abs(centers[1]-(centers[0]+centers[2])*.5f)>=Math.max(1.25f,gap*(deep?.25f:.1f))
+                    &&Math.abs(centers[0]-centers[2])<=gap*(deep?.4f:.65f))return true;
         }
         return false;
     }

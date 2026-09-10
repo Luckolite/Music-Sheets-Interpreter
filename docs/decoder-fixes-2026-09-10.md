@@ -661,3 +661,35 @@ scans, crops and transcriptions stay private; mixed experiments and rollback
 snapshots remain intact. Weights, dependencies and license terms are unchanged.
 Guide107/audio23 refresh derived caches in the next Android build. No APK,
 phone, Sync Hub or Desktop executable update is included in this source batch.
+
+## Deep grace slur fragments
+
+A partial semantic head mask can cover one side of a compact, deep grace slur.
+The raw curve was previously rejected by the shallow tie-like aspect and height
+limits, leaving a spurious note in the score. The complete raw-component check
+now admits deeper returning curves only with a stronger bend and closer endpoint
+heights. It retains overlap, minimum span, crop-edge, staff-rule and attached-stem
+safeguards. Production behavior uses geometry only, with no song-specific rules.
+
+Ten original synthetic tests cover lower, upper and mirrored curves, absent raw
+ink, unequal endpoints, attached stems, filled and hollow ovals, ledger lines and
+incomplete curves. Three fail with the previous algorithm. All 604 Java tests,
+13 Python tests, PNG/PDF/MIDI smoke checks and 45 focused Android tests pass.
+
+On 15 targeted non-YouTube pages, 14 full outputs are unchanged. Dearly Beloved
+loses only the source-confirmed false C4 under a grace slur; all 249 real printed
+pitches remain present and correct. One neighboring grace F4 duration changes
+from 0.1875 to 0.375 when the false chord member disappears. The two small heads
+are genuinely a grace group in the source, but their duration/grouping is not
+certified by this fix and remains a separate rhythm investigation.
+
+1,829 of 1,831 source-reviewed pitch/presence assertions pass; the two remaining
+known failures are the missing high grace and staff-obscured short slur in Arcade.
+All 16 source-verified tie expectations from the preceding repair still pass.
+These counts cover the selected review set, not the complete library.
+
+Only reviewed shared source and original synthetic tests are published. Private
+score images, diagnostic masks and transcriptions remain private. Model weights,
+dependencies and Apache-2.0 terms are unchanged. Mixed experiments and rollback
+snapshots are preserved. Guide108/audio24 refresh derived caches in the next app
+build; this source batch does not update the phone, APK, Hub or Desktop executable.
