@@ -71,6 +71,15 @@ class FrontendTests(unittest.TestCase):
         midi = self.midi([self.note(0, 1), self.note(1, 1)])
         self.assertEqual(2, midi.count(b'\x90\x3c\x50'))
 
+    def test_short_attack_can_become_a_held_tie_across_other_notes(self):
+        accompaniment = self.note(1, .5)
+        accompaniment['midi'] = 64
+        midi = self.midi([self.note(0, .5), self.note(.5, 2.5, True),
+                          accompaniment, self.note(3, 1, True)])
+        self.assertEqual(1, midi.count(b'\x90\x3c\x50'))
+        self.assertEqual(1, midi.count(b'\x80\x3c\x00'))
+        self.assertIn(b'\x90\x40\x50', midi)
+
     def test_overlapping_unison_does_not_cut_off_another_voice(self):
         midi = self.midi([self.note(0, 3), self.note(1, 1, staff=1)])
         self.assertIn(b'\x90\x3c\x50', midi)

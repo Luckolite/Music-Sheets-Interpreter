@@ -407,7 +407,7 @@ public final class ScoreNoteTiming {
         }
         // A hollow notehead may share an onset/staff with a faster independent voice.
         // Group rhythm repairs describe the attack clock, not that note's sounding length.
-        if(hasIndependentSustain(target))return writtenDurationBeats(target);
+        if(hasIndependentDuration(target,notes))return writtenDurationBeats(target);
         if (target == null || notes == null || notes.isEmpty()) return writtenDurationBeats(target);
         List<ScoreNoteEvent> phrase = crossStaffPhrase(target, notes, beatsPerMeasure);
         if (!phrase.isEmpty()) return crossStaffDuration(target, phrase, beatsPerMeasure);
@@ -423,6 +423,22 @@ public final class ScoreNoteTiming {
 
     public static boolean hasIndependentSustain(ScoreNoteEvent note) {
         return note!=null&&note.beamCount()==0&&note.unbeamedDurationBeats()>=ScoreNoteEvent.DURATION_HALF;
+    }
+
+    /** Mixed written values at one chord onset prove parallel voices on this stave.
+     * Their quarter notes may overlap the other voice's eighth-note attacks too. */
+    public static boolean hasIndependentDuration(ScoreNoteEvent note,List<ScoreNoteEvent> notes) {
+        if(hasIndependentSustain(note))return true;
+        if(note==null||notes==null||note.beamCount()!=0||note.unbeamedDurationBeats()<1)return false;
+        for(ScoreNoteEvent a:notes) {
+            if(a.measureIndex()!=note.measureIndex()||a.staffIndex()!=note.staffIndex()
+                    ||a.staffCount()!=note.staffCount()||a.beamCount()!=0||a.unbeamedDurationBeats()<1)continue;
+            for(ScoreNoteEvent b:notes)if(b.measureIndex()==a.measureIndex()&&b.staffIndex()==a.staffIndex()
+                    &&b.staffCount()==a.staffCount()&&b.beamCount()>0
+                    &&Math.abs(a.positionInMeasure()-b.positionInMeasure())<=SAME_ONSET_POSITION
+                    &&writtenDurationBeats(b)<writtenDurationBeats(a))return true;
+        }
+        return false;
     }
 
     /** Only a proved beam bridge and a complete single phrase can share a cross-staff clock.

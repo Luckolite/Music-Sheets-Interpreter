@@ -1,5 +1,5 @@
 {
-  "source_commit": "7d314e3898a4a2bba8a56db92138a0ce7ccfe7cc",
+  "source_commit": "bec587662958e65c0df608ebdf9698b581398ade",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -52,7 +52,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "9b7976c5df313ab5b2d5f096ebf86c54f2ed7df07d54a381628217552a1dab2a"
+      "source_sha256": "788d90b2772d4dd27ef329e3610ca99eb6b689e90a12f76f53ecc910c65b7b1f"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -84,7 +84,7 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "fabc3e8e48501cd5b201a0d519175c4fb15e70aa06c55623ee7d1c8cb9bc62a1"
+      "source_sha256": "01a1a3402dcfc38f2b73755684c08cca0194c809a77f053617174e005a187b1c"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",

@@ -52,7 +52,7 @@ final class OmrScoreInterpreter {
                 OmrMeasurePostProcessor.CLEF_OR_KEY);
         List<Component> heads = new ArrayList<>();
         for (Component head : headComponents) {
-            Staff staff = staffForHead(labels, width, height, staffs, head);
+            Staff staff = staffForHead(labels, gray, width, height, staffs, head);
             if (staff != null && plausibleHead(head, staff.gap)
                     && !flatStemlessFragment(gray, width, height, head, staff.gap)) heads.add(head);
         }
@@ -86,7 +86,7 @@ final class OmrScoreInterpreter {
         }
         List<DetectedNote> detected = new ArrayList<>();
         for (Component head : heads) {
-            Staff staff = staffForHead(labels, width, height, staffs, head);
+            Staff staff = staffForHead(labels, gray, width, height, staffs, head);
             if (staff == null) continue;
             // Heads far outside a staff require printed ledger lines. A nearby
             // text stroke can look like a stem, so a semantic stem alone cannot
@@ -152,7 +152,8 @@ final class OmrScoreInterpreter {
                 detected.add(new DetectedNote(chord,part,staff.gap));
             }
         }
-        detected = applyPrintedClefs(detected, staffs, clefOrKeyComponents, labels, width, height);
+        detected = alignDisplacedSeconds(detected,gray,width,height);
+        detected = applyPrintedClefs(detected, staffs, clefOrKeyComponents, labels, gray, width, height);
         detected.sort(Comparator.comparingInt((DetectedNote note) -> note.event.measureIndex())
                 .thenComparingDouble(note -> note.event.positionInMeasure())
                 .thenComparingInt(note -> note.event.staffIndex())
@@ -207,7 +208,7 @@ final class OmrScoreInterpreter {
         List<NoteArticulationDetector.Anchor> anchors = new ArrayList<>();
         for (DetectedNote note : joined) anchors.add(new NoteArticulationDetector.Anchor(
                 note.head.centerX, note.head.centerY, note.staffGap,
-                staffs.indexOf(staffForHead(labels,width,height,staffs,note.head))));
+                staffs.indexOf(staffForHead(labels,gray,width,height,staffs,note.head))));
         int[] marks = NoteArticulationDetector.detect(labels,gray,width,height,anchors);
         for (int i=0;i<withRests.size();i++) withRests.set(i,withRests.get(i).withArticulations(marks[i]));
         markGraceHeads(labels, gray, width, height, joined, withRests);
@@ -266,9 +267,46 @@ final class OmrScoreInterpreter {
         return heads<gap*gap*.15f&&ink>gap*3&&maxY-minY>gap*1.1f;
     }
 
+    /** Adjacent chord pitches can occupy opposite sides of one shared stem even
+     * when segmentation returns two separate components. Their horizontal offset
+     * is engraving, not an extra attack between the surrounding eighth notes. */
+    private static List<DetectedNote> alignDisplacedSeconds(List<DetectedNote> source,byte[] gray,int width,int height) {
+        if(gray==null)return source;
+        List<DetectedNote> result=new ArrayList<>(source);
+        for(int i=0;i<result.size();i++)for(int j=i+1;j<result.size();j++) {
+            DetectedNote a=result.get(i),b=result.get(j);
+            if(a.event.measureIndex()!=b.event.measureIndex()||a.event.staffIndex()!=b.event.staffIndex()
+                    ||a.event.staffCount()!=b.event.staffCount()||Math.abs(a.event.staffStep()-b.event.staffStep())!=1)continue;
+            float gap=(a.staffGap+b.staffGap)*.5f,dx=Math.abs(a.head.centerX-b.head.centerX);
+            if(dx<gap*.9f||dx>gap*1.8f||Math.abs(a.head.centerY-b.head.centerY)>gap*.75f)continue;
+            int left=Math.max(a.head.minX,b.head.minX)-1,right=Math.min(a.head.maxX,b.head.maxX)+1;
+            if(left>right)continue;
+            boolean shared=false;
+            for(int x=Math.max(0,left);x<=Math.min(width-1,right);x++)for(int direction:new int[]{-1,1}) {
+                int edge=direction<0?Math.min(a.head.minY,b.head.minY):Math.max(a.head.maxY,b.head.maxY);
+                int count=0,samples=0;
+                for(int k=1;k<=Math.round(gap*1.8f);k++) {
+                    int y=edge+direction*k;if(y<0||y>=height)break;
+                    samples++;if((gray[y*width+x]&255)<165)count++;
+                }
+                if(samples>=gap*1.6f&&count>=samples*.92f)shared=true;
+            }
+            if(!shared)continue;
+            float position=Math.min(a.event.positionInMeasure(),b.event.positionInMeasure());
+            for(int index:new int[]{i,j}) {
+                DetectedNote n=result.get(index);ScoreNoteEvent e=n.event;
+                result.set(index,new DetectedNote(new ScoreNoteEvent(e.measureIndex(),position,e.staffStep(),
+                        e.staffIndex(),e.staffCount(),e.pageY(),e.tiedFromPrevious(),e.augmentationDots(),e.beamCount(),
+                        e.writtenAccidental(),e.unbeamedDurationBeats(),e.tupletDivisor(),e.followingRestBeats(),
+                        e.articulations(),e.clefBottomDiatonic(),e.crossStaffBeam(),e.leadingRestBeats()),n.head,n.staffGap));
+            }
+        }
+        return result;
+    }
+
     /** Each printed stave has its own clef stream, including small in-row changes. */
     private static List<DetectedNote> applyPrintedClefs(List<DetectedNote> notes, List<Staff> staffs,
-                                                       List<Component> glyphs, byte[] labels, int width, int height) {
+                                                       List<Component> glyphs, byte[] labels, byte[] gray, int width, int height) {
         List<DetectedNote> result=new ArrayList<>(notes);
         Map<Integer,Integer> inherited=new HashMap<>();
         for(Staff staff:staffs) {
@@ -305,7 +343,7 @@ final class OmrScoreInterpreter {
             int initial=inherited.getOrDefault(voice,ScoreNoteEvent.CLEF_UNKNOWN);
             for(int i=0;i<result.size();i++) {
                 DetectedNote n=result.get(i);
-                if(staffForHead(labels,width,height,staffs,n.head)!=staff)continue;
+                if(staffForHead(labels,gray,width,height,staffs,n.head)!=staff)continue;
                 int active=initial;
                 for(ClefGlyph clef:clefs)if(clef.x<n.head.centerX)active=clef.clef;
                 result.set(i,new DetectedNote(n.event.withClef(active),n.head,n.staffGap));
@@ -1197,7 +1235,7 @@ final class OmrScoreInterpreter {
      * else. This prevents a high piano note from joining and lengthening a simultaneous violin
      * note in mixed violin/piano scores.
      */
-    private static Staff staffForHead(byte[] labels, int width, int height,
+    private static Staff staffForHead(byte[] labels, byte[] gray, int width, int height,
                                       List<Staff> staffs, Component head) {
         Staff nearest = nearestHeadStaff(staffs, head.centerY);
         if (nearest == null) return null;
@@ -1216,6 +1254,13 @@ final class OmrScoreInterpreter {
         float smaller = Math.max(.001f, Math.min(upperDistance, lowerDistance));
         if (Math.max(upperDistance, lowerDistance) > smaller * 1.55f) return nearest;
 
+        // Beamed voices may keep an upward stem even above the bass staff.
+        // The ledger chain, when visible, identifies the printed pitch staff
+        // more reliably than that stem direction.
+        int upperLedgers=innerLedgerCount(gray,width,height,head,upper);
+        int lowerLedgers=innerLedgerCount(gray,width,height,head,lower);
+        if(upperLedgers>0&&lowerLedgers==0)return upper;
+        if(lowerLedgers>0&&upperLedgers==0)return lower;
         float gap = Math.min(upper.gap, lower.gap);
         int upward = attachedStemReach(labels, width, height, head, gap, true);
         int downward = attachedStemReach(labels, width, height, head, gap, false);
@@ -1224,6 +1269,29 @@ final class OmrScoreInterpreter {
         if (upward >= minimum && upward >= downward + advantage) return upper;
         if (downward >= minimum && downward >= upward + advantage) return lower;
         return nearest;
+    }
+
+    private static int innerLedgerCount(byte[] gray,int width,int height,Component head,Staff staff) {
+        if(gray==null)return 0;
+        float gap=staff.pitchGap;
+        boolean above=head.centerY<staff.pitchBottom-gap*4;
+        float outer=above?staff.pitchBottom-gap*4:staff.pitchBottom;
+        float direction=above?-1:1;
+        int left=Math.max(0,Math.round(head.minX-gap*.3f));
+        int right=Math.min(width-1,Math.round(head.maxX+gap*.3f));
+        int count=0;
+        for(float line=outer+direction*gap;direction*(head.centerY-line)>gap*.65f;line+=direction*gap) {
+            boolean found=false;
+            for(int y=Math.max(0,Math.round(line-gap*.18f));y<=Math.min(height-1,Math.round(line+gap*.18f));y++) {
+                int ink=0,leftInk=0,rightInk=0;
+                for(int x=left;x<=right;x++)if((gray[y*width+x]&255)<165) {
+                    ink++;if(x<head.minX)leftInk++;if(x>head.maxX)rightInk++;
+                }
+                if(ink>=(right-left+1)*.85f&&leftInk>=gap*.18f&&rightInk>=gap*.18f)found=true;
+            }
+            if(found)count++;
+        }
+        return count;
     }
 
     private static int attachedStemReach(byte[] labels, int width, int height,
@@ -1789,7 +1857,7 @@ final class OmrScoreInterpreter {
         int glyphWidth = glyph.maxX - glyph.minX + 1;
         int glyphHeight = glyph.maxY - glyph.minY + 1;
         if (glyphHeight < gap * 1.55f || glyphHeight > gap * 3.65f
-                || glyphWidth < gap * .65f || glyphWidth > gap * 1.65f
+                || glyphWidth < gap * .65f || glyphWidth > gap * 1.80f
                 || glyphHeight < glyphWidth * 1.45f
                 || glyphHeight > glyphWidth * 3.35f
                 || glyph.area < gap * gap * .42f || glyph.area > gap * gap * 2.45f)
@@ -1855,6 +1923,46 @@ final class OmrScoreInterpreter {
         int bottom = Math.min(height - 1, Math.round(referenceBottom + gap * .58f));
         int exclusion = Math.max(1, Math.round(gap * .45f));
         if(gray!=null) {
+            // A beam can merge with one rule and leave another thin edge half a
+            // space away. Require agreement from several of the five printed
+            // rules before using that edge as a local pitch reference.
+            List<Float> offsets = new ArrayList<>();
+            for (int line=0;line<5;line++) {
+                float reference=referenceBottom-line*gap;
+                int first=Math.max(0,Math.round(reference-gap*.58f));
+                int last=Math.min(height-1,Math.round(reference+gap*.58f));
+                float closest=Float.NaN,distance=Float.MAX_VALUE;int start=-1;
+                for(int y=first;y<=last+1;y++) {
+                    int dark=0,samples=0;
+                    if(y<=last)for(int x=left;x<=right;x++) {
+                        if(x>=head.minX-exclusion&&x<=head.maxX+exclusion)continue;
+                        samples++;if((gray[y*width+x]&255)<=165)dark++;
+                    }
+                    boolean rule=samples>=8&&dark>=samples*.70f;
+                    if(rule&&start<0)start=y;
+                    if(!rule&&start>=0) {
+                        float offset=(start+y-1)*.5f-reference;
+                        if(y-start<=Math.max(3,gap*.38f)&&Math.abs(offset)<distance) {
+                            closest=offset;distance=Math.abs(offset);
+                        }
+                        start=-1;
+                    }
+                }
+                if(Float.isFinite(closest))offsets.add(closest);
+            }
+            List<Float> agreed=List.of();float bestDistance=Float.MAX_VALUE;
+            for(float candidate:offsets) {
+                List<Float> cluster=new ArrayList<>();
+                for(float offset:offsets)if(Math.abs(offset-candidate)<=gap*.18f)cluster.add(offset);
+                float distance=Math.abs(candidate);
+                if(cluster.size()>agreed.size()||cluster.size()==agreed.size()&&distance<bestDistance) {
+                    agreed=cluster;bestDistance=distance;
+                }
+            }
+            if(agreed.size()>=3) {
+                agreed.sort(Float::compare);
+                return referenceBottom+agreed.get(agreed.size()/2);
+            }
             // A beam can be painted as STAFF beside a faded bottom line. Prefer
             // a thin, continuous printed rule across both sides of the head.
             float best=Float.NaN,distance=Float.MAX_VALUE;int start=-1;
