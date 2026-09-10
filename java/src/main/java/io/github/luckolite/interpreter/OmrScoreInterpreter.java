@@ -274,13 +274,28 @@ final class OmrScoreInterpreter {
         if(gray==null)return false;
         Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
         float gap=staff.gap;
-        if(head.maxY-head.minY<gap*3 || head.maxY-head.minY>gap*4.3f
-                ||head.maxX-head.minX>gap*1.9f ||head.maxX-head.minX<gap*.65f
-                ||head.minY<staff.top-gap*.2f ||head.maxY>staff.bottom+gap*.3f)return false;
+        boolean whole=head.maxY-head.minY>=gap*3&&head.maxY-head.minY<=gap*4.3f
+                &&head.maxX-head.minX<=gap*1.9f&&head.maxX-head.minX>=gap*.65f
+                &&head.minY>=staff.top-gap*.2f&&head.maxY<=staff.bottom+gap*.3f;
+        boolean denominator=head.maxY-head.minY>=gap*1.45f&&head.maxY-head.minY<=gap*2.65f
+                &&head.maxX-head.minX<=gap*2.2f&&head.maxX-head.minX>=gap*.65f
+                &&head.minY>=staff.top+gap*1.75f&&head.centerY>=staff.top+gap*2.2f
+                &&head.maxY<=staff.bottom+gap*.3f;
+        if(!whole&&!denominator)return false;
         boolean header=false;
         for(Component glyph:glyphs)if(glyph.maxX<head.minX&&head.minX-glyph.maxX<gap*7
                 &&glyph.maxY-glyph.minY>gap*4.5f&&glyph.maxX-glyph.minX>gap*1.1f
                 &&glyph.centerY>staff.top-gap&&glyph.centerY<staff.bottom+gap)header=true;
+        // Meter changes also occur after a barline within or at the end of a system.
+        // Require a complete printed rule, not a short note stem or numeral stroke.
+        if(!header)for(int x=Math.max(0,Math.round(head.minX-gap*3.8f));
+                x<Math.min(width,Math.round(head.minX-gap*.3f));x++) {
+            int ink=0,total=0;
+            for(int y=Math.max(0,Math.round(staff.top));y<=Math.min(height-1,Math.round(staff.bottom));y++) {
+                total++;if((gray[y*width+x]&255)<155)ink++;
+            }
+            if(total>=gap*3.8f&&ink>=total*.93f) {header=true;break;}
+        }
         if(!header)return false;
         int[] stem=attachedRawStem(gray,width,height,head,gap);
         if(stem!=null&&(stem[1]<staff.top-gap*.25f||stem[1]>staff.bottom+gap*.25f))return false;
@@ -316,7 +331,21 @@ final class OmrScoreInterpreter {
             float cy=top+(minY+maxY)*.5f;
             if(cy<staff.top+gap*2)upper++;else lower++;
         }
-        return upper>=1&&lower>=2;
+        if(whole)return upper>=1&&lower>=2;
+        if(lower<2)return false;
+        // An 8 denominator may be the only part labelled as a head. Its printed
+        // numerator must span the upper half, without an actual note/chord there.
+        int ink=0,heads=0,minY=height,maxY=-1;
+        for(int y=Math.max(0,Math.round(staff.top));
+                y<=Math.min(head.minY-1,Math.min(height-1,Math.round(staff.top+gap*1.85f)));y++)
+            for(int x=Math.max(0,Math.round(head.minX-gap*.8f));
+                    x<=Math.min(width-1,Math.round(head.maxX+gap*.25f));x++) {
+                if(labels[y*width+x]==OmrMeasurePostProcessor.NOTEHEAD)heads++;
+                float lineDistance=Math.abs((y-staff.top)/gap-Math.round((y-staff.top)/gap))*gap;
+                if(lineDistance<=Math.max(1,gap*.15f))continue;
+                if((gray[y*width+x]&255)<155) {ink++;minY=Math.min(minY,y);maxY=Math.max(maxY,y);}
+            }
+        return heads<gap*gap*.15f&&ink>gap*3&&maxY-minY>gap*1.1f;
     }
 
     /** A tall, rounded lower meter digit can be painted as a hollow notehead. */

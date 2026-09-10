@@ -102,3 +102,26 @@ durations were unchanged. The 22 revisited page outputs were entirely unchanged.
 The broader library audit remains ongoing; these checks do not imply every note
 has been manually transcribed or listened to. Model weights and packaged releases
 are unchanged, and the private score fixtures are not distributed here.
+
+## Inline meter denominators
+
+A rounded 8 in a meter such as 12/8 could be segmented independently of its
+numerator and split into two sounding notes. Besides adding false notes, this
+could attach an accidental to a false head and carry that alteration into a real
+note. The pre-split filter now recognizes paired upright counters in a lower
+denominator, with printed numerator evidence and either a clef or a complete
+nearby barline. Actual upper noteheads and stems extending beyond the stave
+protect real chords. This also covers signatures printed within a system.
+
+Seven original synthetic cases were added; three fail with the preceding
+published decoder. Validation passed 298 Java tests, 13 Python tests, PNG/PDF
+inference-to-MIDI smoke tests, and 1,409 app tests plus lint. A private 38-page
+comparison passed 305 saved pitch/presence expectations. Source inspection
+confirmed 14 removed meter fragments and one corrected A-natural pitch. All
+other matched pitches are unchanged; 34 page outputs are unchanged.
+
+Removing false events also changes some neighboring onsets. Those fixtures do
+not encode every internal meter change, and rest/voice timing errors remain.
+This is a pitch and presence improvement, not full-performance validation.
+The broader library review continues; private scans are not included. Model
+weights, packaged releases, and the existing rollback checkpoint are unchanged.
