@@ -138,3 +138,30 @@ Eleven additional control pages produced identical complete JSON outputs,
 including note timings and measure regions. These selected checks do not establish
 whole-library accuracy; remaining duplicated staff estimates and other recognition
 errors are still under investigation. Commercial score fixtures remain private.
+
+## September 10 touching filled voices
+
+Two touching filled noteheads can form one wide segmentation component and be
+misclassified as a half note. The decoder now splits that component when the
+printed image contains two filled lobes separated by a narrow neck and supported
+by opposing stems. Each head then follows normal pitch, position, beam, and
+duration decoding. Existing hollow-voice handling remains separate.
+
+Aligning a displaced chord second now moves other tones in its original chord
+columns with it, retaining the earliest original attack and each tone's duration.
+Five original synthetic regressions cover separate filled voices, ambiguous ink,
+missing stem evidence, complete chord alignment, and an earlier chord anchor.
+
+Validation passed 272 standalone Java tests, 13 Python tests, PNG/PDF model-to-MIDI
+smoke checks, and the app's 1,383 tests and Android lint. Comparisons covered
+19 focused pages and a rotation of 22 different earlier pages; all 427 retained
+pitch/absence expectations passed. No existing pitches or note counts regressed,
+and one previously merged note was recovered. Printed-score review confirmed the
+new head and affected chord attacks. A saved absence expectation was correctly
+interpreted as no note, rather than a missing pitch value.
+
+These are selected comparisons, not whole-library accuracy results. The recovered
+passage still needs its printed triplet/rest timing repaired; some other shared-stem
+chords have inconsistent duration classifications. A later-page audit now uses the
+printed 12/8 meter instead of an old 4/4 fallback. Private scans and score fixtures
+remain excluded, and model weights, dependencies, and licensing are unchanged.

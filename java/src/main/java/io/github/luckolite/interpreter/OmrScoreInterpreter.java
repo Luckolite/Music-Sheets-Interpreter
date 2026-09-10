@@ -299,7 +299,19 @@ final class OmrScoreInterpreter {
             }
             if(!shared)continue;
             float position=Math.min(a.event.positionInMeasure(),b.event.positionInMeasure());
-            for(int index:new int[]{i,j}) {
+            // A displaced second may share its original column with further chord tones.
+            // Move that whole attack together, preserving every tone's independent duration.
+            List<Integer> chord=new ArrayList<>();
+            for(int index=0;index<result.size();index++) {
+                DetectedNote n=result.get(index);ScoreNoteEvent e=n.event;
+                if(e.measureIndex()!=a.event.measureIndex()||e.staffIndex()!=a.event.staffIndex()
+                        ||e.staffCount()!=a.event.staffCount())continue;
+                if(index!=i&&index!=j&&Math.abs(n.head.centerX-a.head.centerX)>gap*.3f
+                        &&Math.abs(n.head.centerX-b.head.centerX)>gap*.3f)continue;
+                chord.add(index);
+                position=Math.min(position,e.positionInMeasure());
+            }
+            for(int index:chord) {
                 DetectedNote n=result.get(index);ScoreNoteEvent e=n.event;
                 result.set(index,new DetectedNote(new ScoreNoteEvent(e.measureIndex(),position,e.staffStep(),
                         e.staffIndex(),e.staffCount(),e.pageY(),e.tiedFromPrevious(),e.augmentationDots(),e.beamCount(),
@@ -828,6 +840,9 @@ final class OmrScoreInterpreter {
         for (Component component : source) {
             Staff staff = nearestHeadStaff(staffs, component.centerY);
             float componentHeight = component.maxY - component.minY + 1f;
+            List<Component> filled = splitTouchingFilledVoices(labels, gray, width, height,
+                    component, staff);
+            if (!filled.isEmpty()) { result.addAll(filled); continue; }
             List<Component> mixed=splitMixedUnisonStack(labels,gray,width,height,component,staff);
             if(!mixed.isEmpty()){result.addAll(mixed);continue;}
             List<Component> regular = splitRegularStack(labels, width, component, staff);
@@ -928,6 +943,48 @@ final class OmrScoreInterpreter {
             } else result.add(component);
         }
         return List.copyOf(result);
+    }
+
+    /** A narrow raw-ink neck and opposing stems identify two touching filled voices.
+     * Split before event decoding so each head retains its own position and duration. */
+    private static List<Component> splitTouchingFilledVoices(byte[] labels, byte[] gray,
+            int width, int height, Component head, Staff staff) {
+        if (gray == null || staff == null) return List.of();
+        float gap = staff.pitchGap;
+        int w = head.maxX - head.minX + 1, h = head.maxY - head.minY + 1;
+        if (w < gap * 1.8f || w > gap * 3.1f || h < gap * .65f || h > gap * 1.4f)
+            return List.of();
+        int middle = (head.minX + head.maxX) / 2;
+        Component left = horizontalHeadSlice(labels, width, head, head.minX, middle);
+        Component right = horizontalHeadSlice(labels, width, head, middle + 1, head.maxX);
+        if (left == null || right == null || !plausibleHead(left, gap) || !plausibleHead(right, gap)
+                || Math.abs(left.centerY - right.centerY) > gap * .3f
+                || left.area < gap * gap * .35f || right.area < gap * gap * .35f
+                || hasOpenCenter(labels, gray, width, height, left, gap)
+                || hasOpenCenter(labels, gray, width, height, right, gap)) return List.of();
+        int leftUp = attachedStemReach(labels, width, height, left, gap, true);
+        int leftDown = attachedStemReach(labels, width, height, left, gap, false);
+        int rightUp = attachedStemReach(labels, width, height, right, gap, true);
+        int rightDown = attachedStemReach(labels, width, height, right, gap, false);
+        int minimum = Math.max(3, Math.round(gap * .72f));
+        boolean opposing = (leftDown >= minimum && rightUp >= minimum
+                && leftUp < minimum && rightDown < minimum)
+                || (leftUp >= minimum && rightDown >= minimum
+                && leftDown < minimum && rightUp < minimum);
+        if (!opposing) return List.of();
+        int leftPeak = 0, rightPeak = 0, neck = h;
+        for (int x = head.minX; x <= head.maxX; x++) {
+            int ink = 0;
+            for (int y = head.minY; y <= head.maxY; y++)
+                if ((gray[y * width + x] & 255) < 165) ink++;
+            if (x < middle) leftPeak = Math.max(leftPeak, ink);
+            if (x > middle) rightPeak = Math.max(rightPeak, ink);
+            if (Math.abs(x - middle) <= Math.max(1, Math.round(gap * .15f)))
+                neck = Math.min(neck, ink);
+        }
+        if (Math.min(leftPeak, rightPeak) < gap * .65f
+                || neck > Math.min(leftPeak, rightPeak) * .6f) return List.of();
+        return List.of(left, right);
     }
 
     /** A filled voice can touch two hollow chord heads on the opposite side
