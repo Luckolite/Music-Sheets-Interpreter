@@ -601,3 +601,32 @@ scans, transcriptions and logs remain private. Mixed experiments and rollback
 snapshots are preserved. Weights, dependencies and Apache-2.0 terms are unchanged.
 Guide105/audio21 refresh derived caches in the next Android build. This source
 batch does not update the phone, APK, Sync Hub or Desktop executable.
+
+## Faded inner ledger support
+
+The recent extra-ledger safeguard rejected a real high G when part of an inner
+ledger faded below the strong-ink threshold. A continuous weak-ink run may now
+complete that ledger only when strong pixels still supply at least 60 percent
+of the required run. Entirely pale strokes and disconnected fragments remain
+insufficient; the required number and geometry of ledgers do not change.
+
+Six original synthetic cases cover upper/lower faded ledgers, a white break,
+entirely or mostly pale unsupported strokes and ordinary solid rules. Two fail
+on the preceding decoder. All 585 Java tests, 13 Python tests, PNG/PDF/MIDI smoke
+checks and 28 focused Android tests pass. Fourteen of 15 targeted pages have
+completely identical outputs. The sole changed page recovers its high G and
+corrects four following note timings in that measure; no existing pitch changes.
+
+Private source review confirms all 249 real pitches on Dearly Beloved now match.
+The dropped G was present through the 530-test build and lost in the 542-test
+ledger update; this repairs that regression without removing its safeguards.
+Five source-transcribed onset/duration checks in the repaired measure pass. A
+missed tie and a false short grace-slur note remain separate open issues.
+
+Across 1,831 saved private pitch/presence assertions, 1,828 pass; the three known
+remaining failures are one missing grace and two short grace slurs on the newly
+reviewed pages. No private scores, transcriptions or logs are published. Original
+synthetic fixtures and reviewed code are mirrored to the public interpreter;
+mixed experiments, rollback snapshots, weights and license terms are preserved.
+Guide106/audio22 invalidate caches in the next Android build. No phone, APK,
+Sync Hub or Desktop executable update is included in this source batch.

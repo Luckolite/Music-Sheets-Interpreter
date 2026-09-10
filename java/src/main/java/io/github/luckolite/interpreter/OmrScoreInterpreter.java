@@ -2099,12 +2099,17 @@ final class OmrScoreInterpreter {
             boolean found=false;
             for(int y=Math.max(1,Math.round(center-staff.gap*.55f));
                     y<=Math.min(height-2,Math.round(center+staff.gap*.55f))&&!found;y++) {
-                int run=0;
+                int run=0,strongInRun=0;
                 for(int x=left;x<=right;x++) {
-                    boolean dark=(gray[y*width+x]&255)<160||(gray[(y-1)*width+x]&255)<160
+                    boolean strong=(gray[y*width+x]&255)<160||(gray[(y-1)*width+x]&255)<160
                             ||(gray[(y+1)*width+x]&255)<160;
+                    boolean dark=strong||(gray[y*width+x]&255)<185||(gray[(y-1)*width+x]&255)<185
+                            ||(gray[(y+1)*width+x]&255)<185;
                     run=dark?run+1:0;
-                    if(run>=minimum&&(!reduced||(x-run+1<head.minX&&x>head.maxX))) {
+                    strongInRun=dark?strongInRun+(strong?1:0):0;
+                    // Faded portions may complete a printed rule, but pale underlines alone
+                    // cannot supply the additional ledger required for a remote note.
+                    if(run>=minimum&&strongInRun>=minimum*.6f&&(!reduced||(x-run+1<head.minX&&x>head.maxX))) {
                         found=true;
                         break;
                     }
