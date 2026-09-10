@@ -279,7 +279,7 @@ final class OmrScoreInterpreter {
                 &&head.minY>=staff.top-gap*.2f&&head.maxY<=staff.bottom+gap*.3f;
         boolean denominator=head.maxY-head.minY>=gap*1.45f&&head.maxY-head.minY<=gap*2.65f
                 &&head.maxX-head.minX<=gap*2.2f&&head.maxX-head.minX>=gap*.65f
-                &&head.minY>=staff.top+gap*1.75f&&head.centerY>=staff.top+gap*2.2f
+                &&head.minY+1>=staff.top+gap*1.75f&&head.centerY>=staff.top+gap*2.2f
                 &&head.maxY<=staff.bottom+gap*.3f;
         if(!whole&&!denominator)return false;
         boolean header=false;
@@ -324,10 +324,11 @@ final class OmrScoreInterpreter {
                 }
             }
             int cw=maxX-minX+1,ch=maxY-minY+1;
-            // Numeral counters are upright. The broad, shallow holes of real hollow
-            // chord heads do not become digits merely because they share a column.
+            // Full stacked glyphs need upright counters. A separate denominator
+            // can have wider bowls; it also requires printed numerator evidence.
+            // Broad shallow hollow-note counters remain excluded.
             if(edge||size<gap*gap*.07f||cw<gap*.2f||cw>gap*1.1f
-                    ||ch<gap*.35f||ch>gap*1.1f||ch<cw*.75f)continue;
+                    ||ch<gap*.35f||ch>gap*1.1f||ch<cw*(whole?.75f:.6f))continue;
             float cy=top+(minY+maxY)*.5f;
             if(cy<staff.top+gap*2)upper++;else lower++;
         }

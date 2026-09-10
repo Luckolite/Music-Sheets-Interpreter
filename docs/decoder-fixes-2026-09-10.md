@@ -152,3 +152,27 @@ This does not establish complete timing or pitch accuracy for those songs or
 the full library. Cut-time glyphs, some rest shapes and other previously recorded
 issues still need work. Private source images are not included; weights and
 packaged releases are unchanged.
+
+## Meter counters at fractional staff boundaries
+
+Some printed 8 denominators still became two sounding notes because the upper
+pixel row fell just outside a fractional staff boundary, and the font used
+wider counters than the filter accepted. The boundary now accounts for the
+inclusive pixel extent. Independently segmented denominators permit wider
+counters while still requiring printed numerator evidence and rejecting upper
+semantic noteheads. The stricter full-stack counter rule is unchanged.
+
+Four synthetic cases were added, including fractional boundaries, wide bowls,
+missing numerators and shallow hollow-note counters. Two fail with the previous
+decoder; the wide-bowl case also exercises complete note extraction. Validation
+passed 313 Java tests, 13 Python tests, PNG/PDF inference-to-MIDI smoke tests,
+and 1,424 app tests plus lint. A 48-page comparison passed 411 saved pitch and
+presence expectations. Four source-confirmed meter fragments were removed;
+all matched pitches remained unchanged. A separate remaining rest-bar artifact
+changes onset after the preceding false events are removed.
+
+The hourly revisit of 22 earlier pages also passed all 177 saved expectations
+with identical sounding events. One previously missed dotted-rest duration was
+confirmed against its printed source. The full library and performance audit
+remains incomplete. Private scans, model weights and packaged releases are
+unchanged by this source update.
