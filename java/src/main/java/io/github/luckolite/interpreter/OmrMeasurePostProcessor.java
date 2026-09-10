@@ -367,8 +367,10 @@ final class OmrMeasurePostProcessor {
      * Require an actual ink connection, ignoring the staff lines that join everything. */
     private static boolean headTouchesColumn(byte[] labels,byte[] gray,int width,int height,int x,
             int top,int bottom,int[] rows,float gap,float shift) {
+        float[] printedRows = connectionStaffRows(gray, width, height, x, rows, gap, shift);
         for(int y=Math.max(0,top);y<=Math.min(height-1,bottom);y++) {
-            boolean staffLine=false;for(int row:rows)if(Math.abs(y-row-shift)<=Math.max(1,gap*.14f))staffLine=true;
+            boolean staffLine=false;
+            for(float row:printedRows)if(Math.abs(y-row)<=Math.max(1,gap*.14f))staffLine=true;
             if(staffLine)continue;
             // Semantic candidates include the two-pixel halo around a thin column.
             // Start from each real column, or its white halo falsely looks disconnected.
@@ -379,6 +381,38 @@ final class OmrMeasurePostProcessor {
                 }
         }
         return false;
+    }
+
+    /** Use thin bilateral raw rules when semantic centers drift into the spaces.
+     * Require all five lines; short ledger rules and nearby beams cannot relocate a staff. */
+    private static float[] connectionStaffRows(byte[] gray, int width, int height, int x,
+            int[] rows, float gap, float shift) {
+        float[] original = new float[5], refined = new float[5];
+        for (int line = 0; line < 5; line++) original[line] = rows[line] + shift;
+        int inner = Math.max(3, Math.round(gap * .45f));
+        int outer = Math.max(inner + 3, Math.round(gap * 2f));
+        if (x - outer < 0 || x + outer >= width) return original;
+        for (int line = 0; line < 5; line++) {
+            int top = Math.max(0, (int)Math.floor(original[line] - gap * .32f));
+            int bottom = Math.min(height - 1, (int)Math.ceil(original[line] + gap * .32f));
+            int first = -1, last = -1;
+            for (int y = top; y <= bottom; y++) {
+                int left = 0, right = 0;
+                for (int d = inner; d <= outer; d++) {
+                    if ((gray[y * width + x - d] & 255) < 150) left++;
+                    if ((gray[y * width + x + d] & 255) < 150) right++;
+                }
+                if (Math.min(left, right) < (outer - inner + 1) * .8f) continue;
+                if (last >= 0 && y != last + 1) return original;
+                if (first < 0) first = y;
+                last = y;
+            }
+            if (first < 0 || last - first + 1 > Math.max(2, gap * .3f)) return original;
+            refined[line] = (first + last) / 2f;
+            if (line > 0 && Math.abs(refined[line] - refined[line - 1] - gap) > gap * .2f)
+                return original;
+        }
+        return refined;
     }
 
     /** High ledger heads still veto their own long stem, but not an unrelated bar on the next row. */

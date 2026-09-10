@@ -454,3 +454,30 @@ standalone code were compared directly; pre-existing mixed experiments were
 excluded. Weights, dependencies and Apache-2.0 terms are unchanged. This source
 batch has not been installed on a phone; cache revisions advance for the next
 Android build.
+
+## Printed staff centers and nearby barlines
+
+Slight errors in semantic staff centers could leave a real staff rule in the
+note-to-bar connection check. That horizontal rule connected an unrelated nearby
+head to a valid barline, causing two printed bars to merge. The check now uses
+five thin, bilaterally supported raw rules when they agree with the existing
+staff geometry. Incomplete, thick or one-sided evidence retains the original
+behavior. Actual attached heads continue to veto note stems as barlines.
+
+Ten original generated-geometry regressions cover both displacement directions,
+two resolutions, already accurate staff centers, true attached heads, incomplete
+ledger evidence and one-sided ink. Four fail on the previous decoder. All 573
+Java tests, 13 Python tests, PNG/PDF/MIDI smoke checks and 52 focused Android tests
+pass. All 1,270 saved private pitch/presence assertions pass.
+
+In the private two-page source, page 1 now has all 27 printed bars instead of 26;
+its 220 pitches are unchanged. Nineteen source-transcribed timing assertions in
+the two formerly merged bars now pass, including the final triplet. Page 2's
+event output is identical; one boundary moves by a single pixel. Ten other
+targeted pages have completely identical output. Other known rhythm/tie issues
+remain open; this is not exhaustive listening certification.
+
+Only reviewed shared code and original synthetic tests are published. Private
+scores and logs, mixed experiments, weights, dependencies and license terms are
+unchanged. Guide104/audio20 invalidate derived caches in the next Android build.
+No APK, phone, Sync Hub or EXE update is included in this source batch.
