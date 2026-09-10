@@ -132,6 +132,9 @@ final class OmrScoreInterpreter {
                 augmentationDots=0;
             int writtenAccidental = detectWrittenAccidental(labels, width, height,
                     localAccidentals, head, localPitch[1]);
+            if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                    &&rawFlatFromBowl(gray,width,height,localAccidentals,head,localPitch[1]))
+                writtenAccidental=ScoreNoteEvent.ACCIDENTAL_FLAT;
             if((writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                     ||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FLAT)
                     &&rawNaturalFromCrossbars(gray,width,height,localAccidentals,head,localPitch[1]))
@@ -2098,7 +2101,7 @@ final class OmrScoreInterpreter {
             List<DetectedNote> detected, List<ScoreNoteEvent> events) {
         for (int i=0;i<detected.size();i++) {
             DetectedNote first=detected.get(i);
-            if (!smallGraceHead(first) || (gray != null
+            if (!(smallGraceHead(first)||roundedBeamedGraceHead(first,gray,width,height)) || (gray != null
                     ? attachedRawStem(gray,width,height,first.head,first.staffGap*.65f)==null
                     : !hasAttachedStem(labels,width,height,first.head,first.staffGap))) continue;
             List<Integer> prefix=new ArrayList<>(); prefix.add(i);
@@ -2111,14 +2114,17 @@ final class OmrScoreInterpreter {
                 float dx=next.head.centerX-previous.head.centerX;
                 if(dx<first.staffGap*.65f || dx>first.staffGap*2.8f
                         ||Math.abs(next.head.centerY-previous.head.centerY)>first.staffGap*2.5f)break;
-                if(smallGraceHead(next)) {
+                if(smallGraceHead(next)||roundedBeamedGraceHead(next,gray,width,height)) {
                     if(gray!=null
                             ? attachedRawStem(gray,width,height,next.head,next.staffGap*.65f)==null
                             : !hasAttachedStem(labels,width,height,next.head,next.staffGap))break;
                     prefix.add(j);previous=next;continue;
                 }
                 if(next.head.area>first.head.area*1.65f
-                        &&next.head.maxX-next.head.minX+1>first.staffGap*1.05f)
+                        &&next.head.maxX-next.head.minX+1>first.staffGap*1.05f
+                        &&(prefix.stream().allMatch(index->smallGraceHead(detected.get(index)))
+                        ||prefix.size()>=2&&prefix.stream().allMatch(index->
+                                next.head.area>detected.get(index).head.area*1.65f)))
                     for(int index:prefix)events.set(index,events.get(index).withArticulations(
                             events.get(index).articulations()|NoteOrnament.GRACE));
                 break;
@@ -2457,6 +2463,57 @@ final class OmrScoreInterpreter {
         if(area==0)return false;
         Component glyph=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
         return isNaturalGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap);
+    }
+
+    /** A flat's bowl can keep its accidental label while its tall spine is labelled as a stem. */
+    private static boolean rawFlatFromBowl(byte[] gray,int width,int height,
+            List<AccidentalCandidate> candidates,Component head,float gap) {
+        if(gray==null||gray.length!=width*height)return false;
+        for(AccidentalCandidate seed:candidates) {
+            if(seed.label!=OmrMeasurePostProcessor.CLEF_OR_KEY&&seed.label!=0)continue;
+            Component c=seed.component;
+            if(c.maxX>=head.minX||head.minX-c.maxX>gap*1.35f
+                    ||c.maxX-c.minX+1<gap*.24f||c.maxX-c.minX+1>gap*1.25f
+                    ||Math.abs(c.centerY-head.centerY)>gap*.8f)continue;
+            int margin=Math.max(1,Math.round(gap*.16f));
+            int left=Math.max(0,c.minX-margin),right=Math.min(width-1,Math.min(c.maxX+margin,head.minX-2));
+            int top=Math.max(0,Math.round(head.centerY-gap*2.7f)),bottom=Math.min(height-1,Math.round(head.centerY+gap*.8f));
+            int w=right-left+1,h=bottom-top+1;if(w<=0||h<=0)continue;
+            byte[] ink=new byte[w*h];int area=0,minX=w,maxX=-1,minY=h,maxY=-1;long sx=0,sy=0;
+            int reach=Math.max(3,Math.round(gap*.6f)),probe=Math.max(2,Math.round(gap*.2f));
+            for(int y=top;y<=bottom;y++) {
+                int outside=0,dark=0;
+                for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
+                    if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=180)dark++;}
+                boolean rule=outside>0&&dark>=outside*.8f;
+                for(int x=left;x<=right;x++) {
+                    if((gray[y*width+x]&255)>180)continue;
+                    if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>180
+                            ||(gray[(y+probe)*width+x]&255)>180))continue;
+                    int xx=x-left,yy=y-top;ink[yy*w+xx]=OmrMeasurePostProcessor.SYMBOL;
+                    area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);
+                    minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
+                }
+            }
+            if(area==0)continue;
+            var glyph=new AccidentalCandidate(new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area),OmrMeasurePostProcessor.SYMBOL);
+            if(!isNaturalGlyph(ink,w,h,glyph,gap)&&!isSharpGlyph(ink,w,h,glyph,gap)
+                    &&isFlatGlyph(ink,w,h,glyph,gap)&&Math.abs(top+flatPitchCenter(ink,w,glyph,gap)-head.centerY)<=gap*.45f)
+                return true;
+        }
+        return false;
+    }
+
+    /** Raster rounding can make a beamed grace group nearly one staff space tall.
+     * Only admit these larger candidates with shortened stems; the caller also
+     * requires a group and a substantially larger principal for every member. */
+    private static boolean roundedBeamedGraceHead(DetectedNote n,byte[] gray,int width,int height) {
+        if(n.head.maxX-n.head.minX+1>Math.round(n.staffGap*1.10f)
+                ||n.head.maxY-n.head.minY+1>Math.round(n.staffGap)
+                ||n.head.area>n.staffGap*n.staffGap*.80f||n.event.augmentationDots()!=0
+                ||n.event.beamCount()<1||n.event.unbeamedDurationBeats()>=ScoreNoteEvent.DURATION_HALF)return false;
+        int[] stem=attachedRawStem(gray,width,height,n.head,n.staffGap*.65f);
+        return stem!=null&&Math.abs(stem[1]-n.head.centerY)<=n.staffGap*3.1f;
     }
 
     /** Returns a local accidental immediately left of this head, or key-signature fallback. */
@@ -3522,6 +3579,13 @@ final class OmrScoreInterpreter {
                         &&bins[0]>=5&&bins[4]>=5&&coveredBins[0]>=7&&coveredBins[1]>=7
                         &&coveredBins[2]>=7&&coveredBins[3]>=7&&coveredBins[4]>=7
                         &&arcCurvature(supportedCenters,0,0,49)>=Math.max(1.2f,gap*.15f))return true;
+                // Both ends of a short tie can merge into the same thick staff rule.
+                // Require an almost complete curve and an independently visible middle
+                // and returning shoulders; a straight rule or one-sided beam cannot pass.
+                if(hits>=36&&obscured>0&&obscured<=14&&hits+obscured>=48
+                        &&bins[0]>=3&&bins[4]>=3&&bins[1]>=9&&bins[2]>=9&&bins[3]>=9
+                        &&coveredBins[0]>=9&&coveredBins[4]>=9
+                        &&arcCurvature(centers,0,0,49)>=Math.max(1.2f,gap*.15f))return true;
             }
         return false;
     }

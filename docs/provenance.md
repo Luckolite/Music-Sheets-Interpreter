@@ -290,3 +290,40 @@ Validation passed 485 standalone Java tests, 13 Python tests, PNG/PDF-to-MIDI
 smoke checks, and 1,584 app tests in each Android variant with debug/release lint.
 The corresponding Music Sheets 1.18.109 phone update preserves all 396 recorded
 song identities. Whole-library listening validation remains in progress.
+
+
+## Split flat spines, staff-crossing ties and rounded grace groups
+
+A flat can retain its labelled bowl while its tall spine is labelled as a stem.
+The decoder now reconstructs that narrow accidental from the source ink, removes
+crossing staff rules and requires flat geometry and a matching bowl pitch. It
+rejects sharps, naturals and stems without bowls. The existing measure accidental
+state then carries the recovered flat to subsequent matching notes.
+
+Short ties whose two ends overlap one staff rule now require a nearly complete
+returning curve with a visible middle and both shoulders. Straight rules,
+sloping/stepped beams and incomplete arcs remain excluded. Beamed grace groups
+with rounded raster masks can be slightly larger when they have shortened stems,
+at least two notes and a substantially larger principal. They share the existing
+grace-time budget instead of displacing the written rhythm.
+
+Twenty original synthetic regressions cover these repairs. The exact private
+Android capture reproduces three B-natural errors in place of B-flats, an omitted
+C tie and two grace groups treated as metrical notes. The candidate corrects
+those readings. Fifteen of eighteen targeted page outputs remain identical;
+548 separately transcribed pitch checks pass. Another changed page retains a
+previously identified false beam-fragment note in a grace group; that unresolved
+presence defect is not counted as a correct note or whole-page accuracy success.
+Private score scans and phone fixtures are not distributed.
+
+The Android adapter also repairs a cache validation restriction that rejected
+quarter, half, dotted and triplet rests. This is app-only serialization code; the
+standalone interpreter has no Android guide-cache reader. No weights, dependencies,
+license terms or model lineage changed. Whole-library evaluation remains ongoing.
+
+Validation passed 505 standalone Java tests, 13 Python tests, PNG/PDF-to-MIDI smoke
+checks, 1,606 unit tests in each Android variant and both lint checks. The corresponding
+1.18.110 phone update preserves 396 song identities. All three reported-song pages
+were regenerated on the phone; refreshed guides contain the corrected flats, tie
+and grace groups and survive cache round trips. These are targeted device checks,
+not a claim that every library page or recorded performance is accurate.
