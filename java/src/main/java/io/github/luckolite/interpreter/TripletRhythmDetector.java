@@ -11,91 +11,131 @@ import java.util.List;
 final class TripletRhythmDetector {
     private TripletRhythmDetector() { }
 
-    static List<ScoreNoteEvent> apply(List<ScoreNoteEvent> notes, List<MeasureRegion> measures,
-                                       byte[] gray, int width, int height) {
-        if (notes == null || notes.size() < 3 || measures == null || gray == null
-                || width < 1 || height < 1 || gray.length != width * height) return notes;
-        List<ScoreNoteEvent> result = new ArrayList<>(notes);
-        List<Integer> order = new ArrayList<>();
-        for (int i = 0; i < notes.size(); i++) order.add(i);
-        order.sort(Comparator.comparingInt((Integer i) -> notes.get(i).measureIndex())
-                .thenComparingInt(i -> notes.get(i).staffIndex())
-                .thenComparingDouble(i -> notes.get(i).positionInMeasure()));
-        for (int i = 0; i + 2 < order.size(); i++) {
-            ScoreNoteEvent a = result.get(order.get(i)), b = result.get(order.get(i + 1)),
-                    c = result.get(order.get(i + 2));
-            if (a.measureIndex() < 0 || a.measureIndex() >= measures.size()
-                    || a.measureIndex() != b.measureIndex() || a.measureIndex() != c.measureIndex()
-                    || a.staffIndex() != b.staffIndex() || a.staffIndex() != c.staffIndex()
-                    || a.staffCount() != b.staffCount() || a.staffCount() != c.staffCount()
-                    || ((a.articulations()|b.articulations()|c.articulations())&NoteOrnament.GRACE)!=0
-                    || a.tupletDivisor() != 1 || b.tupletDivisor() != 1 || c.tupletDivisor() != 1
-                    || a.augmentationDots() != 0 || b.augmentationDots() != 0 || c.augmentationDots() != 0
-                    || a.beamCount() != b.beamCount() || a.beamCount() != c.beamCount()) continue;
-            double value = ScoreNoteTiming.writtenDurationBeats(a);
-            if (!Double.isFinite(value) || value > 1
-                    || Math.abs(value - ScoreNoteTiming.writtenDurationBeats(b)) > .001
-                    || Math.abs(value - ScoreNoteTiming.writtenDurationBeats(c)) > .001) continue;
-            float firstGap = b.positionInMeasure() - a.positionInMeasure();
-            float secondGap = c.positionInMeasure() - b.positionInMeasure();
-            if (firstGap < .022f || secondGap < .022f
-                    || Math.max(firstGap, secondGap) > Math.min(firstGap, secondGap) * 1.5f) continue;
-            MeasureRegion region = measures.get(a.measureIndex());
-            float gap = Math.max(4f, (region.bottom() - region.top()) * height / (8 * a.staffCount()));
-            float x1 = (region.left() + a.positionInMeasure() * (region.right() - region.left())) * width;
-            float x3 = (region.left() + c.positionInMeasure() * (region.right() - region.left())) * width;
-            if (x3 - x1 < gap * 2 || x3 - x1 > gap * 18) continue;
-            float y1 = Math.min(a.pageY(), Math.min(b.pageY(), c.pageY())) * height;
-            float y2 = Math.max(a.pageY(), Math.max(b.pageY(), c.pageY())) * height;
-            if (!hasPrintedThree(gray, width, height, x1, x3, y1, y2, gap, a.beamCount() > 0)) continue;
-            for (int j = 0; j < 3; j++) {
-                int index = order.get(i + j);
-                ScoreNoteEvent n = result.get(index);
-                result.set(index, new ScoreNoteEvent(n.measureIndex(), n.positionInMeasure(),
-                        n.staffStep(), n.staffIndex(), n.staffCount(), n.pageY(), n.tiedFromPrevious(),
-                        n.augmentationDots(), n.beamCount(), n.writtenAccidental(),
-                        n.unbeamedDurationBeats(), 3, n.followingRestBeats(), n.articulations(), n.clefBottomDiatonic(), n.crossStaffBeam(), n.leadingRestBeats()));
+    /** A chord contributes one attack column, regardless of how many heads it contains. */
+    private record Onset(List<Integer> indices,float position,float top,float bottom) { }
+
+    private static List<Onset> onsets(List<ScoreNoteEvent> notes) {
+        List<Integer> order=new ArrayList<>();
+        for(int i=0;i<notes.size();i++)order.add(i);
+        order.sort(Comparator.comparingInt((Integer i)->notes.get(i).measureIndex())
+                .thenComparingInt(i->notes.get(i).staffIndex())
+                .thenComparingInt(i->notes.get(i).staffCount())
+                .thenComparingDouble(i->notes.get(i).positionInMeasure()));
+        List<Onset> result=new ArrayList<>();
+        for(int i=0;i<order.size();) {
+            ScoreNoteEvent first=notes.get(order.get(i));
+            List<Integer> members=new ArrayList<>();float top=first.pageY(),bottom=top;
+            int j=i;
+            while(j<order.size()) {
+                ScoreNoteEvent n=notes.get(order.get(j));
+                if(!sameVoice(first,n)||n.positionInMeasure()-first.positionInMeasure()>.012f)break;
+                members.add(order.get(j));top=Math.min(top,n.pageY());bottom=Math.max(bottom,n.pageY());j++;
             }
-            i += 2;
+            result.add(new Onset(List.copyOf(members),first.positionInMeasure(),top,bottom));i=j;
+        }
+        return result;
+    }
+
+    private static boolean sameVoice(ScoreNoteEvent a,ScoreNoteEvent b) {
+        return a.measureIndex()==b.measureIndex()&&a.staffIndex()==b.staffIndex()&&a.staffCount()==b.staffCount();
+    }
+
+    /** Keep independent held voices out of a moving chord's rhythmic group.
+     * The three attack columns themselves remain consecutive: an intervening
+     * different-value attack must not be skipped to manufacture a triplet. */
+    private static Onset matching(Onset onset,List<ScoreNoteEvent> notes,ScoreNoteEvent first) {
+        double value=ScoreNoteTiming.writtenDurationBeats(first);
+        if(!Double.isFinite(value)||value<=0||value>1)return null;
+        List<Integer> members=new ArrayList<>();float top=Float.POSITIVE_INFINITY,bottom=Float.NEGATIVE_INFINITY;
+        for(int index:onset.indices()) {
+            ScoreNoteEvent n=notes.get(index);
+            double written=ScoreNoteTiming.writtenDurationBeats(n);
+            if(!Double.isFinite(written)||!sameVoice(first,n)||n.beamCount()!=first.beamCount()||n.augmentationDots()!=0
+                    ||n.tupletDivisor()!=1||(n.articulations()&NoteOrnament.GRACE)!=0
+                    ||Math.abs(written-value)>.001)continue;
+            members.add(index);top=Math.min(top,n.pageY());bottom=Math.max(bottom,n.pageY());
+        }
+        return members.isEmpty()?null:new Onset(List.copyOf(members),onset.position(),top,bottom);
+    }
+
+    private static List<List<Onset>> triples(Onset a,Onset b,Onset c,List<ScoreNoteEvent> notes,boolean beamed) {
+        List<List<Onset>> result=new ArrayList<>();
+        float ab=b.position()-a.position(),bc=c.position()-b.position();
+        if(ab<.022f||bc<.022f||Math.max(ab,bc)>Math.min(ab,bc)*1.5f)return result;
+        for(int index:a.indices()) {
+            ScoreNoteEvent first=notes.get(index);
+            if(beamed&&first.beamCount()<1)continue;
+            boolean seen=false;
+            for(List<Onset> group:result)if(group.get(0).indices().contains(index)){seen=true;break;}
+            if(seen)continue;
+            Onset aa=matching(a,notes,first),bb=matching(b,notes,first),cc=matching(c,notes,first);
+            if(aa!=null&&bb!=null&&cc!=null)result.add(List.of(aa,bb,cc));
+        }
+        return result;
+    }
+
+    static List<ScoreNoteEvent> apply(List<ScoreNoteEvent> notes,List<MeasureRegion> measures,
+            byte[] gray,int width,int height) {
+        if(notes==null||notes.size()<3||measures==null||gray==null
+                ||width<1||height<1||gray.length!=width*height)return notes;
+        List<ScoreNoteEvent> result=new ArrayList<>(notes);List<Onset> groups=onsets(notes);
+        for(int i=0;i+2<groups.size();i++) {
+            boolean marked=false;
+            for(List<Onset> group:triples(groups.get(i),groups.get(i+1),groups.get(i+2),result,false)) {
+                Onset a=group.get(0),b=group.get(1),c=group.get(2);
+                ScoreNoteEvent first=result.get(a.indices().get(0));
+                if(first.measureIndex()<0||first.measureIndex()>=measures.size())continue;
+                MeasureRegion region=measures.get(first.measureIndex());
+                float gap=Math.max(4,(region.bottom()-region.top())*height/(8*first.staffCount()));
+                float x1=(region.left()+a.position()*(region.right()-region.left()))*width;
+                float x3=(region.left()+c.position()*(region.right()-region.left()))*width;
+                if(x3-x1<gap*2||x3-x1>gap*18)continue;
+                float y1=Math.min(a.top(),Math.min(b.top(),c.top()))*height;
+                float y2=Math.max(a.bottom(),Math.max(b.bottom(),c.bottom()))*height;
+                if(!hasPrintedThree(gray,width,height,x1,x3,y1,y2,gap,first.beamCount()>0))continue;
+                for(Onset onset:List.of(a,b,c))for(int index:onset.indices()) {
+                    ScoreNoteEvent n=result.get(index);
+                    result.set(index,new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
+                            n.staffIndex(),n.staffCount(),n.pageY(),n.tiedFromPrevious(),n.augmentationDots(),
+                            n.beamCount(),n.writtenAccidental(),n.unbeamedDurationBeats(),3,n.followingRestBeats(),
+                            n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats()));
+                }
+                marked=true;
+            }
+            if(marked)i+=2;
         }
         return List.copyOf(result);
     }
 
-    /** A numeral predicted as a long note can interrupt the triple that would identify it.
-     * Require its complete raw 3 glyph and a coherent surrounding short-note triple. */
+    /** Complete printed numeral evidence overrides spurious head/beam predictions on that glyph. */
     static List<ScoreNoteEvent> withoutNumeralHeads(List<ScoreNoteEvent> notes,
             List<MeasureRegion> measures,byte[] gray,int width,int height) {
         if(notes==null||notes.size()<4||measures==null||gray==null||width<1||height<1
                 ||gray.length!=width*height)return notes;
         List<ScoreNoteEvent> result=new ArrayList<>(notes);
         for(ScoreNoteEvent candidate:notes) {
-            if(candidate.beamCount()!=0||candidate.tiedFromPrevious()
-                    ||candidate.measureIndex()<0||candidate.measureIndex()>=measures.size())continue;
+            if(candidate.tiedFromPrevious()||candidate.measureIndex()<0||candidate.measureIndex()>=measures.size())continue;
             List<ScoreNoteEvent> voice=new ArrayList<>();
-            for(ScoreNoteEvent n:result)if(n!=candidate&&n.measureIndex()==candidate.measureIndex()
-                    &&n.staffIndex()==candidate.staffIndex()&&n.staffCount()==candidate.staffCount())voice.add(n);
-            voice.sort(Comparator.comparingDouble(ScoreNoteEvent::positionInMeasure));
+            for(ScoreNoteEvent n:result)if(n!=candidate&&sameVoice(n,candidate))voice.add(n);
+            List<Onset> groups=onsets(voice);
             MeasureRegion region=measures.get(candidate.measureIndex());
             float gap=Math.max(4,(region.bottom()-region.top())*height/(8*candidate.staffCount()));
             float candidateX=(region.left()+candidate.positionInMeasure()*(region.right()-region.left()))*width;
             float candidateY=candidate.pageY()*height;
-            for(int i=0;i+2<voice.size();i++) {
-                ScoreNoteEvent a=voice.get(i),b=voice.get(i+1),c=voice.get(i+2);
-                if(a.beamCount()<1||a.beamCount()!=b.beamCount()||a.beamCount()!=c.beamCount()
-                        ||a.augmentationDots()!=0||b.augmentationDots()!=0||c.augmentationDots()!=0
-                        ||a.tupletDivisor()!=1||b.tupletDivisor()!=1||c.tupletDivisor()!=1
-                        ||((a.articulations()|b.articulations()|c.articulations())&NoteOrnament.GRACE)!=0)continue;
-                float ab=b.positionInMeasure()-a.positionInMeasure(),bc=c.positionInMeasure()-b.positionInMeasure();
-                if(ab<.022f||bc<.022f||Math.max(ab,bc)>Math.min(ab,bc)*1.5f)continue;
-                float x1=(region.left()+a.positionInMeasure()*(region.right()-region.left()))*width;
-                float x3=(region.left()+c.positionInMeasure()*(region.right()-region.left()))*width;
-                float y1=Math.min(a.pageY(),Math.min(b.pageY(),c.pageY()))*height;
-                float y2=Math.max(a.pageY(),Math.max(b.pageY(),c.pageY()))*height;
-                if(x3-x1<gap*2||x3-x1>gap*18||candidateX<x1-gap||candidateX>x3+gap
-                        ||candidateY>=y1-gap&&candidateY<=y2+gap)continue;
-                if(findPrintedThree(gray,width,height,x1,x3,y1,y2,gap,true,candidateX,candidateY)!=null) {
-                    result.remove(candidate);break;
+            for(int i=0;i+2<groups.size();i++) {
+                for(List<Onset> group:triples(groups.get(i),groups.get(i+1),groups.get(i+2),voice,true)) {
+                    Onset a=group.get(0),b=group.get(1),c=group.get(2);
+                    float x1=(region.left()+a.position()*(region.right()-region.left()))*width;
+                    float x3=(region.left()+c.position()*(region.right()-region.left()))*width;
+                    float y1=Math.min(a.top(),Math.min(b.top(),c.top()))*height;
+                    float y2=Math.max(a.bottom(),Math.max(b.bottom(),c.bottom()))*height;
+                    if(x3-x1<gap*2||x3-x1>gap*18||candidateX<x1-gap||candidateX>x3+gap
+                            ||candidateY>=y1-gap&&candidateY<=y2+gap)continue;
+                    if(findPrintedThree(gray,width,height,x1,x3,y1,y2,gap,true,candidateX,candidateY)!=null) {
+                        result.remove(candidate);break;
+                    }
                 }
+                if(!result.contains(candidate))break;
             }
         }
         return List.copyOf(result);

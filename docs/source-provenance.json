@@ -1,5 +1,5 @@
 {
-  "source_commit": "de9aedd728b6a6779f90363e95574c57f77c1970",
+  "source_commit": "d9cff59383dca9fadbfd33df15c6495d5cea8215",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -52,7 +52,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "29c91850f3ae8d3c21e7e88ecdeac8cfeb97518eb6d4d3b064548d62d77a56fa"
+      "source_sha256": "f41f209987863cd6f5ca0b3223cd9e12ec9244a05e5bf067d51edcbb69f17776"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -84,7 +84,7 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "341f14af2100801195e757ec67f1890e4c3b4d37f4d214bb555392a1b221c2a5"
+      "source_sha256": "2dfd92ea7286822ff879ca5e2364c1602331026928b282089bbb6f7e9cfcdd2e"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
@@ -112,7 +112,7 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "04fee3ea3461239164ecb17de8f9ff4ef3acb23837195b349b7f0477dc8b01a6"
+      "source_sha256": "3cbda4444563c2c704d2e38a9c06b183aa91d04d210567c3377d1c6741b58213"
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"

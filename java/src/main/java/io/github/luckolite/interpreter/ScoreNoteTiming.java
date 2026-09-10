@@ -284,20 +284,15 @@ public final class ScoreNoteTiming {
         double proposed=candidateCrossStaffOnset(target,allNotes,beatsPerMeasure,voiceOnset);
         if(Math.abs(proposed-voiceOnset)<.0001)return voiceOnset;
         if(target.staffCount()>1) {
-            // Validate the whole candidate map before applying it. Comparing to unaligned
-            // neighbour times rejects legitimate repairs when an entire damaged voice shifts.
-            // If pairwise anchors contradict reading order, keep the independent staff clocks.
-            for(int staff=0;staff<target.staffCount();staff++) {
-                final int index=staff;
-                var voice=allNotes.stream().filter(n->n.measureIndex()==target.measureIndex()
-                        &&n.staffCount()==target.staffCount()&&n.staffIndex()==index)
-                        .sorted(Comparator.comparingDouble(ScoreNoteEvent::positionInMeasure)).collect(java.util.stream.Collectors.toList());
-                double previous=-1;float position=-1;
-                for(var n:voice) {
-                    double candidate=candidateCrossStaffOnset(n,allNotes,beatsPerMeasure,voiceBeatInMeasure(n,allNotes,beatsPerMeasure));
-                    if(n.positionInMeasure()-position>SAME_ONSET_POSITION&&candidate<=previous+.0001)return voiceOnset;
-                    previous=candidate;position=n.positionInMeasure();
-                }
+            // Validate this staff's full candidate map, so shifting a voice
+            // cannot collapse two attacks. A conflict in an unrelated third
+            // staff must not disable a consistent accompaniment alignment.
+            var voice=measureVoice(target,allNotes);
+            double previous=-1;float position=-1;
+            for(var n:voice) {
+                double candidate=candidateCrossStaffOnset(n,allNotes,beatsPerMeasure,voiceBeatInMeasure(n,allNotes,beatsPerMeasure));
+                if(n.positionInMeasure()-position>SAME_ONSET_POSITION&&candidate<=previous+.0001)return voiceOnset;
+                previous=candidate;position=n.positionInMeasure();
             }
         }
         return proposed;
@@ -336,7 +331,7 @@ public final class ScoreNoteTiming {
         Double printedOnset=null;
         for(ScoreNoteEvent anchor:aligned) {
             List<RhythmGroup> groups=rhythmGroups(measureVoice(anchor,allNotes));
-            if(!completePrintedRestRhythm(groups,beatsPerMeasure))continue;
+            if(!completePrintedRestRhythm(groups,beatsPerMeasure)&&!completeWrittenRhythm(groups,beatsPerMeasure))continue;
             double onset=voiceBeatInMeasure(anchor,allNotes,beatsPerMeasure);
             if(printedOnset!=null&&Math.abs(printedOnset-onset)>.0001)return voiceOnset;
             printedOnset=onset;
@@ -532,6 +527,24 @@ public final class ScoreNoteTiming {
 
     private static double leadingRest(List<RhythmGroup> groups) {
         return groups.isEmpty()?0:groups.get(0).notes.stream().mapToDouble(ScoreNoteEvent::leadingRestBeats).max().orElse(0);
+    }
+
+    /** A complete sequence of explicitly read values is an anchor even without rests. */
+    private static boolean completeWrittenRhythm(List<RhythmGroup> groups,double beats) {
+        if(groups.isEmpty()||!Double.isFinite(beats))return false;
+        double total=leadingRest(groups);
+        for(RhythmGroup group:groups) {
+            double written=group.writtenDuration();
+            if(!Double.isFinite(written)||written<=0)return false;
+            total+=written+followingRest(group);
+        }
+        if(Math.abs(total-beats)>=.001)return false;
+        // Four falsely unflagged short notes can coincidentally sum to a bar
+        // while occupying only its opening. Require the written sequence to
+        // span the bar before letting it override a neighbouring clock.
+        double expectedSpan=(beats-groups.get(groups.size()-1).writtenDuration())/beats;
+        double printedSpan=groups.get(groups.size()-1).position-groups.get(0).position;
+        return expectedSpan<=0||printedSpan>=expectedSpan*.8;
     }
 
     private static boolean completePrintedRestRhythm(List<RhythmGroup> groups, double beats) {

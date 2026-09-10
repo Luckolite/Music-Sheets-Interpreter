@@ -64,7 +64,7 @@ final class OmrScoreInterpreter {
         // A bright paper halo can enlarge a printed augmentation dot enough for the model to label it
         // as a second plausible notehead. Demote only small, stemless components immediately to
         // the right of a substantially larger head; grace notes retain their attached stem.
-        List<Component> demotedDotHeads = augmentationDotHeads(labels, width, height, heads, staffs);
+        List<Component> demotedDotHeads = augmentationDotHeads(labels, gray, width, height, heads, staffs);
         demotedDotHeads.addAll(articulationDotHeads(labels, gray, width, height, heads, staffs));
         heads.removeAll(demotedDotHeads);
         heads.removeAll(stemSlashFragments(gray, width, height, heads, staffs));
@@ -1961,7 +1961,7 @@ final class OmrScoreInterpreter {
 
     /** Grace-sized heads use shorter ledger rules but retain the normal staff spacing. */
     private static boolean reducedLedgerHead(byte[] gray,int width,int height,Component head,float gap) {
-        return head.maxX-head.minX+1<=gap*.95f&&head.maxY-head.minY+1<=gap*.78f
+        return head.maxX-head.minX+1<=Math.round(gap*.95f)&&head.maxY-head.minY+1<=Math.round(gap*.78f)
                 &&head.area<=gap*gap*.60f
                 &&attachedRawStem(gray,width,height,head,gap*.65f)!=null;
     }
@@ -2071,9 +2071,9 @@ final class OmrScoreInterpreter {
                 if(dx<first.staffGap*.65f || dx>first.staffGap*2.8f
                         ||Math.abs(next.head.centerY-previous.head.centerY)>first.staffGap*2.5f)break;
                 if(smallGraceHead(next)) {
-                    if(prefix.size()>=4 || (gray!=null
+                    if(gray!=null
                             ? attachedRawStem(gray,width,height,next.head,next.staffGap*.65f)==null
-                            : !hasAttachedStem(labels,width,height,next.head,next.staffGap)))break;
+                            : !hasAttachedStem(labels,width,height,next.head,next.staffGap))break;
                     prefix.add(j);previous=next;continue;
                 }
                 if(next.head.area>first.head.area*1.65f
@@ -2086,8 +2086,8 @@ final class OmrScoreInterpreter {
     }
 
     private static boolean smallGraceHead(DetectedNote n) {
-        return n.head.maxX-n.head.minX+1<=n.staffGap*.95f
-                &&n.head.maxY-n.head.minY+1<=n.staffGap*.78f
+        return n.head.maxX-n.head.minX+1<=Math.round(n.staffGap*.95f)
+                &&n.head.maxY-n.head.minY+1<=Math.round(n.staffGap*.78f)
                 &&n.head.area<=n.staffGap*n.staffGap*.60f
                 &&n.event.augmentationDots()==0
                 &&n.event.unbeamedDurationBeats()<ScoreNoteEvent.DURATION_HALF;
@@ -2105,7 +2105,7 @@ final class OmrScoreInterpreter {
                 && head.area >= Math.max(4, Math.round(gap * gap * .11f));
     }
 
-    private static List<Component> augmentationDotHeads(byte[] labels, int width, int height,
+    private static List<Component> augmentationDotHeads(byte[] labels, byte[] gray, int width, int height,
                                                          List<Component> heads,
                                                          List<Staff> staffs) {
         List<Component> dots = new ArrayList<>();
@@ -2117,7 +2117,8 @@ final class OmrScoreInterpreter {
             float candidateHeight = candidate.maxY - candidate.minY + 1f;
             if (candidateWidth > gap * .82f || candidateHeight > gap * .82f
                     || candidate.area > gap * gap * .48f
-                    || hasAttachedStem(labels, width, height, candidate, gap)) continue;
+                    || hasAttachedStem(labels, width, height, candidate, gap)
+                    || attachedRawStem(gray,width,height,candidate,gap*.65f)!=null) continue;
             for (Component main : heads) {
                 if (main == candidate || nearestHeadStaff(staffs, main.centerY) != staff) continue;
                 float mainWidth = main.maxX - main.minX + 1f;

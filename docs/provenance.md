@@ -225,3 +225,29 @@ across three recent arrangements still agree with the source. A separate false
 grace-beam event remains under investigation; this is not a whole-library accuracy
 claim. Model weights, licenses and dependencies are unchanged. No commercial
 images or device logs were included.
+
+
+## Grace prefixes and chord triplets
+
+Small grace heads now retain short raw stems even when semantic stem labels are
+missing. Pixel-rounded size bounds accommodate fractional staff spacing, and
+stemmed ornamental prefixes are not limited to four notes. A printed triplet
+applies to three consecutive attack columns, including every compatible chord
+member while preserving independent held voices. Complete raw numeral geometry
+also removes false note events on the numeral when beam predictions are noisy.
+
+A complete written voice spanning the measure can anchor aligned accompaniment
+onsets. Conflicting complete voices keep independent clocks, and an ordering
+conflict in a third staff does not disable a consistent piano alignment.
+
+Twenty-eight original synthetic tests cover these repairs and their negative
+cases. Validation passed 430 standalone Java tests, 13 Python tests, PNG/PDF
+model-to-MIDI smoke checks, and 1,534 app tests with Android lint. Fifteen targeted
+private pages were compared: eleven complete outputs stayed identical, no
+existing pitches were substituted, three true grace heads were recovered, and
+three false numeral events were removed. All 88 changed existing events were
+reviewed against printed rhythm; an existing hollow-chord duration error remains
+separately tracked. A false grace-beam event also remains under investigation.
+These selected checks do not establish whole-library accuracy. Model weights,
+licenses and dependencies are unchanged. No commercial images or private logs
+are included in this repository.
