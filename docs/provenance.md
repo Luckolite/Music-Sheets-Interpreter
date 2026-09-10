@@ -203,3 +203,25 @@ outputs stayed identical; one false sounding note was removed from the affected
 page, whose 189 printed pitches and final sounding-bar durations were checked.
 These are selected checks, not a whole-library accuracy claim. Model weights,
 licenses and dependencies are unchanged; commercial images remain private.
+
+
+## Reduced ledger rules on small stemmed notes
+
+Small stemmed heads can have shorter ledger rules than full-size notes. The
+ledger validator now uses a head-sized minimum for that geometry while retaining
+normal staff spacing between ledger lines. Reduced rules must extend on both
+sides of the head, and the separate inner-ledger requirement remains in force.
+Existing grace-prefix recognition then supplies ornament timing.
+
+Ten original synthetic tests cover low and high grace pitches, principal-note
+pitch and duration, borrowed grace time, missing ledgers, one-sided rules,
+unstemmed blobs and nearby slur fragments. All 402 standalone Java tests, 13 Python
+tests, PNG/PDF model-to-MIDI smoke checks, and 1,506 app tests with Android lint
+passed. Thirteen targeted private pages were compared: twelve complete outputs
+stayed identical. The affected page recovered one printed A3 grace; its D4
+principal retained its pitch and gave the grace a quarter-beat from its half-note
+duration. No existing pitches changed. All 135 currently reviewed present pitches
+across three recent arrangements still agree with the source. A separate false
+grace-beam event remains under investigation; this is not a whole-library accuracy
+claim. Model weights, licenses and dependencies are unchanged. No commercial
+images or device logs were included.

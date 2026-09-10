@@ -1939,6 +1939,8 @@ final class OmrScoreInterpreter {
 
     private static boolean hasLedgerInk(byte[] gray,int width,int height,Component head,float gap) {
         boolean stemless=attachedRawStem(gray,width,height,head,gap)==null;
+        boolean reduced=reducedLedgerHead(gray,width,height,head,gap);
+        float minimum=ledgerRunMinimum(head,gap,reduced);
         int left=Math.max(0,Math.round(head.centerX-gap*1.2f));
         int right=Math.min(width-1,Math.round(head.centerX+gap*1.2f));
         for(int y=Math.max(0,Math.round(head.centerY-gap*.65f));
@@ -1951,15 +1953,28 @@ final class OmrScoreInterpreter {
                 run=dark?run+1:0;
                 // A horizontal instruction arrow also ends in a head-like blob.
                 // A stemless ledger note has rule ink on both sides of its oval.
-                if(run>=gap*1.5f&&(!stemless||(x-run+1<head.minX&&x>head.maxX)))return true;
+                if(run>=minimum&&(!stemless&&!reduced||(x-run+1<head.minX&&x>head.maxX)))return true;
             }
         }
         return false;
     }
 
+    /** Grace-sized heads use shorter ledger rules but retain the normal staff spacing. */
+    private static boolean reducedLedgerHead(byte[] gray,int width,int height,Component head,float gap) {
+        return head.maxX-head.minX+1<=gap*.95f&&head.maxY-head.minY+1<=gap*.78f
+                &&head.area<=gap*gap*.60f
+                &&attachedRawStem(gray,width,height,head,gap*.65f)!=null;
+    }
+
+    private static float ledgerRunMinimum(Component head,float gap,boolean reduced) {
+        return reduced?Math.max(gap,head.maxX-head.minX+1+2*Math.max(1,Math.round(gap*.1f))):gap*1.5f;
+    }
+
     private static boolean hasInnerLedgerInk(byte[] gray,int width,int height,Component head,Staff staff) {
         // Beyond two staff spaces, real notation needs another ledger toward
         // the staff. One instruction arrow or underline is insufficient.
+        boolean reduced=reducedLedgerHead(gray,width,height,head,staff.gap);
+        float minimum=ledgerRunMinimum(head,staff.gap,reduced);
         float direction=head.centerY<staff.top?1:-1;
         float center=head.centerY+direction*staff.gap;
         int left=Math.max(0,Math.round(head.centerX-staff.gap*1.2f));
@@ -1971,7 +1986,7 @@ final class OmrScoreInterpreter {
                 boolean dark=(gray[y*width+x]&255)<160||(gray[(y-1)*width+x]&255)<160
                         ||(gray[(y+1)*width+x]&255)<160;
                 run=dark?run+1:0;
-                if(run>=staff.gap*1.5f)return true;
+                if(run>=minimum&&(!reduced||(x-run+1<head.minX&&x>head.maxX)))return true;
             }
         }
         return false;
