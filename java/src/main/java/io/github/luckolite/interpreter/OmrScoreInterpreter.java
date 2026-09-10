@@ -1946,8 +1946,9 @@ final class OmrScoreInterpreter {
             if (accidental == ScoreNoteEvent.ACCIDENTAL_FROM_KEY) continue;
             // A sharp belongs at the centre of its crossbars. Extra staff ink can
             // shift its pixel centroid toward another head in the same chord.
-            float pitchCenter=accidental==ScoreNoteEvent.ACCIDENTAL_SHARP?sharpCenter:glyph.centerY;
-            float tolerance=accidental==ScoreNoteEvent.ACCIDENTAL_SHARP?.65f:.90f;
+            float pitchCenter=accidental==ScoreNoteEvent.ACCIDENTAL_SHARP?sharpCenter:
+                    accidental==ScoreNoteEvent.ACCIDENTAL_FLAT?flatPitchCenter(labels,width,candidate,gap):glyph.centerY;
+            float tolerance=accidental==ScoreNoteEvent.ACCIDENTAL_NATURAL?.90f:.65f;
             if(Math.abs(pitchCenter-head.centerY)>gap*tolerance)continue;
             if (horizontal < bestDistance) {
                 best = candidate;
@@ -1984,6 +1985,17 @@ final class OmrScoreInterpreter {
         if (spine > Math.round((glyphWidth - 1) * .48f)
                 || columns[spine] < glyphHeight * .68f) return false;
         int splitY = glyph.minY + Math.round(glyphHeight * .45f);
+        int upperEnd=glyph.minY+Math.max(1,Math.round(glyphHeight*.25f));
+        int[] upperReach=new int[upperEnd-glyph.minY];
+        for(int y=glyph.minY;y<upperEnd;y++)for(int x=glyph.minX+spine;x<=glyph.maxX;x++)
+            if(candidate.matches(labels[y*width+x]))upperReach[y-glyph.minY]=x;
+        java.util.Arrays.sort(upperReach);
+        int upperEdge=upperReach[upperReach.length/2],expandedRows=0;
+        for(int y=splitY;y<=glyph.maxY;y++)for(int x=Math.max(glyph.minX,upperEdge+Math.max(2,Math.round(gap*.2f)));x<=glyph.maxX;x++)
+            if(candidate.matches(labels[y*width+x])){expandedRows++;break;}
+        // A cut note stem can widen by a pixel at a staff crossing. A flat has
+        // a distinct bowl projecting beyond the width of its upper stem.
+        if(expandedRows<Math.max(2,Math.round(glyphHeight*.1f)))return false;
         int rightStart = glyph.minX + spine + Math.max(1, Math.round(glyphWidth * .16f));
         int upperRight = 0, lowerRight = 0, wideLowerRows = 0, bowlRows = 0;
         for (int y = glyph.minY; y <= glyph.maxY; y++) {
@@ -2005,6 +2017,24 @@ final class OmrScoreInterpreter {
                 && lowerRight >= glyph.area * .13f
                 && (wideLowerRows >= Math.max(2, Math.round(glyphHeight * .10f))
                     || bowlRows >= Math.max(3, Math.round(glyphHeight * .16f)));
+    }
+
+    /** A flat changes the note beside its bowl, not the note beside its tall spine. */
+    private static float flatPitchCenter(byte[] labels,int width,AccidentalCandidate candidate,float gap) {
+        Component glyph=candidate.component;
+        int glyphWidth=glyph.maxX-glyph.minX+1,glyphHeight=glyph.maxY-glyph.minY+1;
+        int[] columns=new int[glyphWidth];
+        for(int y=glyph.minY;y<=glyph.maxY;y++)for(int x=glyph.minX;x<=glyph.maxX;x++)
+            if(candidate.matches(labels[y*width+x]))columns[x-glyph.minX]++;
+        int spine=0;
+        for(int x=1;x<glyphWidth;x++)if(columns[x]>columns[spine])spine=x;
+        int start=glyph.minX+spine+(int)Math.ceil(Math.max(gap*.30f,glyphWidth*.55f));
+        int first=-1,last=-1;
+        for(int y=glyph.minY+Math.round(glyphHeight*.45f);y<=glyph.maxY;y++)
+            for(int x=start;x<=glyph.maxX;x++)if(candidate.matches(labels[y*width+x])) {
+                if(first<0)first=y;last=y;break;
+            }
+        return first<0?glyph.minY+glyphHeight*.75f:(first+last)*.5f;
     }
 
     /**
@@ -2120,7 +2150,7 @@ final class OmrScoreInterpreter {
 
         // Measure crossbars against the two spines, not stray ink at the glyph edge.
         int wideThreshold = Math.max(2, Math.round((rightSpine-leftSpine+1) * 1.15f));
-        int firstCrossbar = -1, lastCrossbar = -1;
+        List<int[]> crossbars=new ArrayList<>();
         int terminalMargin=Math.max(2,Math.round(glyphHeight*.10f));
         for (int row = terminalMargin; row < rows.length-terminalMargin;) {
             if(rows[row]<wideThreshold){row++;continue;}
@@ -2128,10 +2158,13 @@ final class OmrScoreInterpreter {
             while(row<rows.length-terminalMargin&&rows[row]>=wideThreshold)row++;
             // A painted staff stripe at a spine tip is not a sharp crossbar.
             if(row-first<Math.max(2,Math.round(gap*.12f)))continue;
-            if(firstCrossbar<0)firstCrossbar=first;
-            lastCrossbar=row-1;
+            crossbars.add(new int[]{first,row-1});
         }
-        if (firstCrossbar < 0 || lastCrossbar - firstCrossbar < glyphHeight * .18f) return Float.NaN;
+        float bestCenter=Float.NaN;int bestSupport=-1;
+        for(int i=0;i<crossbars.size();i++)pair:for(int j=i+1;j<crossbars.size();j++) {
+        int[] firstBand=crossbars.get(i),lastBand=crossbars.get(j);
+        int firstCrossbar=firstBand[0],lastCrossbar=lastBand[1];
+        if(lastCrossbar-firstCrossbar<glyphHeight*.18f)continue;
         // Both sharp spines protrude through both crossbars. A flat's bowl can
         // supply a long second column, but cannot supply its upper extension.
         int radius = Math.max(1, Math.round(glyphWidth * .09f));
@@ -2147,12 +2180,18 @@ final class OmrScoreInterpreter {
                 if (ink && row < firstCrossbar) above++;
                 if (ink && row > lastCrossbar) below++;
             }
-            if (above < required || below < required) return Float.NaN;
+            if (above < required || below < required) continue pair;
             if (firstTop < 0) { firstTop = top; firstBottom = bottom; }
             else if (Math.abs(top - firstTop) > glyphHeight * .22f
-                    || Math.abs(bottom - firstBottom) > glyphHeight * .22f) return Float.NaN;
+                    || Math.abs(bottom - firstBottom) > glyphHeight * .22f) continue pair;
         }
-        return glyph.minY+(firstCrossbar+lastCrossbar)*.5f;
+        // A hairpin or staff stripe can add a third short band near a tip.
+        // Prefer the two substantial crossbars with support on both spines.
+        int firstSize=firstBand[1]-firstBand[0]+1,lastSize=lastBand[1]-lastBand[0]+1;
+        int support=Math.min(firstSize,lastSize)*100+firstSize+lastSize;
+        if(support>bestSupport){bestSupport=support;bestCenter=glyph.minY+(firstCrossbar+lastCrossbar)*.5f;}
+        }
+        return bestCenter;
     }
 
     /** Uses the staff line beside the note instead of the page-wide average on skewed scans. */

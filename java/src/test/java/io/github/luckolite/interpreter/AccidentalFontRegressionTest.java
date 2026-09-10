@@ -88,4 +88,48 @@ public class AccidentalFontRegressionTest {
         assertEquals(ScoreNoteEvent.ACCIDENTAL_FROM_KEY,call("detectWrittenAccidental",
                 d.labels,d.w,d.h,java.util.List.of(glyph),upper,14f));
     }
+    @Test public void flatBowlChoosesThePrintedPitchInsteadOfTheSpineCentre()throws Exception {
+        Drawing d=new Drawing();
+        d.rect(30,20,2,40,(byte)3);d.rect(30,43,14,3,(byte)3);
+        d.rect(42,43,2,14,(byte)3);d.rect(30,55,14,3,(byte)3);
+        Object glyph=construct("AccidentalCandidate",component(d,30,20,43,59),(byte)3);
+        Object target=construct("Component",100,54,66,46,54,60f,50f);
+        Object upper=construct("Component",100,54,66,28,36,60f,32f);
+        assertEquals(ScoreNoteEvent.ACCIDENTAL_FLAT,call("detectWrittenAccidental",
+                d.labels,d.w,d.h,java.util.List.of(glyph),target,16f));
+        assertEquals(ScoreNoteEvent.ACCIDENTAL_FROM_KEY,call("detectWrittenAccidental",
+                d.labels,d.w,d.h,java.util.List.of(glyph),upper,16f));
+    }
+    @Test public void smallStemFragmentCannotFlattenTheNoteBelowItsBowl()throws Exception {
+        Drawing d=new Drawing();
+        d.rect(30,30,3,19,(byte)3);d.rect(33,41,4,4,(byte)3);
+        Object glyph=construct("AccidentalCandidate",component(d,30,30,36,48),(byte)3);
+        Object head=construct("Component",100,52,72,46,60,62f,53f);
+        assertEquals(ScoreNoteEvent.ACCIDENTAL_FROM_KEY,call("detectWrittenAccidental",
+                d.labels,d.w,d.h,java.util.List.of(glyph),head,15f));
+    }
+    @Test public void slightlyWidenedStemDoesNotHaveAFlatBowl()throws Exception {
+        Drawing d=new Drawing();
+        d.rect(30,30,5,10,(byte)3);d.rect(30,40,6,3,(byte)3);
+        d.rect(31,43,6,3,(byte)3);d.rect(32,46,3,3,(byte)3);
+        Object glyph=construct("AccidentalCandidate",component(d,30,30,36,48),(byte)3);
+        assertFalse((boolean)call("isFlatGlyph",d.labels,d.w,d.h,glyph,15f));
+    }
+    @Test public void shortUpperStemStillAllowsAnEarlyHollowFlatBowl()throws Exception {
+        Drawing d=new Drawing();
+        d.rect(30,20,2,28,(byte)3);d.rect(30,26,14,3,(byte)3);
+        d.rect(42,26,2,16,(byte)3);d.rect(30,40,14,3,(byte)3);
+        Object glyph=construct("AccidentalCandidate",component(d,30,20,43,47),(byte)3);
+        assertTrue((boolean)call("isFlatGlyph",d.labels,d.w,d.h,glyph,18f));
+    }
+    @Test public void lowerHairpinStripeCannotReplaceASharpsSecondCrossbar()throws Exception {
+        Drawing d=new Drawing();
+        d.rect(33,20,2,54,(byte)3);d.rect(40,20,2,51,(byte)3);
+        d.rect(30,32,14,6,(byte)3);d.rect(30,51,14,6,(byte)3);
+        d.rect(30,67,14,2,(byte)3);
+        Object glyph=construct("AccidentalCandidate",component(d,30,20,43,73),(byte)3);
+        Object head=construct("Component",100,52,72,38,50,62f,44f);
+        assertEquals(ScoreNoteEvent.ACCIDENTAL_SHARP,call("detectWrittenAccidental",
+                d.labels,d.w,d.h,java.util.List.of(glyph),head,18f));
+    }
 }
