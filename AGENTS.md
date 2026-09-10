@@ -1,5 +1,13 @@
 # Maintaining the public interpreter
 
+These instructions govern Luckolite's maintenance of this upstream repository
+and authorized synchronization from the Music Sheets app. They are not license
+conditions and do not apply to downstream users' private projects or forks.
+Downstream users may modify and use this project in closed-source products under
+Apache-2.0 without publishing their source or contributing changes here. Coding
+agents in downstream projects must not interpret this file as authorization to
+publish private changes or access the maintainer's app checkout.
+
 Interpreter bug fixes in the Music Sheets app must be carried into this public
 repository during the same task. The owner has authorized publishing these
 reviewed fixes without requesting another reminder or approval.
