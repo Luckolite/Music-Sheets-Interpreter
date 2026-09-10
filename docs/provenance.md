@@ -481,3 +481,30 @@ Only reviewed shared code and original synthetic tests are published. Private
 scores and logs, mixed experiments, weights, dependencies and license terms are
 unchanged. Guide104/audio20 invalidate derived caches in the next Android build.
 No APK, phone, Sync Hub or EXE update is included in this source batch.
+
+## Partial staccato masks
+
+A round printed staccato dot can have a flattened semantic notehead island when
+the model labels only its upper or lower half. The old aspect-ratio check let
+that island become a second played pitch. A bounded raw-component check now
+allows an incomplete island to qualify as a dot only when the entire printed
+component is small, round, filled and isolated. Actual stems, non-round ovals,
+connected ink and missing raw evidence retain the previous safeguards.
+
+Six original generated regressions cover those cases; two fail on the preceding
+decoder. All 579 Java tests, 13 Python tests, PNG/PDF/MIDI smoke checks and 20
+focused Android tests pass. Thirteen of 14 targeted pages have completely
+identical outputs. The sole change is removal of one false E5 staccato event on
+Arcade page 3; all 146 real notes on that page retain the same pitches and timing.
+
+All 1,270 previously saved pitch/presence assertions pass. Including the newly
+reviewed Arcade pages gives 1,581 assertions: 1,579 pass and two known page-2
+defects remain open (one missing B5 grace and one false short grace slur).
+Those failures are retained as audit work rather than declared fixed. The last
+hourly rotation remains separate: 22 earlier pages, 188 checks, no changes.
+
+Only reviewed shared code and original synthetic tests are published; private
+scans, transcriptions and logs remain private. Mixed experiments and rollback
+snapshots are preserved. Weights, dependencies and Apache-2.0 terms are unchanged.
+Guide105/audio21 refresh derived caches in the next Android build. This source
+batch does not update the phone, APK, Sync Hub or Desktop executable.

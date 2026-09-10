@@ -2355,6 +2355,42 @@ final class OmrScoreInterpreter {
                 && Math.max(above, below) >= Math.max(3, Math.round(gap * .42f));
     }
 
+    /** A partial semantic island can flatten a round staccato dot. Require the
+     * complete, isolated raw component before relaxing its semantic aspect ratio. */
+    private static boolean rawRoundArticulationDot(byte[] labels,byte[] gray,int width,int height,
+            Component head,float gap) {
+        if(gray==null)return false;
+        int padding=Math.max(2,Math.round(gap*.30f));
+        int left=Math.max(0,head.minX-padding),right=Math.min(width-1,head.maxX+padding);
+        int top=Math.max(0,head.minY-padding),bottom=Math.min(height-1,head.maxY+padding);
+        int w=right-left+1,h=bottom-top+1;
+        boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];
+        for(int start=0;start<w*h;start++) {
+            if(seen[start]||(gray[(top+start/w)*width+left+start%w]&255)>=165)continue;
+            int read=0,count=1;queue[0]=start;seen[start]=true;
+            int minX=w,maxX=-1,minY=h,maxY=-1,overlap=0;
+            while(read<count) {
+                int point=queue[read++],x=point%w,y=point/w;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+                int xx=left+x,yy=top+y;
+                if(xx>=head.minX&&xx<=head.maxX&&yy>=head.minY&&yy<=head.maxY
+                        &&labels[yy*width+xx]==OmrMeasurePostProcessor.NOTEHEAD)overlap++;
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;
+                    int next=ny*w+nx;
+                    if(!seen[next]&&(gray[(top+ny)*width+left+nx]&255)<165) {
+                        seen[next]=true;queue[count++]=next;
+                    }
+                }
+            }
+            if(minX==0||maxX==w-1||minY==0||maxY==h-1||overlap<head.area*.5f)continue;
+            float rw=maxX-minX+1,rh=maxY-minY+1;
+            if(Math.max(rw,rh)<=gap*.72f&&Math.max(rw,rh)<=Math.min(rw,rh)*1.45f
+                    &&count>=Math.max(4,gap*gap*.04f)&&count>=rw*rh*.55f)return true;
+        }
+        return false;
+    }
+
     /** A small isolated dot above/below a full head is an articulation, not another pitch. */
     private static List<Component> articulationDotHeads(byte[] labels, byte[] gray,
             int width, int height, List<Component> heads, List<Staff> staffs) {
@@ -2365,8 +2401,9 @@ final class OmrScoreInterpreter {
             float gap = staff.gap;
             float w = candidate.maxX - candidate.minX + 1f;
             float h = candidate.maxY - candidate.minY + 1f;
-            if (w > gap * .75f || h > gap * .75f || candidate.area > gap * gap * .36f
-                    || Math.max(w,h) > Math.min(w,h) * 1.6f) continue;
+            if (w > gap * .75f || h > gap * .75f || candidate.area > gap * gap * .36f) continue;
+            if (Math.max(w,h) > Math.min(w,h) * 1.6f
+                    && !rawRoundArticulationDot(labels,gray,width,height,candidate,gap)) continue;
             // The broad semantic stem window can borrow the main note's stem.
             // Trace contiguous raw ink from this component when pixels exist.
             if (gray != null ? attachedRawStem(gray,width,height,candidate,gap) != null
