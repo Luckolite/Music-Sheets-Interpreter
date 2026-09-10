@@ -48,3 +48,21 @@ That Android playback class remains outside this package; the standalone MIDI
 writer already retains tied durations across intervening pitches and has an
 additional original regression for a short attack continuing into a held voice.
 Weights and training lineage are unchanged.
+
+## September 10 archived-result pitch audit
+
+Small bass-clef changes are now confirmed from printed dots and tails when the
+semantic mask splits their parts. Staff calibration rejects thick beam rows,
+checks local spacing, and requires several corroborating rules on faded scans.
+Flat recognition requires a sustained spine; short bowl edges no longer inflate
+key-signature counts. A filled unison touching two hollow chord heads is separated
+using the printed open centres, preserving the held voices and their dots.
+
+`IndependentPitchAuditTest` contains nine original synthetic regressions. Private
+evaluation checked all 210 matched pitch disagreements on 22 archived score pages:
+130 supported the newer reading, 77 supported the old reading, and three supported
+neither. All 210 adjudicated expectations passed after the repair. Another pitch
+change introduced by the repair was checked against the score and confirmed.
+These are disagreement checks, not a full transcription accuracy percentage or
+proof of parity on arbitrary scores. Commercial images and legacy model artifacts
+remain outside this repository. Weights and dependencies are unchanged.
