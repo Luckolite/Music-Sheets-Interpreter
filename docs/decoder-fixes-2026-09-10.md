@@ -290,3 +290,30 @@ false note on a multimeasure rest remains under investigation.
 
 No song-specific rules, source scans, private logs, model weights, dependencies,
 license changes or packaged release updates are included.
+
+## Multimeasure rest bar fragments
+
+Tiny notehead predictions inside a thick H-shaped rest bar could both sound as
+notes and prevent the caller's correct rest count from being accepted. A compact
+fragment is now removed only when the raw image proves a long, thick horizontal
+band with a cap extending above and below the band at each end. The inspection
+uses the fragment's rows so a crossing staff rule does not hide the end caps.
+The cleaned mask is available before rest-count reconciliation; direct note
+extraction applies the same rule. Source pixels and caller masks are preserved.
+
+Twelve original synthetic tests cover extraction, rest-count acceptance, both
+caps, narrow cap fragments, crossing staff rules, short beams, thin rules,
+ordinary small notes, missing raw evidence and repeated preparation. Seven fail
+on the preceding published decoder. Validation passed 372 Java tests, 13 Python
+tests, PNG/PDF inference-to-MIDI smoke checks, and 1,476 app tests plus Android
+lint. Six targeted pages with multimeasure rests were compared: five complete
+outputs are unchanged. The remaining page loses three confirmed false events;
+all 74 real pitches match a full visual transcription. Supplying its printed
+seven- and five-bar rest counts now yields the correct 45 measures. The retained
+notes keep their durations and local timing; their absolute starts shift only
+by the restored silent measures.
+
+This resolves the multimeasure-rest false-note case identified in the preceding
+batch. Other library pages and remaining partial-measure issues still require
+review. Model weights, dependencies, licenses and packaged releases are unchanged;
+commercial source pages and private diagnostics are not included here.

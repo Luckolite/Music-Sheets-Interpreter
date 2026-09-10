@@ -50,6 +50,7 @@ final class OmrScoreInterpreter {
         rawHeadComponents.removeIf(head -> commonTimeGlyphBounds(labels, gray, width, height,
                 head, staffs, clefOrKeyComponents) != null);
         rawHeadComponents.removeIf(head -> isTempoUnitHead(gray, width, height, head, staffs));
+        rawHeadComponents.removeIf(head -> isHeavyRestBarFragment(gray, width, height, head, staffs));
         List<Component> headComponents = splitStackedHeads(labels, gray, width, height,
                 rawHeadComponents, staffs);
         List<Component> symbolComponents = findComponents(labels, width, height,
@@ -325,6 +326,8 @@ final class OmrScoreInterpreter {
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null && isRoundedHeaderMeter(labels, gray, width, height, head, staffs, glyphs))
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
+            if (bounds == null && isHeavyRestBarFragment(gray, width, height, head, staffs))
+                bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null) continue;
             for (int y = bounds[2]; y <= bounds[3]; y++) for (int x = bounds[0]; x <= bounds[1]; x++) {
                 int at = y * width + x;
@@ -336,6 +339,54 @@ final class OmrScoreInterpreter {
             }
         }
         return result;
+    }
+
+    /** A compact prediction inside the thick centre of a two-capped multimeasure rest.
+     * Both end caps must extend beyond both edges of the horizontal band. */
+    private static boolean isHeavyRestBarFragment(byte[] gray,int width,int height,
+            Component head,List<Staff> staffs) {
+        if(gray==null)return false;
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
+        float gap=staff.pitchGap;
+        if(head.maxX-head.minX+1>gap*.8f||head.maxY-head.minY+1>gap*1.25f
+                ||head.area>gap*gap*.4f||Math.abs(head.centerY-(staff.pitchBottom-gap*2))>gap*.7f)return false;
+        for(int y=head.minY;y<=head.maxY;y++)
+            if(heavyRestBarAtRow(gray,width,height,Math.round(head.centerX),y,gap))return true;
+        return false;
+    }
+
+    private static boolean heavyRestBarAtRow(byte[] gray,int width,int height,int x,int y,float gap) {
+        // A thin staff rule can run through the centre of the thick rest. Inspect
+        // the predicted fragment's rows so that rule cannot hide the end caps.
+        if((gray[y*width+x]&255)>=165)return false;
+        int left=x,right=x;
+        while(left>0&&(gray[y*width+left-1]&255)<165)left--;
+        while(right+1<width&&(gray[y*width+right+1]&255)<165)right++;
+        if(right-left<gap*6||right-left>gap*60)return false;
+        int top=y,bottom=y;
+        while(top>0&&restBandRow(gray,width,left,right,top-1))top--;
+        while(bottom+1<height&&restBandRow(gray,width,left,right,bottom+1))bottom++;
+        int thick=bottom-top+1;
+        if(thick<gap*.35f||thick>gap*1.2f)return false;
+        return restEndCap(gray,width,height,left,top,bottom,gap)
+                &&restEndCap(gray,width,height,right,top,bottom,gap);
+    }
+
+    private static boolean restBandRow(byte[] gray,int width,int left,int right,int y) {
+        for(int i=1;i<=5;i++)if((gray[y*width+left+(right-left)*i/6]&255)>=165)return false;
+        return true;
+    }
+
+    private static boolean restEndCap(byte[] gray,int width,int height,int edge,
+            int top,int bottom,float gap) {
+        int margin=Math.max(2,Math.round(gap*.4f));
+        if(top-margin<0||bottom+margin>=height)return false;
+        for(int x=Math.max(0,Math.round(edge-gap*.25f));x<=Math.min(width-1,Math.round(edge+gap*.25f));x++) {
+            boolean solid=true;
+            for(int y=top-margin;y<=bottom+margin;y++)if((gray[y*width+x]&255)>=165){solid=false;break;}
+            if(solid)return true;
+        }
+        return false;
     }
 
     /** A note followed by an equals sign and text above the staff is a tempo beat unit. */
