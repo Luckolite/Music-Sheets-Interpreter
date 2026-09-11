@@ -219,11 +219,40 @@ final class StaffPitchTrack {
             for(int i=0;i<5;i++)bottoms.add(centers[i]+(4-i)*spacing);
             float base=median(bottoms);int consistent=0;
             for(float value:bottoms)if(Math.abs(value-base)<=gap*.16f)consistent++;
+            // A beam and four rules can outscore a faded outer rule. If that
+            // omitted rule continues on both sides at the original staff edge,
+            // the shifted group is ambiguous and must not replace the reference.
+            if(bilateral&&Math.abs(base-referenceBottom)>gap*.6f) {
+                float outside=base<referenceBottom?base+spacing:base-5*spacing;
+                float expected=base<referenceBottom?referenceBottom:referenceBottom-4*gap;
+                if(Math.abs(outside-expected)<gap*.35f&&printedRuleOnBothSides(gray,width,height,x,
+                        headLeft,headRight,outside,slope,left,right,exclusion,band,flank))continue;
+            }
             if(consistent==5&&Math.abs(base-referenceBottom)<=gap*1.5f
                     &&(!bilateral||supportedOnBothSides(labels,gray,width,height,x,headLeft,headRight,
                             base,spacing,slope,left,right,exclusion,band,flank)))return new float[]{base,spacing};
         }
         return null;
+    }
+
+    private static boolean printedRuleOnBothSides(byte[] gray,int width,int height,float x,
+            int headLeft,int headRight,float row,float slope,int left,int right,int exclusion,int band,int flank) {
+        for(int side=0;side<2;side++) {
+            int first=side==0?left:headRight+exclusion+1,last=side==0?headLeft-exclusion-1:right;
+            int samples=0,supported=0;
+            for(int xx=first;xx<=last;xx++) {
+                if(xx<0||xx>=width)continue;samples++;boolean ink=false;
+                int center=Math.round(row+(xx-x)*slope);
+                for(int y=Math.max(flank,center-band);y<=Math.min(height-1-flank,center+band);y++) {
+                    int value=gray[y*width+xx]&255;
+                    if(value<=205&&(gray[(y-flank)*width+xx]&255)>=value+12
+                            &&(gray[(y+flank)*width+xx]&255)>=value+12){ink=true;break;}
+                }
+                if(ink)supported++;
+            }
+            if(samples<8||supported<samples*.6f)return false;
+        }
+        return true;
     }
 
     private static boolean supportedOnBothSides(byte[] labels,byte[] gray,int width,int height,
