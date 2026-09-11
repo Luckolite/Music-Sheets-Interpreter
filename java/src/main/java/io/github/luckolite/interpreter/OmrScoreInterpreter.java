@@ -809,11 +809,62 @@ final class OmrScoreInterpreter {
     }
 
     /** A tall, rounded lower meter digit can be painted as a hollow notehead. */
+    /** A small head prediction can cover just one corner of a repeated meter digit.
+     * Require two tall matching printed glyphs after a full barline, with no upper
+     * note prediction or attached stem extending beyond the staff. */
+    private static boolean isRepeatedMeterFragment(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff) {
+        float gap=staff.gap;
+        if(head.area>gap*gap*.55f||head.maxX-head.minX>gap||head.maxY-head.minY>gap)return false;
+        float[] pitch=localStaffPitch(labels,gray,width,height,staff,head);
+        gap=pitch[1];float staffBottom=pitch[0],staffTop=staffBottom-gap*4;
+        if(head.area>gap*gap*.55f||head.maxX-head.minX>gap||head.maxY-head.minY>gap
+                ||head.centerY<staffTop+gap*2.25f||head.centerY>staffBottom)return false;
+        boolean boundary=false;
+        for(int x=Math.max(0,Math.round(head.minX-gap*4));x<head.minX-gap*.7f;x++) {
+            int ink=0,total=0;
+            for(int y=Math.max(0,Math.round(staffTop));y<=Math.min(height-1,Math.round(staffBottom));y++) {
+                total++;if((gray[y*width+x]&255)<155)ink++;
+            }
+            if(total>=gap*3.8f&&ink>=total*.94f){boundary=true;break;}
+        }
+        if(!boundary)return false;
+        int[] stem=attachedRawStem(gray,width,height,head,gap);
+        if(stem!=null&&(stem[1]<staffTop-gap*.25f||stem[1]>staffBottom+gap*.25f))return false;
+        int left=Math.max(0,Math.round(head.centerX-gap*1.25f));
+        int right=Math.min(width-1,Math.round(head.centerX+gap*1.25f));
+        int top=Math.max(0,Math.round(staffTop)),bottom=Math.min(height-1,Math.round(staffTop+gap*1.95f));
+        int upperHeads=0;
+        for(int y=top;y<=bottom;y++)for(int x=left;x<=right;x++)
+            if(labels[y*width+x]==OmrMeasurePostProcessor.NOTEHEAD)upperHeads++;
+        if(upperHeads>gap*gap*.08f)return false;
+        for(int dy=Math.round(gap*1.75f);dy<=Math.round(gap*2.15f);dy++)
+            for(int dx=-Math.round(gap*.2f);dx<=Math.round(gap*.2f);dx++) {
+                int intersection=0,union=0,inkA=0,inkB=0,minX=width,maxX=-1,minY=height,maxY=-1;
+                for(int y=top;y<=bottom;y++)for(int x=left;x<=right;x++) {
+                    int xx=x+dx,yy=y+dy;
+                    if(xx<0||xx>=width||yy<0||yy>=height||yy>staffBottom+gap*.15f)continue;
+                    float aDistance=Math.abs((y-staffTop)/gap-Math.round((y-staffTop)/gap))*gap;
+                    float bDistance=Math.abs((yy-staffTop)/gap-Math.round((yy-staffTop)/gap))*gap;
+                    if(aDistance<gap*.16f||bDistance<gap*.16f)continue;
+                    boolean a=(gray[y*width+x]&255)<155,b=(gray[yy*width+xx]&255)<155;
+                    if(a){inkA++;minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);}
+                    if(b)inkB++;
+                    if(a||b)union++;
+                    if(a&&b)intersection++;
+                }
+                if(inkA>gap*gap*.45f&&inkB>gap*gap*.45f&&maxX-minX>gap*.75f
+                        &&maxY-minY>gap*1.2f&&intersection>union*.72f)return true;
+            }
+        return false;
+    }
+
     private static boolean isHeaderMeterDigit(byte[] labels,byte[] gray,int width,int height,
             Component head,List<Staff> staffs,List<Component> glyphs) {
         if(gray==null)return false;
         Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
         float gap=staff.gap;
+        if(isRepeatedMeterFragment(labels,gray,width,height,head,staff))return true;
         if(head.centerY<staff.top+gap*2.2f||head.centerY>staff.bottom+gap*.2f
                 ||head.maxX-head.minX>gap*2.2f||head.maxY-head.minY<gap*1.5f
                 ||head.maxY-head.minY>gap*2.6f
