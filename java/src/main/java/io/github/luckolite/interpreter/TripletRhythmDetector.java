@@ -322,7 +322,7 @@ final class TripletRhythmDetector {
             // A row occupies a whole pixel band; include a short opening that
             // crosses a lobe boundary instead of discarding it at small sizes.
             float nextFraction = (y + 1) / (float) h;
-            if (nextFraction > .15f && fraction <= .36f) {
+            if (nextFraction > .15f && fraction <= .36f + 1f / h) {
                 upperLobe = Math.max(upperLobe, max[y]);
                 if (min[y] >= w * .40f) upperOpen++;
                 if (hasLobePocket(gray, width, left, top + y, w)) upperPocket++;
@@ -341,7 +341,7 @@ final class TripletRhythmDetector {
         // lobe: a closed 8 and the solid upper-left stem of a 5 still fail.
         boolean upper = upperOpen >= required || upperOpen >= 1 && upperPocket >= required;
         boolean lower = lowerOpen >= required || lowerOpen >= 1 && lowerPocket >= required;
-        int indentation = Math.max(1, Math.round(w * .08f));
+        int indentation = Math.max(1, (int) Math.floor(w * .08f));
         int foot=-1;
         for(int y=(int)(h*.92);y<h;y++)foot=Math.max(foot,max[y]);
         return lowerLobe-foot>=indentation && upper && lower && upperLobe - waist >= indentation

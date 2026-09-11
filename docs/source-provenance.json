@@ -1,5 +1,5 @@
 {
-  "source_commit": "854a2691aadf650cd9a9f30b1fd5a832ddb45fea",
+  "source_commit": "9a32bee589e32af0b834c2243d4e399c80f10e53",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -112,7 +112,7 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "5cb299b08d3d716b5e057b4d15983a67edc12edd622b4e6962ab4df1605df6b4"
+      "source_sha256": "6638470ed93f4f52ebd92782f95e6eea5332fea00a20718fe506df08147dc5b0"
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"

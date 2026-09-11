@@ -60,6 +60,38 @@ public class TripletNumeralHeadTest {
         n.add(new ScoreNoteEvent(0,.28f,3,0,1,.4f,false,0,0,2,1,1));
         assertEquals(n,clean(n,shiftedNumeral(three())));
     }
+    private static String[] extendedCurl() {
+        var rows=new ArrayList<>(Arrays.asList(three()));
+        rows.add(7,rows.get(6));rows.add(7,rows.get(6));
+        return rows.toArray(new String[0]);
+    }
+    @Test public void upperCurlOpeningOneRasterRowPastTheBandStillCounts() {
+        assertEquals(3,clean(notes(145),image(extendedCurl(),145)).size());
+    }
+    @Test public void rasterBoundaryToleranceWorksAboveTheStaffToo() {
+        assertEquals(3,clean(notes(30),image(extendedCurl(),30)).size());
+    }
+    @Test public void boundaryToleranceDoesNotTurnAClosedCounterIntoAThree() {
+        String[] glyph=extendedCurl();for(int y=2;y<glyph.length-2;y++)glyph[y]="##"+glyph[y].substring(2);
+        var n=notes(145);assertEquals(n,clean(n,image(glyph,145)));
+    }
+    @Test public void aOnePixelWaistRemainsAnIndentationAtSmallGlyphWidths() {
+        String[] original=three(),wide=new String[original.length];
+        for(int y=0;y<wide.length;y++) {
+            var line=new StringBuilder();
+            for(int x=0;x<19;x++)line.append(original[y].charAt(x*12/19));
+            wide[y]=line.toString();
+        }
+        int lower=-1;
+        for(int y=0;y<wide.length;y++)if(y/(float)wide.length>=.6f&&y/(float)wide.length<=.75f)
+            lower=Math.max(lower,wide[y].lastIndexOf('#'));
+        for(int y=0;y<wide.length;y++)if(y/(float)wide.length>=.37f&&y/(float)wide.length<=.55f) {
+            char[] line=wide[y].toCharArray();
+            for(int x=wide[y].lastIndexOf('#');x<lower;x++)line[x]='#';
+            wide[y]=new String(line);
+        }
+        assertEquals(3,clean(notes(145),image(wide,145)).size());
+    }
     @Test public void aThreeHeadNoLongerInterruptsItsOwnTriplet() {
         var gray=image(three(),145);var cleaned=clean(notes(145),gray);assertEquals(3,cleaned.size());
         var timed=TripletRhythmDetector.apply(cleaned,List.of(new MeasureRegion(0,1,.1f,.8f)),gray,400,240);
