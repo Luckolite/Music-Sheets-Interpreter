@@ -3100,11 +3100,39 @@ final class OmrScoreInterpreter {
             }
         }
         if(area==0)return false;
+        Component whole=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
+        if(!rawStrokeLeavesCrop(gray,width,height,ink,w,h,left,top,gap)
+                &&isNaturalGlyph(ink,w,h,new AccidentalCandidate(whole,OmrMeasurePostProcessor.SYMBOL),gap))return true;
+        Component glyph=retainSeedConnectedInk(ink,w,h,seed,left,top);
+        if(glyph==null)return false;
         // A crop through an annotation can give a flat a false lower-right spine.
         // Recovered natural endpoints must finish inside the inspected column.
         if(rawStrokeLeavesCrop(gray,width,height,ink,w,h,left,top,gap))return false;
-        Component glyph=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
         return isNaturalGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap);
+    }
+
+    /** A nearby disconnected slur must not become an endpoint of the seeded accidental. */
+    private static Component retainSeedConnectedInk(byte[] ink,int width,int height,Component seed,int left,int top) {
+        boolean[] kept=new boolean[ink.length];int[] queue=new int[ink.length];int tail=0;
+        for(int y=Math.max(0,seed.minY-top);y<=Math.min(height-1,seed.maxY-top);y++)
+            for(int x=Math.max(0,seed.minX-left);x<=Math.min(width-1,seed.maxX-left);x++) {
+                int at=y*width+x;if(ink[at]!=0){kept[at]=true;queue[tail++]=at;}
+            }
+        for(int head=0;head<tail;head++) {
+            int at=queue[head],x=at%width,y=at/width;
+            for(int yy=Math.max(0,y-1);yy<=Math.min(height-1,y+1);yy++)
+                for(int xx=Math.max(0,x-1);xx<=Math.min(width-1,x+1);xx++) {
+                    int next=yy*width+xx;
+                    if(ink[next]!=0&&!kept[next]){kept[next]=true;queue[tail++]=next;}
+                }
+        }
+        int area=0,minX=width,maxX=-1,minY=height,maxY=-1;long sx=0,sy=0;
+        for(int at=0;at<ink.length;at++) {
+            if(!kept[at]){ink[at]=0;continue;}
+            int x=at%width,y=at/width;area++;sx+=x;sy+=y;
+            minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+        }
+        return area==0?null:new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
     }
 
     private static boolean rawStrokeLeavesCrop(byte[] gray,int width,int height,byte[] ink,
@@ -3323,17 +3351,11 @@ final class OmrScoreInterpreter {
             return false;
 
         int[] columns = new int[glyphWidth];
-        int[] rowMin = new int[glyphHeight];
-        int[] rowMax = new int[glyphHeight];
-        java.util.Arrays.fill(rowMin, glyphWidth);
-        java.util.Arrays.fill(rowMax, -1);
         for (int y = Math.max(0, glyph.minY); y <= Math.min(height - 1, glyph.maxY); y++)
             for (int x = Math.max(0, glyph.minX); x <= Math.min(width - 1, glyph.maxX); x++)
                 if (candidate.matches(labels[y * width + x])) {
-                    int localX = x - glyph.minX, localY = y - glyph.minY;
+                    int localX = x - glyph.minX;
                     columns[localX]++;
-                    rowMin[localY] = Math.min(rowMin[localY], localX);
-                    rowMax[localY] = Math.max(rowMax[localY], localX);
                 }
 
         int leftSpine = 0;
@@ -3371,15 +3393,29 @@ final class OmrScoreInterpreter {
         if (rightTop - leftTop < endpointOffset
                 || rightBottom - leftBottom < endpointOffset) return false;
 
-        int firstConnector = -1, lastConnector = -1;
-        int connectorSpan = Math.max(2, Math.round((rightSpine - leftSpine) * .75f));
-        for (int row = 0; row < glyphHeight; row++)
-            if (rowMax[row] >= rowMin[row] && rowMax[row] - rowMin[row] + 1 >= connectorSpan) {
-                if (firstConnector < 0) firstConnector = row;
-                lastConnector = row;
+        // A flag can have two offset sides, but only one diagonal connector.
+        // Require two actual ink bridges separated by an open counter.
+        int innerLeft=leftSpine+radius+1,innerRight=rightSpine-radius-1;
+        if(innerLeft>innerRight)return false;
+        int span=innerRight-innerLeft+1;
+        for(float slope:new float[]{0,-.3f,-.6f,.3f,.6f}) {
+            int firstConnector=-1,openRows=0;
+            for(int row=0;row<glyphHeight;row++) {
+                int bridge=0;
+                for(int col=innerLeft;col<=innerRight;col++) {
+                    int y=row+Math.round((col-leftSpine)*slope);
+                    if(y>=0&&y<glyphHeight&&candidate.matches(labels[(glyph.minY+y)*width+glyph.minX+col]))bridge++;
+                }
+                boolean connected=bridge>=Math.max(1,(int)Math.ceil(span*.75f));
+                if(connected) {
+                    if(firstConnector<0)firstConnector=row;
+                    if(openRows>=Math.max(2,Math.round(gap*.15f))
+                            &&row-firstConnector>=gap*.45f)return true;
+                    openRows=0;
+                } else if(firstConnector>=0)openRows++;
             }
-        return firstConnector >= 0
-                && lastConnector - firstConnector >= glyphHeight * .16f;
+        }
+        return false;
     }
 
     /** A sharp has two full-height vertical spines crossed by two separated wide strokes. */
