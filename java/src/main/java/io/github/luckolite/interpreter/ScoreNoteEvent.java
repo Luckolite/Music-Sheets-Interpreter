@@ -9,7 +9,23 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
                              boolean tiedFromPrevious, int augmentationDots, int beamCount,
                              int writtenAccidental, float unbeamedDurationBeats, int tupletDivisor,
                              float followingRestBeats, int articulations, int clefBottomDiatonic,
-                             boolean crossStaffBeam, float leadingRestBeats, boolean compactOpening) {
+                             boolean crossStaffBeam, float leadingRestBeats, boolean compactOpening, int octaveShift) {
+    /** Compatibility constructor: notes without an octave mark keep their written register. */
+    public ScoreNoteEvent(int measureIndex,float positionInMeasure,int staffStep,int staffIndex,int staffCount,
+            float pageY,boolean tiedFromPrevious,int augmentationDots,int beamCount,int writtenAccidental,
+            float unbeamedDurationBeats,int tupletDivisor,float followingRestBeats,int articulations,
+            int clefBottomDiatonic,boolean crossStaffBeam,float leadingRestBeats,boolean compactOpening) {
+        this(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,pageY,tiedFromPrevious,
+                augmentationDots,beamCount,writtenAccidental,unbeamedDurationBeats,tupletDivisor,
+                followingRestBeats,articulations,clefBottomDiatonic,crossStaffBeam,leadingRestBeats,compactOpening,0);
+    }
+    public ScoreNoteEvent withOctaveShift(int shift) {
+        if(shift < -2 || shift > 2)throw new IllegalArgumentException("Octave shift must be -2..2");
+        return new ScoreNoteEvent(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,pageY,
+                tiedFromPrevious,augmentationDots,beamCount,writtenAccidental,unbeamedDurationBeats,
+                tupletDivisor,followingRestBeats,articulations,clefBottomDiatonic,crossStaffBeam,
+                leadingRestBeats,compactOpening,shift);
+    }
     /** Source-compatible constructor for callers without opening-measure geometry. */
     public ScoreNoteEvent(int measureIndex, float positionInMeasure, int staffStep,
             int staffIndex, int staffCount, float pageY, boolean tiedFromPrevious,
@@ -23,7 +39,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent withCompactOpening() {
         return new ScoreNoteEvent(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,pageY,
                 tiedFromPrevious,augmentationDots,beamCount,writtenAccidental,unbeamedDurationBeats,
-                tupletDivisor,followingRestBeats,articulations,clefBottomDiatonic,crossStaffBeam,leadingRestBeats,true);
+                tupletDivisor,followingRestBeats,articulations,clefBottomDiatonic,crossStaffBeam,leadingRestBeats,true,octaveShift);
     }
     public ScoreNoteEvent(int measureIndex,float positionInMeasure,int staffStep,int staffIndex,int staffCount,float pageY,
             boolean tiedFromPrevious,int augmentationDots,int beamCount,int writtenAccidental,float unbeamedDurationBeats,
@@ -34,7 +50,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent withLeadingRest(float beats) {
         return new ScoreNoteEvent(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,pageY,tiedFromPrevious,
                 augmentationDots,beamCount,writtenAccidental,unbeamedDurationBeats,tupletDivisor,followingRestBeats,
-                articulations,clefBottomDiatonic,crossStaffBeam,beats,compactOpening);
+                articulations,clefBottomDiatonic,crossStaffBeam,beats,compactOpening,octaveShift);
     }
     public ScoreNoteEvent(int measureIndex, float positionInMeasure, int staffStep,
                           int staffIndex, int staffCount, float pageY, boolean tiedFromPrevious,
@@ -48,7 +64,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent withCrossStaffBeam() {
         return new ScoreNoteEvent(measureIndex, positionInMeasure, staffStep, staffIndex, staffCount, pageY,
                 tiedFromPrevious, augmentationDots, Math.max(1, beamCount), writtenAccidental, 0,
-                tupletDivisor, followingRestBeats, articulations, clefBottomDiatonic, true, leadingRestBeats,compactOpening);
+                tupletDivisor, followingRestBeats, articulations, clefBottomDiatonic, true, leadingRestBeats,compactOpening,octaveShift);
     }
     public static final int CLEF_UNKNOWN = -1;
     public static final int CLEF_TREBLE = 30; // E4, C=0 diatonic numbering
@@ -64,7 +80,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent withClef(int clef) {
         return new ScoreNoteEvent(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,pageY,
                 tiedFromPrevious,augmentationDots,beamCount,writtenAccidental,unbeamedDurationBeats,
-                tupletDivisor,followingRestBeats,articulations,clef,crossStaffBeam,leadingRestBeats,compactOpening);
+                tupletDivisor,followingRestBeats,articulations,clef,crossStaffBeam,leadingRestBeats,compactOpening,octaveShift);
     }
     public int diatonicPitchIdentity() {
         return staffStep + (clefBottomDiatonic == CLEF_UNKNOWN ? 0 : clefBottomDiatonic);
@@ -81,7 +97,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent withArticulations(int marks) {
         return new ScoreNoteEvent(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,
                 pageY,tiedFromPrevious,augmentationDots,beamCount,writtenAccidental,
-                unbeamedDurationBeats,tupletDivisor,followingRestBeats,marks,clefBottomDiatonic,crossStaffBeam,leadingRestBeats,compactOpening);
+                unbeamedDurationBeats,tupletDivisor,followingRestBeats,marks,clefBottomDiatonic,crossStaffBeam,leadingRestBeats,compactOpening,octaveShift);
     }
     public ScoreNoteEvent(int measureIndex, float positionInMeasure, int staffStep,
                           int staffIndex, int staffCount, float pageY, boolean tiedFromPrevious,
@@ -153,6 +169,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     }
 
     public ScoreNoteEvent {
+        if(octaveShift < -2 || octaveShift > 2)throw new IllegalArgumentException("Octave shift must be -2..2");
         if(!Float.isFinite(leadingRestBeats)||leadingRestBeats<0||leadingRestBeats>16)leadingRestBeats=0;
         if(clefBottomDiatonic!=CLEF_TREBLE&&clefBottomDiatonic!=CLEF_BASS)clefBottomDiatonic=CLEF_UNKNOWN;
         articulations &= NoteArticulation.ALL;

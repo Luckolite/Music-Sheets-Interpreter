@@ -72,6 +72,7 @@ public final class SheetInterpreter {
         var staffs=ScoreDynamicsDetector.alignStaffs(
                 OmrScoreInterpreter.techniqueStaffs(labels,gray,width,height,measures),notes,height);
         var words=annotations.words.stream().map(Word::internal).toList();
+        notes=OctaveMarkDetector.apply(words,staffs,measures,notes,gray,width,height);
         for(var meter:annotations.meters)if(meter.measureIndex()>=measures.size())
             throw new IllegalArgumentException("Meter change is outside the detected measure range");
         return new ScorePageInterpretation(measures,notes,

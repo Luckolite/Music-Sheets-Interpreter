@@ -59,12 +59,13 @@ public final class Main {
                 accidental=0;int[] order=key>=0?new int[]{3,0,4,1,5,2,6}:new int[]{6,2,5,1,4,0,3};
                 for(int i=0;i<Math.abs(key);i++)if(order[i]==letter)accidental=key>0?1:-1;
             }
-            int midi=(octave+1)*12+new int[]{0,2,4,5,7,9,11}[letter]+accidental;
+            int midi=(octave+1+note.octaveShift())*12+new int[]{0,2,4,5,7,9,11}[letter]+accidental;
             double duration=ScoreNoteTiming.resolvedWrittenDurationBeats(note,score.notes(),beats[bar]);
             boolean estimated=!Double.isFinite(duration)||duration<=0;
             if(estimated)duration=.5;
             var event=new LinkedHashMap<String,Object>();event.put("measureIndex",bar);event.put("staffIndex",note.staffIndex());
-            event.put("staffCount",note.staffCount());event.put("midi",midi);event.put("clefInferred",guessed);
+            event.put("staffCount",note.staffCount());
+            if(note.octaveShift()!=0)event.put("octaveShift",note.octaveShift());event.put("midi",midi);event.put("clefInferred",guessed);
             event.put("startBeat",starts[bar]+ScoreNoteTiming.beatInMeasure(note,score.notes(),beats[bar]));
             if(NoteOrnament.tremoloBeams(note.articulations())>0)event.put("tremoloBeats",NoteOrnament.tremoloBeats(note.articulations()));
             event.put("durationBeats",duration);event.put("durationFallback",estimated);event.put("tiedFromPrevious",note.tiedFromPrevious());

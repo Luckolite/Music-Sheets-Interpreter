@@ -1,5 +1,5 @@
 {
-  "source_commit": "9bfd271bb9c614a2f2e032792a203a337288d2ad",
+  "source_commit": "39178e6c4c5d338e185639a336f9589064f81481",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -80,7 +80,7 @@
     },
     "ScoreNoteEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteEvent.java",
-      "source_sha256": "11dd3e9dd4cbed42722cc355018fb5efc3ea0f769ef909bffb68f697eca1b729"
+      "source_sha256": "8c0b02506d8374bee2dcf11a7e49ac5a454b89dc7f60f8de5af156e4f2d0a85d"
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
@@ -143,6 +143,14 @@
     "PrintedMeasureRhythmGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedMeasureRhythmGuard.java",
       "source_sha256": "baceaf0ae4a347c1f35bafdb2daeb3629761e56763095b70487370aca65416f1"
+    },
+    "OctaveMarkDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
+      "source_sha256": "1bc3a35119e2e8595ba7a9d360cee7105bda027f814b29272c0daccd447c1c47"
+    },
+    "OctaveWordShapes.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",
+      "source_sha256": "d5cd7ea44ad51b241855e6d5cda0620485747f3845d3631edec4636b70ec9bb2"
     }
   }
 }
