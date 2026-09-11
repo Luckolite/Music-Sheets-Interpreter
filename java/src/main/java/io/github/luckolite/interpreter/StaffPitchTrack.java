@@ -19,8 +19,10 @@ final class StaffPitchTrack {
         int first=Math.max(0,Math.round(top-gap*6)),last=Math.min(height,Math.round(bottom+gap*6));
         if(last<=first)return null;
         List<float[]> samples=new ArrayList<>();
-        for(int strip=0;strip<7;strip++) {
-            int left=Math.max(0,Math.min(width-stripWidth,Math.round(width*(.15f+strip*.12f)-stripWidth*.5f)));
+        // Sample between the broad windows too: beams can obscure one rule
+        // across several windows while clear intervening ink still proves a curve.
+        for(int strip=0;strip<13;strip++) {
+            int left=Math.max(0,Math.min(width-stripWidth,Math.round(width*(.15f+strip*.06f)-stripWidth*.5f)));
             byte[] local=new byte[stripWidth*(last-first)];
             for(int y=first;y<last;y++)System.arraycopy(gray,y*width+left,local,(y-first)*stripWidth,stripWidth);
             RawStaffLineDetector.StaffLines best=null;float distance=Float.MAX_VALUE;
@@ -68,7 +70,10 @@ final class StaffPitchTrack {
             float variation=0;
             for(int i=1;i<samples.size();i++) {
                 float change=Math.abs(samples.get(i)[1]-samples.get(i-1)[1]);
-                if(change>typicalGap*.35f)return null;
+                // Missing windows increase the distance between valid samples;
+                // constrain the slope rather than treating that gap as an abrupt jump.
+                float distance=samples.get(i)[0]-samples.get(i-1)[0];
+                if(change>typicalGap*.35f*distance/(width*.12f))return null;
                 variation+=change;
             }
             if(variation>max-min+typicalGap*.25f)return null;
