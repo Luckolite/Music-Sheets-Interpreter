@@ -1919,7 +1919,44 @@ final class OmrScoreInterpreter {
             if (!representedStaff(recovered, staffs, height)) staffs.add(recovered);
         }
         staffs.sort(Comparator.comparingDouble(staff -> staff.top));
-        for(Staff staff:staffs)staff.pitchTrack=StaffPitchTrack.detect(gray,width,height,staff.top,staff.bottom,staff.pitchGap);
+        // A ledger-heavy semantic group may be one rule out of phase on a tilted page.
+        // Calibrate only a nearby, similarly spaced group proved by all five printed rules.
+        if(gray!=null&&Math.abs(semanticSlope)>.001f) {
+            int[] printedRows=new int[height];
+            for(int y=0;y<height;y++)for(int x=0;x<width;x++)if((gray[y*width+x]&255)<170) {
+                int row=Math.round(y-semanticSlope*(x-width*.5f));
+                if(row>=0&&row<height)printedRows[row]++;
+            }
+            for(int row=0;row<height;row++)if(printedRows[row]>=width*.25f) {
+                int run=0,longest=0;
+                for(int x=0;x<width;x++) {
+                    int y=Math.round(row+semanticSlope*(x-width*.5f));boolean ink=false;
+                    for(int yy=Math.max(0,y-1);yy<=Math.min(height-1,y+1);yy++)
+                        if((gray[yy*width+x]&255)<180){ink=true;break;}
+                    if(ink)longest=Math.max(longest,++run);else run=0;
+                }
+                if(longest<width*.25f)printedRows[row]=0;
+            }
+            for(var raw:RawStaffLineDetector.detectFromStrength(printedRows,Math.max(24,Math.round(width*.25f)),height)) {
+                if(!completePrintedDeskewedStaff(gray,width,height,raw,semanticSlope))continue;
+                for(Staff staff:staffs) {
+                    if(raw.gap()<staff.gap*.85f||raw.gap()>staff.gap*1.18f
+                            ||Math.abs(staff.top-raw.top())>raw.gap()*1.2f
+                            ||Math.abs(staff.bottom-raw.bottom())>raw.gap()*1.2f)continue;
+                    if(Math.max(Math.abs(staff.pitchBottom-raw.bottom()),Math.abs(staff.bottom-raw.bottom()))<raw.gap()*.45f)continue;
+                    staff.pitchBottom=raw.bottom();staff.pitchGap=raw.gap();staff.pitchSlope=semanticSlope;
+                    staff.printedPhase=true;
+                }
+            }
+        }
+        for(Staff staff:staffs) {
+            staff.pitchTrack=StaffPitchTrack.detect(gray,width,height,
+                staff.printedPhase?staff.pitchBottom-staff.pitchGap*4:staff.top,
+                staff.printedPhase?staff.pitchBottom:staff.bottom,staff.pitchGap);
+            if(staff.printedPhase&&staff.pitchTrack!=null
+                    &&Math.abs(staff.pitchTrack.at(width*.5f)[0]-staff.pitchBottom)>staff.pitchGap*.5f)
+                staff.pitchTrack=null;
+        }
         assignSystemPositions(staffs, measures, height);
         return staffs;
     }
@@ -3448,7 +3485,7 @@ final class OmrScoreInterpreter {
         float[] complete=shaded
                 ?StaffPitchTrack.localRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap,staff.pitchTrack!=null)
                 :StaffPitchTrack.localPrintedRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap);
-        if(complete!=null)return complete;
+        if(complete!=null&&(!staff.printedPhase||Math.abs(complete[0]-referenceBottom)<gap*.5f))return complete;
         int radius = Math.max(4, Math.round(gap * 3.5f));
         int left = Math.max(0, Math.round(head.centerX) - radius);
         int right = Math.min(width - 1, Math.round(head.centerX) + radius);
@@ -4554,6 +4591,7 @@ final class OmrScoreInterpreter {
     private static final class Staff {
         final float top, bottom, gap;
         float pitchBottom, pitchGap, pitchSlope;
+        boolean printedPhase;
         StaffPitchTrack pitchTrack;
         int index, count = 1;
         Staff(float top, float bottom, float gap) {
