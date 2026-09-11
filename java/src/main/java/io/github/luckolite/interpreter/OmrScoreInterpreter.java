@@ -177,7 +177,8 @@ final class OmrScoreInterpreter {
             float position = (normalizedX - measure.left()) / Math.max(0.0001f,
                     measure.right() - measure.left());
             float[] localPitch = localStaffPitch(labels, gray, width, height, staff, head);
-            float localBottom=localPitch[0],localGap=localPitch[1];
+            float localGap=localPitch[1];
+            float localBottom=printedLedgerBottom(gray,width,height,head,localPitch[0],localGap);
             int step = printedPitchStep(gray,width,height,head,localBottom,localGap);
             int beamCount = detectBeamCount(labels, gray, width, height, head, staff);
             int[] tremolo = tremoloStrokeCounts(gray,width,height,head,staff.gap,heads);
@@ -3546,6 +3547,63 @@ final class OmrScoreInterpreter {
     }
 
     /** Uses the staff line beside the note instead of the page-wide average on skewed scans. */
+    /** Two neighboring printed lines can correct subpixel error accumulated above/below a staff. */
+    private static float printedLedgerBottom(byte[] gray,int width,int height,Component head,float bottom,float gap) {
+        if(gray==null||gap<8)return bottom;
+        float step=(bottom-head.centerY)/(gap*.5f);
+        if(step<9.5f&&step> -1.5f)return bottom;
+        int ledger=Math.round(step*.5f)*2;
+        if(ledger>0&&ledger<10||ledger<0&&ledger> -2)return bottom;
+        int adjacent=ledger+(ledger>0?-2:2);
+        float first=printedLedgerLine(gray,width,height,head,bottom-ledger*gap*.5f,gap,true);
+        float second=printedLedgerLine(gray,width,height,head,bottom-adjacent*gap*.5f,gap,adjacent>8||adjacent<0);
+        if(!Float.isFinite(first)||!Float.isFinite(second)||Math.abs(Math.abs(first-second)-gap)>gap*.12f)return bottom;
+        float a=first+ledger*gap*.5f,b=second+adjacent*gap*.5f;
+        if(Math.abs(a-bottom)>gap*.2f||Math.abs(b-bottom)>gap*.2f)return bottom;
+        return (a+b)*.5f;
+    }
+
+    private static float printedLedgerLine(byte[] gray,int width,int height,Component head,float expected,float gap,boolean bounded) {
+        int reach=Math.max(3,Math.round(gap*.55f)),range=Math.max(2,Math.round(gap*.25f));
+        int flank=Math.max(2,Math.round(gap*.3f));float[] centers=new float[2];
+        for(int side=0;side<2;side++) {
+            int left=side==0?head.minX-reach:head.maxX+1,right=side==0?head.minX-1:head.maxX+reach;
+            if(left<0||right>=width)return Float.NaN;
+            int first=Math.max(flank,Math.round(expected)-range),last=Math.min(height-1-flank,Math.round(expected)+range);
+            double weighted=0,weight=0;int peak=0,peakY=-1;
+            int[] strengths=new int[Math.max(0,last-first+1)];
+            for(int y=first;y<=last;y++) {
+                int support=0;
+                for(int x=left;x<=right;x++) {
+                    int ink=gray[y*width+x]&255;
+                    if(ink<180&&(gray[(y-flank)*width+x]&255)>ink+20&&(gray[(y+flank)*width+x]&255)>ink+20)support++;
+                }
+                strengths[y-first]=support;if(support>peak){peak=support;peakY=y;}
+            }
+            if(peak<Math.max(2,Math.round(gap*.16f)))return Float.NaN;
+            for(int y=first;y<=last;y++)if(Math.abs(y-peakY)<=gap*.15f&&strengths[y-first]>=peak*.65f) {
+                weighted+=y*strengths[y-first];weight+=strengths[y-first];
+            }
+            if(weight==0)return Float.NaN;centers[side]=(float)(weighted/weight);
+        }
+        if(Math.abs(centers[0]-centers[1])>gap*.1f)return Float.NaN;
+        float center=(centers[0]+centers[1])*.5f;
+        // A ledger ends near its head; an extended beam cannot establish this reference.
+        if(bounded)for(int x:new int[]{head.minX-Math.round(gap),head.maxX+Math.round(gap)}) {
+            int continued=0;
+            for(int xx=Math.max(0,x-2);xx<=Math.min(width-1,x+2);xx++) {
+                boolean ink=false;
+                for(int y=Math.max(flank,Math.round(center)-1);y<=Math.min(height-1-flank,Math.round(center)+1);y++) {
+                    int value=gray[y*width+xx]&255;
+                    if(value<180&&(gray[(y-flank)*width+xx]&255)>value+20&&(gray[(y+flank)*width+xx]&255)>value+20)ink=true;
+                }
+                if(ink)continued++;
+            }
+            if(continued>=2)return Float.NaN;
+        }
+        return center;
+    }
+
     /** Near a line/space boundary, measure a compact filled head in the printed image.
      * Thin staff/stem ink is removed before centering; three thresholds must agree. */
     private static int printedPitchStep(byte[] gray,int width,int height,Component head,float bottom,float gap) {
