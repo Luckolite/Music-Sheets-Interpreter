@@ -77,7 +77,7 @@ public final class ScoreNoteTiming {
         }
 
         boolean hasTuplet() {
-            for (ScoreNoteEvent note : notes) if (note.tupletDivisor() == 3) return true;
+            for (ScoreNoteEvent note : notes) if (note.tupletDivisor() > 1) return true;
             return false;
         }
 
@@ -585,15 +585,17 @@ public final class ScoreNoteTiming {
     /** Finest written subdivision in one staff/measure, capped at the ordinary 16th-note grid. */
     static double rhythmicGrid(List<ScoreNoteEvent> voice) {
         double grid = .25;
+        double minimum = .0625;
         if (voice == null) return grid;
         for (ScoreNoteEvent note : voice) {
             if (note.tupletDivisor() == 3) grid = Math.min(grid, 1.0 / 12.0);
+            if (note.tupletDivisor() == 7) { grid = Math.min(grid, 1.0 / 28.0); minimum = 1.0 / 28.0; }
             double written = writtenDurationBeats(note);
             if (Double.isFinite(written)) grid = Math.min(grid,
                     rhythmicBeamCount(note) <= 0 ? .25
                             : 1.0 / (1 << rhythmicBeamCount(note)));
         }
-        return Math.max(.0625, grid);
+        return Math.max(minimum, grid);
     }
 
     private static List<ScoreNoteEvent> measureVoice(ScoreNoteEvent target,

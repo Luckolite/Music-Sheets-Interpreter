@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** Reads an isolated printed 3 over a short-note group or inside its explicit tuplet bracket. */
+/** Reads printed triplets and beamed seven-in-four groups from numeral and attack geometry. */
 final class TripletRhythmDetector {
     private TripletRhythmDetector() { }
 
@@ -35,10 +35,10 @@ final class TripletRhythmDetector {
         List<ScoreRestEvent> scaled=new ArrayList<>(rests);
         for(int i=0;i<restIndices.size();i++) {
             int index=restIndices.get(i);ScoreRestEvent rest=rests.get(index);
-            if(marked.get(notes.size()+i).tupletDivisor()!=3)continue;
+            if(marked.get(notes.size()+i).tupletDivisor()<=1)continue;
             scaled.set(index,new ScoreRestEvent(rest.measureIndex(),rest.positionInMeasure(),
                     rest.pageY(),rest.pageHeight(),rest.staffIndex(),rest.staffCount(),
-                    rest.durationBeats()*2/3));
+                    rest.durationBeats()*marked.get(notes.size()+i).durationScale()));
         }
         List<ScoreNoteEvent> result=new ArrayList<>();
         for(int i=0;i<notes.size();i++) {
@@ -174,6 +174,55 @@ final class TripletRhythmDetector {
             }
             if(marked)i+=2;
         }
+        return septuplets(result,measures,gray,width,height);
+    }
+
+    private static List<ScoreNoteEvent> septuplets(List<ScoreNoteEvent> notes,
+            List<MeasureRegion> measures,byte[] gray,int width,int height) {
+        List<ScoreNoteEvent> result=new ArrayList<>(notes);
+        List<Onset> groups=onsets(notes);
+        for(int i=0;i+6<groups.size();i++) {
+            Onset firstGroup=groups.get(i);
+            for(int index:firstGroup.indices()) {
+                ScoreNoteEvent first=result.get(index);
+                if(first.tupletDivisor()!=1||first.beamCount()<1||first.augmentationDots()!=0
+                        ||first.measureIndex()<0||first.measureIndex()>=measures.size())continue;
+                List<Onset> run=new ArrayList<>();float minimum=Float.MAX_VALUE,maximum=0;
+                boolean valid=true;
+                for(int j=0;j<7;j++) {
+                    Onset onset=matching(groups.get(i+j),result,first);
+                    if(onset==null){valid=false;break;}
+                    if(j>0) {
+                        float delta=onset.position()-run.get(j-1).position();
+                        minimum=Math.min(minimum,delta);maximum=Math.max(maximum,delta);
+                    }
+                    run.add(onset);
+                }
+                if(!valid||minimum<.012f||maximum>minimum*1.6f)continue;
+                // A longer uninterrupted run does not become seven notes merely
+                // because a small 7 happens to be nearby.
+                if(i>0&&matching(groups.get(i-1),result,first)!=null
+                        &&firstGroup.position()-groups.get(i-1).position()<minimum*1.5f)continue;
+                if(i+7<groups.size()&&matching(groups.get(i+7),result,first)!=null
+                        &&groups.get(i+7).position()-run.get(6).position()<minimum*1.5f)continue;
+                MeasureRegion bar=measures.get(first.measureIndex());
+                float gap=Math.max(4,(bar.bottom()-bar.top())*height/(8*first.staffCount()));
+                float x1=(bar.left()+run.get(0).position()*(bar.right()-bar.left()))*width;
+                float x7=(bar.left()+run.get(6).position()*(bar.right()-bar.left()))*width;
+                if(x7-x1<gap*3||x7-x1>gap*26)continue;
+                float y1=Float.MAX_VALUE,y2=-Float.MAX_VALUE;
+                for(Onset onset:run){y1=Math.min(y1,onset.top()*height);y2=Math.max(y2,onset.bottom()*height);}
+                if(findPrintedNumeral(gray,width,height,x1,x7,y1,y2,gap,true,
+                        Float.NaN,Float.NaN,7)==null)continue;
+                for(Onset onset:run)for(int at:onset.indices()) {
+                    ScoreNoteEvent n=result.get(at);
+                    result.set(at,new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
+                            n.staffIndex(),n.staffCount(),n.pageY(),n.tiedFromPrevious(),n.augmentationDots(),
+                            n.beamCount(),n.writtenAccidental(),n.unbeamedDurationBeats(),7,n.followingRestBeats(),
+                            n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening()));
+                }
+            }
+        }
         return List.copyOf(result);
     }
 
@@ -224,6 +273,11 @@ final class TripletRhythmDetector {
 
     private static Glyph findPrintedThree(byte[] gray,int width,int height,float firstX,
             float lastX,float firstY,float lastY,float gap,boolean shortNotes,float headX,float headY) {
+        return findPrintedNumeral(gray,width,height,firstX,lastX,firstY,lastY,gap,shortNotes,headX,headY,3);
+    }
+
+    private static Glyph findPrintedNumeral(byte[] gray,int width,int height,float firstX,
+            float lastX,float firstY,float lastY,float gap,boolean shortNotes,float headX,float headY,int number) {
         float centerX = (firstX + lastX) * .5f;
         // Numerals align with the beam/stems, which can sit to one side of the
         // oval centres. Include that offset without clipping an italic 3.
@@ -261,7 +315,8 @@ final class TripletRhythmDetector {
                     || !(maxY < firstY - gap || minY > lastY + gap)) continue;
             if(Float.isFinite(headX)&&(headX<minX-gap*.1f||headX>maxX+gap*.1f
                     ||headY<minY-gap*.1f||headY>maxY+gap*.1f))continue;
-            if (!looksLikeThree(gray, width, minX, minY, gw, gh)) continue;
+            if (!(number==7 ? looksLikeSeven(gray,width,minX,minY,gw,gh)
+                    : looksLikeThree(gray, width, minX, minY, gw, gh))) continue;
             // Quarter-note tuplets need the two bracket arms. For beamed/flagged short notes,
             // publishers routinely print only the numeral, so its shape/group alignment suffices.
             if (shortNotes || bracketArm(gray, width, height, Math.round(firstX - gap * .3f),
@@ -305,6 +360,29 @@ final class TripletRhythmDetector {
             if(separation>=Math.max(2,gap*.2f)&&separation<=gap)return true;
         }
         return false;
+    }
+
+    private static boolean looksLikeSeven(byte[] gray,int width,int left,int top,int w,int h) {
+        // Broad top bar followed by one descending diagonal, without the lower
+        // bowl/base of 2, closed counters of 8, or two lobes of 3.
+        int broad=0,upper=0,lower=0,upperRows=0,lowerRows=0;
+        int previous=Integer.MAX_VALUE,reverse=0;
+        for(int y=0;y<h;y++) {
+            int min=w,max=-1,count=0;
+            for(int x=0;x<w;x++)if(dark(gray,width,left+x,top+y)){min=Math.min(min,x);max=x;count++;}
+            if(max<0)return false;
+            if(y<h*.3f&&max-min>=w*.65f)broad++;
+            if(y>=h*.35f) {
+                if(max-min>w*.55f||y<h*.8f&&count<w*.12f)return false;
+                int center=min+max;
+                if(previous!=Integer.MAX_VALUE&&center>previous+2)reverse++;
+                previous=center;
+                if(y<h*.55f){upper+=center;upperRows++;}
+                if(y>=h*.8f){lower+=center;lowerRows++;}
+            }
+        }
+        return broad>=Math.max(1,h/12)&&upperRows>0&&lowerRows>0&&reverse<=h/10
+                &&upper/(float)upperRows-lower/(float)lowerRows>=w*.45f;
     }
 
     private static boolean looksLikeThree(byte[] gray, int width, int left, int top, int w, int h) {
