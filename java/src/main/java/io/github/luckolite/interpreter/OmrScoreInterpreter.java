@@ -1893,7 +1893,8 @@ final class OmrScoreInterpreter {
     private static List<Component> sideBySideUnison(byte[] labels,byte[] gray,int width,int height,
                                                    Component head,float gap) {
         float w=head.maxX-head.minX+1,h=head.maxY-head.minY+1;
-        if(gray==null||w<gap*1.8f||w>gap*3.1f||h<gap*.65f||h>gap*1.4f)return List.of();
+        // Compare component bounds on their integer-pixel grid when staff spacing is fractional.
+        if(gray==null||w<gap*1.8f||w>Math.round(gap*3.1f)||h<gap*.65f||h>gap*1.4f)return List.of();
         int middle=(head.minX+head.maxX)/2;
         Component left=horizontalHeadSlice(labels,width,head,head.minX,middle);
         Component right=horizontalHeadSlice(labels,width,head,middle+1,head.maxX);
