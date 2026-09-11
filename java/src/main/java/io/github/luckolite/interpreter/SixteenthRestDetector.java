@@ -117,7 +117,7 @@ final class SixteenthRestDetector {
             mappedNotes.add(new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
                     n.staffIndex(),n.staffCount(),y,n.tiedFromPrevious(),n.augmentationDots(),n.beamCount(),
                     n.writtenAccidental(),n.unbeamedDurationBeats(),n.tupletDivisor(),n.followingRestBeats(),
-                    n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats()));
+                    n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening()));
         }
         Staff rectified=new Staff(staff.top()-first,staff.bottom()-first,staff.gap(),staff.index(),staff.count());
         Detection detected=detectWithDots(flat,width,bandHeight,mappedMeasures,List.of(rectified),mappedNotes);

@@ -341,7 +341,7 @@ final class OmrScoreInterpreter {
                 withRests.set(i,withRests.get(i).withCrossStaffBeam());
             }
         }
-        return new Analysis(withRests, keyChanges, rests);
+        return new Analysis(OpeningMeasureLayout.mark(withRests,rests,measures), keyChanges, rests);
     }
 
     /** Excludes proven non-note header ink before OCR rest reconciliation, without modifying input masks. */
@@ -801,7 +801,7 @@ final class OmrScoreInterpreter {
                 result.set(index,new DetectedNote(new ScoreNoteEvent(e.measureIndex(),position,e.staffStep(),
                         e.staffIndex(),e.staffCount(),e.pageY(),e.tiedFromPrevious(),e.augmentationDots(),e.beamCount(),
                         e.writtenAccidental(),e.unbeamedDurationBeats(),e.tupletDivisor(),e.followingRestBeats(),
-                        e.articulations(),e.clefBottomDiatonic(),e.crossStaffBeam(),e.leadingRestBeats()),n.head,n.staffGap));
+                        e.articulations(),e.clefBottomDiatonic(),e.crossStaffBeam(),e.leadingRestBeats(),e.compactOpening()),n.head,n.staffGap));
             }
         }
         return result;

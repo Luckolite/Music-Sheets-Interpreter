@@ -164,6 +164,14 @@ public final class ScoreNoteTiming {
         List<ScoreNoteEvent> voice = measureVoice(target, notes);
         List<RhythmGroup> groups = rhythmGroups(voice);
         if (groups.isEmpty()) return beatInMeasure(target, (float) safeBeats);
+        double pickupStart = openingPickupStart(target, notes, safeBeats);
+        if (Double.isFinite(pickupStart)) {
+            double onset = pickupStart;
+            for (RhythmGroup group : groups) {
+                if (group.contains(target)) return onset;
+                onset += group.writtenDuration();
+            }
+        }
         // A half-note melody can overlap a short beamed tail in another voice on this same
         // staff. Its sounding length must not push that tail (or its tie) later in the bar.
         if(!hasIndependentSustain(target)&&groups.get(0).notes.stream().allMatch(ScoreNoteTiming::hasIndependentSustain)) {
@@ -684,6 +692,31 @@ public final class ScoreNoteTiming {
                     && repairedError >= rawError - .001) return optical;
         }
         return result;
+    }
+
+    private static double openingPickupStart(ScoreNoteEvent target, List<ScoreNoteEvent> notes,
+                                              double beats) {
+        if (!target.compactOpening()) return Double.NaN;
+        List<ScoreNoteEvent> opening = notes.stream().filter(n -> n.measureIndex()==target.measureIndex()
+                && !grace(n)).collect(java.util.stream.Collectors.toList());
+        if (opening.isEmpty() || opening.stream().anyMatch(n -> !n.compactOpening()
+                || n.leadingRestBeats()>0 || n.followingRestBeats()>0 || n.tiedFromPrevious())) return Double.NaN;
+        double span=0;
+        java.util.Set<String> seen=new java.util.HashSet<>();
+        for (ScoreNoteEvent note : opening) {
+            if (!seen.add(note.staffIndex()+":"+note.staffCount())) continue;
+            double voice=0;
+            for (RhythmGroup group : rhythmGroups(measureVoice(note,opening))) {
+                double duration=group.writtenDuration();
+                if (!Double.isFinite(duration) || duration<=0) return Double.NaN;
+                voice+=duration;
+            }
+            // Every printed part must account for the same pickup span. Otherwise an omitted
+            // rest or a separate voice still needs resolving before changing the shared clock.
+            if (span>0 && Math.abs(span-voice)>.0001) return Double.NaN;
+            span=voice;
+        }
+        return span>0 && span<beats-.0001 ? beats-span : Double.NaN;
     }
 
     /** A complete, evenly engraved short-note tail after a leading rest ends at the barline. */

@@ -70,7 +70,7 @@ final class TripletRhythmDetector {
                     note.staffIndex(),note.staffCount(),note.pageY(),note.tiedFromPrevious(),note.augmentationDots(),
                     note.beamCount(),note.writtenAccidental(),note.unbeamedDurationBeats(),note.tupletDivisor(),
                     (float)Math.max(0,note.followingRestBeats()-after),note.articulations(),note.clefBottomDiatonic(),
-                    note.crossStaffBeam(),(float)Math.max(0,note.leadingRestBeats()-before)));
+                    note.crossStaffBeam(),(float)Math.max(0,note.leadingRestBeats()-before),note.compactOpening()));
         }
         return new Rhythm(List.copyOf(result),List.copyOf(scaled));
     }
@@ -168,7 +168,7 @@ final class TripletRhythmDetector {
                     result.set(index,new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
                             n.staffIndex(),n.staffCount(),n.pageY(),n.tiedFromPrevious(),n.augmentationDots(),
                             n.beamCount(),n.writtenAccidental(),n.unbeamedDurationBeats(),3,n.followingRestBeats(),
-                            n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats()));
+                            n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening()));
                 }
                 marked=true;
             }

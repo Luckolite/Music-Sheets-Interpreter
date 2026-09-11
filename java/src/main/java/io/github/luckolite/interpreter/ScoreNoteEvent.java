@@ -9,7 +9,22 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
                              boolean tiedFromPrevious, int augmentationDots, int beamCount,
                              int writtenAccidental, float unbeamedDurationBeats, int tupletDivisor,
                              float followingRestBeats, int articulations, int clefBottomDiatonic,
-                             boolean crossStaffBeam, float leadingRestBeats) {
+                             boolean crossStaffBeam, float leadingRestBeats, boolean compactOpening) {
+    /** Source-compatible constructor for callers without opening-measure geometry. */
+    public ScoreNoteEvent(int measureIndex, float positionInMeasure, int staffStep,
+            int staffIndex, int staffCount, float pageY, boolean tiedFromPrevious,
+            int augmentationDots, int beamCount, int writtenAccidental,
+            float unbeamedDurationBeats, int tupletDivisor, float followingRestBeats,
+            int articulations, int clefBottomDiatonic, boolean crossStaffBeam, float leadingRestBeats) {
+        this(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,pageY,tiedFromPrevious,
+                augmentationDots,beamCount,writtenAccidental,unbeamedDurationBeats,tupletDivisor,
+                followingRestBeats,articulations,clefBottomDiatonic,crossStaffBeam,leadingRestBeats,false);
+    }
+    public ScoreNoteEvent withCompactOpening() {
+        return new ScoreNoteEvent(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,pageY,
+                tiedFromPrevious,augmentationDots,beamCount,writtenAccidental,unbeamedDurationBeats,
+                tupletDivisor,followingRestBeats,articulations,clefBottomDiatonic,crossStaffBeam,leadingRestBeats,true);
+    }
     public ScoreNoteEvent(int measureIndex,float positionInMeasure,int staffStep,int staffIndex,int staffCount,float pageY,
             boolean tiedFromPrevious,int augmentationDots,int beamCount,int writtenAccidental,float unbeamedDurationBeats,
             int tupletDivisor,float followingRestBeats,int articulations,int clefBottomDiatonic,boolean crossStaffBeam) {
@@ -19,7 +34,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent withLeadingRest(float beats) {
         return new ScoreNoteEvent(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,pageY,tiedFromPrevious,
                 augmentationDots,beamCount,writtenAccidental,unbeamedDurationBeats,tupletDivisor,followingRestBeats,
-                articulations,clefBottomDiatonic,crossStaffBeam,beats);
+                articulations,clefBottomDiatonic,crossStaffBeam,beats,compactOpening);
     }
     public ScoreNoteEvent(int measureIndex, float positionInMeasure, int staffStep,
                           int staffIndex, int staffCount, float pageY, boolean tiedFromPrevious,
@@ -33,7 +48,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent withCrossStaffBeam() {
         return new ScoreNoteEvent(measureIndex, positionInMeasure, staffStep, staffIndex, staffCount, pageY,
                 tiedFromPrevious, augmentationDots, Math.max(1, beamCount), writtenAccidental, 0,
-                tupletDivisor, followingRestBeats, articulations, clefBottomDiatonic, true, leadingRestBeats);
+                tupletDivisor, followingRestBeats, articulations, clefBottomDiatonic, true, leadingRestBeats,compactOpening);
     }
     public static final int CLEF_UNKNOWN = -1;
     public static final int CLEF_TREBLE = 30; // E4, C=0 diatonic numbering
@@ -49,7 +64,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent withClef(int clef) {
         return new ScoreNoteEvent(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,pageY,
                 tiedFromPrevious,augmentationDots,beamCount,writtenAccidental,unbeamedDurationBeats,
-                tupletDivisor,followingRestBeats,articulations,clef,crossStaffBeam,leadingRestBeats);
+                tupletDivisor,followingRestBeats,articulations,clef,crossStaffBeam,leadingRestBeats,compactOpening);
     }
     public int diatonicPitchIdentity() {
         return staffStep + (clefBottomDiatonic == CLEF_UNKNOWN ? 0 : clefBottomDiatonic);
@@ -66,7 +81,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent withArticulations(int marks) {
         return new ScoreNoteEvent(measureIndex,positionInMeasure,staffStep,staffIndex,staffCount,
                 pageY,tiedFromPrevious,augmentationDots,beamCount,writtenAccidental,
-                unbeamedDurationBeats,tupletDivisor,followingRestBeats,marks,clefBottomDiatonic,crossStaffBeam,leadingRestBeats);
+                unbeamedDurationBeats,tupletDivisor,followingRestBeats,marks,clefBottomDiatonic,crossStaffBeam,leadingRestBeats,compactOpening);
     }
     public ScoreNoteEvent(int measureIndex, float positionInMeasure, int staffStep,
                           int staffIndex, int staffCount, float pageY, boolean tiedFromPrevious,
