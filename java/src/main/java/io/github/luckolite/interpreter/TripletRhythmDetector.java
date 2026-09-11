@@ -156,7 +156,13 @@ final class TripletRhythmDetector {
                 if(x3-x1<gap*2||x3-x1>gap*18)continue;
                 float y1=Math.min(a.top(),Math.min(b.top(),c.top()))*height;
                 float y2=Math.max(a.bottom(),Math.max(b.bottom(),c.bottom()))*height;
-                if(!hasPrintedThree(gray,width,height,x1,x3,y1,y2,gap,first.beamCount()>0))continue;
+                Glyph numeral=findPrintedThree(gray,width,height,x1,x3,y1,y2,gap,
+                        first.beamCount()>0,Float.NaN,Float.NaN);
+                if(numeral==null)continue;
+                // Vertically stacked small numbers assign fingers to chord tones.
+                // They do not turn the surrounding three chord attacks into a tuplet.
+                if(a.indices().size()>1&&b.indices().size()>1&&c.indices().size()>1
+                        &&hasStackedFingering(gray,width,height,numeral,gap))continue;
                 for(Onset onset:List.of(a,b,c))for(int index:onset.indices()) {
                     ScoreNoteEvent n=result.get(index);
                     result.set(index,new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
@@ -262,6 +268,41 @@ final class TripletRhythmDetector {
                     minY, maxY, gap)) return new Glyph(minX,minY,maxX,maxY);
         }
         return null;
+    }
+
+    /** Look for a separate, similarly sized upright glyph stacked over or under
+     * this 3. The caller requires chord tones at all three candidate attacks. */
+    private static boolean hasStackedFingering(byte[] gray,int width,int height,Glyph three,float gap) {
+        float cx=(three.left()+three.right())*.5f;
+        int gh=three.bottom()-three.top()+1;
+        int left=Math.max(0,Math.round(cx-gap)),right=Math.min(width-1,Math.round(cx+gap));
+        int top=Math.max(0,Math.round(three.top()-gap*2.4f));
+        int bottom=Math.min(height-1,Math.round(three.bottom()+gap*2.4f));
+        int w=right-left+1,h=bottom-top+1;boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];
+        for(int seed=0;seed<w*h;seed++) {
+            if(seen[seed]||!dark(gray,width,left+seed%w,top+seed/w))continue;
+            int take=0,size=1,minX=width,maxX=-1,minY=height,maxY=-1;
+            queue[0]=seed;seen[seed]=true;
+            while(take<size) {
+                int at=queue[take++],x=at%w,y=at/w;
+                minX=Math.min(minX,left+x);maxX=Math.max(maxX,left+x);
+                minY=Math.min(minY,top+y);maxY=Math.max(maxY,top+y);
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int nx=x+dx,ny=y+dy;if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                    int next=ny*w+nx;
+                    if(!seen[next]&&dark(gray,width,left+nx,top+ny)){seen[next]=true;queue[size++]=next;}
+                }
+            }
+            if(minX<=left||maxX>=right||minY<=top||maxY>=bottom)continue;
+            int cw=maxX-minX+1,ch=maxY-minY+1;
+            if(ch<gap*.7f||ch>gap*2.3f||ch<gh*.65f||ch>gh*1.4f
+                    ||cw<ch*.2f||cw>ch*.95f||size<cw*ch*.15f||size>cw*ch*.7f
+                    ||Math.abs((minX+maxX)*.5f-cx)>gap*.35f)continue;
+            int separation=maxY<three.top()?three.top()-maxY:
+                    minY>three.bottom()?minY-three.bottom():-1;
+            if(separation>=Math.max(2,gap*.2f)&&separation<=gap)return true;
+        }
+        return false;
     }
 
     private static boolean looksLikeThree(byte[] gray, int width, int left, int top, int w, int h) {

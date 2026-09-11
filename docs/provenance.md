@@ -694,3 +694,34 @@ score pixels, phone captures and transcriptions remain private. No weights or
 licensing changed. Guide111/audio27 refresh derived caches in the next app build;
 the phone still runs 1.18.111 without this repair. Mixed experiments and original
 rollback snapshots are preserved.
+
+## Preserve chord rhythms around stacked fingerings
+
+Vertically stacked fingering numbers above repeated chords included a printed 3.
+The tuplet detector treated this as a rhythmic marking and shortened three chord
+attacks, shifting the remainder of the bar. It now checks for a separate, similarly
+sized upright glyph immediately above or below the 3 when all three candidate
+attacks contain multiple chord tones. That stacked arrangement preserves the
+written rhythm. Ordinary isolated triplet numerals retain their prior behavior.
+
+Eight original synthetic tests cover upper and lower stacked fingers, genuine
+chord triplets, horizontal and distant neighbors, single-voice behavior, ordinary
+chords and input preservation. Two fail on the previous decoder. All 636 Java
+tests, 13 Python tests, PNG/PDF/MIDI smoke checks and 94 focused Android tests pass.
+
+Across 26 targeted pages, 25 full outputs are identical. The affected page changes
+only onset or duration for 84 notes in two bars; all pitches, note membership,
+ties and geometry remain unchanged. Raw source review confirms ordinary
+thirty-second-note chords and stacked fingerings in both bars. On desktop and
+fresh phone captures, all 229 reviewed pitches and 192 timing assertions now pass,
+including the previously restored displaced chord runs. The expanded source set
+has 3,078 passing pitch/presence checks out of 3,092, with 14 previously documented
+unrelated failures. Later-page output stability does not prove those pages fully
+correct; the wider library audit remains ongoing.
+
+Only the global geometry repair and original synthetic tests are published.
+Private score pixels, phone captures and transcriptions remain private. Model
+weights and licensing are unchanged. Guide112/audio28 refresh derived caches in
+the next app build. The installed phone app remains 1.18.111 without these fixes;
+this is source and captured-input validation, not an installed listening test.
+Original rollback snapshots and separate mixed experiments are preserved.
