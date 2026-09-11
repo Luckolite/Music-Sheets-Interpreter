@@ -65,6 +65,7 @@ final class OmrScoreInterpreter {
                 else heads.add(head);
             }
         }
+        heads.removeAll(beamJunctionHeads(gray,width,height,heads,staffs));
         List<Component> shortTies=shortTieBowlHeads(labels,gray,width,height,heads,staffs);
         heads.removeAll(shortTies);
         rejectedSlurHeads.addAll(shortTies);
@@ -2534,6 +2535,61 @@ final class OmrScoreInterpreter {
                     (left.centerY+right.centerY)*.5f,gap,head))result.add(head);
         }
         return result;
+    }
+
+    /** Small semantic islands at a beam endpoint can borrow the actual note's stem.
+     * Reject only a thin beam tip on a stem already attached to a larger head. */
+    private static List<Component> beamJunctionHeads(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> rejected=new ArrayList<>();
+        if(gray==null)return rejected;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);
+            if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.maxX-head.minX+1>gap*.85f||head.maxY-head.minY+1>gap*.60f
+                    ||head.area>gap*gap*.36f)continue;
+            for(Component main:heads) {
+                if(main==head||main.area<head.area*3f||nearestHeadStaff(staffs,main.centerY)!=staff
+                        ||Math.abs(main.centerX-head.centerX)>gap
+                        ||Math.abs(main.centerY-head.centerY)<gap*2
+                        ||Math.abs(main.centerY-head.centerY)>gap*6)continue;
+                int[] stem=attachedRawStem(gray,width,height,main,gap);
+                if(stem==null||stem[0]<head.minX-gap*.2f||stem[0]>head.maxX+gap*.2f
+                        ||Math.abs(stem[1]-head.centerY)>gap*.45f)continue;
+                if(narrowBeamTip(gray,width,height,stem[0],head.centerY,gap)) {
+                    rejected.add(head);break;
+                }
+            }
+        }
+        return rejected;
+    }
+
+    /** A beam has an extended straight core and no rounded head bulge at its tip. */
+    static boolean narrowBeamTip(byte[] gray,int width,int height,float stemX,float centerY,float gap) {
+        if(gray==null||gap<8)return false;
+        int core=Math.max(1,Math.round(gap*.07f));
+        int flank=Math.max(core+2,Math.round(gap*.28f));
+        int first=Math.max(3,Math.round(gap*.35f)),last=Math.round(gap*2.2f);
+        int search=Math.max(2,Math.round(gap*.3f));
+        for(int side:new int[]{-1,1})for(int offset=-search;offset<=search;offset++) {
+            float origin=centerY+offset;
+            for(int angle=-12;angle<=12;angle++) {
+                float slope=angle*.05f;int supported=0,total=0,tip=0,tipTotal=0;
+                for(int distance=first;distance<=last;distance++) {
+                    int x=Math.round(stemX)+side*distance,y=Math.round(origin+slope*distance);
+                    if(x<0||x>=width||y-flank<0||y+flank>=height)break;
+                    boolean ink=true;
+                    for(int dy=-core;dy<=core;dy++)if((gray[(y+dy)*width+x]&255)>=165)ink=false;
+                    boolean thin=(gray[(y-flank)*width+x]&255)>=165
+                            &&(gray[(y+flank)*width+x]&255)>=165;
+                    total++;if(ink&&thin)supported++;
+                    if(distance<=gap*.85f){tipTotal++;if(ink&&thin)tip++;}
+                }
+                if(total==last-first+1&&supported>=total*.88f&&tipTotal>=3&&tip>=tipTotal*.85f)return true;
+            }
+        }
+        return false;
     }
 
     private static boolean flatStemlessFragment(byte[] gray, int width, int height,
