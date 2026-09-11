@@ -1,5 +1,5 @@
 {
-  "source_commit": "9046d886b4b2f215cd060a3211b69c6035a79e5c",
+  "source_commit": "10d3ac6d90c15e453c7667d8cb3ea8ef77d982ce",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -8,7 +8,7 @@
   "files": {
     "ActiveScoreNotes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ActiveScoreNotes.java",
-      "source_sha256": "7a87fd00c91a12f3f69af5f3f5b4c00e001efd80b328679e6ad088ca6086caa7"
+      "source_sha256": "3114b89b3971ab4952a3ff48baac84dde0a2a8d9b2df98b43ea32f911e93c035"
     },
     "CrossStaffBeamDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CrossStaffBeamDetector.java",
