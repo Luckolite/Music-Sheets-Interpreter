@@ -101,8 +101,9 @@ final class OmrScoreInterpreter {
         for (Component component : symbolComponents)
             accidentalCandidates.add(new AccidentalCandidate(component,
                     OmrMeasurePostProcessor.SYMBOL));
-        List<AccidentalCandidate> localAccidentals = joinLocalAccidentalFragments(
-                labels, gray, width, height, accidentalCandidates, staffs);
+        List<AccidentalCandidate> localAccidentals = new ArrayList<>(joinLocalAccidentalFragments(
+                labels, gray, width, height, accidentalCandidates, staffs));
+        localAccidentals.removeIf(candidate->attachedGraceFlag(labels,gray,width,height,candidate,heads,staffs));
         List<Component> accidentalInk = new ArrayList<>();
         for (AccidentalCandidate candidate : localAccidentals) {
             Staff staff = nearestHeadStaff(staffs, candidate.component.centerY);
@@ -2973,6 +2974,34 @@ final class OmrScoreInterpreter {
             float rw=maxX-minX+1,rh=maxY-minY+1;
             if(Math.max(rw,rh)<=gap*.72f&&Math.max(rw,rh)<=Math.min(rw,rh)*1.45f
                     &&count>=Math.max(4,gap*gap*.04f)&&count>=rw*rh*.55f)return true;
+        }
+        return false;
+    }
+
+    /** A flag attached to an accepted grace head cannot flatten the next note. */
+    private static boolean attachedGraceFlag(byte[] labels,byte[] gray,int width,int height,
+            AccidentalCandidate candidate,List<Component> heads,List<Staff> staffs) {
+        if(gray==null)return false;
+        Component glyph=candidate.component;
+        Staff staff=nearestHeadStaff(staffs,glyph.centerY);
+        if(staff==null)return false;
+        float gap=staff.gap;
+        if(!isFlatGlyph(labels,width,height,candidate,gap))return false;
+        int spine=glyph.minX,strongest=0;
+        for(int x=glyph.minX;x<=glyph.maxX;x++) {
+            int ink=0;
+            for(int y=glyph.minY;y<=glyph.maxY;y++)if(candidate.matches(labels[y*width+x]))ink++;
+            if(ink>strongest){strongest=ink;spine=x;}
+        }
+        for(Component head:heads) {
+            if(head.maxX-head.minX+1>gap*1.25f||head.maxY-head.minY+1>gap*.95f
+                    ||head.area>gap*gap*.85f||nearestHeadStaff(staffs,head.centerY)!=staff
+                    ||head.centerY-glyph.maxY<gap*.35f||head.centerY-glyph.maxY>gap*1.1f
+                    ||Math.abs(head.maxX-spine)>gap*.35f)continue;
+            int[] stem=attachedRawStem(gray,width,height,head,gap*.65f);
+            if(stem==null||stem[2]!=-1||Math.abs(stem[0]-spine)>gap*.22f
+                    ||Math.abs(stem[1]-glyph.minY)>gap*.65f)continue;
+            return true;
         }
         return false;
     }
