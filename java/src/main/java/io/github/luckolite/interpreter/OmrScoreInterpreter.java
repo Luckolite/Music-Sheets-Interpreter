@@ -178,7 +178,7 @@ final class OmrScoreInterpreter {
                     measure.right() - measure.left());
             float[] localPitch = localStaffPitch(labels, gray, width, height, staff, head);
             float localBottom=localPitch[0],localGap=localPitch[1];
-            int step = Math.round((localBottom - head.centerY()) / (localGap * 0.5f));
+            int step = printedPitchStep(gray,width,height,head,localBottom,localGap);
             int beamCount = detectBeamCount(labels, gray, width, height, head, staff);
             int[] tremolo = tremoloStrokeCounts(gray,width,height,head,staff.gap,heads);
             beamCount = Math.max(0,beamCount-tremolo[1]);
@@ -236,7 +236,7 @@ final class OmrScoreInterpreter {
             List<Component> seconds=sideBySideSeconds(labels,width,head,staff.gap);
             if(seconds.isEmpty())detected.add(new DetectedNote(event, head, staff.gap));
             else for(Component part:seconds) {
-                int partStep=Math.round((localBottom-part.centerY)/(localGap*.5f));
+                int partStep=printedPitchStep(gray,width,height,part,localBottom,localGap);
                 // Displaced seconds share the stem/attack, despite their two horizontal centres.
                 var chord=new ScoreNoteEvent(measureIndex,clamp(position),partStep,staff.index,staff.count,
                         clamp(part.centerY/height),false,augmentationDots,beamCount,writtenAccidental,unbeamedDuration)
@@ -3546,6 +3546,54 @@ final class OmrScoreInterpreter {
     }
 
     /** Uses the staff line beside the note instead of the page-wide average on skewed scans. */
+    /** Near a line/space boundary, measure a compact filled head in the printed image.
+     * Thin staff/stem ink is removed before centering; three thresholds must agree. */
+    private static int printedPitchStep(byte[] gray,int width,int height,Component head,float bottom,float gap) {
+        float position=(bottom-head.centerY)/(gap*.5f);
+        int original=Math.round(position);
+        if(gray==null||Math.abs(position-(float)Math.floor(position)-.5f)>.12f||gap<8)return original;
+        int cx=Math.round(head.centerX),cy=Math.round(head.centerY);
+        if((gray[cy*width+cx]&255)>140)return original;
+        int radius=Math.round(gap*1.15f),left=cx-radius,top=cy-radius,size=radius*2+1;
+        if(left<0||top<0||left+size>width||top+size>height)return original;
+        int rx=Math.max(2,Math.round(gap*.20f)),ry=Math.max(1,Math.round(gap*.125f));
+        List<int[]> kernel=new ArrayList<>();
+        for(int dy=-ry;dy<=ry;dy++) {
+            int extent=Math.round(rx*(float)Math.sqrt(1-dy*dy/(float)(ry*ry)));
+            for(int dx=-extent;dx<=extent;dx++)kernel.add(new int[]{dx,dy});
+        }
+        int agreed=Integer.MIN_VALUE;float minY=Float.MAX_VALUE,maxY=-Float.MAX_VALUE;
+        for(int threshold:new int[]{60,100,140}) {
+            boolean[] opened=new boolean[size*size];
+            for(int y=ry;y<size-ry;y++)for(int x=rx;x<size-rx;x++) {
+                boolean solid=true;
+                for(int[] k:kernel)if((gray[(top+y+k[1])*width+left+x+k[0]]&255)>=threshold){solid=false;break;}
+                if(solid)for(int[] k:kernel)opened[(y+k[1])*size+x+k[0]]=true;
+            }
+            int seed=radius*size+radius;
+            if(!opened[seed])return original;
+            int[] queue=new int[size*size];int count=1,read=0;queue[0]=seed;opened[seed]=false;
+            long sumY=0,sumX=0;int minX=size,maxX=0,minRow=size,maxRow=0;
+            while(read<count) {
+                int at=queue[read++],y=at/size,x=at%size;sumY+=y;sumX+=x;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minRow=Math.min(minRow,y);maxRow=Math.max(maxRow,y);
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int xx=x+dx,yy=y+dy;if(xx<0||xx>=size||yy<0||yy>=size)continue;
+                    int next=yy*size+xx;if(opened[next]){opened[next]=false;queue[count++]=next;}
+                }
+            }
+            float y=top+sumY/(float)count,x=left+sumX/(float)count;
+            if(count<gap*gap*.35f||count>gap*gap*1.7f||maxX-minX<gap*.65f||maxX-minX>gap*1.8f
+                    ||maxRow-minRow<gap*.4f||maxRow-minRow>gap*1.3f
+                    ||Math.abs(x-head.centerX)>gap*.2f||Math.abs(y-head.centerY)>gap*.15f)return original;
+            minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+            int pitch=Math.round((bottom-y)/(gap*.5f));
+            if(pitch==original)return original;
+            if(agreed!=Integer.MIN_VALUE&&agreed!=pitch)return original;agreed=pitch;
+        }
+        return maxY-minY<=gap*.04f?agreed:original;
+    }
+
     private static float[] localStaffPitch(byte[] labels, byte[] gray, int width, int height, Staff staff,
                                          Component head) {
         float gap=staff.pitchGap, referenceBottom=staff.pitchBottom+staff.pitchSlope*(head.centerX-width*.5f);
