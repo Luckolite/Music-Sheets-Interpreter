@@ -657,7 +657,7 @@ final class OmrScoreInterpreter {
                 &&head.minY>=staff.top-gap*.2f&&head.maxY<=staff.bottom+gap*.3f;
         boolean denominator=head.maxY-head.minY>=gap*1.45f&&head.maxY-head.minY<=gap*2.65f
                 &&head.maxX-head.minX<=gap*2.2f&&head.maxX-head.minX>=gap*.65f
-                &&head.minY+1>=staff.top+gap*1.75f&&head.centerY>=staff.top+gap*2.2f
+                &&head.minY+1>=Math.floor(staff.top+gap*1.75f)&&head.centerY>=staff.top+gap*2.2f
                 &&head.maxY<=staff.bottom+gap*.3f;
         if(!whole&&!denominator)return false;
         boolean header=false;
@@ -681,7 +681,7 @@ final class OmrScoreInterpreter {
         int right=Math.min(width-1,Math.round(head.maxX+gap*.3f));
         int top=Math.max(0,Math.round(staff.top-gap*.2f));
         int bottom=Math.min(height-1,Math.round(staff.bottom+gap*.2f));
-        int w=right-left+1,h=bottom-top+1,upper=0,lower=0;
+        int w=right-left+1,h=bottom-top+1,upper=0,lower=0,tallLower=0;
         boolean[] visited=new boolean[w*h];int[] queue=new int[w*h];
         for(int seed=0;seed<w*h;seed++) {
             if(visited[seed]||(gray[(top+seed/w)*width+left+seed%w]&255)<=155)continue;
@@ -706,12 +706,15 @@ final class OmrScoreInterpreter {
             // can have wider bowls; it also requires printed numerator evidence.
             // Broad shallow hollow-note counters remain excluded.
             if(edge||size<gap*gap*.07f||cw<gap*.2f||cw>gap*1.1f
-                    ||ch<gap*.35f||ch>gap*1.1f||ch<cw*(whole?.75f:.6f))continue;
+                    ||ch<gap*.35f||ch>gap*1.1f||ch<cw*(whole?.75f:.5f))continue;
             float cy=top+(minY+maxY)*.5f;
-            if(cy<staff.top+gap*2)upper++;else lower++;
+            if(cy<staff.top+gap*2)upper++;else {
+                lower++;
+                if(ch>=cw*.6f)tallLower++;
+            }
         }
         if(whole)return upper>=1&&lower>=2;
-        if(lower<2)return false;
+        if(lower<2||tallLower<1)return false;
         // An 8 denominator may be the only part labelled as a head. Its printed
         // numerator must span the upper half, without an actual note/chord there.
         int ink=0,heads=0,minY=height,maxY=-1;

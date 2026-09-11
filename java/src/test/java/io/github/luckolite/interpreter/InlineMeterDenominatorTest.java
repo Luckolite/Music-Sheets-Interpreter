@@ -90,4 +90,25 @@ public class InlineMeterDenominatorTest {
     @Test public void shallowHollowChordCountersRemainProtected()throws Exception {
         Page p=new Page(false,true);reshapeCounters(p,8,3.5);assertFalse(p.classify(true));
     }
+    @Test public void fractionalStaffBoundaryUsesTheCoveredPixelRow()throws Exception {
+        assertTrue(new Page(false,true).classify(true,82.25f));
+    }
+    private static void upperCounter(Page p) {
+        int cy=120;
+        for(int y=cy-8;y<=cy+8;y++)for(int x=120;x<=140;x++) {
+            double outer=Math.pow((x-130)/10.0,2)+Math.pow((y-cy)/8.0,2);
+            if(outer<=1)p.gray[y*p.w+x]=Math.pow((x-130)/7.0,2)+Math.pow((y-cy)/4.0,2)<1?(byte)255:0;
+        }
+    }
+    @Test public void unequalEightCountersStillFormOneDenominator()throws Exception {
+        Page p=new Page(false,true);upperCounter(p);assertTrue(p.classify(true));
+        Page inline=new Page(true,true);upperCounter(inline);assertTrue(inline.notes().isEmpty());
+    }
+    @Test public void twoFlattenedCountersCannotEstablishAMeterDigit()throws Exception {
+        Page p=new Page(false,true);reshapeCounters(p,7,4);assertFalse(p.classify(true));
+    }
+    @Test public void asymmetricCounterStillNeedsANumerator()throws Exception {
+        Page p=new Page(false,false);upperCounter(p);assertFalse(p.classify(true));
+    }
+
 }
