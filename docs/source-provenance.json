@@ -1,5 +1,5 @@
 {
-  "source_commit": "7e9bf38122d9dc619693af5877b5254735ee26b2",
+  "source_commit": "e0b72c22230fa68d79800aa1965821582bd5816c",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -142,7 +142,7 @@
     },
     "PrintedMeasureRhythmGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedMeasureRhythmGuard.java",
-      "source_sha256": "3419c66622df1807b4edbc870c36817ef562f5da9250955834e836bdc0f8ed08"
+      "source_sha256": "baceaf0ae4a347c1f35bafdb2daeb3629761e56763095b70487370aca65416f1"
     }
   }
 }

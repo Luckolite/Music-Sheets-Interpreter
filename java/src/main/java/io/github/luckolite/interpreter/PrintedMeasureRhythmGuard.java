@@ -96,16 +96,16 @@ final class PrintedMeasureRhythmGuard {
     private static List<MeasureRegion> fragments(MeasureRegion region, List<MeasureRegion> fitted) {
         return fitted.stream().filter(part -> sameRow(region, part)
                 && part.left() >= region.left() - .006f && part.right() <= region.right() + .006f)
-                .sorted(Comparator.comparingDouble(MeasureRegion::left)).toList();
+                .sorted(Comparator.comparingDouble(MeasureRegion::left)).collect(java.util.stream.Collectors.toList());
     }
     private static List<Span> spans(List<ScoreNoteEvent> notes, int measure) {
         List<Span> result = new ArrayList<>();
         var lanes = notes.stream().filter(n -> n.measureIndex() == measure)
-                .map(n -> n.staffCount() * 16 + n.staffIndex()).distinct().toList();
+                .map(n -> n.staffCount() * 16 + n.staffIndex()).distinct().collect(java.util.stream.Collectors.toList());
         for (int lane : lanes) {
             var voice = notes.stream().filter(n -> n.measureIndex() == measure
                     && n.staffCount() * 16 + n.staffIndex() == lane)
-                    .sorted(Comparator.comparingDouble(ScoreNoteEvent::positionInMeasure)).toList();
+                    .sorted(Comparator.comparingDouble(ScoreNoteEvent::positionInMeasure)).collect(java.util.stream.Collectors.toList());
             double beats = 0;
             int groups = 0;
             boolean beamed = true, valid = true;
