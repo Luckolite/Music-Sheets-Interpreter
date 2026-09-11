@@ -1962,7 +1962,15 @@ final class OmrScoreInterpreter {
                     // A close bottom rule does not guarantee the correct scale on ledger notes.
                     float error=Math.max(Math.abs(staff.pitchBottom-raw.bottom()),Math.abs(staff.bottom-raw.bottom()));
                     error=Math.max(error,Math.abs(staff.pitchGap-raw.gap())*6);
-                    if(error<raw.gap()*.45f)continue;
+                    if(error<raw.gap()*.45f) {
+                        // A centered seed can fit while its missing slope loses a rule at the edge.
+                        // Correct that seed without locking the local reader to a new staff phase.
+                        if(!staff.printedPhase&&Math.abs(staff.pitchSlope-semanticSlope)*width*.5f>=raw.gap()*.45f) {
+                            staff.pitchBottom=raw.bottom();staff.pitchGap=raw.gap();
+                            staff.pitchSlope=semanticSlope;staff.printedSlope=true;
+                        }
+                        continue;
+                    }
                     staff.pitchBottom=raw.bottom();staff.pitchGap=raw.gap();staff.pitchSlope=semanticSlope;
                     staff.printedPhase=true;
                 }
@@ -1976,8 +1984,8 @@ final class OmrScoreInterpreter {
         staffs.sort(Comparator.comparingDouble(staff -> staff.top));
         for(Staff staff:staffs) {
             staff.pitchTrack=StaffPitchTrack.detect(gray,width,height,
-                staff.printedPhase?staff.pitchBottom-staff.pitchGap*4:staff.top,
-                staff.printedPhase?staff.pitchBottom:staff.bottom,staff.pitchGap);
+                staff.printedPhase||staff.printedSlope?staff.pitchBottom-staff.pitchGap*4:staff.top,
+                staff.printedPhase||staff.printedSlope?staff.pitchBottom:staff.bottom,staff.pitchGap);
             if(staff.printedPhase&&staff.pitchTrack!=null
                     &&Math.abs(staff.pitchTrack.at(width*.5f)[0]-staff.pitchBottom)>staff.pitchGap*.5f)
                 staff.pitchTrack=null;
@@ -4652,7 +4660,7 @@ final class OmrScoreInterpreter {
     private static final class Staff {
         final float top, bottom, gap;
         float pitchBottom, pitchGap, pitchSlope;
-        boolean printedPhase;
+        boolean printedPhase, printedSlope;
         StaffPitchTrack pitchTrack;
         int index, count = 1;
         Staff(float top, float bottom, float gap) {
