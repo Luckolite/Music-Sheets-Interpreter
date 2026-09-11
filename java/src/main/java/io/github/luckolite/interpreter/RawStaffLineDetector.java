@@ -87,13 +87,18 @@ final class RawStaffLineDetector {
         int minimum=Math.max(24,Math.round(width*.12f));
         for(int y:candidate.rows()) {
             if(y<probe||y>=height-probe)return false;
-            int count=0;
+            int count=0,run=0,longest=0;
             for(int x=0;x<width;x++) {
                 int ink=gray[y*width+x]&255;
                 if(ink<=DARK&&(gray[(y-probe)*width+x]&255)>=ink+12
-                        &&(gray[(y+probe)*width+x]&255)>=ink+12)count++;
+                        &&(gray[(y+probe)*width+x]&255)>=ink+12) {
+                    count++;
+                    longest=Math.max(longest,++run);
+                } else run=0;
             }
-            if(count<minimum)return false;
+            // Text baselines have plenty of thin ink, but each glyph interrupts the rule.
+            // Require a short continuous segment as well as aggregate page-wide support.
+            if(count<minimum || longest<Math.max(12,Math.round(candidate.gap()*3)))return false;
         }
         return true;
     }

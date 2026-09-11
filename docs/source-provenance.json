@@ -1,5 +1,5 @@
 {
-  "source_commit": "efcf39aa604d69b7a41118269609d22119255f62",
+  "source_commit": "3525e3d72c5536c11024ef31b3dfcabf1e9c30c5",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -60,7 +60,7 @@
     },
     "RawStaffLineDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RawStaffLineDetector.java",
-      "source_sha256": "5d4f576c61d9597de2f364ac17dd3592922db08b9278b4bad49f3ef468a2a1f4"
+      "source_sha256": "35332699e43bec1a3777d13e51065d5511f4e7d6970144ae3cb83e0ac040ae24"
     },
     "ScoreDynamicChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicChange.java",
