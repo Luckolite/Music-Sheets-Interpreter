@@ -992,10 +992,11 @@ final class OmrScoreInterpreter {
     private record ClefGlyph(float x,int clef) { }
 
     private static boolean rawBassClef(Component body,byte[] labels,byte[] gray,int width,int height,Staff staff) {
-        // A key sharp beside the two round terminals of a meter digit can mimic
-        // a narrow bass clef. Its two spines and crossbars establish an accidental.
-        return !isSharpGlyph(labels,width,height,new AccidentalCandidate(body,
-                OmrMeasurePostProcessor.CLEF_OR_KEY),staff.gap)
+        // A key accidental beside rounded meter terminals can mimic a bass clef.
+        // Preserve a sharp's crossbars or a flat's left spine and lower bowl.
+        AccidentalCandidate candidate=new AccidentalCandidate(body,OmrMeasurePostProcessor.CLEF_OR_KEY);
+        return !isSharpGlyph(labels,width,height,candidate,staff.gap)
+                &&!isFlatGlyph(labels,width,height,candidate,staff.gap)
                 &&rawBassClef(body,gray,width,height,staff);
     }
 

@@ -39,4 +39,18 @@ public class BassClefAccidentalGuardTest {
         var body=construct("Component",150,100,117,82,107,109f,95f);
         assertTrue(check(body,true));
     }
+    private Object flatBesideNumeral(int top)throws Exception {
+        prepare();rect(100,82,3,48,3);rect(100,108,19,3,3);
+        rect(116,108,3,18,3);rect(100,123,19,3,3);
+        for(int y=82;y<top;y++)for(int x=100;x<103;x++)labels[y*W+x]=5;
+        int area=0;long sx=0,sy=0;
+        for(int y=top;y<=129;y++)for(int x=100;x<=118;x++)if(labels[y*W+x]==3){area++;sx+=x;sy+=y;}
+        return construct("Component",area,100,118,top,129,sx/(float)area,sy/(float)area);
+    }
+    @Test public void aFlatAndNeighboringNumeralCannotChangeTheClef()throws Exception {
+        var body=flatBesideNumeral(82);assertTrue(check(body,false));assertFalse(check(body,true));
+    }
+    @Test public void aFlatWithShorterClassifiedSpineStillPreservesTheClef()throws Exception {
+        var body=flatBesideNumeral(88);assertTrue(check(body,false));assertFalse(check(body,true));
+    }
 }
