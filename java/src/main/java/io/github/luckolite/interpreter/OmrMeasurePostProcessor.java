@@ -115,7 +115,9 @@ final class OmrMeasurePostProcessor {
                     result.add(new StaffRun(rows[0], rows[4], gap, left, right, boundaries, slope));
             }
         }
-        recoverRawStaffs(labels, gray, width, height, result);
+        recoverRawStaffs(labels, gray, width, height, result, 0f);
+        // A tilted system may lose every staff label while retaining clear printed rules.
+        if(gray!=null&&Math.abs(slope)>.001f)recoverRawStaffs(labels,gray,width,height,result,slope);
         result.sort(Comparator.comparingInt(StaffRun::top));
         return result;
     }
@@ -126,12 +128,21 @@ final class OmrMeasurePostProcessor {
      * leaving the semantic result in charge wherever it already found the system.
      */
     private static void recoverRawStaffs(byte[] labels, byte[] gray, int width, int height,
-                                         List<StaffRun> result) {
+                                         List<StaffRun> result,float slope) {
         List<Float> semanticCenters = new ArrayList<>();
         for (StaffRun staff : result) semanticCenters.add((staff.top + staff.bottom) * .5f);
         semanticCenters.sort(Float::compare);
         float semanticSystemStep = typicalSystemStep(semanticCenters);
-        List<RawStaffLineDetector.StaffLines> rawStaffs=RawStaffLineDetector.detect(gray,width,height);
+        byte[] detectionGray=gray;
+        // Deskew detection only; boundaries and note coordinates stay on the original page.
+        if(slope!=0f) {
+            detectionGray=new byte[gray.length];Arrays.fill(detectionGray,(byte)255);
+            for(int y=0;y<height;y++)for(int x=0;x<width;x++) {
+                int originalY=y+Math.round(slope*(x-width*.5f));
+                if(originalY>=0&&originalY<height)detectionGray[y*width+x]=gray[originalY*width+x];
+            }
+        }
+        List<RawStaffLineDetector.StaffLines> rawStaffs=RawStaffLineDetector.detect(detectionGray,width,height);
         for (RawStaffLineDetector.StaffLines raw : rawStaffs) {
             int representedIndex = -1;
             for (int index = 0; index < result.size(); index++) {
@@ -143,15 +154,17 @@ final class OmrMeasurePostProcessor {
                 }
             }
 
-            int[] columns = rawStaffColumns(gray, width, height, raw.rows(), raw.gap());
+            // The second pass recovers omitted systems without replacing accepted geometry.
+            if(slope!=0f&&representedIndex>=0)continue;
+            int[] columns = rawStaffColumns(gray, width, height, raw.rows(), raw.gap(),slope);
             int total = Arrays.stream(columns).sum();
             int left = percentileColumn(columns, total, .012f);
             int right = percentileColumn(columns, total, .988f);
             int continuedRight=continuousPrintedRight(columns,right,raw.gap());
-            if(clippedClosingHead(labels,width,height,right,continuedRight,raw.rows(),raw.gap(),0f))right=continuedRight;
+            if(clippedClosingHead(labels,width,height,right,continuedRight,raw.rows(),raw.gap(),slope))right=continuedRight;
             if (right - left < Math.max(width / 4, Math.round(raw.gap() * 18f))) continue;
             List<Integer> boundaries = findBoundaries(labels, gray, width, height, raw.rows(),
-                    raw.gap(), left, right, 0f);
+                    raw.gap(), left, right, slope);
             if (representedIndex >= 0) {
                 StaffRun existing = result.get(representedIndex);
                 // A global semantic deskew can find the staff but still miss its raw vertical
@@ -183,9 +196,9 @@ final class OmrMeasurePostProcessor {
                 }
             } else if (boundaries.size() >= 2
                     && (!betweenAdjacentSemanticSystems(raw.center(), semanticCenters,
-                    semanticSystemStep)||RawStaffLineDetector.connectedToStaff(raw,rawStaffs,gray,width,height)))
+                    semanticSystemStep)||RawStaffLineDetector.connectedToStaff(raw,rawStaffs,detectionGray,width,height)))
                 result.add(new StaffRun(raw.top(), raw.bottom(), raw.gap(), left, right,
-                        boundaries, 0f));
+                        boundaries, slope));
         }
     }
 
