@@ -1882,22 +1882,24 @@ final class OmrScoreInterpreter {
                 // projection, inventing a half-spacing staff. A complete,
                 // strong deskewed five-rule group with no intervening rules
                 // resolves that alias before the page-scale gate can reject it.
+                boolean printed=completePrintedDeskewedStaff(gray,width,height,lines,semanticSlope);
                 boolean replaced=false;
                 if(alignedWithMeasureRow(recovered,measures,height)
-                        &&unambiguousDeskewedRules(deskewed,lines,width)) {
+                        &&(printed||unambiguousDeskewedRules(deskewed,lines,width))) {
                     for(int i=staffs.size()-1;i>=0;i--) {
                         Staff prior=staffs.get(i);
                         float center=(prior.top+prior.bottom)*.5f;
-                        if(recovered.gap>=prior.gap*1.8f&&recovered.gap<=prior.gap*2.2f
-                                &&Math.abs(center-(recovered.top+recovered.bottom)*.5f)<=recovered.gap
-                                &&prior.top>=recovered.top-recovered.gap*.25f
-                                &&prior.bottom<=recovered.bottom+recovered.gap*.25f) {
+                        if(recovered.gap>=prior.gap*(printed?1.18f:1.8f)&&recovered.gap<=prior.gap*(printed?2.4f:2.2f)
+                                &&Math.abs(center-(recovered.top+recovered.bottom)*.5f)<=recovered.gap*(printed?1.75f:1f)
+                                &&prior.top>=recovered.top-recovered.gap*(printed?.8f:.25f)
+                                &&prior.bottom<=recovered.bottom+recovered.gap*(printed?.8f:.25f)) {
                             staffs.remove(i);replaced=true;
                         }
                     }
                 }
-                if(replaced||alignedWithMeasureRow(recovered,measures,height)&&compatibleStaffScale(recovered,staffs)
-                        &&isolatedMissingSystem(recovered,staffs)&&!representedStaff(recovered,staffs,height))staffs.add(recovered);
+                if(replaced||alignedWithMeasureRow(recovered,measures,height)&&(printed||compatibleStaffScale(recovered,staffs))
+                        &&(printed&&staffs.isEmpty()||isolatedMissingSystem(recovered,staffs))
+                        &&!representedStaff(recovered,staffs,height))staffs.add(recovered);
             }
         }
         for (RawStaffLineDetector.StaffLines raw : RawStaffLineDetector.detect(gray, width, height)) {
@@ -1922,6 +1924,24 @@ final class OmrScoreInterpreter {
         for(Staff staff:staffs)staff.pitchTrack=StaffPitchTrack.detect(gray,width,height,staff.top,staff.bottom,staff.pitchGap);
         assignSystemPositions(staffs, measures, height);
         return staffs;
+    }
+
+    /** Verify all five sloped rules in the printed page, with clear spaces between them. */
+    private static boolean completePrintedDeskewedStaff(byte[] gray,int width,int height,
+            RawStaffLineDetector.StaffLines staff,float slope) {
+        if(gray==null||gray.length!=width*height)return false;
+        int step=Math.max(1,width/512),radius=Math.max(1,Math.round(staff.gap()*.15f));
+        for(int i=0;i<9;i++) {
+            float row=i<5?staff.rows()[i]:(staff.rows()[i-5]+staff.rows()[i-4])*.5f;
+            int dark=0,samples=0;
+            for(int x=0;x<width;x+=step) {
+                int y=Math.round(row+slope*(x-width*.5f));samples++;
+                for(int yy=Math.max(0,y-radius);yy<=Math.min(height-1,y+radius);yy++)
+                    if((gray[yy*width+x]&255)<180){dark++;break;}
+            }
+            if(i<5?dark<samples*.55f:dark>=samples*.5f)return false;
+        }
+        return true;
     }
 
     private static boolean unambiguousDeskewedRules(int[] strength,
