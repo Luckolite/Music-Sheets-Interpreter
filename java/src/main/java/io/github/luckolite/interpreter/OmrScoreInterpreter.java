@@ -3313,18 +3313,25 @@ final class OmrScoreInterpreter {
 
         int radius = Math.max(0, Math.round(glyphWidth * .09f));
         int leftTop = glyphHeight, leftBottom = -1, rightTop = glyphHeight, rightBottom = -1;
+        int leftRows=0,rightRows=0;
         for (int row = 0; row < glyphHeight; row++) {
+            boolean leftInk=false,rightInk=false;
             for (int column = Math.max(0, leftSpine - radius);
                  column <= Math.min(glyphWidth - 1, leftSpine + radius); column++)
                 if (candidate.matches(labels[(glyph.minY + row) * width + glyph.minX + column])) {
-                    leftTop = Math.min(leftTop, row); leftBottom = Math.max(leftBottom, row);
+                    leftInk=true;leftTop = Math.min(leftTop, row); leftBottom = Math.max(leftBottom, row);
                 }
             for (int column = Math.max(0, rightSpine - radius);
                  column <= Math.min(glyphWidth - 1, rightSpine + radius); column++)
                 if (candidate.matches(labels[(glyph.minY + row) * width + glyph.minX + column])) {
-                    rightTop = Math.min(rightTop, row); rightBottom = Math.max(rightBottom, row);
+                    rightInk=true;rightTop = Math.min(rightTop, row); rightBottom = Math.max(rightBottom, row);
                 }
+            if(leftInk)leftRows++;if(rightInk)rightRows++;
         }
+        // Separate fragments cannot lengthen a spine across mostly empty space.
+        // Allow short scan breaks while requiring ink along each offset stem.
+        if(leftRows<(leftBottom-leftTop+1)*.65f
+                ||rightRows<(rightBottom-rightTop+1)*.65f)return false;
         int endpointOffset = Math.max(1, Math.round(glyphHeight * .05f));
         if (rightTop - leftTop < endpointOffset
                 || rightBottom - leftBottom < endpointOffset) return false;
