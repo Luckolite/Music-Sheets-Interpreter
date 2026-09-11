@@ -758,3 +758,37 @@ the general repair and original synthetic tests are public. Private score pixels
 transcriptions and device data remain private. No model or license changes.
 Guide113/audio29 invalidate derived caches in the next app build. Existing mixed
 experiments and rollback snapshots remain preserved.
+
+## Keep rejected head fragments out of key-signature boundaries
+
+The key reader used every plausible head-shaped component to locate the first
+note, including fragments rejected later as non-notes. A rejected fragment in a
+header could cut the reading window short before the last flat, creating a false
+key change and altering an entire following passage. The boundary now uses only
+heads belonging to emitted notes. Genuine first notes still end the signature.
+
+Five original synthetic tests cover rejected high and low fragments, intact key
+signatures, a real first-note boundary and input preservation. Two fail on the
+previous decoder. All 648 Java tests, 13 Python tests, PNG/PDF/MIDI smoke checks
+and 55 focused Android tests pass.
+
+Across 26 targeted pages, 24 full outputs are identical. The reported page changes
+exactly 15 pitches from D-natural5 to the printed D-flat5, removing the false
+four-flat-to-three-flat key change. All 344 pitches on that page now match the
+manual source review; event count, rhythm, positions and ties are unchanged by
+this repair. One other page now recognizes its printed single-flat signature
+from its opening bar instead of the seventh bar; its supplied key already matched,
+so every playback event remains identical. Both changes were checked against the
+raw printed score. The expanded source set has 3,422 passing pitch/presence checks
+out of 3,436, with 14 previously documented unrelated failures. The scheduled
+hourly revisit checked 22 additional earlier pages: all complete outputs are
+identical to the prior hourly decoder and all 188 saved assertions pass.
+
+The separate connected-bowing-mark beam endpoint issue remains open: one note in
+a later dense run is still twice its printed duration. Pitch correctness does not
+imply complete rhythm correctness. Phone wireless debugging remains disconnected;
+this repair has not been installed or listening-tested there. Guide114/audio30
+invalidate derived caches in the next app build. Only general code and original
+synthetic tests are public; private scores and captures remain private. No weights,
+license changes or song-specific rules. Rollback snapshots and mixed experiments
+remain preserved.

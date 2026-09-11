@@ -250,7 +250,7 @@ final class OmrScoreInterpreter {
             }
         }
         List<ScoreKeyChange> keyChanges = detectKeyChanges(labels, gray, width, height, measures,
-                staffs, accidentalCandidates, heads);
+                staffs, accidentalCandidates, joined.stream().map(n -> n.head).toList());
         List<ScoreNoteEvent> withRests = new ArrayList<>();
         for (DetectedNote note : joined) {
             ScoreNoteEvent event = note.event;
