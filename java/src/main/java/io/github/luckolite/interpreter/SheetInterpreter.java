@@ -62,8 +62,10 @@ public final class SheetInterpreter {
         var numbers=annotations.measureNumbers.stream().map(NumberToken::internal).toList();
         var rests=MultiMeasureRestDetector.detect(labels,gray,width,height,measures,
                 annotations.restCounts.stream().map(NumberToken::internal).toList());
+        var rawMeasures = measures;
         if(!numbers.isEmpty()||!rests.isEmpty())
             measures=MeasureNumberReconciler.reconcile(measures,numbers,rests);
+        measures=PrintedMeasureRhythmGuard.reconcile(rawMeasures,measures,labels,gray,width,height);
         var score=OmrScoreInterpreter.analyze(labels,gray,width,height,measures);
         var rhythm=TripletRhythmDetector.withRests(score.notes(),score.rests(),measures,gray,width,height);
         var notes=rhythm.notes();

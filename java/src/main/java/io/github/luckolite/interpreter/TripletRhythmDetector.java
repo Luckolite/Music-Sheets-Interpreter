@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** Reads printed triplets and beamed seven-in-four groups from numeral and attack geometry. */
+/** Reads printed triplets and beamed five- or seven-in-four groups from numeral and attack geometry. */
 final class TripletRhythmDetector {
     private TripletRhythmDetector() { }
 
@@ -174,14 +174,14 @@ final class TripletRhythmDetector {
             }
             if(marked)i+=2;
         }
-        return septuplets(result,measures,gray,width,height);
+        return beamedTuplets(beamedTuplets(result,measures,gray,width,height,7),measures,gray,width,height,5);
     }
 
-    private static List<ScoreNoteEvent> septuplets(List<ScoreNoteEvent> notes,
-            List<MeasureRegion> measures,byte[] gray,int width,int height) {
+    private static List<ScoreNoteEvent> beamedTuplets(List<ScoreNoteEvent> notes,
+            List<MeasureRegion> measures,byte[] gray,int width,int height,int divisor) {
         List<ScoreNoteEvent> result=new ArrayList<>(notes);
         List<Onset> groups=onsets(notes);
-        for(int i=0;i+6<groups.size();i++) {
+        for(int i=0;i+divisor-1<groups.size();i++) {
             Onset firstGroup=groups.get(i);
             for(int index:firstGroup.indices()) {
                 ScoreNoteEvent first=result.get(index);
@@ -189,7 +189,7 @@ final class TripletRhythmDetector {
                         ||first.measureIndex()<0||first.measureIndex()>=measures.size())continue;
                 List<Onset> run=new ArrayList<>();float minimum=Float.MAX_VALUE,maximum=0;
                 boolean valid=true;
-                for(int j=0;j<7;j++) {
+                for(int j=0;j<divisor;j++) {
                     Onset onset=matching(groups.get(i+j),result,first);
                     if(onset==null){valid=false;break;}
                     if(j>0) {
@@ -199,26 +199,26 @@ final class TripletRhythmDetector {
                     run.add(onset);
                 }
                 if(!valid||minimum<.012f||maximum>minimum*1.6f)continue;
-                // A longer uninterrupted run does not become seven notes merely
-                // because a small 7 happens to be nearby.
+                // A longer uninterrupted run does not become a shorter tuplet merely
+                // because a numeral happens to be nearby.
                 if(i>0&&matching(groups.get(i-1),result,first)!=null
                         &&firstGroup.position()-groups.get(i-1).position()<minimum*1.5f)continue;
-                if(i+7<groups.size()&&matching(groups.get(i+7),result,first)!=null
-                        &&groups.get(i+7).position()-run.get(6).position()<minimum*1.5f)continue;
+                if(i+divisor<groups.size()&&matching(groups.get(i+divisor),result,first)!=null
+                        &&groups.get(i+divisor).position()-run.get(divisor-1).position()<minimum*1.5f)continue;
                 MeasureRegion bar=measures.get(first.measureIndex());
                 float gap=Math.max(4,(bar.bottom()-bar.top())*height/(8*first.staffCount()));
                 float x1=(bar.left()+run.get(0).position()*(bar.right()-bar.left()))*width;
-                float x7=(bar.left()+run.get(6).position()*(bar.right()-bar.left()))*width;
-                if(x7-x1<gap*3||x7-x1>gap*26)continue;
+                float lastX=(bar.left()+run.get(divisor-1).position()*(bar.right()-bar.left()))*width;
+                if(lastX-x1<gap*3||lastX-x1>gap*26)continue;
                 float y1=Float.MAX_VALUE,y2=-Float.MAX_VALUE;
                 for(Onset onset:run){y1=Math.min(y1,onset.top()*height);y2=Math.max(y2,onset.bottom()*height);}
-                if(findPrintedNumeral(gray,width,height,x1,x7,y1,y2,gap,true,
-                        Float.NaN,Float.NaN,7)==null)continue;
+                if(findPrintedNumeral(gray,width,height,x1,lastX,y1,y2,gap,true,
+                        Float.NaN,Float.NaN,divisor)==null)continue;
                 for(Onset onset:run)for(int at:onset.indices()) {
                     ScoreNoteEvent n=result.get(at);
                     result.set(at,new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
                             n.staffIndex(),n.staffCount(),n.pageY(),n.tiedFromPrevious(),n.augmentationDots(),
-                            n.beamCount(),n.writtenAccidental(),n.unbeamedDurationBeats(),7,n.followingRestBeats(),
+                            n.beamCount(),n.writtenAccidental(),n.unbeamedDurationBeats(),divisor,n.followingRestBeats(),
                             n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening()));
                 }
             }
@@ -316,6 +316,7 @@ final class TripletRhythmDetector {
             if(Float.isFinite(headX)&&(headX<minX-gap*.1f||headX>maxX+gap*.1f
                     ||headY<minY-gap*.1f||headY>maxY+gap*.1f))continue;
             if (!(number==7 ? looksLikeSeven(gray,width,minX,minY,gw,gh)
+                    : number==5 ? looksLikeFive(gray,width,minX,minY,gw,gh)
                     : looksLikeThree(gray, width, minX, minY, gw, gh))) continue;
             // Quarter-note tuplets need the two bracket arms. For beamed/flagged short notes,
             // publishers routinely print only the numeral, so its shape/group alignment suffices.
@@ -383,6 +384,25 @@ final class TripletRhythmDetector {
         }
         return broad>=Math.max(1,h/12)&&upperRows>0&&lowerRows>0&&reverse<=h/10
                 &&upper/(float)upperRows-lower/(float)lowerRows>=w*.45f;
+    }
+
+    private static boolean looksLikeFive(byte[] gray,int width,int left,int top,int w,int h) {
+        int bars=0,leftStem=0,lowerOpen=0,lowerPocket=0,lowerEdge=-1,foot=-1;
+        for(int y=0;y<h;y++) {
+            int min=w,max=-1;
+            for(int x=0;x<w;x++)if(dark(gray,width,left+x,top+y)){min=Math.min(min,x);max=Math.max(max,x);}
+            if(y<h*.28f&&max-min>=w*.6f)bars++;
+            if(y>=h*.18f&&y<h*.42f&&min<=w*.35f&&max<=w*.55f&&max>=min)leftStem++;
+            if(y>=h*.48f&&y<h*.82f) {
+                lowerEdge=Math.max(lowerEdge,max);
+                if(min>=w*.45f&&max>=w*.7f)lowerOpen++;
+                if(hasLobePocket(gray,width,left,top+y,w))lowerPocket++;
+            }
+            if(y>=h*.94f)foot=Math.max(foot,max);
+        }
+        return bars>=Math.max(2,h/12)&&leftStem>=Math.max(1,h/12)
+                &&lowerOpen>=1&&lowerOpen+lowerPocket>=Math.max(2,h/8)
+                &&lowerEdge-foot>=Math.max(1,(int)(w*.08f));
     }
 
     private static boolean looksLikeThree(byte[] gray, int width, int left, int top, int w, int h) {

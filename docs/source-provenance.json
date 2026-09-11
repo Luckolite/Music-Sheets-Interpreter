@@ -1,5 +1,5 @@
 {
-  "source_commit": "10d3ac6d90c15e453c7667d8cb3ea8ef77d982ce",
+  "source_commit": "7e9bf38122d9dc619693af5877b5254735ee26b2",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -80,11 +80,11 @@
     },
     "ScoreNoteEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteEvent.java",
-      "source_sha256": "3eed0acce7fc2bc4e38ec1d4311cc41d518276cbcd513818ddb77b235a11cddb"
+      "source_sha256": "11dd3e9dd4cbed42722cc355018fb5efc3ea0f769ef909bffb68f697eca1b729"
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "e6453b488253af0973a2278285a4034e922f2d6625526bd95d31db35b2eade48"
+      "source_sha256": "78eb9341aa0e5a6fbed5141d977f8949ff818379be1b34eb339004ed8c3b2c4a"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
@@ -112,7 +112,7 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "86aa7149ed15d2ba420c53986674ccbb446580c83a6b03d921c4e180db496661"
+      "source_sha256": "4819e89ac176e764f403aaa2292d6d2363ae8a73f9be0d91c66a4569111a66cc"
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
@@ -139,6 +139,10 @@
     "OpeningMeasureLayout.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpeningMeasureLayout.java",
       "source_sha256": "f373692368e2ff32492927af8ae01bea35203c26a0c693c64862834c7c2d9a5d"
+    },
+    "PrintedMeasureRhythmGuard.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedMeasureRhythmGuard.java",
+      "source_sha256": "3419c66622df1807b4edbc870c36817ef562f5da9250955834e836bdc0f8ed08"
     }
   }
 }

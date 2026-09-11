@@ -82,7 +82,7 @@ public class SeptupletTest {
         assertEquals(run(7),apply(run(7),gray));
     }
     @Test public void unrecognizedDivisorStillFallsBackSafely() {
-        var n=new ScoreNoteEvent(0,.1f,0,0,1,.4f,false,0,2,2,0,5);
+        var n=new ScoreNoteEvent(0,.1f,0,0,1,.4f,false,0,2,2,0,6);
         assertEquals(1,n.tupletDivisor());assertEquals(.25,ScoreNoteTiming.writtenDurationBeats(n),0);
     }
     @Test public void aRestOccupiesOneOfTheSevenSlots() {
