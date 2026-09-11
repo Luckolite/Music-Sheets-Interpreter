@@ -138,7 +138,7 @@ final class OmrScoreInterpreter {
             int writtenAccidental = detectWrittenAccidental(labels, width, height,
                     localAccidentals, head, localPitch[1]);
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
-                    &&rawFlatFromBowl(gray,width,height,localAccidentals,head,localPitch[1]))
+                    &&rawFlatFromBowl(gray,width,height,withoutRecognizedSharps(labels,width,height,localAccidentals,localPitch[1]),head,localPitch[1]))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_FLAT;
             if((writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                     ||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FLAT)
@@ -2720,6 +2720,16 @@ final class OmrScoreInterpreter {
         return isNaturalGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap);
     }
 
+    /** A complete sharp already has stronger shape evidence than a cropped raw
+     * bowl. Do not reinterpret it as a flat after pitch alignment rejected it. */
+    private static List<AccidentalCandidate> withoutRecognizedSharps(byte[] labels,int width,int height,
+            List<AccidentalCandidate> candidates,float gap) {
+        List<AccidentalCandidate> result=new ArrayList<>();
+        for(AccidentalCandidate candidate:candidates)
+            if(!isSharpGlyph(labels,width,height,candidate,gap))result.add(candidate);
+        return result;
+    }
+
     /** A flat's bowl can keep its accidental label while its tall spine is labelled as a stem. */
     private static boolean rawFlatFromBowl(byte[] gray,int width,int height,
             List<AccidentalCandidate> candidates,Component head,float gap) {
@@ -2797,7 +2807,10 @@ final class OmrScoreInterpreter {
             // shift its pixel centroid toward another head in the same chord.
             float pitchCenter=accidental==ScoreNoteEvent.ACCIDENTAL_SHARP?sharpCenter:
                     accidental==ScoreNoteEvent.ACCIDENTAL_FLAT?flatPitchCenter(labels,width,candidate,gap):glyph.centerY;
-            float tolerance=accidental==ScoreNoteEvent.ACCIDENTAL_NATURAL?.90f:.65f;
+            // A sharp's measured crossbar centre must not reach the next staff
+            // position. Keep subpixel/font tolerance below the half-gap step.
+            float tolerance=accidental==ScoreNoteEvent.ACCIDENTAL_NATURAL?.90f:
+                    accidental==ScoreNoteEvent.ACCIDENTAL_SHARP?.45f:.65f;
             if(Math.abs(pitchCenter-head.centerY)>gap*tolerance)continue;
             if (horizontal < bestDistance) {
                 best = candidate;

@@ -635,3 +635,31 @@ label maps and private transcriptions remain private. Weights, dependencies and
 Apache-2.0 terms are unchanged. Mixed experiments and original rollback snapshots
 remain intact. Guide109/audio25 refresh derived caches in the next app build;
 the phone remains on the 1.18.111 release installed before this source repair.
+
+## Sharp alignment at adjacent staff positions
+
+A sharp close to a note could affect the neighboring staff position because its
+vertical acceptance range exceeded half a staff gap. The crossbar centre now has
+to be within 0.45 gaps of the head. The raw flat fallback also excludes complete
+semantic sharps, so rejecting a misaligned sharp cannot reinterpret its cropped
+lower strokes as a flat. Natural and flat alignment rules are unchanged.
+
+Eight original synthetic tests cover matching and adjacent pitches, small raster
+offsets, semantic-only input and source preservation. Three fail on the previous
+decoder. All 622 Java tests, 13 Python tests, PNG/PDF/MIDI smoke checks and 69
+focused Android tests pass.
+
+On 22 targeted eligible pages, 21 complete outputs are unchanged. The affected
+page changes exactly four pitches from G-sharp5 to the source-verified G5, with
+no event-count, onset, duration or tie changes. A fresh phone-rendered capture
+reproduces the same defect and all 122 manually reviewed pitches from the reported
+bar to the end now pass with the candidate. The expanded private source set has
+2,849 passing pitch/presence assertions out of 2,863; the 14 known failures are
+separate grace, curved-symbol and parenthesized-note issues still under review.
+This does not certify the whole library or every rhythm/rest.
+
+The repair is global. No title-specific code, private score pixels, transcriptions,
+phone logs, training data or model changes enter the public repository. Apache-2.0
+terms and model lineage remain unchanged. Guide110/audio26 invalidate derived
+caches in the next app build. The phone remains on 1.18.111; this source repair is
+not yet installed. Original rollback snapshots and mixed experiments are preserved.
