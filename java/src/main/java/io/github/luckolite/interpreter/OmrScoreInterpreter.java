@@ -51,6 +51,7 @@ final class OmrScoreInterpreter {
                 head, staffs, clefOrKeyComponents) != null);
         rawHeadComponents.removeIf(head -> isTempoUnitHead(gray, width, height, head, staffs));
         rawHeadComponents.removeIf(head -> isHeavyRestBarFragment(gray, width, height, head, staffs));
+        rawHeadComponents.removeIf(head -> isHeaderFlatHead(labels,gray,width,height,head,staffs,clefOrKeyComponents));
         List<Component> headComponents = splitStackedHeads(labels, gray, width, height,
                 rawHeadComponents, staffs);
         List<Component> symbolComponents = findComponents(labels, width, height,
@@ -358,6 +359,8 @@ final class OmrScoreInterpreter {
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null && isHeavyRestBarFragment(gray, width, height, head, staffs))
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
+            if (bounds == null && isHeaderFlatHead(labels,gray,width,height,head,staffs,glyphs))
+                bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null) continue;
             for (int y = bounds[2]; y <= bounds[3]; y++) for (int x = bounds[0]; x <= bounds[1]; x++) {
                 int at = y * width + x;
@@ -369,6 +372,60 @@ final class OmrScoreInterpreter {
             }
         }
         return result;
+    }
+
+    /** A key flat can be split between an accidental spine and a note-labelled bowl.
+     * Require a nearby printed clef, semantic spine evidence and the complete raw flat. */
+    private static boolean isHeaderFlatHead(byte[] labels,byte[] gray,int width,int height,
+            Component head,List<Staff> staffs,List<Component> glyphs) {
+        if(gray==null||gray.length!=width*height)return false;
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
+        float gap=staff.pitchGap;
+        if(head.maxX-head.minX+1>gap||head.maxY-head.minY+1>gap
+                ||head.area>gap*gap*.55f||head.centerY<staff.top-gap||head.centerY>staff.bottom+gap)return false;
+        boolean header=false;
+        for(Component c:glyphs) {
+            if(c.maxX>=head.minX||head.minX-c.maxX>gap*4)continue;
+            float gh=c.maxY-c.minY+1,gw=c.maxX-c.minX+1;
+            boolean treble=gh>=gap*4.8f&&gh<=gap*8.8f&&gw>=gap*1.25f&&gw<=gap*3.4f
+                    &&c.area>=gap*gap*1.65f&&c.minY<staff.top-gap*.35f
+                    &&c.maxY>staff.bottom+gap*.2f&&Math.abs(c.centerY-(staff.top+staff.bottom)*.5f)<gap*1.1f;
+            if(treble||rawBassClef(c,gray,width,height,staff)){header=true;break;}
+        }
+        if(!header)return false;
+        for(Component seed:glyphs) {
+            if(seed.minX>=head.minX||seed.maxX<head.minX-gap*.6f
+                    ||seed.maxX-seed.minX+1>gap*.85f||seed.maxY-seed.minY+1<gap*.8f
+                    ||seed.minY>head.centerY-gap*.9f||seed.maxY<head.minY-gap*.25f)continue;
+            int margin=Math.max(1,Math.round(gap*.16f));
+            int left=Math.max(0,Math.min(seed.minX,head.minX)-margin);
+            int right=Math.min(width-1,Math.max(seed.maxX,head.maxX)+margin);
+            int top=Math.max(0,Math.round(head.centerY-gap*2.7f));
+            int bottom=Math.min(height-1,Math.round(head.centerY+gap*.8f));
+            int w=right-left+1,h=bottom-top+1;if(w<=0||h<=0)continue;
+            byte[] ink=new byte[w*h];int area=0,minX=w,maxX=-1,minY=h,maxY=-1;long sx=0,sy=0;
+            int reach=Math.max(3,Math.round(gap*.6f)),probe=Math.max(2,Math.round(gap*.2f));
+            for(int y=top;y<=bottom;y++) {
+                int outside=0,dark=0;
+                for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
+                    if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=180)dark++;}
+                boolean rule=outside>0&&dark>=outside*.8f;
+                for(int x=left;x<=right;x++) {
+                    if((gray[y*width+x]&255)>180)continue;
+                    if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>180
+                            ||(gray[(y+probe)*width+x]&255)>180))continue;
+                    int xx=x-left,yy=y-top;ink[yy*w+xx]=OmrMeasurePostProcessor.SYMBOL;
+                    area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);
+                    minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
+                }
+            }
+            if(area==0)continue;
+            var flat=new AccidentalCandidate(new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area),OmrMeasurePostProcessor.SYMBOL);
+            if(!isNaturalGlyph(ink,w,h,flat,gap)&&!isSharpGlyph(ink,w,h,flat,gap)
+                    &&isFlatGlyph(ink,w,h,flat,gap)
+                    &&Math.abs(top+flatPitchCenter(ink,w,flat,gap)-head.centerY)<=gap*.5f)return true;
+        }
+        return false;
     }
 
     /** A compact prediction inside the thick centre of a two-capped multimeasure rest.

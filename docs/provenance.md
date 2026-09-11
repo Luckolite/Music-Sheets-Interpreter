@@ -600,3 +600,38 @@ score images, diagnostic masks and transcriptions remain private. Model weights,
 dependencies and Apache-2.0 terms are unchanged. Mixed experiments and rollback
 snapshots are preserved. Guide108/audio24 refresh derived caches in the next app
 build; this source batch does not update the phone, APK, Hub or Desktop executable.
+
+## Key-signature flat bowls mistaken for notes
+
+A flat can be segmented into an accidental-labelled spine and a note-labelled
+part of its bowl. The false head then produces an extra pitch and steals time
+from the first bar. A new shared check requires a nearby printed bass or treble
+clef, the surviving semantic accidental spine, and a complete raw flat profile.
+It excludes natural and sharp profiles and verifies the bowl's vertical position.
+Both direct interpretation and header normalization reject the proven false head
+without changing the caller's labels or grayscale pixels.
+
+Ten original synthetic tests cover the split flat, normalization, missing clef
+or spine evidence, distant ink, real up/down stems, hollow heads, idempotence and
+source preservation. Two fail before the repair. All 614 Java tests, 13 Python
+tests, PNG/PDF/MIDI smoke checks and 40 focused Android tests pass.
+
+On 17 targeted non-YouTube pages, 16 full outputs are identical. Caro Mio Ben
+loses only the source-confirmed false B-flat2 inside a key signature. All 135
+real pitches remain correct. Removing that false event corrects six onsets in
+the opening bar of its seventh system; the printed half note again starts on
+the barline, followed by its grace group, quarter, dotted eighth and sixteenth.
+Six source-reviewed timing assertions pass. The page's printed bass clefs are
+respected regardless of its instrument label. No title exception is used.
+
+The expanded source-review set has 2,048 passing pitch/presence checks out of
+2,050, retaining the two known Arcade grace-related errors for further work.
+All 16 saved tie checks pass. Hoist the Colours was newly reviewed in full too:
+all 83 printed pitches are present and correct. These are selected source checks,
+not a claim that the complete library is correct.
+
+Only reviewed shared code and original synthetic tests are public. Source scans,
+label maps and private transcriptions remain private. Weights, dependencies and
+Apache-2.0 terms are unchanged. Mixed experiments and original rollback snapshots
+remain intact. Guide109/audio25 refresh derived caches in the next app build;
+the phone remains on the 1.18.111 release installed before this source repair.
