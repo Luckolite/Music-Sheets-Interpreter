@@ -1150,6 +1150,9 @@ final class OmrScoreInterpreter {
                             : isFlatGlyph(labels, width, height, candidate, staff.gap)
                             ? ScoreNoteEvent.ACCIDENTAL_FLAT
                             : ScoreNoteEvent.ACCIDENTAL_FROM_KEY;
+                    if(accidental==ScoreNoteEvent.ACCIDENTAL_FLAT
+                            &&printedSignatureSharp(gray,width,height,candidate,staff.gap))
+                        accidental=ScoreNoteEvent.ACCIDENTAL_SHARP;
                     if (accidental != ScoreNoteEvent.ACCIDENTAL_FROM_KEY)
                         glyphs.add(new SignatureGlyph(glyph.centerX, accidental));
                 }
@@ -1205,6 +1208,41 @@ final class OmrScoreInterpreter {
                 result.add(new ScoreKeyChange(measureIndex, bestFifths));
         }
         return List.copyOf(result);
+    }
+
+    /** A staff stripe can leave only one lobe of a sharp in the semantic mask.
+     * Recover its narrow printed column only when both complete spines and both
+     * crossbars prove a sharp; a flat's bowl alone cannot supply that evidence. */
+    private static boolean printedSignatureSharp(byte[] gray,int width,int height,
+            AccidentalCandidate candidate,float gap) {
+        if(gray==null||gap<3)return false;
+        Component seed=candidate.component;
+        if(seed.maxX-seed.minX+1>gap*1.6f||seed.maxY-seed.minY+1>gap*3.65f)return false;
+        int margin=Math.max(1,Math.round(gap*.3f));
+        int left=Math.max(0,seed.minX-margin),right=Math.min(width-1,seed.maxX+margin);
+        int top=Math.max(0,Math.round(seed.centerY-gap*2.5f));
+        int bottom=Math.min(height-1,Math.round(seed.centerY+gap*2.5f));
+        int w=right-left+1,h=bottom-top+1,reach=Math.max(3,Math.round(gap*.7f));
+        int probe=Math.max(2,Math.round(gap*.2f));
+        for(int threshold:new int[]{180,205}) {
+            byte[] ink=new byte[w*h];
+            for(int y=top;y<=bottom;y++) {
+                int outside=0,dark=0;
+                for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
+                    if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=threshold)dark++;}
+                boolean rule=outside>0&&dark>=outside*.8f;
+                for(int x=left;x<=right;x++) {
+                    if((gray[y*width+x]&255)>threshold)continue;
+                    if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>threshold
+                            ||(gray[(y+probe)*width+x]&255)>threshold))continue;
+                    ink[(y-top)*w+x-left]=OmrMeasurePostProcessor.SYMBOL;
+                }
+            }
+            Component glyph=retainSeedConnectedInk(ink,w,h,seed,left,top);
+            if(glyph==null||rawStrokeLeavesCrop(gray,width,height,ink,w,h,left,top,gap))continue;
+            if(isSharpGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap))return true;
+        }
+        return false;
     }
 
     /** A visibly unfinished extra sharp cannot prove that a repeated key has fewer sharps. */
