@@ -885,3 +885,12 @@ invalidate derived caches in the next app build. Only general code and original
 synthetic tests are public; private scores and captures remain private. No weights,
 license changes or song-specific rules. Rollback snapshots and mixed experiments
 remain preserved.
+
+## Android collection compatibility
+
+The emitted-head key-boundary fix now uses the Java 8 collection operation instead
+of Stream.toList, which Android lint correctly rejected below API 34. The app
+supports API 26 onward. The public port uses the same equivalent operation; all 648
+Java tests, 13 Python tests and smoke checks pass. Complete outputs for both
+affected pages and the opening single-flat signature example are identical.
+No model, licensing or recognition behavior changed.
