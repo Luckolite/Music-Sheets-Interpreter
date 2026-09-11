@@ -1407,6 +1407,9 @@ final class OmrScoreInterpreter {
             for (int index = start + 1; index < glyphs.size(); index++) {
                 SignatureGlyph previous = current.get(current.size() - 1);
                 SignatureGlyph next = glyphs.get(index);
+                // Stacked local accidentals belong to chord pitches, not to a
+                // horizontally ordered key signature.
+                if(next.x-previous.x<gap*.5f)continue;
                 if (next.x - previous.x > gap * 1.85f
                         || next.x - current.get(0).x > gap * 7.8f) break;
                 current.add(next);
