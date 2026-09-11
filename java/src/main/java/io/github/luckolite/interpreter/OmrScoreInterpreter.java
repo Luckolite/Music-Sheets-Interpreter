@@ -111,6 +111,22 @@ final class OmrScoreInterpreter {
                 accidentalInk.add(candidate.component);
         }
         List<Component> roundedLedgerGraces=roundedLedgerGraceHeads(labels,gray,width,height,heads,staffs);
+        List<Component> bowMarks=new ArrayList<>();
+        for(Component candidate:heads) {
+            Staff staff=nearestHeadStaff(staffs,candidate.centerY);
+            if(staff==null||candidate.area>staff.gap*staff.gap*1.1f)continue;
+            for(Component other:heads) {
+                float dy=other.centerY-candidate.centerY;
+                if(other==candidate||other.area<candidate.area*1.35f||other.maxX-other.minX+1<staff.gap*.9f
+                        ||nearestHeadStaff(staffs,other.centerY)!=staff
+                        ||Math.abs(other.centerX-candidate.centerX)>staff.gap*.7f
+                        ||dy<staff.gap*1.2f||dy>staff.gap*4f)continue;
+                if(NoteArticulationDetector.upBowAtHead(gray,width,height,candidate.minX,candidate.minY,
+                        candidate.maxX,candidate.maxY,staff.gap)) {bowMarks.add(candidate);break;}
+            }
+        }
+        // Bow direction changes technique, not the pitch or accent of the following note.
+        heads.removeAll(bowMarks);
         Map<Component,Integer> recoveredArticulations=new HashMap<>();
         List<Component> angularMarks=new ArrayList<>();
         for(Component candidate:heads) {

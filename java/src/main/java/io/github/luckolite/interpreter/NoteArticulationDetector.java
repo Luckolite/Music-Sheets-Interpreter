@@ -65,6 +65,66 @@ final class NoteArticulationDetector {
                 &&gh/gw>=.6f&&chevronVertical(glyph,width,above);
     }
 
+    /** A handwritten up-bow can leave its rounded tip in the notehead mask. */
+    static boolean upBowAtHead(byte[] gray,int width,int height,int left,int top,int right,int bottom,float gap) {
+        if(gray==null||gray.length!=width*height||gap<=0)return false;
+        int pad=Math.max(3,Math.round(gap*2.5f));
+        int x0=Math.max(0,left-pad),x1=Math.min(width-1,right+pad);
+        int y0=Math.max(0,top-pad),y1=Math.min(height-1,bottom+Math.max(2,Math.round(gap*.3f)));
+        int w=x1-x0+1,h=y1-y0+1;boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];
+        for(int sy=Math.max(y0,top);sy<=Math.min(y1,bottom);sy++)for(int sx=Math.max(x0,left);sx<=Math.min(x1,right);sx++) {
+            int origin=(sy-y0)*w+sx-x0;
+            if(seen[origin]||(gray[sy*width+sx]&255)>=155)continue;
+            int size=1,take=0;queue[0]=origin;seen[origin]=true;boolean clipped=false;
+            int gx0=width,gx1=0,gy0=height,gy1=0;
+            while(take<size) {
+                int at=queue[take++],x=at%w,y=at/w;
+                if(x==0||x==w-1||y==0||y==h-1)clipped=true;
+                gx0=Math.min(gx0,x+x0);gx1=Math.max(gx1,x+x0);gy0=Math.min(gy0,y+y0);gy1=Math.max(gy1,y+y0);
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int nx=x+dx,ny=y+dy;if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                    int next=ny*w+nx;
+                    if(!seen[next]&&(gray[(y0+ny)*width+x0+nx]&255)<155){seen[next]=true;queue[size++]=next;}
+                }
+            }
+            float gw=gx1-gx0+1,gh=gy1-gy0+1;
+            if(clipped||gw<gap*.65f||gw>gap*3f||gh<gap*.8f||gh>gap*3.5f||gh/gw<.65f||gh/gw>2.2f)continue;
+            // The mistaken head must be the bottom tip, not a note attached to an arm.
+            if((top+bottom)*.5f<gy0+gh*.55f)continue;
+            int[] pixels=new int[size];for(int i=0;i<size;i++)pixels[i]=(y0+queue[i]/w)*width+x0+queue[i]%w;
+            if(upBowShape(new Glyph(gx0,gy0,gx1,gy1,size,pixels),width))return true;
+        }
+        return false;
+    }
+
+    private static boolean upBowShape(Glyph g,int width) {
+        double tip=0;int tips=0;
+        for(int p:g.pixels)if(p/width>=g.bottom-(g.bottom-g.top)*.15) {tip+=p%width;tips++;}
+        if(tips==0)return false;
+        double apex=(tip/tips-g.left)/Math.max(1,g.right-g.left);
+        if(apex<.2||apex>.85)return false;
+        int leftTop=g.bottom,rightTop=g.bottom;
+        for(int p:g.pixels) {
+            double x=(p%width-g.left)/(double)Math.max(1,g.right-g.left);
+            if(x<.25)leftTop=Math.min(leftTop,p/width);
+            if(x>.75)rightTop=Math.min(rightTop,p/width);
+        }
+        double leftY=(leftTop-g.top)/(double)Math.max(1,g.bottom-g.top);
+        double rightY=(rightTop-g.top)/(double)Math.max(1,g.bottom-g.top);
+        if(leftY>.45||rightY>.45)return false;
+        int hits=0;boolean[] bins=new boolean[12];
+        for(int p:g.pixels) {
+            double x=(p%width-g.left)/(double)Math.max(1,g.right-g.left);
+            double y=(p/width-g.top)/(double)Math.max(1,g.bottom-g.top);
+            double expected=x<apex?leftY+(1-leftY)*x/apex:rightY+(1-rightY)*(1-x)/(1-apex);
+            double slope=x<apex?(1-leftY)/apex:(1-rightY)/(1-apex);
+            double distance=Math.abs(y-expected)/Math.sqrt(1+slope*slope);
+            if(distance<.14+.75/Math.max(1,Math.min(g.right-g.left,g.bottom-g.top))) {hits++;bins[Math.min(11,(int)(x*12))]=true;}
+        }
+        int covered=0;for(boolean bin:bins)if(bin)covered++;
+        return hits>=g.count*.85&&covered>=10;
+    }
+
     private static boolean recoveryStaffRule(byte[] gray,int width,int height,int x,int y,float gap) {
         if(horizontalRuleInk(gray,width,height,x,y,gap,155,.85f))return true;
         // A cue staff may start less than four spaces before its first mark.
