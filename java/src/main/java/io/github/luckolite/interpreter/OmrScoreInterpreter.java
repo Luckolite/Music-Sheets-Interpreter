@@ -3374,6 +3374,7 @@ final class OmrScoreInterpreter {
         // Trace the attached ink, not a fixed-height semantic window. In a wide chord the
         // upper head lies inside that window and used to masquerade as the lower head's beam.
         int[] attached = attachedRawStem(gray, width, height, head, gap);
+        attached = stemBelowDetachedBow(gray,width,height,head,gap,attached);
         if (attached != null) {
             bestX = attached[0]; stemEnd = attached[1]; upward = attached[2] < 0;
         }
@@ -3443,6 +3444,50 @@ final class OmrScoreInterpreter {
             return Math.min(3, thick);
         }
         return Math.min(3, beams);
+    }
+
+    /** A small white gap tolerated in a stem trace can lead into a separate
+     * down-bow square. Its cap is not the beam endpoint. Require the complete
+     * detached cap and two legs, followed by a thick beam attached to this stem. */
+    private static int[] stemBelowDetachedBow(byte[] gray,int width,int height,
+                                              Component head,float gap,int[] stem) {
+        if(gray==null||stem==null||stem[2]>=0)return stem;
+        int left=Math.max(0,stem[0]-Math.round(gap*2)),right=Math.min(width-1,stem[0]+Math.round(gap*2));
+        int top=Math.max(0,stem[1]-Math.round(gap*.5f)),bottom=Math.min(height-1,stem[1]+Math.round(gap*2));
+        int w=right-left+1,h=bottom-top+1,seed=(stem[1]-top)*w+stem[0]-left;
+        if((gray[stem[1]*width+stem[0]]&255)>165)return stem;
+        boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];queue[0]=seed;seen[seed]=true;
+        int take=0,size=1,minX=width,maxX=-1,minY=height,maxY=-1;
+        while(take<size) {
+            int at=queue[take++],x=at%w,y=at/w;
+            minX=Math.min(minX,left+x);maxX=Math.max(maxX,left+x);minY=Math.min(minY,top+y);maxY=Math.max(maxY,top+y);
+            for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                int nx=x+dx,ny=y+dy;if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                int next=ny*w+nx;if(!seen[next]&&(gray[(top+ny)*width+left+nx]&255)<=165){seen[next]=true;queue[size++]=next;}
+            }
+        }
+        int gw=maxX-minX+1,gh=maxY-minY+1;
+        if(minX<=left||maxX>=right||minY<=top||maxY>=bottom||gw<gap*.65f||gw>gap*1.65f
+                ||gh<gap*.65f||gh>gap*1.65f||stem[1]>minY+gap*.3f)return stem;
+        int capRows=0,legRows=0,legTotal=0;
+        for(int y=minY;y<=maxY;y++) {
+            int row=0,a=0,b=0,middle=0;
+            for(int x=minX;x<=maxX;x++)if(seen[(y-top)*w+x-left]) {
+                row++;if(x<minX+gw*.25f)a++;else if(x>maxX-gw*.25f)b++;else middle++;
+            }
+            if(y<minY+gh*.4f&&row>=gw*.75f)capRows++;
+            if(y>=minY+gh*.45f){legTotal++;if(a>0&&b>0&&middle<=gw*.1f)legRows++;}
+        }
+        if(capRows<Math.max(2,Math.round(gh*.18f))||legRows<legTotal*.9f)return stem;
+        int first=maxY+1,last=Math.min(height-1,maxY+Math.round(gap*.55f));
+        while(first<=last&&(gray[first*width+stem[0]]&255)>165)first++;
+        if(first>last||first<=maxY+1||first>=head.centerY-gap)return stem;
+        int thick=Math.max(3,(int)Math.ceil(gap*.3f));
+        for(int y=first;y<first+thick;y++) {
+            if(y>=height||darkRunAtStem(gray,width,y,Math.max(0,stem[0]-Math.round(gap*2.5f)),
+                    Math.min(width-1,stem[0]+Math.round(gap*2.5f)),stem[0],1,1)<gap*2)return stem;
+        }
+        return new int[]{stem[0],first,stem[2]};
     }
 
     private static int[] attachedRawStem(byte[] gray,int width,int height,Component head,float gap) {

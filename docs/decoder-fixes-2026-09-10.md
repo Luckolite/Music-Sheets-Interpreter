@@ -894,3 +894,32 @@ supports API 26 onward. The public port uses the same equivalent operation; all 
 Java tests, 13 Python tests and smoke checks pass. Complete outputs for both
 affected pages and the opening single-flat signature example are identical.
 No model, licensing or recognition behavior changed.
+
+## Trace beams below detached bowing marks
+
+A stem trace tolerates tiny paper gaps so raster seams do not break real stems.
+That tolerance could connect a note to a detached down-bow mark immediately above
+its beam. Using the mark's cap as the stem endpoint then placed the beam search
+too high, missing a secondary beam and lengthening the note. The beam reader now
+recognizes the detached square's complete cap, two legs and open interior, plus
+a real paper gap and a thick beam attached below it. It uses that beam endpoint
+for rhythm analysis. Other uses of the raw stem trace remain unchanged.
+
+Seven original synthetic tests cover one, two and three beams, an ordinary beam
+run, a farther bow mark, unchanged pitches and positions, and input preservation.
+Two fail on the previous decoder. All 655 Java tests, 13 Python tests, PNG/PDF/MIDI
+smoke checks, 59 focused Android tests and Android debug lint pass.
+
+Across 26 targeted pages, 25 complete outputs are identical. The affected page
+changes only one duration from a sixteenth to the printed thirty-second and the
+following 20 onsets. All 22 timing assertions for the affected bar now pass.
+Note membership, pitches, ties and positions are unchanged. All 3,706 previously
+passing source pitch/presence checks remain passing out of 3,720; the 14 separate
+known failures are unchanged. The hourly review was not repeated early.
+
+The repair is global and uses no song identifiers. Only original synthetic ink
+and general code are public; private source scores and captures remain private.
+No model or license changes. Guide115/audio31 invalidate derived caches in the
+next app build. The published APK remains 1.18.112 without this additional repair;
+the phone is disconnected and no new device validation is claimed. Existing
+rollback snapshots and separate mixed experiments are preserved.
