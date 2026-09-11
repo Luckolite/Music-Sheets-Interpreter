@@ -4184,11 +4184,10 @@ final class OmrScoreInterpreter {
                     && current.event.positionInMeasure() - previous.event.positionInMeasure() > .68f
                     && !ScoreNoteTiming.hasIndependentSustain(previous.event))
                 continue;
-            // A hollow half/whole note can occupy the entire preceding bar. Its tie starts
-            // near that bar's left edge, not necessarily in the final half of the engraving.
-            if (measureDistance == 1 && ((previous.event.positionInMeasure() < .42f
-                    && !ScoreNoteTiming.hasIndependentSustain(previous.event))
-                    || current.event.positionInMeasure() > .58f)) continue;
+            // A short meter can fill the preceding bar with a quarter or dotted quarter.
+            // Its left-edge position does not rule out a tie: the returning printed arc
+            // must still connect matching pitches at consecutive voice onsets.
+            if (measureDistance == 1 && current.event.positionInMeasure() > .58f) continue;
             float gap = (previous.staffGap + current.staffGap) * .5f;
             int horizontal = current.head.minX - previous.head.maxX;
             if (horizontal < gap * 1.3f || horizontal > width * .34f) continue;
