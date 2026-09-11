@@ -148,10 +148,15 @@ public final class ScoreNoteTiming {
         List<ScoreNoteEvent> crossStaff = crossStaffPhrase(target, notes, safeBeats);
         if (!crossStaff.isEmpty()) {
             double onset = 0;
-            for (ScoreNoteEvent note : crossStaff) {
-                if (note.equals(target) || hasIndependentSustain(target)
-                        && Math.abs(note.positionInMeasure()-target.positionInMeasure())<=SAME_ONSET_POSITION) return onset;
-                onset += crossStaffDuration(note, crossStaff, safeBeats);
+            for(int i=0;i<crossStaff.size();) {
+                ScoreNoteEvent first=crossStaff.get(i);int next=i;double advance=Double.POSITIVE_INFINITY;
+                while(next<crossStaff.size()&&Math.abs(crossStaff.get(next).positionInMeasure()-first.positionInMeasure())<=SAME_ONSET_POSITION) {
+                    ScoreNoteEvent note=crossStaff.get(next++);
+                    if(note.equals(target)||hasIndependentSustain(target)
+                            &&Math.abs(note.positionInMeasure()-target.positionInMeasure())<=SAME_ONSET_POSITION)return onset;
+                    advance=Math.min(advance,crossStaffDuration(note,crossStaff,safeBeats));
+                }
+                onset+=advance;i=next;
             }
         }
         double voiceOnset = voiceBeatInMeasure(target, notes, safeBeats);
@@ -496,11 +501,7 @@ public final class ScoreNoteTiming {
         if(bridges<2||phrase.size()<3)return List.of();
         phrase.sort(Comparator.comparingDouble(ScoreNoteEvent::positionInMeasure));
         if(phrase.get(0).positionInMeasure()>.22f)return List.of();
-        double sum=0;float previous=-1;
-        for(ScoreNoteEvent note:phrase) {
-            if(note.positionInMeasure()-previous<SAME_ONSET_POSITION)return List.of();
-            previous=note.positionInMeasure();sum+=writtenDurationBeats(note);
-        }
+        double sum=crossStaffClockBeats(phrase);
         if (Double.isFinite(sum) && Math.abs(sum-beats)<.03125) return phrase;
         // An overlapping dotted held head can contaminate the first moving head's dot/beam.
         // Accept exactly one repair only when the beam, adjacent slots, and total bar agree.
@@ -517,9 +518,20 @@ public final class ScoreNoteTiming {
         return List.of();
     }
 
+    /** Coincident voices share an attack; the shorter value advances the moving line. */
+    private static double crossStaffClockBeats(List<ScoreNoteEvent> phrase) {
+        double total=0;
+        for(int i=0;i<phrase.size();) {
+            float position=phrase.get(i).positionInMeasure();double advance=Double.POSITIVE_INFINITY;
+            do {advance=Math.min(advance,writtenDurationBeats(phrase.get(i++)));}
+            while(i<phrase.size()&&Math.abs(phrase.get(i).positionInMeasure()-position)<=SAME_ONSET_POSITION);
+            total+=advance;
+        }
+        return total;
+    }
+
     private static double crossStaffDuration(ScoreNoteEvent note, List<ScoreNoteEvent> phrase, double beats) {
-        double sum=0;
-        for(ScoreNoteEvent n:phrase)sum+=writtenDurationBeats(n);
+        double sum=crossStaffClockBeats(phrase);
         if(note.equals(phrase.get(0))&&Math.abs(sum-beats)>=.03125)
             return writtenDurationBeats(note)+beats-sum;
         return writtenDurationBeats(note);

@@ -395,16 +395,14 @@ final class OmrScoreInterpreter {
             if(a.event.measureIndex()!=b.event.measureIndex()||a.event.staffCount()!=2
                     ||b.event.staffCount()!=2||a.event.staffIndex()==b.event.staffIndex()
                     ||ScoreNoteTiming.hasIndependentSustain(a.event)||ScoreNoteTiming.hasIndependentSustain(b.event))continue;
-            // Held heads are independent of the moving phrase. Require a single attack stream
-            // among the moving heads before proving its cross-staff beam from raw ink.
-            boolean singlePhrase=true;float previousPosition=-1;
+            // Prove the printed bridge even when another voice overlaps later in the bar.
+            // The rhythm reader separately requires a complete shared attack clock.
+            boolean interrupted=false;
             for(ScoreNoteEvent n:withRests) if(n.measureIndex()==a.event.measureIndex()) {
                 if(ScoreNoteTiming.hasIndependentSustain(n))continue;
-                if(n.followingRestBeats()>0
-                        ||n.positionInMeasure()-previousPosition<.018f) {singlePhrase=false;break;}
-                previousPosition=n.positionInMeasure();
+                if(n.followingRestBeats()>0||n.leadingRestBeats()>0){interrupted=true;break;}
             }
-            if(!singlePhrase)continue;
+            if(interrupted)continue;
             if(CrossStaffBeamDetector.connected(gray,width,height,a.head.centerX,a.head.centerY,
                     b.head.centerX,b.head.centerY,(a.staffGap+b.staffGap)/2)) {
                 withRests.set(prior,withRests.get(prior).withCrossStaffBeam());
