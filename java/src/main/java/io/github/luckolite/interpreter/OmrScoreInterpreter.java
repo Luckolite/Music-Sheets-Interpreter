@@ -107,8 +107,7 @@ final class OmrScoreInterpreter {
             if (gray != null && physicalStaff != null
                     && (head.centerY < physicalStaff.top-physicalStaff.gap*1.8f
                     || head.centerY > physicalStaff.bottom+physicalStaff.gap*1.8f)
-                    && (!hasLedgerInk(gray,width,height,head,physicalStaff.gap,roundedLedgerGraces.contains(head))
-                    || !hasInnerLedgerInk(gray,width,height,head,physicalStaff,roundedLedgerGraces.contains(head)))) continue;
+                    && !hasHeadLedgerSupport(labels,gray,width,height,head,physicalStaff,roundedLedgerGraces.contains(head))) continue;
             float normalizedX = head.centerX() / width;
             float normalizedY = head.centerY() / height;
             int measureIndex = containingMeasureForStaff(measures, normalizedX, normalizedY,
@@ -2040,6 +2039,18 @@ final class OmrScoreInterpreter {
             if (candidate < distance) { distance = candidate; best = staff; }
         }
         return best != null && distance <= best.gap * maximumGapDistance ? best : null;
+    }
+
+    /** A displaced second shares a stem between two ovals. Its combined bounds
+     * are not one stemless head: require ledger evidence for both actual tones. */
+    private static boolean hasHeadLedgerSupport(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff,boolean roundedGrace) {
+        List<Component> parts=sideBySideSeconds(labels,width,head,staff.gap);
+        if(parts.isEmpty())parts=List.of(head);
+        for(Component part:parts)
+            if(!hasLedgerInk(gray,width,height,part,staff.gap,roundedGrace)
+                    ||!hasInnerLedgerInk(gray,width,height,part,staff,roundedGrace))return false;
+        return true;
     }
 
     private static boolean hasLedgerInk(byte[] gray,int width,int height,Component head,float gap,boolean roundedGrace) {

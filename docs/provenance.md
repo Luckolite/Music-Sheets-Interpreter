@@ -663,3 +663,34 @@ phone logs, training data or model changes enter the public repository. Apache-2
 terms and model lineage remain unchanged. Guide110/audio26 invalidate derived
 caches in the next app build. The phone remains on 1.18.111; this source repair is
 not yet installed. Original rollback snapshots and mixed experiments are preserved.
+
+## Preserve displaced ledger chords
+
+Two adjacent chord tones can form one wide semantic component with their shared
+stem between the ovals. Ledger validation treated that component as a single
+stemless note and required a ledger to extend beyond its combined width. This
+discarded complete runs of real notes. Recognized displaced seconds now validate
+the ledger evidence around each constituent head; both tones must pass the same
+ledger and inner-ledger checks. Single-head behavior is unchanged.
+
+Six original synthetic tests cover both recovered tones, their pitches and shared
+attack, missing-ledger rejection, an ordinary staff note and input preservation.
+Three fail on the previous decoder. All 628 Java tests, 13 Python tests,
+PNG/PDF/MIDI smoke checks and 62 focused Android tests pass.
+
+Across 23 targeted pages plus three later pages of the reported sheet, 25 full
+outputs are unchanged. The affected page gains exactly 48 source-confirmed chord
+tones without losing any notes: 32 in one bar and 16 in another. A fresh phone
+capture reproduces both omissions and both recoveries. All 165 source-reviewed
+pitches in the reported run and affected chord passages pass on desktop and
+phone captures. The 64 note-timing assertions for the first restored chord bar
+also pass. The second bar still has a separate false-triplet timing issue: 50
+of its 64 timing assertions remain open. Recovery is not a complete rhythm audit.
+
+The expanded source set has 3,014 passing pitch/presence assertions out of 3,028;
+the 14 known failures concern separate grace, curved-symbol and parenthesized-note
+issues. Only the global repair and original synthetic tests are published. Private
+score pixels, phone captures and transcriptions remain private. No weights or
+licensing changed. Guide111/audio27 refresh derived caches in the next app build;
+the phone still runs 1.18.111 without this repair. Mixed experiments and original
+rollback snapshots are preserved.
