@@ -110,7 +110,7 @@ motivated repairs to ledger pitches, repeated key signatures, false time-signatu
 held ties and staff recovery. Those fixes do not establish general accuracy.
 
 Read the [model card](models/MODEL_CARD.md), [training guide](training/README.md) and
-[source provenance](docs/provenance.md). Training uses external Verovio and resvg tools;
+[source records](docs/source-provenance.json). Training uses external Verovio and resvg tools;
 font files retain their own OFL notices. Commercial score images and private phone logs
 are not part of this repository.
 
