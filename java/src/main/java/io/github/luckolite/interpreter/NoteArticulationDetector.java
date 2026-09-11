@@ -15,6 +15,50 @@ final class NoteArticulationDetector {
     }
     private NoteArticulationDetector() { }
 
+    /** Recover an angular mark whose mask was mistaken for a small notehead.
+     * Staff rules may cross its tip or feet; exclude only proven horizontal rules. */
+    static boolean marcatoAtHead(byte[] gray,int width,int height,int left,int top,int right,int bottom,
+                                  float gap,boolean above) {
+        if(gray==null||gray.length!=width*height)return false;
+        int padding=Math.max(3,Math.round(gap*1.1f));
+        int x0=Math.max(0,left-padding),x1=Math.min(width-1,right+padding);
+        int y0=Math.max(0,top-padding),y1=Math.min(height-1,bottom+padding);
+        int w=x1-x0+1,h=y1-y0+1;boolean[] rules=new boolean[h],seen=new boolean[w*h];
+        for(int y=y0;y<=y1;y++)rules[y-y0]=horizontalRuleInk(gray,width,height,(left+right)/2,y,gap,155,.85f);
+        int[] queue=new int[w*h];List<Integer> pixels=new ArrayList<>();
+        int gx0=width,gx1=0,gy0=height,gy1=0;
+        for(int origin=0;origin<seen.length;origin++) {
+            int ox=origin%w,oy=origin/w;
+            if(seen[origin]||rules[oy]||(gray[(y0+oy)*width+x0+ox]&255)>=155)continue;
+            int size=1,take=0;queue[0]=origin;seen[origin]=true;boolean clipped=false;
+            while(take<size) {
+                int at=queue[take++],x=at%w,y=at/w;
+                if(x==0||x==w-1||y==0||y==h-1)clipped=true;
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int nx=x+dx,ny=y+dy;
+                    if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                    int next=ny*w+nx;
+                    if(!seen[next]&&!rules[ny]&&(gray[(y0+ny)*width+x0+nx]&255)<155){seen[next]=true;queue[size++]=next;}
+                }
+            }
+            if(clipped||size<3)continue;
+            int partLeft=w,partRight=0,partTop=h,partBottom=0;
+            for(int i=0;i<size;i++) {
+                int x=queue[i]%w,y=queue[i]/w;
+                partLeft=Math.min(partLeft,x);partRight=Math.max(partRight,x);
+                partTop=Math.min(partTop,y);partBottom=Math.max(partBottom,y);
+            }
+            if(partRight-partLeft+1<gap*.2f&&partBottom-partTop+1>gap*.45f)continue;
+            for(int i=0;i<size;i++) {
+                int x=x0+queue[i]%w,y=y0+queue[i]/w;
+                gx0=Math.min(gx0,x);gx1=Math.max(gx1,x);gy0=Math.min(gy0,y);gy1=Math.max(gy1,y);pixels.add(y*width+x);
+            }
+        }
+        if(pixels.isEmpty()||right<gx0||left>gx1||bottom<gy0||top>gy1)return false;
+        Glyph glyph=new Glyph(gx0,gy0,gx1,gy1,pixels.size(),pixels.stream().mapToInt(Integer::intValue).toArray());
+        return classify(glyph,width,gap,above)==NoteArticulation.MARCATO;
+    }
+
     static int[] detect(byte[] labels,byte[] gray,int width,int height,List<Anchor> notes) {
         int[] result=new int[notes.size()];
         if(notes.isEmpty()||labels==null||labels.length!=width*height)return result;
@@ -175,8 +219,8 @@ final class NoteArticulationDetector {
             if(kind==0){a=x;b=y;}else{a=kind==1?1-y:y;b=x;}
             double expected=1-2*Math.abs(b-.5);
             // Small printed accents have antialiased, rounded stroke edges. Allow less than
-            // one source pixel of horizontal rounding while retaining two-arm coverage.
-            double tolerance=.22+(kind==0?.75/Math.max(1,g.right-g.left):0);
+            // one source pixel of edge rounding while retaining two-arm coverage.
+            double tolerance=.22+.75/Math.max(1,kind==0?g.right-g.left:g.bottom-g.top);
             if(Math.abs(a-expected)<tolerance) {hits++;bins[Math.min(11,(int)(b*12))]=true;}
         }
         int covered=0;for(boolean bin:bins)if(bin)covered++;

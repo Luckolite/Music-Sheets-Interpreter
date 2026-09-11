@@ -1,5 +1,5 @@
 {
-  "source_commit": "1d28d52e9a443c0fe14935da4661d79c5ba47bfa",
+  "source_commit": "f271c12270d0411dbbc8050fcda5b5fb8104879a",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -40,7 +40,7 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "f36bdbd97e7c02b56e171df35b3b1d49d93d4ae17ea140ccdba1059fc0902ead"
+      "source_sha256": "f5afbbe4c7b5779f988a2895ed84b6ba01d40ce8bbdadbe6031452523ec82e18"
     },
     "NoteOrnament.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",
@@ -52,7 +52,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "295d38ef778666eadf6504d8bb3bbbc7ad2efddde84d9774e2de47874fd903fd"
+      "source_sha256": "6d0aed091b8700c69b328c82790950e1c8d98453d5adf0fa489d25b4bd1f9839"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",

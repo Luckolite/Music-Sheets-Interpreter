@@ -111,6 +111,28 @@ final class OmrScoreInterpreter {
                 accidentalInk.add(candidate.component);
         }
         List<Component> roundedLedgerGraces=roundedLedgerGraceHeads(labels,gray,width,height,heads,staffs);
+        Map<Component,Integer> recoveredArticulations=new HashMap<>();
+        List<Component> angularMarks=new ArrayList<>();
+        for(Component candidate:heads) {
+            Staff staff=nearestHeadStaff(staffs,candidate.centerY);
+            if(staff==null||candidate.area>staff.gap*staff.gap*.65f)continue;
+            Component owner=null;float distance=Float.MAX_VALUE;
+            for(Component other:heads) {
+                float dy=Math.abs(other.centerY-candidate.centerY);
+                if(other==candidate||other.area<candidate.area*2||other.maxX-other.minX+1<staff.gap*.9f
+                        ||Math.abs(other.centerX-candidate.centerX)>staff.gap*.7f
+                        ||dy<staff.gap*1.2f||dy>staff.gap*6f||dy>=distance)continue;
+                if(NoteArticulationDetector.marcatoAtHead(gray,width,height,candidate.minX,candidate.minY,
+                        candidate.maxX,candidate.maxY,staff.gap,candidate.centerY<other.centerY)) {owner=other;distance=dy;}
+            }
+            if(owner!=null) {
+                angularMarks.add(candidate);Staff ownerStaff=nearestHeadStaff(staffs,owner.centerY);
+                for(Component chord:heads)if(Math.abs(chord.centerX-owner.centerX)<staff.gap*.45f
+                        &&nearestHeadStaff(staffs,chord.centerY)==ownerStaff)
+                    recoveredArticulations.merge(chord,NoteArticulation.MARCATO,(a,b)->a|b);
+            }
+        }
+        heads.removeAll(angularMarks);
         List<DetectedNote> detected = new ArrayList<>();
         for (Component head : heads) {
             Staff staff = staffForHead(labels, gray, width, height, staffs, head);
@@ -174,6 +196,7 @@ final class OmrScoreInterpreter {
                     event.articulations(),beamCount+tremolo[0]));
             if(detachedTremolos.containsKey(head))event=event.withArticulations(
                     NoteOrnament.withTremolo(event.articulations(),3));
+            event=event.withArticulations(event.articulations()|recoveredArticulations.getOrDefault(head,0));
             List<Component> unison=sideBySideUnison(labels,gray,width,height,head,staff.gap);
             if(!unison.isEmpty()) {
                 // Opposite stems share a printed pitch/attack but have separate durations.
