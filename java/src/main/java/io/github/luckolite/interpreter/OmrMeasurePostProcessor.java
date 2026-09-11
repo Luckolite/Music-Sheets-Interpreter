@@ -46,7 +46,17 @@ final class OmrMeasurePostProcessor {
         if (staffs.isEmpty()) return List.of();
         List<SystemRun> systems = mergeAlignedStaffs(staffs, gray, width, height);
         List<MeasureRegion> result = new ArrayList<>();
-        for (SystemRun system : systems) addMeasures(headerLabels, width, height, system, result);
+        for (int i = 0; i < systems.size(); i++) {
+            SystemRun system = systems.get(i);
+            // Header trimming must see the same ledger range as note recognition.
+            // Stop halfway to adjacent systems so their heads cannot trim this header.
+            float headTop = system.top - system.gap * MAX_HEAD_LEDGER_GAPS;
+            float headBottom = system.bottom + system.gap * MAX_HEAD_LEDGER_GAPS;
+            if (i > 0) headTop = Math.max(headTop, (systems.get(i - 1).bottom + system.top) / 2f);
+            if (i + 1 < systems.size()) headBottom = Math.min(headBottom,
+                    (system.bottom + systems.get(i + 1).top) / 2f);
+            addMeasures(headerLabels, width, height, system, result, headTop, headBottom);
+        }
         // Systems already run top to bottom and their boundaries left to right.
         // Sorting tilted measure boxes by their top edge reverses an uphill row.
         return List.copyOf(result);
@@ -716,7 +726,7 @@ final class OmrMeasurePostProcessor {
     }
 
     private static void addMeasures(byte[] labels, int width, int height, SystemRun system,
-                                    List<MeasureRegion> output) {
+                                    List<MeasureRegion> output, float headTop, float headBottom) {
         List<Integer> boundaries = system.boundaries;
         for (int index = 0; index + 1 < boundaries.size(); index++) {
             int rawLeft = boundaries.get(index), rawRight = boundaries.get(index + 1);
@@ -743,7 +753,7 @@ final class OmrMeasurePostProcessor {
                 // crop that note out of the playable measure. A substantial
                 // notehead in the header window is the stopping point.
                 int firstHead = firstHeaderHead(labels,width,height,rawLeft,headerLimit,
-                        Math.round(system.top-system.gap*2f),Math.round(system.bottom+system.gap*2f),system.gap);
+                        Math.round(headTop),Math.round(headBottom),system.gap);
                 if(firstHead>=0)playableLeft=Math.min(playableLeft,firstHead-Math.max(2,Math.round(system.gap*.12f)));
             }
             int playableRight = rawRight - inset;
