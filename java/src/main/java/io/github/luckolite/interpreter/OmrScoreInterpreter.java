@@ -3173,6 +3173,14 @@ final class OmrScoreInterpreter {
 
     private static boolean rawNaturalAtSeed(byte[] gray,int width,int height,
             Component seed,Component head,float gap,int margin) {
+        // Gray antialiasing can fill the counter at the permissive threshold.
+        // A darker core must still prove both offset spines and open crossbars.
+        return rawNaturalAtSeed(gray,width,height,seed,head,gap,margin,225)
+                ||rawNaturalAtSeed(gray,width,height,seed,head,gap,margin,180);
+    }
+
+    private static boolean rawNaturalAtSeed(byte[] gray,int width,int height,
+            Component seed,Component head,float gap,int margin,int inkThreshold) {
         int left=Math.max(0,seed.minX-margin);
         int right=Math.min(Math.min(width-1,seed.maxX+margin),Math.round(head.minX-gap*.15f));
         int top=Math.max(0,Math.round(head.centerY-gap*1.8f));
@@ -3185,14 +3193,14 @@ final class OmrScoreInterpreter {
         for(int y=top;y<=bottom;y++) {
             int outside=0,dark=0;
             for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
-                if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=225)dark++;}
+                if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=inkThreshold)dark++;}
             boolean rule=outside>0&&dark>=outside*.8f;
             for(int x=left;x<=right;x++) {
-                if((gray[y*width+x]&255)>225)continue;
+                if((gray[y*width+x]&255)>inkThreshold)continue;
                 // Preserve a vertical spine where a rule crosses it.
                 if(rule&&(y<verticalProbe||y+verticalProbe>=height
-                        ||(gray[(y-verticalProbe)*width+x]&255)>225
-                        ||(gray[(y+verticalProbe)*width+x]&255)>225))continue;
+                        ||(gray[(y-verticalProbe)*width+x]&255)>inkThreshold
+                        ||(gray[(y+verticalProbe)*width+x]&255)>inkThreshold))continue;
                 int xx=x-left,yy=y-top;ink[yy*w+xx]=OmrMeasurePostProcessor.SYMBOL;
                 area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);
                 minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
