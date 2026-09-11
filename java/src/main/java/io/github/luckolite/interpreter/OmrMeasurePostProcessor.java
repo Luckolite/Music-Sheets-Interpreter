@@ -97,6 +97,8 @@ final class OmrMeasurePostProcessor {
                 int printedRight=percentileColumn(printed,printedTotal,.988f);
                 if(printedLeft<left&&continuousStaffExtension(printed,printedLeft,left))left=printedLeft;
                 if(printedRight>right&&continuousStaffExtension(printed,right,printedRight))right=printedRight;
+                int continuedRight=continuousPrintedRight(printed,right,gap);
+                if(clippedClosingHead(labels,width,height,right,continuedRight,rows,gap,slope))right=continuedRight;
                 // Very faded horizontal rules may disappear while the closing
                 // bar remains clear. A verified full-height bar can preserve
                 // those final notes without guessing a regular measure width.
@@ -145,6 +147,8 @@ final class OmrMeasurePostProcessor {
             int total = Arrays.stream(columns).sum();
             int left = percentileColumn(columns, total, .012f);
             int right = percentileColumn(columns, total, .988f);
+            int continuedRight=continuousPrintedRight(columns,right,raw.gap());
+            if(clippedClosingHead(labels,width,height,right,continuedRight,raw.rows(),raw.gap(),0f))right=continuedRight;
             if (right - left < Math.max(width / 4, Math.round(raw.gap() * 18f))) continue;
             List<Integer> boundaries = findBoundaries(labels, gray, width, height, raw.rows(),
                     raw.gap(), left, right, 0f);
@@ -274,6 +278,51 @@ final class OmrMeasurePostProcessor {
         long score=0;
         for(int value:projection)score+=(long)value*value;
         return score;
+    }
+
+    /** Recover a trimmed ending only when it excludes an actual detected head.
+     * A decorative or courtesy-only tail must not create another timed measure. */
+    private static boolean clippedClosingHead(byte[] labels,int width,int height,int right,int end,
+            int[] rows,float gap,float slope) {
+        if(end<=right)return false;
+        int left=Math.max(0,Math.round(right-gap*2f));
+        int shift=Math.round(slope*((right+end)*.5f-width*.5f));
+        int top=Math.max(0,Math.round(rows[0]+shift-gap*MAX_HEAD_LEDGER_GAPS));
+        int bottom=Math.min(height-1,Math.round(rows[4]+shift+gap*MAX_HEAD_LEDGER_GAPS));
+        int w=end-left+1,h=bottom-top+1;
+        if(w<=0||h<=0)return false;
+        boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];
+        for(int i=0;i<seen.length;i++) {
+            if(seen[i]||labels[(top+i/w)*width+left+i%w]!=NOTEHEAD)continue;
+            int read=0,size=1,minX=w,maxX=0,minY=h,maxY=0;long sumX=0;
+            seen[i]=true;queue[0]=i;
+            while(read<size) {
+                int at=queue[read++],x=at%w,y=at/w;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);sumX+=x;
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int nx=x+dx,ny=y+dy;
+                    if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                    int next=ny*w+nx;
+                    if(!seen[next]&&labels[(top+ny)*width+left+nx]==NOTEHEAD){seen[next]=true;queue[size++]=next;}
+                }
+            }
+            float center=left+sumX/(float)size;int headWidth=maxX-minX+1,headHeight=maxY-minY+1;
+            int inset=Math.max(1,Math.round(gap*.12f));
+            if(size>=gap*gap*.14f&&headWidth>=gap*.35f&&headWidth<=gap*2.5f
+                    &&headHeight>=gap*.25f&&headHeight<=gap*1.6f
+                    &&center>right-inset&&center<=end-inset)return true;
+        }
+        return false;
+    }
+
+    /** Follow at least four printed rules, bridging short ink interruptions. */
+    private static int continuousPrintedRight(int[] columns,int right,float gap) {
+        int last=right,missing=0;
+        for(int x=right+1;x<columns.length;x++) {
+            if(columns[x]>=4){last=x;missing=0;}
+            else if(++missing>Math.max(2,Math.round(gap)))break;
+        }
+        return last;
     }
 
     private static int percentileColumn(int[] counts, int total, float percentile) {
