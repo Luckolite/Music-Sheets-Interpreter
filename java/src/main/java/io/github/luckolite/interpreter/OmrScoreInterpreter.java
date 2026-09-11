@@ -968,7 +968,7 @@ final class OmrScoreInterpreter {
                     }
                     if(above&&below)clef=ScoreNoteEvent.CLEF_BASS;
                 }
-                if(clef==ScoreNoteEvent.CLEF_UNKNOWN&&rawBassClef(original,gray,width,height,staff))
+                if(clef==ScoreNoteEvent.CLEF_UNKNOWN&&rawBassClef(original,labels,gray,width,height,staff))
                     clef=ScoreNoteEvent.CLEF_BASS;
                 if(clef!=ScoreNoteEvent.CLEF_UNKNOWN)clefs.add(new ClefGlyph(glyph.maxX,clef));
             }
@@ -987,6 +987,14 @@ final class OmrScoreInterpreter {
         return result;
     }
     private record ClefGlyph(float x,int clef) { }
+
+    private static boolean rawBassClef(Component body,byte[] labels,byte[] gray,int width,int height,Staff staff) {
+        // A key sharp beside the two round terminals of a meter digit can mimic
+        // a narrow bass clef. Its two spines and crossbars establish an accidental.
+        return !isSharpGlyph(labels,width,height,new AccidentalCandidate(body,
+                OmrMeasurePostProcessor.CLEF_OR_KEY),staff.gap)
+                &&rawBassClef(body,gray,width,height,staff);
+    }
 
     /** A small bass-clef tail and one dot may be painted as generic symbols.
      * Confirm its two round dots and descending body in the printed pixels. */
