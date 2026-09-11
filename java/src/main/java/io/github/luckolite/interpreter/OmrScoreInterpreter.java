@@ -2468,7 +2468,34 @@ final class OmrScoreInterpreter {
         return true;
     }
 
+    private static int[] ledgerInkLimits(byte[] gray,int width,int height,Component head,float gap) {
+        int[] normal={160,185};
+        if(gray==null)return normal;
+        int[] ink=new int[256],paper=new int[256];int ni=0,np=0;
+        for(int y=Math.max(0,head.minY);y<=Math.min(height-1,head.maxY);y++)
+            for(int x=Math.max(0,head.minX);x<=Math.min(width-1,head.maxX);x++) {
+                ink[gray[y*width+x]&255]++;ni++;
+            }
+        int radius=Math.max(8,Math.round(gap*2));
+        for(int y=Math.max(0,head.minY-radius);y<=Math.min(height-1,head.maxY+radius);y+=2)
+            for(int x=Math.max(0,head.minX-radius);x<=Math.min(width-1,head.maxX+radius);x+=2) {
+                paper[gray[y*width+x]&255]++;np++;
+            }
+        if(ni<6||np<12)return normal;
+        int dark=0,light=0,sum=0;
+        for(int i=0;i<256;i++){sum+=ink[i];if(sum>=Math.max(1,ni/4)){dark=i;break;}}
+        sum=0;for(int i=0;i<256;i++){sum+=paper[i];if(sum>=np*.9f){light=i;break;}}
+        if(dark<70||dark>205||light-dark<45)return normal;
+        // A pale antialiased curve on an otherwise crisp scan is not faded ink.
+        // Bound the head estimate by the surrounding printed strokes.
+        sum=0;for(int i=0;i<256;i++){sum+=paper[i];if(sum>=np*.05f){dark=Math.min(dark,i);break;}}
+        if(dark<70||dark>205||light-dark<45)return normal;
+        return new int[]{Math.min(225,Math.max(160,Math.round(dark+(light-dark)*160f/255))),
+                Math.min(235,Math.max(185,Math.round(dark+(light-dark)*185f/255)))};
+    }
+
     private static boolean hasLedgerInk(byte[] gray,int width,int height,Component head,float gap,boolean roundedGrace) {
+        int[] limits=ledgerInkLimits(gray,width,height,head,gap);
         boolean stemless=attachedRawStem(gray,width,height,head,gap)==null;
         boolean reduced=roundedGrace||reducedLedgerHead(gray,width,height,head,gap);
         float minimum=ledgerRunMinimum(head,gap,reduced);
@@ -2478,9 +2505,9 @@ final class OmrScoreInterpreter {
                 y<=Math.min(height-1,Math.round(head.centerY+gap*.65f));y++) {
             int run=0;
             for(int x=left;x<=right;x++) {
-                boolean dark=(gray[y*width+x]&255)<160;
-                if(!dark&&y>0&&y+1<height)dark=(gray[(y-1)*width+x]&255)<160
-                        ||(gray[(y+1)*width+x]&255)<160;
+                boolean dark=(gray[y*width+x]&255)<limits[0];
+                if(!dark&&y>0&&y+1<height)dark=(gray[(y-1)*width+x]&255)<limits[0]
+                        ||(gray[(y+1)*width+x]&255)<limits[0];
                 run=dark?run+1:0;
                 // A horizontal instruction arrow also ends in a head-like blob.
                 // A stemless ledger note has rule ink on both sides of its oval.
@@ -2567,6 +2594,7 @@ final class OmrScoreInterpreter {
     private static boolean hasInnerLedgerInk(byte[] gray,int width,int height,Component head,Staff staff,boolean roundedGrace) {
         // Beyond two staff spaces, real notation needs another ledger toward
         // the staff. One instruction arrow or underline is insufficient.
+        int[] limits=ledgerInkLimits(gray,width,height,head,staff.gap);
         boolean reduced=roundedGrace||reducedLedgerHead(gray,width,height,head,staff.gap);
         float minimum=ledgerRunMinimum(head,staff.gap,reduced);
         float direction=head.centerY<staff.top?1:-1;
@@ -2584,10 +2612,10 @@ final class OmrScoreInterpreter {
                     y<=Math.min(height-2,Math.round(center+staff.gap*.55f))&&!found;y++) {
                 int run=0,strongInRun=0;
                 for(int x=left;x<=right;x++) {
-                    boolean strong=(gray[y*width+x]&255)<160||(gray[(y-1)*width+x]&255)<160
-                            ||(gray[(y+1)*width+x]&255)<160;
-                    boolean dark=strong||(gray[y*width+x]&255)<185||(gray[(y-1)*width+x]&255)<185
-                            ||(gray[(y+1)*width+x]&255)<185;
+                    boolean strong=(gray[y*width+x]&255)<limits[0]||(gray[(y-1)*width+x]&255)<limits[0]
+                            ||(gray[(y+1)*width+x]&255)<limits[0];
+                    boolean dark=strong||(gray[y*width+x]&255)<limits[1]||(gray[(y-1)*width+x]&255)<limits[1]
+                            ||(gray[(y+1)*width+x]&255)<limits[1];
                     run=dark?run+1:0;
                     strongInRun=dark?strongInRun+(strong?1:0):0;
                     // Faded portions may complete a printed rule, but pale underlines alone
