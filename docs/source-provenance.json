@@ -1,5 +1,5 @@
 {
-  "source_commit": "d79f5d2cce3e39781b96fb5cab241c09ef1752de",
+  "source_commit": "cf1efff8481edeee216d1b721df0319ea092100e",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -20,7 +20,7 @@
     },
     "MeasureNumberReconciler.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureNumberReconciler.java",
-      "source_sha256": "fda379b9d58f2bf809dff4725335213fc0d0d41c48cc2edc679d4977404e8a93"
+      "source_sha256": "bef0865ad1ca3644d29c406b61433c40e78a7a8fa895b6a6d71d9d7743779424"
     },
     "MeasureRegion.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureRegion.java",

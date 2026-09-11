@@ -350,7 +350,8 @@ final class MeasureNumberReconciler {
                 float maximumVertical = Math.max(.16f,
                         Math.min(.24f, medianStep(layout) * 2.35f));
                 if (difference < 1 || difference > 16 || vertical < 0.035f
-                        || vertical > maximumVertical
+                        || (vertical > maximumVertical && !adjacentDetectedRowsAgree(
+                        candidates.get(before), candidates.get(index), difference, layout))
                         || !plausiblePrintedDifference(candidates.get(before),
                         candidates.get(index), difference, layout))
                     continue;
@@ -375,6 +376,27 @@ final class MeasureNumberReconciler {
         }
         java.util.Collections.reverse(result);
         return List.copyOf(result);
+    }
+
+    private static boolean adjacentDetectedRowsAgree(NumberToken from, NumberToken to,
+                                                       int difference, List<Row> layout) {
+        // Grand-staff systems can be farther apart than a quarter page. Their printed
+        // numbers still anchor consecutive rows when the visible bars confirm the jump.
+        int first = headerRow(from, layout), next = headerRow(to, layout);
+        return first >= 0 && next == first + 1
+                && layout.get(first).measures.size() == difference;
+    }
+
+    private static int headerRow(NumberToken token, List<Row> layout) {
+        if (layout == null) return -1;
+        float centerY = (token.top + token.bottom) * .5f;
+        for (int index = 0; index < layout.size(); index++) {
+            Row row = layout.get(index);
+            if (centerY >= row.top - .035f && centerY <= row.top + .012f
+                    && (token.left + token.right) * .5f <= row.left + .012f)
+                return index;
+        }
+        return -1;
     }
 
     private static boolean plausiblePrintedDifference(NumberToken from, NumberToken to,
