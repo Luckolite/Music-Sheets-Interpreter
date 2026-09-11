@@ -36,6 +36,30 @@ public class TripletNumeralHeadTest {
     private static List<ScoreNoteEvent> clean(List<ScoreNoteEvent> notes,byte[] gray) {
         return TripletRhythmDetector.withoutNumeralHeads(notes,List.of(new MeasureRegion(0,1,.1f,.8f)),gray,400,240);
     }
+    private static List<ScoreNoteEvent> pairedBowls() {
+        var n=new ArrayList<>(notes(145));
+        n.set(1,new ScoreNoteEvent(0,.29f,-3,0,1,161/240f,false,0,0,2,2,1));
+        n.add(new ScoreNoteEvent(0,.29f,-1,0,1,150/240f,false,0,0,2,2,1));
+        return n;
+    }
+    private static byte[] shiftedNumeral(String[] shape) {
+        var original=image(shape,145);byte[] shifted=new byte[original.length];Arrays.fill(shifted,(byte)255);
+        for(int y=0;y<240;y++)for(int x=8;x<400;x++)shifted[y*400+x-8]=original[y*400+x];
+        return shifted;
+    }
+    @Test public void twoPredictedBowlsDoNotInterruptTheSameNumeralCleanup() {
+        assertEquals(List.of(moving(.25f,2),moving(.3125f,2),moving(.375f,2)),clean(pairedBowls(),shiftedNumeral(three())));
+    }
+    @Test public void pairedBowlsStillRequireACompletePrintedThree() {
+        var n=pairedBowls();String[] glyph=three();
+        for(int y=2;y<glyph.length-2;y++)glyph[y]="##"+glyph[y].substring(2);
+        assertEquals(n,clean(n,shiftedNumeral(glyph)));
+    }
+    @Test public void aRealInterveningNoteStillBlocksPairedNumeralRemoval() {
+        var n=new ArrayList<>(pairedBowls());
+        n.add(new ScoreNoteEvent(0,.28f,3,0,1,.4f,false,0,0,2,1,1));
+        assertEquals(n,clean(n,shiftedNumeral(three())));
+    }
     @Test public void aThreeHeadNoLongerInterruptsItsOwnTriplet() {
         var gray=image(three(),145);var cleaned=clean(notes(145),gray);assertEquals(3,cleaned.size());
         var timed=TripletRhythmDetector.apply(cleaned,List.of(new MeasureRegion(0,1,.1f,.8f)),gray,400,240);

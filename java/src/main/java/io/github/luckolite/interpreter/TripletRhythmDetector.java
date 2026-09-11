@@ -185,11 +185,13 @@ final class TripletRhythmDetector {
         List<ScoreNoteEvent> result=new ArrayList<>(notes);
         for(ScoreNoteEvent candidate:notes) {
             if(candidate.tiedFromPrevious()||candidate.measureIndex()<0||candidate.measureIndex()>=measures.size())continue;
-            List<ScoreNoteEvent> voice=new ArrayList<>();
-            for(ScoreNoteEvent n:result)if(n!=candidate&&sameVoice(n,candidate))voice.add(n);
-            List<Onset> groups=onsets(voice);
             MeasureRegion region=measures.get(candidate.measureIndex());
             float gap=Math.max(4,(region.bottom()-region.top())*height/(8*candidate.staffCount()));
+            List<ScoreNoteEvent> voice=new ArrayList<>();
+            for(ScoreNoteEvent n:result)if(n!=candidate&&sameVoice(n,candidate)
+                    && !(Math.abs(n.positionInMeasure()-candidate.positionInMeasure())<=.018f
+                    && Math.abs(n.pageY()-candidate.pageY())*height<=gap*2.3f))voice.add(n);
+            List<Onset> groups=onsets(voice);
             float candidateX=(region.left()+candidate.positionInMeasure()*(region.right()-region.left()))*width;
             float candidateY=candidate.pageY()*height;
             for(int i=0;i+2<groups.size();i++) {
