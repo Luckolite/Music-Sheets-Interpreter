@@ -1919,8 +1919,8 @@ final class OmrScoreInterpreter {
             if (!representedStaff(recovered, staffs, height)) staffs.add(recovered);
         }
         staffs.sort(Comparator.comparingDouble(staff -> staff.top));
-        // A ledger-heavy semantic group may be one rule out of phase on a tilted page.
-        // Calibrate only a nearby, similarly spaced group proved by all five printed rules.
+        // Recover staff geometry from five continuous printed rules on a tilted page.
+        // Match nearby groups and require page-scale support for compressed aliases.
         if(gray!=null&&Math.abs(semanticSlope)>.001f) {
             int[] printedRows=new int[height];
             for(int y=0;y<height;y++)for(int x=0;x<width;x++)if((gray[y*width+x]&255)<170) {
@@ -1939,16 +1939,41 @@ final class OmrScoreInterpreter {
             }
             for(var raw:RawStaffLineDetector.detectFromStrength(printedRows,Math.max(24,Math.round(width*.25f)),height)) {
                 if(!completePrintedDeskewedStaff(gray,width,height,raw,semanticSlope))continue;
-                for(Staff staff:staffs) {
+                for(int i=0;i<staffs.size();i++) {
+                    Staff staff=staffs.get(i);
+                    Staff printed=new Staff(raw.top(),raw.bottom(),raw.gap());
+                    // Multiple peaks within each tilted rule can invent a tiny staff.
+                    // Five continuous printed rules, clear spaces, measure alignment and
+                    // the other staffs' scale resolve it without a fixed alias ratio.
+                    if(raw.gap()>staff.gap*1.18f
+                            &&staff.top>=raw.top()-raw.gap()*.8f
+                            &&staff.bottom<=raw.bottom()+raw.gap()*.8f
+                            &&Math.abs((staff.top+staff.bottom-raw.top()-raw.bottom())*.5f)<=raw.gap()*1.75f
+                            &&alignedWithMeasureRow(printed,measures,height)) {
+                        List<Staff> others=new ArrayList<>(staffs);others.remove(i);
+                        if(compatibleStaffScale(printed,others)) {
+                            printed.pitchSlope=semanticSlope;printed.printedPhase=true;
+                            staffs.set(i,printed);continue;
+                        }
+                    }
                     if(raw.gap()<staff.gap*.85f||raw.gap()>staff.gap*1.18f
                             ||Math.abs(staff.top-raw.top())>raw.gap()*1.2f
                             ||Math.abs(staff.bottom-raw.bottom())>raw.gap()*1.2f)continue;
-                    if(Math.max(Math.abs(staff.pitchBottom-raw.bottom()),Math.abs(staff.bottom-raw.bottom()))<raw.gap()*.45f)continue;
+                    // A close bottom rule does not guarantee the correct scale on ledger notes.
+                    float error=Math.max(Math.abs(staff.pitchBottom-raw.bottom()),Math.abs(staff.bottom-raw.bottom()));
+                    error=Math.max(error,Math.abs(staff.pitchGap-raw.gap())*6);
+                    if(error<raw.gap()*.45f)continue;
                     staff.pitchBottom=raw.bottom();staff.pitchGap=raw.gap();staff.pitchSlope=semanticSlope;
                     staff.printedPhase=true;
                 }
+                Staff missing=new Staff(raw.top(),raw.bottom(),raw.gap());
+                if(alignedWithMeasureRow(missing,measures,height)
+                        &&compatibleStaffScale(missing,staffs)&&!representedStaff(missing,staffs,height)) {
+                    missing.pitchSlope=semanticSlope;missing.printedPhase=true;staffs.add(missing);
+                }
             }
         }
+        staffs.sort(Comparator.comparingDouble(staff -> staff.top));
         for(Staff staff:staffs) {
             staff.pitchTrack=StaffPitchTrack.detect(gray,width,height,
                 staff.printedPhase?staff.pitchBottom-staff.pitchGap*4:staff.top,
