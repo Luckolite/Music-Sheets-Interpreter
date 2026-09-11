@@ -923,3 +923,35 @@ No model or license changes. Guide115/audio31 invalidate derived caches in the
 next app build. The published APK remains 1.18.112 without this additional repair;
 the phone is disconnected and no new device validation is claimed. Existing
 rollback snapshots and separate mixed experiments are preserved.
+
+## Keep unpitched cross heads out of the pitched melody
+
+A semantic notehead mask can retain only a corner of an X-shaped count-in head.
+Treating that corner as an oval creates an audible pitch. The decoder now checks
+the raw ink for two opposing diagonals that converge toward their intersection.
+The check excludes complete crosses and partial corner detections from pitched
+events. It measures actual long staff ink rather than relying on a rounded staff
+seed. Hollow oval sides have the opposite convergence and remain pitched notes.
+This does not add percussion playback or change the public event schema.
+
+Nine original synthetic tests cover partial and complete crosses, crosses on
+staff lines and spaces, silent cross-only bars, filled and hollow ovals, a small
+grace head, unaffected pitch/position, and unchanged input arrays. Five tests
+fail on the previous decoder. All 664 Java tests, 13 Python tests, PNG/PDF/MIDI
+smoke checks, 68 focused Android tests and Android debug lint pass.
+
+Across 28 targeted pages, 27 complete outputs are identical. The affected page
+loses exactly two false pitched events. Every remaining event, measure region
+and total page duration is unchanged. Both newly reviewed pages retain all 622
+manually checked pitched notes, including chords, grace notes and high ledger
+notes. All 4,330 previously passing or newly corrected pitch/presence checks pass
+out of 4,344; 14 separate known failures remain unchanged. This is a selected
+source audit, not a claim that all library pitches or timing are correct. The
+hourly revisit was not repeated early.
+
+The repair is global and uses no song identifiers. Only original synthetic ink
+and general code are public; private scores and source transcriptions remain
+private. Model weights and license are unchanged. Guide116/audio32 invalidate
+derived caches in the next app build. The phone is disconnected; no new device
+validation is claimed. Existing rollback snapshots and mixed experiments remain
+preserved.

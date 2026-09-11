@@ -98,6 +98,7 @@ final class OmrScoreInterpreter {
         for (Component head : heads) {
             Staff staff = staffForHead(labels, gray, width, height, staffs, head);
             if (staff == null) continue;
+            if (isUnpitchedCrossHead(gray,width,height,head,staff)) continue;
             // Heads far outside a staff require printed ledger lines. A nearby
             // text stroke can look like a stem, so a semantic stem alone cannot
             // promote a tempo digit or other text into an extreme pitch.
@@ -2406,6 +2407,67 @@ final class OmrScoreInterpreter {
     private static boolean rawColumnInk(byte[] gray, int width, int x, int y) {
         return (gray[(y-1)*width+x]&255)<170 || (gray[y*width+x]&255)<170
                 || (gray[(y+1)*width+x]&255)<170;
+    }
+
+
+    /** Cross heads denote an unpitched attack. A partial semantic mask can keep
+     * only one corner, so inspect the two converging diagonals in the raw ink.
+     * Hollow oval sides diverge toward their centre, the opposite topology. */
+    private static boolean isUnpitchedCrossHead(byte[] gray,int width,int height,
+                                               Component head,Staff staff) {
+        if(gray==null||staff.gap<9||head.maxX-head.minX>staff.gap*1.7f
+                ||head.maxY-head.minY>staff.gap*1.2f)return false;
+        float gap=staff.gap;
+        int inner=Math.max(2,Math.round(gap*.22f)),outer=Math.max(inner+2,Math.round(gap*.38f));
+        int radius=Math.round(gap),searchX=Math.round(gap*.8f),searchY=Math.round(gap*.65f);
+        for(int cy=Math.max(outer,Math.round(head.centerY)-searchY);
+                cy<=Math.min(height-outer-1,Math.round(head.centerY)+searchY);cy++) {
+            boolean rule=false;
+            int ruleLeft=Math.max(0,Math.round(head.centerX-gap*3)),ruleRight=Math.min(width-1,Math.round(head.centerX+gap*3));
+            for(int dy:new int[]{-outer,-inner,inner,outer}) {
+                int ink=0;
+                for(int x=ruleLeft;x<=ruleRight;x++)if((gray[(cy+dy)*width+x]&255)<165)ink++;
+                if(ink>(ruleRight-ruleLeft+1)*.8f)rule=true;
+            }
+            if(rule)continue;
+            for(int cx=Math.max(radius,Math.round(head.centerX)-searchX);
+                    cx<=Math.min(width-radius-1,Math.round(head.centerX)+searchX);cx++) {
+                int[] upper=crossHeadSides(gray,width,cx,cy-outer,radius,gap);
+                if(upper==null)continue;
+                int[] lower=crossHeadSides(gray,width,cx,cy+outer,radius,gap);
+                if(lower==null)continue;
+                int[] upperInner=crossHeadSides(gray,width,cx,cy-inner,radius,gap);
+                int[] lowerInner=crossHeadSides(gray,width,cx,cy+inner,radius,gap);
+                if(upperInner==null||lowerInner==null)continue;
+                boolean converges=true;
+                for(int[] pair:new int[][]{upper,lower}) {
+                    int[] near=pair==upper?upperInner:lowerInner;
+                    if(near[1]-pair[1]<gap*.1f||pair[2]-near[2]<gap*.1f
+                            ||pair[2]-pair[1]<gap*.45f)converges=false;
+                }
+                if(!converges||Math.abs(upper[1]-lower[1])>gap*.25f
+                        ||Math.abs(upper[2]-lower[2])>gap*.25f)continue;
+                if(head.centerX<Math.min(upper[0],lower[0])-1
+                        ||head.centerX>Math.max(upper[3],lower[3])+1
+                        ||Math.abs(head.centerY-cy)>outer+1)continue;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int[] crossHeadSides(byte[] gray,int width,int cx,int y,int radius,float gap) {
+        if((gray[y*width+cx]&255)<165)return null;
+        int left=cx-1,right=cx+1;
+        while(left>=cx-radius&&(gray[y*width+left]&255)>=165)left--;
+        while(right<=cx+radius&&(gray[y*width+right]&255)>=165)right++;
+        if(left<cx-radius||right>cx+radius)return null;
+        int begin=left,end=right;
+        while(begin>cx-radius&&(gray[y*width+begin-1]&255)<165)begin--;
+        while(end<cx+radius&&(gray[y*width+end+1]&255)<165)end++;
+        if(left-begin+1<2||end-right+1<2||left-begin+1>gap*.55f||end-right+1>gap*.55f
+                ||end-begin<gap*.85f||end-begin>gap*1.9f)return null;
+        return new int[]{begin,left,right,end};
     }
 
     private static boolean plausibleHead(Component head, float gap) {
