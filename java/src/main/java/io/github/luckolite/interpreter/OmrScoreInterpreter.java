@@ -104,6 +104,7 @@ final class OmrScoreInterpreter {
         List<AccidentalCandidate> localAccidentals = new ArrayList<>(joinLocalAccidentalFragments(
                 labels, gray, width, height, accidentalCandidates, staffs));
         localAccidentals.removeIf(candidate->attachedGraceFlag(labels,gray,width,height,candidate,heads,staffs));
+        localAccidentals.removeAll(noteParentheses(gray,width,height,localAccidentals,heads,staffs));
         List<Component> accidentalInk = new ArrayList<>();
         for (AccidentalCandidate candidate : localAccidentals) {
             Staff staff = nearestHeadStaff(staffs, candidate.component.centerY);
@@ -2981,6 +2982,61 @@ final class OmrScoreInterpreter {
                     &&count>=Math.max(4,gap*gap*.04f)&&count>=rw*rh*.55f)return true;
         }
         return false;
+    }
+
+    /** Mirrored printed parentheses enclosing a note do not alter the next pitch. */
+    private static List<AccidentalCandidate> noteParentheses(byte[] gray,int width,int height,
+            List<AccidentalCandidate> candidates,List<Component> heads,List<Staff> staffs) {
+        List<AccidentalCandidate> result=new ArrayList<>();
+        if(gray==null)return result;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);
+            if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.maxX-head.minX+1>gap*2.2f||head.maxY-head.minY+1>gap*1.35f)continue;
+            for(AccidentalCandidate left:candidates) {
+                Component a=left.component;
+                if(a.maxX>=head.minX||head.minX-a.maxX>gap
+                        ||a.minY>head.minY||a.maxY<head.maxY
+                        ||Math.abs((a.minY+a.maxY)*.5f-head.centerY)>gap*.35f
+                        ||!printedParenthesis(gray,width,height,a,gap,true))continue;
+                for(AccidentalCandidate right:candidates) {
+                    Component b=right.component;
+                    if(b.minX<=head.maxX||b.minX-head.maxX>gap
+                            ||b.minY>head.minY||b.maxY<head.maxY
+                            ||Math.abs(a.minY-b.minY)>gap*.3f||Math.abs(a.maxY-b.maxY)>gap*.3f
+                            ||Math.abs((a.maxX+b.minX)*.5f-head.centerX)>gap*.4f
+                            ||!printedParenthesis(gray,width,height,b,gap,false))continue;
+                    result.add(left);result.add(right);
+                }
+            }
+        }
+        return result;
+    }
+
+    private static boolean printedParenthesis(byte[] gray,int width,int height,Component glyph,
+            float gap,boolean opening) {
+        int w=glyph.maxX-glyph.minX+1,h=glyph.maxY-glyph.minY+1;
+        if(w<gap*.24f||w>gap*.8f||h<gap*1.3f||h>gap*2.8f
+                ||glyph.minX<0||glyph.maxX>=width||glyph.minY<0||glyph.maxY>=height)return false;
+        float[] centers=new float[h];java.util.Arrays.fill(centers,Float.NaN);
+        for(int y=glyph.minY;y<=glyph.maxY;y++) {
+            int n=0,sum=0;
+            for(int x=glyph.minX;x<=glyph.maxX;x++)if((gray[y*width+x]&255)<170){sum+=x-glyph.minX;n++;}
+            if(n>0)centers[y-glyph.minY]=sum/(float)n;
+        }
+        float top=parenthesisBand(centers,0,.15f),middle=parenthesisBand(centers,.35f,.65f),
+                bottom=parenthesisBand(centers,.85f,1);
+        if(!Float.isFinite(top)||!Float.isFinite(middle)||!Float.isFinite(bottom))return false;
+        float bend=Math.max(1,w*.2f),sign=opening?1:-1;
+        return sign*(top-middle)>=bend&&sign*(bottom-middle)>=bend
+                &&Math.abs(top-bottom)<=gap*.25f;
+    }
+
+    private static float parenthesisBand(float[] centers,float from,float to) {
+        int first=Math.round(from*(centers.length-1)),last=Math.round(to*(centers.length-1)),n=0;float sum=0;
+        for(int i=first;i<=last;i++)if(Float.isFinite(centers[i])){sum+=centers[i];n++;}
+        return n>=Math.max(2,(last-first+1)*.5f)?sum/n:Float.NaN;
     }
 
     /** A flag attached to an accepted grace head cannot flatten the next note. */
