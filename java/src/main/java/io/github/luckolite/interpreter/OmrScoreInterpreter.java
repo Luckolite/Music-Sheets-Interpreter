@@ -75,6 +75,20 @@ final class OmrScoreInterpreter {
         demotedDotHeads.addAll(articulationDotHeads(labels, gray, width, height, heads, staffs));
         heads.removeAll(demotedDotHeads);
         heads.removeAll(stemSlashFragments(gray, width, height, heads, staffs));
+        Map<Component,int[]> detachedTremolos=new HashMap<>();
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);
+            if(staff==null||head.maxX-head.minX+1<staff.gap*1.4f
+                    ||!hasOpenCenter(labels,gray,width,height,head,staff.gap)
+                    ||attachedRawStem(gray,width,height,head,staff.gap)!=null)continue;
+            int[] mark=detachedTremolo(gray,width,height,head,staff.gap);
+            if(mark!=null)detachedTremolos.put(head,mark);
+        }
+        heads.removeIf(head->detachedTremolos.entrySet().stream().anyMatch(entry->{
+            int[] mark=entry.getValue();return head!=entry.getKey()
+                    &&head.minX>=mark[0]&&head.maxX<=mark[1]
+                    &&head.minY>=mark[2]&&head.maxY<=mark[3];
+        }));
         heads.removeIf(head -> isHeaderMeterDigit(labels,gray,width,height,head,staffs,clefOrKeyComponents));
         List<Component> dotCandidates = new ArrayList<>(symbolComponents);
         for (Component component : headComponents) if (!heads.contains(component))
@@ -134,6 +148,7 @@ final class OmrScoreInterpreter {
                     beamsBeyondTremolo(gray,labels,width,height,head,staff));
             float unbeamedDuration = detectUnbeamedDuration(labels, gray, width, height,
                     head, staff.gap, beamCount);
+            if(detachedTremolos.containsKey(head))unbeamedDuration=ScoreNoteEvent.DURATION_WHOLE;
             // Beamed notes cannot have open heads. If a staff line, slur, or artwork edge near
             // an open half/whole head looked like a beam, retain the notehead's stronger direct
             // evidence instead of collapsing the sustained passage into eighths/sixteenths.
@@ -157,6 +172,8 @@ final class OmrScoreInterpreter {
                     writtenAccidental, unbeamedDuration);
             if(tremolo[0]>0)event=event.withArticulations(NoteOrnament.withTremolo(
                     event.articulations(),beamCount+tremolo[0]));
+            if(detachedTremolos.containsKey(head))event=event.withArticulations(
+                    NoteOrnament.withTremolo(event.articulations(),3));
             List<Component> unison=sideBySideUnison(labels,gray,width,height,head,staff.gap);
             if(!unison.isEmpty()) {
                 // Opposite stems share a printed pitch/attack but have separate durations.
@@ -3475,6 +3492,67 @@ final class OmrScoreInterpreter {
                         sumX / (float) area, sumY / (float) area));
         }
         return result;
+    }
+
+    /** Three parallel slashes can sit above or below a stemless whole note. */
+    private static int[] detachedTremolo(byte[] gray,int width,int height,Component head,float gap) {
+        if(gray==null)return null;
+        int radius=Math.max(3,Math.round(gap*.4f));
+        for(int direction:new int[]{1,-1})for(float shift:new float[]{0,-.15f,.15f})
+                for(float slope:new float[]{-.5f,-.35f,-.65f,-.8f}) {
+            int cx=Math.round(head.centerX+shift*gap),edge=direction>0?head.maxY:head.minY;
+            int a=edge+direction*Math.round(gap*.35f),b=edge+direction*Math.round(gap*3.4f);
+            int first=Math.max(radius+1,Math.min(a,b)),last=Math.min(height-radius-2,Math.max(a,b));
+            if(cx-Math.round(gap*1.2f)<0||cx+Math.round(gap*1.2f)>=width)continue;
+            List<int[]> bands=new ArrayList<>();int run=0;
+            for(int y=first;y<=last+1;y++) {
+                int shade=0;
+                if(y<=last)for(int dx=-radius;dx<=radius;dx++)
+                    shade+=gray[(y+Math.round(slope*dx))*width+cx+dx]&255;
+                boolean ink=y<=last&&shade<(radius*2+1)*55;
+                if(ink)run++;
+                else {if(run>=2&&run<=gap*.75f)bands.add(new int[]{y-run,y-1});run=0;}
+            }
+            for(int i=0;i+2<bands.size();i++) {
+                int[] one=bands.get(i),two=bands.get(i+1),three=bands.get(i+2);
+                float c1=(one[0]+one[1])*.5f,c2=(two[0]+two[1])*.5f,c3=(three[0]+three[1])*.5f;
+                if(c2-c1<gap*.45f||c2-c1>gap*1.05f||c3-c2<gap*.45f||c3-c2>gap*1.05f
+                        ||Math.abs(c3-2*c2+c1)>gap*.3f
+                        ||Math.abs((direction>0?c1:c3)-edge)>gap*1.5f)continue;
+                int diagonal=0;
+                for(float center:new float[]{c1,c2,c3}) {
+                    float left=verticalInkCenter(gray,width,height,cx-radius,Math.round(center-slope*radius),gap);
+                    float right=verticalInkCenter(gray,width,height,cx+radius,Math.round(center+slope*radius),gap);
+                    // Pixel-run centres are quantized to half pixels on small staves.
+                    if(Float.isFinite(left)&&Float.isFinite(right)
+                            &&left-right>=Math.max(1,Math.floor(gap*.15f))&&left-right<=gap*1.2f)diagonal++;
+                }
+                if(diagonal<2)continue;
+                // Horizontal rules and broad beams do not end near the note's centre.
+                boolean bounded=true;
+                for(float center:new float[]{c1,c2,c3})for(int sign:new int[]{-1,1}) {
+                    int x=cx+sign*Math.round(gap*1.05f),dark=0;
+                    int y=Math.round(center+slope*(x-cx));
+                    if(y<2||y>=height-2){bounded=false;continue;}
+                    for(int yy=Math.max(0,y-radius);yy<=Math.min(height-1,y+radius);yy++) {
+                        dark=(gray[yy*width+x]&255)<135?dark+1:0;
+                        if(dark>=Math.max(4,Math.round(gap*.3f)))bounded=false;
+                    }
+                }
+                if(bounded)return new int[]{cx-Math.round(gap*.95f),cx+Math.round(gap*.95f),
+                        one[0]-Math.round(gap*.45f),three[1]+Math.round(gap*.45f)};
+            }
+        }
+        return null;
+    }
+
+    private static float verticalInkCenter(byte[] gray,int width,int height,int x,int y,float gap) {
+        if(y<0||y>=height||(gray[y*width+x]&255)>=135)return Float.NaN;
+        int top=y,bottom=y,limit=Math.round(gap*1.2f);
+        while(top>0&&y-top<limit&&(gray[(top-1)*width+x]&255)<135)top--;
+        while(bottom<height-1&&bottom-y<limit&&(gray[(bottom+1)*width+x]&255)<135)bottom++;
+        if(y-top==limit||bottom-y==limit)return Float.NaN;
+        return (top+bottom)*.5f;
     }
 
     /** Isolated thick strokes cross BOTH sides of their own stem and end before
