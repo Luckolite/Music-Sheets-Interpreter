@@ -24,7 +24,7 @@ final class NoteArticulationDetector {
         int x0=Math.max(0,left-padding),x1=Math.min(width-1,right+padding);
         int y0=Math.max(0,top-padding),y1=Math.min(height-1,bottom+padding);
         int w=x1-x0+1,h=y1-y0+1;boolean[] rules=new boolean[h],seen=new boolean[w*h];
-        for(int y=y0;y<=y1;y++)rules[y-y0]=horizontalRuleInk(gray,width,height,(left+right)/2,y,gap,155,.85f);
+        for(int y=y0;y<=y1;y++)rules[y-y0]=recoveryStaffRule(gray,width,height,(left+right)/2,y,gap);
         int[] queue=new int[w*h];List<Integer> pixels=new ArrayList<>();
         int gx0=width,gx1=0,gy0=height,gy1=0;
         for(int origin=0;origin<seen.length;origin++) {
@@ -56,7 +56,40 @@ final class NoteArticulationDetector {
         }
         if(pixels.isEmpty()||right<gx0||left>gx1||bottom<gy0||top>gy1)return false;
         Glyph glyph=new Glyph(gx0,gy0,gx1,gy1,pixels.size(),pixels.stream().mapToInt(Integer::intValue).toArray());
-        return classify(glyph,width,gap,above)==NoteArticulation.MARCATO;
+        if(classify(glyph,width,gap,above)==NoteArticulation.MARCATO)return true;
+        // Removing staff stripes can trim both the peak and feet of a small caret.
+        // Only relax its aspect ratio when both edges were actually cut by rules.
+        float gw=gx1-gx0+1,gh=gy1-gy0+1;
+        boolean trimmed=gy0>y0&&gy1<y1&&rules[gy0-y0-1]&&rules[gy1-y0+1];
+        return trimmed&&gw>=gap*.5f&&gw<=gap*1.3f&&gh>=gap*.6f&&gh<=gap*1.7f
+                &&gh/gw>=.6f&&chevronVertical(glyph,width,above);
+    }
+
+    private static boolean recoveryStaffRule(byte[] gray,int width,int height,int x,int y,float gap) {
+        if(horizontalRuleInk(gray,width,height,x,y,gap,155,.85f))return true;
+        // A cue staff may start less than four spaces before its first mark.
+        // Shorter horizontal support is sufficient only with two parallel rules.
+        if(!shortRuleInk(gray,width,height,x,y,gap))return false;
+        int neighbors=0;
+        for(int offset:new int[]{-2,-1,1,2})
+            if(shortRuleInk(gray,width,height,x,Math.round(y+offset*gap),gap))neighbors++;
+        return neighbors>=2;
+    }
+
+    private static boolean shortRuleInk(byte[] gray,int width,int height,int x,int y,float gap) {
+        int near=Math.max(3,Math.round(gap*.8f)),far=Math.round(gap*2f);
+        for(int direction:new int[]{-1,1}) {
+            int hits=0,samples=0;
+            for(int d=near;d<=far;d++) {
+                int xx=x+direction*d;
+                if(xx<0||xx>=width)return false;
+                samples++;
+                for(int yy=Math.max(0,y-1);yy<=Math.min(height-1,y+1);yy++)
+                    if((gray[yy*width+xx]&255)<155){hits++;break;}
+            }
+            if(samples==0||hits<samples*.85f)return false;
+        }
+        return true;
     }
 
     static int[] detect(byte[] labels,byte[] gray,int width,int height,List<Anchor> notes) {

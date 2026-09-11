@@ -1,5 +1,5 @@
 {
-  "source_commit": "f271c12270d0411dbbc8050fcda5b5fb8104879a",
+  "source_commit": "d79f5d2cce3e39781b96fb5cab241c09ef1752de",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -40,7 +40,7 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "f5afbbe4c7b5779f988a2895ed84b6ba01d40ce8bbdadbe6031452523ec82e18"
+      "source_sha256": "a407110e5493b5b23d5d1384b288158e4fe2060af79ed3e0d9050c4187430a31"
     },
     "NoteOrnament.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",
