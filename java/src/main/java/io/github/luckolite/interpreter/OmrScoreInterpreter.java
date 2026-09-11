@@ -66,6 +66,7 @@ final class OmrScoreInterpreter {
             }
         }
         heads.removeAll(beamJunctionHeads(gray,width,height,heads,staffs));
+        heads.removeAll(straightEntranceFragments(gray,width,height,heads,staffs));
         List<Component> shortTies=shortTieBowlHeads(labels,gray,width,height,heads,staffs);
         heads.removeAll(shortTies);
         rejectedSlurHeads.addAll(shortTies);
@@ -2642,6 +2643,66 @@ final class OmrScoreInterpreter {
                 }
                 if(total==last-first+1&&supported>=total*.88f&&tipTotal>=3&&tip>=tipTotal*.85f)return true;
             }
+        }
+        return false;
+    }
+
+    /** A small mask island on an ascending entrance stroke is not a separate attack. */
+    private static List<Component> straightEntranceFragments(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> rejected=new ArrayList<>();
+        if(gray==null)return rejected;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.area>gap*gap*.3f||head.maxX-head.minX+1>gap*.85f
+                    ||head.maxY-head.minY+1>gap*.65f
+                    ||attachedRawStem(gray,width,height,head,gap*.65f)!=null)continue;
+            for(Component main:heads) {
+                float dx=main.centerX-head.centerX,dy=head.centerY-main.centerY;
+                if(main==head||nearestHeadStaff(staffs,main.centerY)!=staff
+                        ||main.area<head.area*3||main.maxX-main.minX+1<gap
+                        ||dx<gap||dx>gap*3||dy<gap*.5f||dy>gap*2.5f
+                        ||attachedRawStem(gray,width,height,main,gap*.65f)==null)continue;
+                if(rawStraightEntrance(gray,width,height,head,main,gap)){rejected.add(head);break;}
+            }
+        }
+        return rejected;
+    }
+
+    private static boolean rawStraightEntrance(byte[] gray,int width,int height,Component head,
+            Component main,float gap) {
+        int left=head.minX-Math.round(gap*.5f),right=main.minX-Math.max(2,Math.round(gap*.25f));
+        int top=Math.round(head.centerY-gap*2.2f),bottom=Math.round(head.centerY+gap*2.2f);
+        int ruleLeft=left-Math.round(gap*2),ruleRight=right+Math.round(gap*2);
+        if(ruleLeft<0||ruleRight>=width||top<0||bottom>=height||right-left<gap*1.3f)return false;
+        boolean[] rules=new boolean[bottom-top+1];
+        for(int y=top;y<=bottom;y++) {
+            int n=0;for(int x=ruleLeft;x<=ruleRight;x++)if((gray[y*width+x]&255)<165)n++;
+            rules[y-top]=n>=(ruleRight-ruleLeft+1)*.9f;
+        }
+        for(int y=0;y<rules.length;) {
+            int start=y;while(y<rules.length&&rules[y])y++;
+            if(y-start>Math.max(3,Math.round(gap*.3f)))java.util.Arrays.fill(rules,start,y,false);
+            if(y==start)y++;
+        }
+        for(float slope=.65f;slope<=1.56f;slope+=.1f)for(int offset=-1;offset<=1;offset++) {
+            int visible=0,supported=0,thin=0;
+            for(int x=left;x<=right;x++) {
+                float cy=head.centerY+offset-slope*(x-head.centerX);
+                int y0=Math.round(cy),radius=Math.max(3,Math.round(gap*.6f));
+                if(y0-radius<top||y0+radius>bottom||rules[y0-top])continue;
+                visible++;boolean ink=false,wide=false;
+                for(int y=y0-radius;y<=y0+radius;y++) {
+                    if(rules[y-top]||(gray[y*width+x]&255)>=165)continue;
+                    float distance=Math.abs(y-cy);
+                    if(distance<=Math.max(1.5f,gap*.18f))ink=true;
+                    if(distance>Math.max(3,gap*.3f))wide=true;
+                }
+                if(ink)supported++;
+                if(ink&&!wide)thin++;
+            }
+            if(visible>=gap&&supported>=visible*.9f&&thin>=visible*.85f)return true;
         }
         return false;
     }
