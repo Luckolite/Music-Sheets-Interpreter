@@ -994,7 +994,9 @@ final class OmrScoreInterpreter {
         if(gray==null)return false;
         float gap=staff.pitchGap,top=staff.pitchBottom-gap*4;
         float gh=body.maxY-body.minY+1,gw=body.maxX-body.minX+1;
-        if(gh<gap*1.3f||gh>gap*3.7f||gw<gap*1.3f||gw>gap*2.8f
+        // Segmentation may lose the left curl of a small bass clef. A narrower
+        // seed still needs both printed dots and the descending tail below them.
+        if(gh<gap*1.3f||gh>gap*3.7f||gw<gap*1.0f||gw>gap*2.8f
                 ||body.area<gap*gap*.5f||Math.abs(body.minY-top)>gap*.65f)return false;
         int left=Math.max(0,Math.round(body.maxX+gap*.10f));
         int right=Math.min(width-1,Math.round(body.maxX+gap*1.15f));
