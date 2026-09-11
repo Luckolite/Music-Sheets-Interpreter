@@ -1079,6 +1079,7 @@ final class OmrScoreInterpreter {
                                                           List<Component> heads) {
         List<ScoreKeyChange> result = new ArrayList<>();
         candidates = joinSignatureFragments(labels, width, candidates, staffs);
+        candidates = splitSignatureSharps(labels, width, height, candidates, staffs);
         for (int measureIndex = 0; measureIndex < measures.size(); measureIndex++) {
             MeasureRegion measure = measures.get(measureIndex);
             Map<Integer, Integer> votes = new HashMap<>();
@@ -1167,6 +1168,10 @@ final class OmrScoreInterpreter {
                 // when its own spines confused the nearby double-bar test.
                 if(strongest==1&&!signatureHeader&&firstHead-run.get(run.size()-1).x<staff.gap*1.35f)continue;
                 int fifths = naturals > 0 ? 0 : flats > 0 ? -flats : sharps;
+                if (signatureHeader && !result.isEmpty() && fifths > 0
+                        && result.get(result.size() - 1).fifths() > fifths
+                        && unfinishedSharpTail(labels, width, height, candidates, run, staff, firstHead))
+                    continue;
                 votes.put(fifths, votes.getOrDefault(fifths, 0) + 1);
             }
             int bestFifths = 0, bestVotes = 0;
@@ -1184,6 +1189,96 @@ final class OmrScoreInterpreter {
                 result.add(new ScoreKeyChange(measureIndex, bestFifths));
         }
         return List.copyOf(result);
+    }
+
+    /** A visibly unfinished extra sharp cannot prove that a repeated key has fewer sharps. */
+    private static boolean unfinishedSharpTail(byte[] labels, int width, int height,
+            List<AccidentalCandidate> candidates, List<SignatureGlyph> run, Staff staff, float firstHead) {
+        float lastX = run.get(run.size() - 1).x, lastPitch = Float.NaN;
+        for (AccidentalCandidate candidate : candidates)
+            if (Math.abs(candidate.component.centerX - lastX) < staff.gap * .35f
+                    && candidate.component.centerY >= staff.top - staff.gap * 2.25f
+                    && candidate.component.centerY <= staff.bottom + staff.gap * 2.25f) {
+                float pitch = sharpPitchCenter(labels, width, height, candidate, staff.gap);
+                if (Float.isFinite(pitch)) lastPitch = pitch;
+            }
+        if (!Float.isFinite(lastPitch)) return false;
+        for (AccidentalCandidate candidate : candidates) {
+            Component c = candidate.component;
+            float dx = c.centerX - lastX;
+            if (candidate.label != OmrMeasurePostProcessor.CLEF_OR_KEY
+                    || c.centerY < staff.top - staff.gap * 2.25f
+                    || c.centerY > staff.bottom + staff.gap * 2.25f
+                    || dx < staff.gap * .65f || dx > staff.gap * 1.85f
+                    || firstHead - c.centerX < staff.gap * 1.35f
+                    || c.maxX-c.minX+1 < staff.gap*.5f || c.maxX-c.minX+1 > staff.gap*1.8f
+                    || c.maxY-c.minY+1 < staff.gap*1.2f || c.maxY-c.minY+1 > staff.gap*3.65f
+                    || c.area < staff.gap*staff.gap*.3f
+                    || isNaturalGlyph(labels,width,height,candidate,staff.gap)
+                    || isFlatGlyph(labels,width,height,candidate,staff.gap)
+                    || isSharpGlyph(labels,width,height,candidate,staff.gap)) continue;
+            for (float expected : new float[]{lastPitch + staff.gap*1.5f, lastPitch - staff.gap*2f})
+                if (expected >= c.minY - staff.gap*.2f && expected <= c.maxY + staff.gap*.2f) return true;
+        }
+        return false;
+    }
+
+    /** Resolve joined signature sharps only when each slice has a complete sharp shape. */
+    private static List<AccidentalCandidate> splitSignatureSharps(byte[] labels, int width, int height,
+            List<AccidentalCandidate> candidates, List<Staff> staffs) {
+        List<AccidentalCandidate> result = new ArrayList<>();
+        for (AccidentalCandidate candidate : candidates) {
+            Staff staff = nearestHeadStaff(staffs, candidate.component.centerY);
+            List<AccidentalCandidate> parts = candidate.label == OmrMeasurePostProcessor.CLEF_OR_KEY
+                    && staff != null ? splitSignatureSharpRun(labels, width, height, candidate, staff.gap, 7)
+                    : List.of();
+            if (parts.size() >= 2) result.addAll(parts); else result.add(candidate);
+        }
+        return result;
+    }
+
+    private static List<AccidentalCandidate> splitSignatureSharpRun(byte[] labels, int width, int height,
+            AccidentalCandidate candidate, float gap, int remaining) {
+        Component box = candidate.component;
+        if (isSharpGlyph(labels, width, height, candidate, gap)) return List.of(candidate);
+        if (remaining < 2 || box.maxX - box.minX + 1 < gap * 1.65f
+                || box.maxX - box.minX + 1 > gap * remaining * 1.8f
+                || box.maxY - box.minY + 1 > gap * 7f) return List.of();
+        int first = box.minX + Math.max(3, Math.round(gap * .65f));
+        int last = Math.min(box.maxX - Math.max(3, Math.round(gap * .65f)),
+                box.minX + Math.round(gap * 1.8f));
+        for (int cut = first; cut <= last; cut++) {
+            AccidentalCandidate left = signatureSlice(labels, width, candidate, box.minX, cut);
+            if (left == null) continue;
+            float leftPitch = sharpPitchCenter(labels, width, height, left, gap);
+            if (!Float.isFinite(leftPitch)) continue;
+            AccidentalCandidate right = signatureSlice(labels, width, candidate, cut + 1, box.maxX);
+            if (right == null) continue;
+            List<AccidentalCandidate> rest = splitSignatureSharpRun(labels, width, height, right, gap, remaining - 1);
+            if (rest.isEmpty()) continue;
+            float delta = sharpPitchCenter(labels, width, height, rest.get(0), gap) - leftPitch;
+            // Consecutive signature sharps alternate a fourth down or a fifth up.
+            if (Math.abs(delta - gap * 1.5f) > gap * .55f
+                    && Math.abs(delta + gap * 2f) > gap * .55f) continue;
+            List<AccidentalCandidate> result = new ArrayList<>();
+            result.add(left); result.addAll(rest); return result;
+        }
+        return List.of();
+    }
+
+    private static AccidentalCandidate signatureSlice(byte[] labels, int width,
+            AccidentalCandidate candidate, int left, int right) {
+        Component box = candidate.component;
+        int cropWidth = right - left + 1, cropHeight = box.maxY - box.minY + 1;
+        byte[] crop = new byte[cropWidth * cropHeight];
+        for (int y = box.minY; y <= box.maxY; y++) for (int x = left; x <= right; x++)
+            if (candidate.matches(labels[y * width + x])) crop[(y - box.minY) * cropWidth + x - left] = 3;
+        Component best = null;
+        for (Component piece : findComponents(crop, cropWidth, cropHeight, (byte) 3))
+            if (best == null || piece.area > best.area) best = piece;
+        return best == null ? null : new AccidentalCandidate(new Component(best.area,
+                best.minX + left, best.maxX + left, best.minY + box.minY, best.maxY + box.minY,
+                best.centerX + left, best.centerY + box.minY), candidate.label);
     }
 
     /** Reconnect a signature glyph cut horizontally by a staff-labelled scan line. */
@@ -3228,6 +3323,14 @@ final class OmrScoreInterpreter {
                 || columns[leftSpine] < glyphHeight * .46f
                 || columns[rightSpine] < glyphHeight * .46f) return Float.NaN;
 
+        // Two thick but disconnected spines are not a crossbar.
+        // Require ink to bridge their inner gap before considering row width.
+        for (int row = 0; row < glyphHeight; row++) {
+            int bridge = 0;
+            for (int col = leftSpine; col <= rightSpine; col++)
+                if (candidate.matches(labels[(glyph.minY + row) * width + glyph.minX + col])) bridge++;
+            if (bridge < (rightSpine - leftSpine + 1) * .70f) rows[row] = 0;
+        }
         // Measure crossbars against the two spines, not stray ink at the glyph edge.
         int wideThreshold = Math.max(2, Math.round((rightSpine-leftSpine+1) * 1.15f));
         List<int[]> crossbars=new ArrayList<>();
