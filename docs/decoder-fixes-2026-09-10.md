@@ -818,3 +818,36 @@ weights and licensing are unchanged. Guide112/audio28 refresh derived caches in
 the next app build. The installed phone app remains 1.18.111 without these fixes;
 this is source and captured-input validation, not an installed listening test.
 Original rollback snapshots and separate mixed experiments are preserved.
+
+## Recover tightly spaced repeated noteheads
+
+A thin semantic bridge along a staff line could join an entire tightly engraved
+run into a single long notehead component. The oversized component then failed
+notehead validation, dropping every attack it contained. The decoder now separates
+three or more repeated heads only when raw ink shows distinct oval lobes and
+every resulting head has an attached printed stem. Each part must also satisfy
+head size, area, vertical alignment and filled-center checks. Solid blobs,
+stemless rows and ordinary single heads retain their previous treatment.
+
+Seven original synthetic tests cover recovered attacks, pitch, beam counts,
+solid-blob and stemless rejection, ordinary heads and input preservation. Three
+fail on the previous decoder. All 643 Java tests, 13 Python tests, PNG/PDF/MIDI
+smoke checks and 62 focused Android tests pass.
+
+Across 26 targeted score pages, 25 full outputs are identical. The affected bar
+gains exactly 14 source-confirmed G4 notes, with no removed events or changed
+pitches. Seven existing onsets or durations change as the recovered attacks
+replace the previously stretched timing. All 214 newly reviewed pitches across
+three preceding chord bars and the affected run match the printed source.
+The expanded set has 3,292 passing pitch/presence assertions out of 3,306; the
+14 previously documented unrelated failures remain. One separate partial-beam
+error remains in the recovered bar: its second note is a thirty-second but is
+still decoded as a sixteenth, shifting subsequent onsets by one eighth beat.
+This recovery does not claim complete rhythm accuracy.
+
+The later page was checked from saved source data. A new phone capture could not
+run because wireless debugging disconnected; no phone update is claimed. Only
+the general repair and original synthetic tests are public. Private score pixels,
+transcriptions and device data remain private. No model or license changes.
+Guide113/audio29 invalidate derived caches in the next app build. Existing mixed
+experiments and rollback snapshots remain preserved.

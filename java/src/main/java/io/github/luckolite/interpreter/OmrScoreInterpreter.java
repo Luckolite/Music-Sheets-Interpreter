@@ -1318,6 +1318,8 @@ final class OmrScoreInterpreter {
         for (Component component : source) {
             Staff staff = nearestHeadStaff(staffs, component.centerY);
             float componentHeight = component.maxY - component.minY + 1f;
+            List<Component> run=splitRepeatedHeadRun(labels,gray,width,height,component,staff);
+            if(!run.isEmpty()){result.addAll(run);continue;}
             List<Component> filled = splitTouchingFilledVoices(labels, gray, width, height,
                     component, staff);
             if (!filled.isEmpty()) { result.addAll(filled); continue; }
@@ -1419,6 +1421,38 @@ final class OmrScoreInterpreter {
                 result.add(upper);
                 result.add(lower);
             } else result.add(component);
+        }
+        return List.copyOf(result);
+    }
+
+    /** Thin semantic bridges can join a tightly engraved repeated run. Require
+     * distinct raw oval lobes and an attached stem for every recovered attack. */
+    private static List<Component> splitRepeatedHeadRun(byte[] labels,byte[] gray,int width,int height,
+                                                       Component head,Staff staff) {
+        if(gray==null||staff==null)return List.of();
+        float gap=staff.gap;int w=head.maxX-head.minX+1,h=head.maxY-head.minY+1;
+        if(w<gap*3.2f||h<gap*.65f||h>gap*1.4f)return List.of();
+        int[] columns=new int[w];
+        for(int x=0;x<w;x++)for(int y=head.minY;y<=head.maxY;y++)
+            if((gray[y*width+head.minX+x]&255)<=165)columns[x]++;
+        List<Integer> cuts=new ArrayList<>();
+        for(int x=0;x<w;) {
+            if(columns[x]>h*.35f){x++;continue;}
+            int start=x;while(x<w&&columns[x]<=h*.35f)x++;
+            if(start>0&&x<w)cuts.add(head.minX+(start+x-1)/2);
+        }
+        if(cuts.size()<2)return List.of();
+        cuts.add(head.maxX);List<Component> result=new ArrayList<>();int left=head.minX;
+        for(int right:cuts) {
+            Component part=horizontalHeadSlice(labels,width,head,left,right);left=right+1;
+            if(part==null||!plausibleHead(part,gap)||part.maxX-part.minX+1<gap*.8f
+                    ||part.maxX-part.minX+1>gap*1.9f||part.area<gap*gap*.4f
+                    ||Math.abs(part.centerY-head.centerY)>gap*.25f
+                    ||hasOpenCenter(labels,gray,width,height,part,gap)
+                    ||attachedRawStem(gray,width,height,part,gap)==null)return List.of();
+            int peak=0;for(int x=part.minX;x<=part.maxX;x++)peak=Math.max(peak,columns[x-head.minX]);
+            if(peak<h*.7f)return List.of();
+            result.add(part);
         }
         return List.copyOf(result);
     }
