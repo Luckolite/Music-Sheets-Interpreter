@@ -65,6 +65,9 @@ final class OmrScoreInterpreter {
                 else heads.add(head);
             }
         }
+        List<Component> shortTies=shortTieBowlHeads(labels,gray,width,height,heads,staffs);
+        heads.removeAll(shortTies);
+        rejectedSlurHeads.addAll(shortTies);
         // A bright paper halo can enlarge a printed augmentation dot enough for the model to label it
         // as a second plausible notehead. Demote only small, stemless components immediately to
         // the right of a substantially larger head; grace notes retain their attached stem.
@@ -2242,6 +2245,40 @@ final class OmrScoreInterpreter {
 
     /** A thin slur fragment joined to a staff line can form a false semantic oval.
      * Require a stem for this unusually flat shape; normal whole notes are taller. */
+
+    /** A short tie clipped by a staff rule can look like a complete small oval.
+     * Require two larger stemmed endpoints and a continuous arc through it. */
+    private static List<Component> shortTieBowlHeads(byte[] labels,byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> result=new ArrayList<>();
+        if(gray==null)return result;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.maxX-head.minX+1>gap*1.4f||head.maxY-head.minY+1>gap*.7f
+                    ||head.area>gap*gap*.6f||attachedRawStem(gray,width,height,head,gap*.65f)!=null)continue;
+            Component left=null,right=null;
+            for(Component other:heads) {
+                float dx=other.centerX-head.centerX,dy=Math.abs(other.centerY-head.centerY);
+                if(other==head||Math.abs(dx)<gap*.9f||Math.abs(dx)>gap*3.3f
+                        ||dy<gap*.4f||dy>gap*1.4f||other.area<head.area*1.8f
+                        ||other.maxX-other.minX+1<gap*1.1f
+                        ||attachedRawStem(gray,width,height,other,gap*.65f)==null)continue;
+                if(dx<0&&(left==null||other.centerX>left.centerX))left=other;
+                if(dx>0&&(right==null||other.centerX<right.centerX))right=other;
+            }
+            if(left==null||right==null||Math.abs(left.centerY-right.centerY)>gap*.2f
+                    ||head.minX<=left.maxX||head.maxX>=right.minX)continue;
+            int a=left.maxX+1,b=right.minX-1;
+            if(b-a+1<gap*1.3f||b-a+1>gap*4.5f)continue;
+            List<Component> retained=new ArrayList<>(heads);retained.remove(head);
+            byte[] arcLabels=tieLabelsWithoutSlurHeads(labels,width,List.of(head),retained);
+            if(hasContinuousTieArc(arcLabels,gray,width,height,a,b,
+                    (left.centerY+right.centerY)*.5f,gap,head))result.add(head);
+        }
+        return result;
+    }
+
     private static boolean flatStemlessFragment(byte[] gray, int width, int height,
                                                 Component head, float gap) {
         if(gray==null)return false;
@@ -3945,7 +3982,7 @@ final class OmrScoreInterpreter {
         int left = Math.max(0, previous.head.maxX + 1);
         int right = Math.min(width - 1, current.head.minX - 1);
         float gap = Math.max(2f, (previous.staffGap + current.staffGap) * .5f);
-        if (right <= left || right - left < gap * 1.3f) return false;
+        if (right <= left || right - left + 1 < gap * 1.3f) return false;
         float centerY = (previous.head.centerY + current.head.centerY) * .5f;
         if (gray != null && gray.length == labels.length) {
             if (hasPrintedTieArc(labels, gray, width, height, left, right, centerY, gap))return true;
@@ -3975,6 +4012,11 @@ final class OmrScoreInterpreter {
     /** Follow one returning curve; averaging nearby slurs, stems and ledger lines loses short ties. */
     private static boolean hasContinuousTieArc(byte[] labels, byte[] gray, int width, int height,
             int left, int right, float centerY, float gap) {
+        return hasContinuousTieArc(labels,gray,width,height,left,right,centerY,gap,null);
+    }
+
+    private static boolean hasContinuousTieArc(byte[] labels, byte[] gray, int width, int height,
+            int left, int right, float centerY, float gap,Component target) {
         int radius=Math.max(1,Math.round(gap*.09f));
         boolean[] straightRows=new boolean[height];
         for(int y=Math.max(0,Math.round(centerY-gap*3.2f));y<=Math.min(height-1,Math.round(centerY+gap*3.2f));y++) {
@@ -3985,6 +4027,7 @@ final class OmrScoreInterpreter {
         for(int side:new int[]{-1,1}) for(float offset=.2f;offset<=1.15f;offset+=.15f)
             for(float bend=-.75f;bend<=1.8f;bend+=.1f) {
                 if(Math.abs(bend)<.24f || offset+bend<.12f)continue;
+                if(target!=null&&Math.abs(centerY+side*gap*(offset+bend)-target.centerY)>gap*.25f)continue;
                 int hits=0,obscured=0;int[] bins=new int[5],coveredBins=new int[5];
                 float[] centers=new float[50],supportedCenters=new float[50];
                 java.util.Arrays.fill(centers,Float.NaN);

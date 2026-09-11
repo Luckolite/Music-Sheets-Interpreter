@@ -862,3 +862,35 @@ private. Model weights and license are unchanged. Guide116/audio32 invalidate
 derived caches in the next app build. The phone is disconnected; no new device
 validation is claimed. Existing rollback snapshots and mixed experiments remain
 preserved.
+
+## Keep short tie bowls out of the pitched melody
+
+A short tie crossing a staff rule can leave a compact, rounded semantic island.
+The existing slur filter required a longer complete raw curve, so that island
+could become a false note, interrupt the actual tie and delay following notes.
+The decoder now requires two larger stemmed endpoints at the same printed
+height and a continuous raw arc whose bend passes through the candidate island.
+Only then is the island excluded from notes and retained as arc ink for tie
+analysis. Inclusive pixel width is used for the shortest accepted tie span.
+
+Nine original synthetic tests cover lower and upper ties, corrupted and clean
+tie masks, independent filled and hollow notes between the same endpoints, an
+attached small note, a separate arc away from a sustained note, and input-array
+preservation. Three fail on the previous decoder. All 673 Java tests, 13 Python
+tests, PNG/PDF/MIDI smoke checks, 93 focused Android tests and debug lint pass.
+
+Across 30 targeted pages, 29 complete outputs are identical. The affected page
+loses four false pitched events; all real note pitches and positions remain
+unchanged. The affected four bars pass all 24 source timing/duration/tie checks.
+There are 13 updated real events as ties, one recovered quarter-note duration
+and subsequent onsets are corrected.
+All 4,719 passing or newly repaired source pitch/presence checks pass out of
+4,734; 15 separate known failures remain. This is selected validation, not an
+exhaustive library claim. The next hourly revisit was not run early.
+
+No song-specific production logic, model or license changes. Only original
+synthetic fixtures and general source are public. Commercial scores, private
+captures and source transcriptions remain private. Guide117/audio33 invalidate
+derived caches in the next app build. The published APK remains 1.18.113 without
+this additional repair. No new phone install or live validation is claimed;
+rollback snapshots and separate mixed experiments remain preserved.
