@@ -276,14 +276,19 @@ final class OmrScoreInterpreter {
         List<DetectedNote> restBodyHeads=new ArrayList<>();
         for(DetectedNote note:joined) {
             Component h=note.head;float gap=note.staffGap;
-            if(gray==null||attachedRawStem(gray,width,height,h,gap)!=null)continue;
-            if(h.maxX-h.minX+1<=gap*.7f&&h.maxY-h.minY+1<=gap*.7f
+            if(gray==null)continue;
+            int[] stem=attachedRawStem(gray,width,height,h,gap);
+            if(stem==null&&h.maxX-h.minX+1<=gap*.7f&&h.maxY-h.minY+1<=gap*.7f
                     &&h.area<=gap*gap*.32f)compactDots.add(note);
             // The zigzag body can generate a larger prediction than an
             // augmentation dot. Its complete raw shape supplies separate
             // evidence, so do not make it pass the tiny-dot size gate.
+            // A quarter-rest zigzag can resemble a stem when several blank
+            // rows are bridged. Preserve continuous stems, but let complete
+            // rest recognition adjudicate a compact head on that broken path.
             if(h.maxX-h.minX+1<=gap*1.05f&&h.maxY-h.minY+1<=gap*1.05f
-                    &&h.area<=gap*gap*.65f)restBodyHeads.add(note);
+                    &&h.area<=gap*gap*.65f
+                    &&(stem==null||attachedRawStem(gray,width,height,h,gap,1)==null))restBodyHeads.add(note);
         }
         if(!compactDots.isEmpty()||!restBodyHeads.isEmpty()) {
             List<ScoreNoteEvent> owners=new ArrayList<>(result);
@@ -294,7 +299,7 @@ final class OmrScoreInterpreter {
             List<ScoreRestEvent> verifiedBodies=new ArrayList<>();
             // An independently recognized complete quarter-rest body can
             // establish ownership even when its false head blocked the first
-            // pass. Stemmed heads are excluded from both candidate lists.
+            // pass. Continuous stems remain excluded from the body candidates.
             for(DetectedNote note:restBodyHeads)for(ScoreRestEvent rest:evidence.rests()) {
                 if(rest.durationBeats()<1||rest.durationBeats()>1.75
                         ||rest.measureIndex()!=note.event.measureIndex()
@@ -4335,6 +4340,10 @@ final class OmrScoreInterpreter {
     }
 
     private static int[] attachedRawStem(byte[] gray,int width,int height,Component head,float gap) {
+        return attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)));
+    }
+
+    private static int[] attachedRawStem(byte[] gray,int width,int height,Component head,float gap,int maxBlank) {
         if(gray==null)return null;
         int bestLength=0;int[] best=null;
         for(int direction:new int[]{-1,1}) {
@@ -4345,7 +4354,7 @@ final class OmrScoreInterpreter {
                     int y=Math.round(head.centerY)+direction*d;
                     if(y<0||y>=height)break;
                     boolean ink=(gray[y*width+x]&255)<170;
-                    if(ink){end=y;blank=0;}else if(++blank>Math.max(1,Math.round(gap*.16f)))break;
+                    if(ink){end=y;blank=0;}else if(++blank>maxBlank)break;
                 }
                 int length=Math.abs(end-Math.round(head.centerY));
                 if(length>bestLength){bestLength=length;best=new int[]{x,end,direction};}
