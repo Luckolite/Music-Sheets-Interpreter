@@ -12,10 +12,39 @@ final class PrintedMeasureRhythmGuard {
 
     static List<MeasureRegion> reconcile(List<MeasureRegion> raw, List<MeasureRegion> fitted,
                                          byte[] labels, byte[] gray, int width, int height) {
-        if (raw.stream().noneMatch(region -> fragments(region, fitted).size() == 2)) return fitted;
+        boolean split = raw.stream().anyMatch(region -> fragments(region, fitted).size() == 2);
+        if (!split && mergedOpening(raw, fitted).isEmpty()) return fitted;
         var notes = OmrScoreInterpreter.analyze(labels, gray, width, height, raw).notes();
-        var aligned = alignPrintedSeparators(raw, fitted, notes, gray, width, height);
+        var preserved = preserveWrittenOpening(raw, fitted, notes);
+        if (!split) return preserved;
+        var aligned = alignPrintedSeparators(raw, preserved, notes, gray, width, height);
         return preserveCompleteRuns(raw, aligned, notes, gray, width, height);
+    }
+
+    /** A short, note-bearing opening bar must not be merged to match later row counts. */
+    static List<MeasureRegion> preserveWrittenOpening(List<MeasureRegion> raw, List<MeasureRegion> fitted,
+            List<ScoreNoteEvent> notes) {
+        var pieces = mergedOpening(raw, fitted);
+        if (pieces.isEmpty() || notes.stream().noneMatch(n -> n.measureIndex() == 0 && n.compactOpening()))
+            return fitted;
+        List<MeasureRegion> result = new ArrayList<>(pieces);
+        result.addAll(fitted.subList(1, fitted.size()));
+        return List.copyOf(result);
+    }
+
+    private static List<MeasureRegion> mergedOpening(List<MeasureRegion> raw, List<MeasureRegion> fitted) {
+        if (raw.size() < 2 || fitted.isEmpty()) return List.of();
+        var combined = fitted.get(0);
+        if (!sameRow(raw.get(0), combined) || combined.left() > raw.get(0).left() + .006f
+                || combined.left() < raw.get(0).left() - .02f) return List.of();
+        List<MeasureRegion> pieces = new ArrayList<>();
+        for (var region : raw) {
+            if (!sameRow(region, combined) || region.right() > combined.right() + .006f) break;
+            pieces.add(region);
+        }
+        if (pieces.size() < 2 || Math.abs(pieces.get(pieces.size()-1).right()-combined.right()) > .006f)
+            return List.of();
+        return pieces;
     }
 
     static List<MeasureRegion> alignPrintedSeparators(List<MeasureRegion> raw, List<MeasureRegion> fitted,

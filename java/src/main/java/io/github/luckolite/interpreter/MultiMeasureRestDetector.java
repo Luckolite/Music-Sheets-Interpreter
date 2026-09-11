@@ -18,14 +18,19 @@ final class MultiMeasureRestDetector {
                                                              List<MeasureNumberReconciler.NumberToken> tokens) {
         if (labels == null || gray == null || width <= 0 || height <= 0
                 || labels.length != width * height || gray.length != labels.length
-                || measures == null || measures.isEmpty() || tokens == null || tokens.isEmpty())
+                || measures == null || measures.isEmpty() || tokens == null)
             return List.of();
         List<RestBarCandidate> restBars = candidateRestBars(labels, gray, width, height, measures);
         if (restBars.isEmpty()) return List.of();
 
+        List<MeasureNumberReconciler.NumberToken> readings = new ArrayList<>(tokens);
+        for (RestBarCandidate candidate : restBars) {
+            var count = standaloneCount(gray, width, height, candidate);
+            if (count != null && aboveStaff(count, labels, width, height, candidate.region())) readings.add(count);
+        }
         List<MeasureNumberReconciler.NumberToken> result = new ArrayList<>();
         boolean[] claimedMeasures = new boolean[measures.size()];
-        for (MeasureNumberReconciler.NumberToken token : tokens) {
+        for (MeasureNumberReconciler.NumberToken token : readings) {
             // Counts above multi-measure rests are normally 2-32. Larger values are overwhelmingly
             // likely to be a tempo, copyright year, or printed system number.
             if (token.value() < 2 || token.value() > 32) continue;
@@ -59,21 +64,21 @@ final class MultiMeasureRestDetector {
         List<RestBarCandidate> result = new ArrayList<>();
         for (int index = 0; index < measures.size(); index++) {
             MeasureRegion parent = measures.get(index);
-            // HOMR can classify the two bowls of a rest-count 8 as a whole note. Exclude
+            // Segmentation can classify a printed rest count as a notehead. Exclude
             // only that verified glyph above the staff, never other heads in the measure.
-            MeasureNumberReconciler.NumberToken eight = null;
+            MeasureNumberReconciler.NumberToken countGlyph = null;
             if (noteheadPixels[index] > noteFreeLimit && hasThickHorizontalBar(gray, width, height, parent)) {
                 MeasureNumberReconciler.NumberToken count = standaloneCount(gray, width, height,
                         new RestBarCandidate(index, parent));
-                if (count != null && count.value() == 8 && aboveStaff(count, labels, width, height, parent))
-                    eight = count;
+                if (count != null && aboveStaff(count, labels, width, height, parent))
+                    countGlyph = count;
             }
             // A real multi-measure rest owns an otherwise note-free visual measure. Looking only
             // at the sliding window is not enough: an ordinary written measure can contain a
             // long beam or staff-line segment in one locally empty window, and a nearby time
             // signature/OCR digit then expands that measure several times. Require the complete
             // parent measure to be note-free before treating any local heavy bar as a rest.
-            if (noteheadPixels[index] - countGlyphHeads(eight, labels, width, height, parent) > noteFreeLimit) continue;
+            if (noteheadPixels[index] - countGlyphHeads(countGlyph, labels, width, height, parent) > noteFreeLimit) continue;
             int parentLeft = clamp(Math.round(parent.left() * width), 0, width - 1);
             int parentRight = clamp(Math.round(parent.right() * width), parentLeft, width - 1);
             int parentTop = clamp(Math.round(parent.top() * height), 0, height - 1);
@@ -89,7 +94,7 @@ final class MultiMeasureRestDetector {
                 MeasureRegion window = new MeasureRegion(windowLeft / (float) width,
                         windowRight / (float) width, parent.top(), parent.bottom());
                 int localHeads = countLabel(labels, width, height, window,
-                        OmrMeasurePostProcessor.NOTEHEAD) - countGlyphHeads(eight, labels, width, height, window);
+                        OmrMeasurePostProcessor.NOTEHEAD) - countGlyphHeads(countGlyph, labels, width, height, window);
                 boolean thickBar = hasThickHorizontalBar(gray, width, height, window);
                 if (localHeads <= noteFreeLimit && thickBar)
                     addOrMerge(result, new RestBarCandidate(index, window));
@@ -111,7 +116,7 @@ final class MultiMeasureRestDetector {
 
     /**
      * ML Kit commonly ignores an isolated one-character OCR crop. Recognize only the distinctive
-     * printed 2/4/8 shapes above a heavy bar; eight also identifies mislabeled count ink.
+     * printed 2/4/8/9 shapes above a heavy bar, including mislabeled count ink.
      */
     static MeasureNumberReconciler.NumberToken standaloneCount(byte[] gray, int width, int height,
                                                                  RestBarCandidate candidate) {
@@ -159,10 +164,12 @@ final class MultiMeasureRestDetector {
             }
             int value = looksLikeEight(gray, width, regionHeight, minX, maxX, minY, maxY) ? 8
                     : looksLikeFour(gray, width, regionHeight, area,
-                    minX, maxX, minY, maxY) ? 4
+                    minX, maxX, minY, maxY) ? (looksLikeNine(gray, width, regionHeight,
+                    minX, maxX, minY, maxY) ? 9 : 4)
+                    : looksLikeNine(gray, width, regionHeight, minX, maxX, minY, maxY) ? 9
                     : looksLikeTwo(gray, width, regionHeight, area,
                     minX, maxX, minY, maxY) ? 2 : 0;
-            if (value == 0) continue;
+            if (value == 0 || !isolatedCountGlyph(gray,width,height,minX,maxX,minY,maxY)) continue;
             float distance = Math.abs((minX + maxX) * .5f - restCenterX);
             // A time-signature 4 can sit at the left edge of the opening measure. The count is
             // centered above the proven heavy rest bar, so evaluate every glyph and retain the
@@ -221,6 +228,59 @@ final class MultiMeasureRestDetector {
         return centers.size() == 2 && centers.get(0) < .45f && centers.get(1) > .55f;
     }
 
+    /** Standalone single-digit recognition must not read a letter or one digit from adjacent text. */
+    private static boolean isolatedCountGlyph(byte[] gray,int width,int height,int left,int right,int top,int bottom) {
+        int h=bottom-top+1,margin=Math.max(2,Math.round(h*.3f));
+        for(int direction:new int[]{-1,1}) {
+            int ink=0;
+            for(int y=Math.max(0,top);y<=Math.min(height-1,bottom);y++)
+                for(int dx=1;dx<=margin;dx++) {
+                    int x=direction<0?left-dx:right+dx;
+                    if(x>=0&&x<width&&(gray[y*width+x]&255)<=165)ink++;
+                }
+            if(ink>Math.max(2,Math.round(h*h*.035f)))return false;
+        }
+        return true;
+    }
+
+    /** A nine has one upper bowl and a right-hand tail that curves back left below it. */
+    private static boolean looksLikeNine(byte[] gray,int width,int regionHeight,
+                                         int left,int right,int top,int bottom) {
+        int w=right-left+1,h=bottom-top+1;
+        if(h<regionHeight*.13f||h>regionHeight*.48f||w<h*.4f||w>h*.95f)return false;
+        boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];
+        int holes=0;float holeY=0;
+        for(int i=0;i<seen.length;i++) {
+            if(seen[i]||(gray[(top+i/w)*width+left+i%w]&255)<=165)continue;
+            int read=0,size=1,area=0,sumY=0;boolean edge=false;queue[0]=i;seen[i]=true;
+            while(read<size) {
+                int at=queue[read++],x=at%w,y=at/w;area++;sumY+=y;
+                edge|=x==0||x==w-1||y==0||y==h-1;
+                for(int next:new int[]{at-1,at+1,at-w,at+w}) {
+                    if(next<0||next>=seen.length||seen[next]
+                            ||Math.abs(next%w-x)+Math.abs(next/w-y)!=1
+                            ||(gray[(top+next/w)*width+left+next%w]&255)<=165)continue;
+                    seen[next]=true;queue[size++]=next;
+                }
+            }
+            if(!edge&&area>=w*h*.035f){holes++;holeY=sumY/(float)area/h;}
+        }
+        if(holes!=1||holeY>.45f)return false;
+        int spine=0,bottomWidth=0;
+        for(int x=Math.round(w*.55f);x<w;x++) {
+            int count=0;
+            for(int y=Math.round(h*.3f);y<=Math.round(h*.8f);y++)
+                if((gray[(top+y)*width+left+x]&255)<=165)count++;
+            spine=Math.max(spine,count);
+        }
+        for(int y=Math.round(h*.78f);y<h;y++) {
+            int first=w,last=-1;
+            for(int x=0;x<w;x++)if((gray[(top+y)*width+left+x]&255)<=165){first=Math.min(first,x);last=x;}
+            if(first<w*.4f)bottomWidth=Math.max(bottomWidth,last-first+1);
+        }
+        return spine>=h*.45f&&bottomWidth>=w*.6f;
+    }
+
     /** Kept as a narrow compatibility seam for the original four-shape regression tests. */
     static MeasureNumberReconciler.NumberToken standaloneFour(byte[] gray, int width, int height,
                                                                 RestBarCandidate candidate) {
@@ -275,13 +335,11 @@ final class MultiMeasureRestDetector {
         float fill = area / (float) (glyphWidth * glyphHeight);
         if (fill < .13f || fill > .66f) return false;
         int[] rows = new int[glyphHeight];
-        int[] columns = new int[glyphWidth];
         int upperRight = 0, lowerLeft = 0, lowerDiagonal = 0;
         for (int y = minY; y <= maxY; y++) for (int x = minX; x <= maxX; x++) {
             if ((gray[y * width + x] & 0xff) > 165) continue;
             int localX = x - minX, localY = y - minY;
             rows[localY]++;
-            columns[localX]++;
             if (localX >= glyphWidth * .52f && localY <= glyphHeight * .48f) upperRight++;
             if (localX <= glyphWidth * .48f && localY >= glyphHeight * .52f) lowerLeft++;
             if (localX <= glyphWidth * .42f && localY >= glyphHeight * .52f
@@ -292,8 +350,13 @@ final class MultiMeasureRestDetector {
                 Math.round(glyphHeight * .30f)); y++) topStroke = Math.max(topStroke, rows[y]);
         for (int y = Math.max(0, Math.round(glyphHeight * .70f)); y < glyphHeight; y++)
             bottomStroke = Math.max(bottomStroke, rows[y]);
-        for (int x = Math.max(0, Math.round(glyphWidth * .58f)); x < glyphWidth; x++)
-            rightSpine = Math.max(rightSpine, columns[x]);
+        for (int x = Math.max(0, Math.round(glyphWidth * .58f)); x < glyphWidth; x++) {
+            int run = 0;
+            for (int y = minY; y <= maxY; y++) {
+                run = (gray[y * width + minX + x] & 255) <= 165 ? run + 1 : 0;
+                rightSpine = Math.max(rightSpine, run);
+            }
+        }
         return topStroke >= glyphWidth * .46f
                 && bottomStroke >= glyphWidth * .52f
                 && rightSpine < glyphHeight * .90f

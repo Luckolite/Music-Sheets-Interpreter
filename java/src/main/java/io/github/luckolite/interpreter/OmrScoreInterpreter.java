@@ -65,7 +65,10 @@ final class OmrScoreInterpreter {
                 else heads.add(head);
             }
         }
-        heads.removeAll(beamJunctionHeads(gray,width,height,heads,staffs));
+        List<Component> rejectedBeamHeads=beamJunctionHeads(gray,width,height,heads,staffs);
+        rejectedBeamHeads.addAll(mergedBeamInteriorHeads(gray,width,height,heads,staffs));
+        heads.removeAll(rejectedBeamHeads);
+        byte[] beamLabels=withoutBeamHeadIslands(labels,width,rejectedBeamHeads);
         heads.removeAll(straightEntranceFragments(gray,width,height,heads,staffs));
         List<Component> shortTies=shortTieBowlHeads(labels,gray,width,height,heads,staffs);
         heads.removeAll(shortTies);
@@ -184,11 +187,11 @@ final class OmrScoreInterpreter {
             float localGap=localPitch[1];
             float localBottom=printedLedgerBottom(gray,width,height,head,localPitch[0],localGap);
             int step = printedPitchStep(gray,width,height,head,localBottom,localGap);
-            int beamCount = detectBeamCount(labels, gray, width, height, head, staff);
+            int beamCount = detectBeamCount(beamLabels, gray, width, height, head, staff);
             int[] tremolo = tremoloStrokeCounts(gray,width,height,head,staff.gap,heads);
             beamCount = Math.max(0,beamCount-tremolo[1]);
             if(tremolo[0]>0)beamCount=Math.max(beamCount,
-                    beamsBeyondTremolo(gray,labels,width,height,head,staff));
+                    beamsBeyondTremolo(gray,beamLabels,width,height,head,staff));
             float unbeamedDuration = detectUnbeamedDuration(labels, gray, width, height,
                     head, staff.gap, beamCount);
             if(detachedTremolos.containsKey(head))unbeamedDuration=ScoreNoteEvent.DURATION_WHOLE;
@@ -223,11 +226,11 @@ final class OmrScoreInterpreter {
                 // Opposite stems share a printed pitch/attack but have separate durations.
                 for(int partIndex=0;partIndex<unison.size();partIndex++) {
                     Component part=unison.get(partIndex);
-                    int partBeams=partIndex==0?detectBeamCount(labels,gray,width,height,part,staff):0;
+                    int partBeams=partIndex==0?detectBeamCount(beamLabels,gray,width,height,part,staff):0;
                     int[] partTremolo=tremoloStrokeCounts(gray,width,height,part,staff.gap,heads);
                     if(partIndex==0&&partTremolo[0]>0)partBeams=Math.max(
                             Math.max(0,partBeams-partTremolo[1]),
-                            beamsBeyondTremolo(gray,labels,width,height,part,staff));
+                            beamsBeyondTremolo(gray,beamLabels,width,height,part,staff));
                     float partDuration=partIndex==0?(partBeams>0?0:1):2;
                     int partDots=partIndex==0?0:countAugmentationDots(dotCandidates,part,staff.gap,gray,width,height,true);
                     var separate=new ScoreNoteEvent(measureIndex,clamp(position),step,staff.index,staff.count,
@@ -2681,6 +2684,68 @@ final class OmrScoreInterpreter {
         return rejected;
     }
 
+    private static byte[] withoutBeamHeadIslands(byte[] labels,int width,List<Component> rejected) {
+        if(rejected.isEmpty())return labels;
+        byte[] result=labels.clone();
+        for(Component head:rejected)for(int y=head.minY;y<=head.maxY;y++)for(int x=head.minX;x<=head.maxX;x++)
+            if(result[y*width+x]==OmrMeasurePostProcessor.NOTEHEAD)result[y*width+x]=0;
+        return result;
+    }
+
+    /** Blurred parallel beams can merge into one broad strip with small mask islands inside. */
+    private static List<Component> mergedBeamInteriorHeads(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> rejected=new ArrayList<>();
+        if(gray==null)return rejected;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.maxX-head.minX+1>gap*2||head.maxY-head.minY+1>gap*.85f
+                    ||head.area>gap*gap)continue;
+            for(Component main:heads) {
+                if(main==head||main.area<Math.max(head.area*1.7f,gap*gap*1.2f)
+                        ||nearestHeadStaff(staffs,main.centerY)!=staff
+                        ||Math.abs(main.centerX-head.centerX)>gap*1.5f
+                        ||Math.abs(main.centerY-head.centerY)<gap*2
+                        ||Math.abs(main.centerY-head.centerY)>gap*6)continue;
+                int[] stem=attachedRawStem(gray,width,height,main,gap);
+                if(stem==null||stem[0]<head.minX-gap*.4f||stem[0]>head.maxX+gap*.4f
+                        ||Math.abs(stem[1]-head.centerY)>gap*1.85f)continue;
+                if(mergedBeamStrip(gray,width,height,head.centerX,head.centerY,gap)) {
+                    rejected.add(head);break;
+                }
+            }
+        }
+        return rejected;
+    }
+
+    static boolean mergedBeamStrip(byte[] gray,int width,int height,float centerX,float centerY,float gap) {
+        if(gray==null||gap<8)return false;
+        int cy=Math.round(centerY),radius=Math.round(gap*1.8f);
+        if(cy-radius<0||cy+radius>=height)return false;
+        for(int direction:new int[]{-1,1}) {
+            int valid=0,total=0;List<Integer> tops=new ArrayList<>(),bottoms=new ArrayList<>();
+            for(int dx=0;dx<=Math.round(gap*3);dx++) {
+                int x=Math.round(centerX)+direction*dx;if(x<0||x>=width)break;
+                total++;if((gray[cy*width+x]&255)>=165)continue;
+                int top=cy,bottom=cy;
+                while(top>cy-radius&&(gray[(top-1)*width+x]&255)<165)top--;
+                while(bottom<cy+radius&&(gray[(bottom+1)*width+x]&255)<165)bottom++;
+                int span=bottom-top+1;
+                if(span<gap*.85f||span>gap*1.8f)continue;
+                valid++;tops.add(top);bottoms.add(bottom);
+            }
+            if(total<Math.round(gap*3)||valid<total*.9f)continue;
+            var sortedTops=new ArrayList<>(tops);var sortedBottoms=new ArrayList<>(bottoms);
+            sortedTops.sort(Integer::compare);sortedBottoms.sort(Integer::compare);
+            int a=sortedTops.get(tops.size()/2),b=sortedBottoms.get(bottoms.size()/2),aligned=0;
+            for(int i=0;i<tops.size();i++)if(Math.abs(tops.get(i)-a)<=gap*.15f
+                    &&Math.abs(bottoms.get(i)-b)<=gap*.15f)aligned++;
+            if(aligned>=valid*.9f)return true;
+        }
+        return false;
+    }
+
     /** A beam has an extended straight core and no rounded head bulge at its tip. */
     static boolean narrowBeamTip(byte[] gray,int width,int height,float stemX,float centerY,float gap) {
         if(gray==null||gap<8)return false;
@@ -4549,9 +4614,12 @@ final class OmrScoreInterpreter {
         // a single beam crossed by a rule still has only one core.
         int darkest=165;
         for(int y=top;y<=bottom;y++)darkest=Math.min(darkest,gray[y*width+x]&255);
-        int coreThreshold=(darkest+165)/2;
-        int cores=thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,coreThreshold);
-        return cores==2&&separateBeamCores(gray,labels,width,x,top,bottom,staff,coreThreshold)?2:normal;
+        for(float fraction:new float[]{.5f,.25f}) {
+            int coreThreshold=darkest+Math.round((165-darkest)*fraction);
+            int cores=thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,coreThreshold);
+            if(cores==2&&separateBeamCores(gray,labels,width,x,top,bottom,staff,coreThreshold))return 2;
+        }
+        return normal;
     }
 
     private static boolean separateBeamCores(byte[] gray,byte[] labels,int width,int x,int top,int bottom,Staff staff,int threshold) {
@@ -4581,7 +4649,7 @@ final class OmrScoreInterpreter {
     private static int thickNonHeadBands(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff,int threshold) {
         float gap=staff.gap;
         if(x<1||x>=width-1)return 0;
-        int bands=0,strongBands=0,run=0,staffRows=0,staffEdges=0;
+        int bands=0,strongBands=0,run=0,staffRows=0;
         for(int y=top;y<=bottom+1;y++) {
             boolean ink=y<=bottom && (gray[y*width+x-1]&255)<threshold
                     &&(gray[y*width+x]&255)<threshold&&(gray[y*width+x+1]&255)<threshold
@@ -4594,7 +4662,6 @@ final class OmrScoreInterpreter {
                     if(x+dx<width&&(gray[y*width+x+dx]&255)<threshold)rightInk++;
                 }
                 if(leftInk>=span*.85f&&rightInk>=span*.85f)staffRows++;
-                else if(Math.max(leftInk,rightInk)>=span*.8f)staffEdges++;
             } else {
                 // Thick antialiased staff lines are not beams. Preserve thicker real beams
                 // crossing a staff, where most of the band extends beyond the staff ink.
@@ -4603,11 +4670,11 @@ final class OmrScoreInterpreter {
                 for(int line=0;line<5;line++)if(Math.abs(bandCenter-(staff.top+line*gap))<=gap*.3f)onStaff=true;
                 // The middle of a long beam also has ink on both sides. Suppress it only
                 // where an actual staff line runs; horizontal shape alone loses inner eighths.
-                boolean onlyStaff=onStaff&&(staffRows==run||(staffRows>=3&&staffEdges==1&&staffRows+1==run))
+                boolean onlyStaff=onStaff&&(staffRows==run||(staffRows>=3&&staffRows+1==run))
                         &&run<=gap*.55f;
                 if(run>=Math.max(3,Math.round(gap*.30f))&&!onlyStaff)bands++;
                 if(run>=Math.max(3,Math.ceil(gap*.30f))&&!onlyStaff)strongBands++;
-                run=0;staffRows=0;staffEdges=0;
+                run=0;staffRows=0;
             }
         }
         // Preserve a single narrow flag. Adding a second beam needs the full
@@ -4635,13 +4702,17 @@ final class OmrScoreInterpreter {
         int right = Math.min(width - 1, Math.round(stemX + gap * 1.5f));
         int top = Math.max(0, Math.round(upward ? end : end - gap * 2.3f));
         int bottom = Math.min(height - 1, Math.round(upward ? end + gap * 2.3f : end));
-        int rows = 0, nearEnd = 0, bulge = 0, exterior = 0;
+        int rows = 0, nearEnd = 0, bulge = 0, exterior = 0, rootRows = 0;
+        boolean skippedDetachedInk = false;
         for (int y = top; y <= bottom; y++) {
             if (Math.abs(y - head.centerY) < gap * .65f) continue;
             // Do not count staff/ledger strokes as the hook's side wall.
             if (rowLabelCount(labels, width, y, Math.max(0, stemX - Math.round(gap)),
                     Math.min(width - 1, stemX + Math.round(gap * 3)),
                     OmrMeasurePostProcessor.STAFF) > gap) continue;
+            // A staff rule can be painted as a generic symbol where a flag crosses
+            // it. Its long continuation on both sides is still printed evidence.
+            if (rawRuleBeyondFlag(gray,width,y,stemX,gap)) continue;
             int minX = right + 1, maxX = left - 1;
             for (int x = left; x <= right; x++) {
                 if ((gray[y * width + x] & 0xff) > 165
@@ -4652,15 +4723,37 @@ final class OmrScoreInterpreter {
                 minX = Math.min(minX, x); maxX = Math.max(maxX, x);
             }
             if (maxX < minX) continue;
+            // The dot of a neighbouring eighth rest may occupy the window before
+            // the hook leaves its stem. It cannot be the root of this flag.
+            if (Math.abs(y - end) < gap * .5f && minX - stemX > gap * .6f) {
+                skippedDetachedInk = true;
+                continue;
+            }
+            if (Math.abs(y - end) <= gap * 1.15f && minX - stemX <= gap * .5f) rootRows++;
             rows++;
             if (Math.abs(y - end) <= gap * 1.15f) nearEnd++;
             if (maxX - stemX >= gap * .55f) bulge++;
             if (maxX >= right - 1) exterior++;
         }
-        return rows >= Math.max(4, Math.round(gap * .65f))
+        // Discarding detached ink is safe only when the remaining hook has a
+        // root beside the stem. A slur entering from the far edge lacks it.
+        return (!skippedDetachedInk || rootRows >= Math.max(2, Math.round(gap * .16f)))
+                && rows >= Math.max(4, Math.round(gap * .65f))
                 && nearEnd >= Math.max(2, Math.round(gap * .16f))
                 && bulge >= Math.max(3, Math.round(gap * .30f))
                 && exterior <= Math.max(1, Math.round(rows * .15f));
+    }
+
+    private static boolean rawRuleBeyondFlag(byte[] gray,int width,int y,int stemX,float gap) {
+        for(int direction:new int[]{-1,1}) {
+            int samples=0,ink=0;
+            for(int dx=Math.round(gap*2);dx<=Math.round(gap*4);dx++) {
+                int x=stemX+direction*dx;if(x<0||x>=width)continue;
+                samples++;if((gray[y*width+x]&255)<=165)ink++;
+            }
+            if(samples<Math.max(6,Math.round(gap))||ink<samples*.85f)return false;
+        }
+        return true;
     }
 
     private static int rowLabelCount(byte[] labels, int width, int y, int left, int right,

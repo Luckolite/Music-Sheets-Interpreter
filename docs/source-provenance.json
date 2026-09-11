@@ -1,5 +1,5 @@
 {
-  "source_commit": "6e7c50348a65d33308c4174339f0cd8ca7f85690",
+  "source_commit": "308053d47ca14317a7501839760d9c60a4e0273f",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -32,7 +32,7 @@
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
-      "source_sha256": "8a9287798f9d2c5d2d1d48b59adbe599aa8ddd7a31715d70cdc06b0c46ccce69"
+      "source_sha256": "b10e6cc2bb455c439127cd0f85c4ee2ff555e24f73b21cbf48b8483f19fafbcf"
     },
     "NoteArticulation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulation.java",
@@ -48,11 +48,11 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "b1d4c8e29c579bff87d34cdb44992d6c7357543f899636f7ab3c9533d44f16c4"
+      "source_sha256": "409b0f8aff67848cf76171f13e223df495cfc8f3d1ef4696d8919cf570030e8f"
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "0238f1c333cb2a3a76c285aceef3815b6468a05c76b03b2cae769b13aeb5c167"
+      "source_sha256": "135cfa1b3c80326bdd1ecf746bc0f22db36fc1b8697749b6e7bcce1b3012a795"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -142,7 +142,7 @@
     },
     "PrintedMeasureRhythmGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedMeasureRhythmGuard.java",
-      "source_sha256": "baceaf0ae4a347c1f35bafdb2daeb3629761e56763095b70487370aca65416f1"
+      "source_sha256": "e47dd54c603800c28907a75e6f80f8e0d01db4e31a1994641fc405580287b050"
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",

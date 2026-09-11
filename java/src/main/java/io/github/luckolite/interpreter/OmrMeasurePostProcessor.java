@@ -323,7 +323,7 @@ final class OmrMeasurePostProcessor {
             int inset=Math.max(1,Math.round(gap*.12f));
             if(size>=gap*gap*.14f&&headWidth>=gap*.35f&&headWidth<=gap*2.5f
                     &&headHeight>=gap*.25f&&headHeight<=gap*1.6f
-                    &&center>right-inset&&center<=end-inset)return true;
+                    &&left+maxX>right-inset&&center<=end-inset)return true;
         }
         return false;
     }
@@ -388,10 +388,11 @@ final class OmrMeasurePostProcessor {
             // the segmentation model's stem/rest mask often shortens true barlines to stem height. Its generic
             // symbol mask retains more of the original line, so combine both semantic outputs
             // and rely on the absence of an attached notehead to reject ordinary note stems.
-            boolean rawSpansStaff = gray != null && rawBarlineSpansStaff(gray, width, height,
+            boolean semanticCandidate = covered >= Math.max(gap * 1.65f, span * 0.36f)
+                    && (touchesTop || touchesBottom);
+            boolean rawSpansStaff = gray != null && semanticCandidate && rawBarlineSpansStaff(gray, width, height,
                     x, rows, gap, shift, slope);
-            boolean semanticBar = covered >= Math.max(gap * 1.65f, span * 0.36f)
-                    && (touchesTop || touchesBottom) && (gray == null || rawSpansStaff);
+            boolean semanticBar = semanticCandidate && (gray == null || rawSpansStaff);
             // Raw pixels validate a semantic candidate, but never create one by themselves:
             // aligned note stems can span all five lines on dense music such as Humoresque.
             boolean bar = semanticBar && !attachedHead;
@@ -514,20 +515,76 @@ final class OmrMeasurePostProcessor {
         return false;
     }
 
+    /** Correct a local staff offset only when all five parallel printed rules support it. */
+    private static int printedRuleOffset(byte[] gray,int width,int height,int centerX,
+                                          int[] rows,float gap,float shift) {
+        int reach=Math.max(8,Math.round(gap*3)),skip=Math.max(2,Math.round(gap*.6f));
+        int separation=Math.max(2,Math.round(gap*.35f)),radius=Math.max(1,Math.round(gap*.08f));
+        int search=Math.max(1,Math.round(gap*1.3f)),best=0;double bestScore=-1;
+        for(int delta=-search;delta<=search;delta++) {
+            double minimum=1,total=0;
+            for(int line=0;line<5;line++) {
+                int y=Math.round(rows[line]+shift)+delta,ink=0,samples=0;
+                if(y-separation-radius<0||y+separation+radius>=height){minimum=0;break;}
+                for(int x=Math.max(0,centerX-reach);x<=Math.min(width-1,centerX+reach);x++) {
+                    if(Math.abs(x-centerX)<skip)continue;
+                    samples++;boolean found=false;
+                    for(int dy=-radius;dy<=radius;dy++) {
+                        int at=y+dy;
+                        int paper=((gray[(at-separation)*width+x]&255)+(gray[(at+separation)*width+x]&255))/2;
+                        if(paper-(gray[at*width+x]&255)>=20){found=true;break;}
+                    }
+                    if(found)ink++;
+                }
+                double coverage=samples==0?0:ink/(double)samples;
+                minimum=Math.min(minimum,coverage);total+=coverage;
+            }
+            if(minimum<.55)continue;
+            double score=minimum*2+total/5-Math.abs(delta)*.003;
+            if(score>bestScore){bestScore=score;best=delta;}
+        }
+        return best;
+    }
+
     /** A note stem can be tall in the semantic mask, but unlike a barline it does not form a
      * nearly continuous raw-ink path through both outer staff lines. */
     private static boolean rawBarlineSpansStaff(byte[] gray, int width, int height, int centerX,
                                                 int[] rows, float gap, float shift, float slope) {
+        shift += printedRuleOffset(gray,width,height,centerX,rows,gap,shift);
         int top = Math.max(0, Math.round(rows[0] + shift - gap * .12f));
         int bottom = Math.min(height - 1, Math.round(rows[4] + shift + gap * .12f));
         if (bottom <= top) return false;
+        // Gray paper must not supply the missing parts of a rest's vertical stroke.
+        int[] inkCutoff = new int[bottom - top + 1], paperTones = new int[bottom - top + 1];
+        int surround = Math.max(4, Math.round(gap * 2));
+        int[] tones = new int[256];
+        for (int y = top; y <= bottom; y++) {
+            java.util.Arrays.fill(tones,0);
+            int count=0;
+            for (int x = Math.max(0, centerX - surround); x <= Math.min(width - 1, centerX + surround); x++) {
+                tones[gray[y * width + x] & 255]++;count++;
+            }
+            // Isolated bright texture is not the paper tone against which to judge ink.
+            int paper=0,seen=tones[0],target=Math.max(1,(count*3+3)/4);
+            while(seen<target&&paper<255)seen+=tones[++paper];
+            paperTones[y - top] = paper;
+        }
+        // On an exact staff-rule row, all horizontal samples can be ink. Include
+        // neighboring paper rows so the rule does not break a genuine barline.
+        int paperRadius = Math.max(1, Math.round(gap * .4f));
+        for (int i = 0; i < inkCutoff.length; i++) {
+            int paper = 0;
+            for (int j = Math.max(0, i - paperRadius); j <= Math.min(paperTones.length - 1, i + paperRadius); j++)
+                paper = Math.max(paper, paperTones[j]);
+            inkCutoff[i] = Math.min(RAW_BARLINE_DARK, Math.max(0, paper - 12));
+        }
         int darkRows = 0, longest = 0, current = 0;
         boolean touchesTop = false, touchesBottom = false;
         int edgeBand = Math.max(2, Math.round(gap * .34f));
         for (int y = top; y <= bottom; y++) {
             boolean dark = false;
             for (int x = Math.max(0, centerX - 2); x <= Math.min(width - 1, centerX + 2); x++)
-                if ((gray[y * width + x] & 0xff) <= RAW_BARLINE_DARK) {
+                if ((gray[y * width + x] & 0xff) <= inkCutoff[y - top]) {
                     dark = true;
                     break;
                 }
@@ -562,13 +619,13 @@ final class OmrMeasurePostProcessor {
                             && rows[line + 1] + shift - y > gap * .29f;
                     if (awayFromRule) widthSamples++;
                     int x = Math.round(origin - slope * (y - (top + bottom) * .5f));
-                    if (x >= 0 && x < width && (gray[y * width + x] & 0xff) <= RAW_BARLINE_DARK) {
+                    if (x >= 0 && x < width && (gray[y * width + x] & 0xff) <= inkCutoff[y - top]) {
                         spaceCovered++;
                         if (!awayFromRule) continue;
                         int reach = Math.max(3, Math.round(gap * .65f));
                         // Estimate the adjacent paper tone. Dark paper must not
                         // turn every thin line into a page-wide branch.
-                        int paper = 0, surround = Math.round(gap * 2f);
+                        int paper = 0;
                         for (int dx = -surround; dx <= surround; dx++)
                             if (x + dx >= 0 && x + dx < width)
                                 paper = Math.max(paper, gray[y * width + x + dx] & 255);
