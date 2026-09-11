@@ -1988,6 +1988,12 @@ final class OmrScoreInterpreter {
         }
         staffs.sort(Comparator.comparingDouble(staff -> staff.top));
         for(Staff staff:staffs) {
+            if(!staff.printedPhase&&!staff.printedSlope) {
+                float[] straight=StaffPitchTrack.straightPitch(labels,gray,width,height,staff.pitchBottom,staff.pitchGap);
+                if(straight!=null) {
+                    staff.pitchBottom=straight[0];staff.pitchGap=straight[1];staff.pitchSlope=0;staff.printedPhase=true;
+                }
+            }
             staff.pitchTrack=StaffPitchTrack.detect(gray,width,height,
                 staff.printedPhase||staff.printedSlope?staff.pitchBottom-staff.pitchGap*4:staff.top,
                 staff.printedPhase||staff.printedSlope?staff.pitchBottom:staff.bottom,staff.pitchGap);

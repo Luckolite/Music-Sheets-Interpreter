@@ -81,6 +81,30 @@ final class StaffPitchTrack {
         return new StaffPitchTrack(samples);
     }
 
+    /** Recalibrate a straight semantic seed only when widely separated complete
+     * printed groups agree on the same staff. Faded rules need contrast evidence,
+     * not a darker global ink threshold. */
+    static float[] straightPitch(byte[] labels,byte[] gray,int width,int height,float bottom,float gap) {
+        if(labels==null||gray==null||gap<3||!straightRules(gray,width,height,bottom,gap))return null;
+        List<float[]> samples=new ArrayList<>();
+        for(int i=0;i<13;i++) {
+            float x=width*(.15f+i*.06f);
+            float[] rules=localRulesWithSlope(labels,gray,width,height,x,
+                    Math.round(x-gap*.6f),Math.round(x+gap*.6f),bottom,gap,0,true);
+            if(rules!=null)samples.add(new float[]{x,rules[0],rules[1]});
+        }
+        if(samples.size()<6||samples.get(samples.size()-1)[0]-samples.get(0)[0]<width*.6f)return null;
+        List<Float> bottoms=new ArrayList<>(),gaps=new ArrayList<>();
+        for(float[] sample:samples){bottoms.add(sample[1]);gaps.add(sample[2]);}
+        float base=median(bottoms),spacing=median(gaps);
+        for(float[] sample:samples)
+            if(Math.abs(sample[1]-base)>gap*.16f||Math.abs(sample[2]-spacing)>gap*.035f)return null;
+        // Do not change staff phase or perturb an already accurate seed.
+        if(Math.abs(base-bottom)>gap*.4f
+                ||Math.max(Math.abs(base-bottom),Math.abs(spacing-gap)*8)<gap*.5f)return null;
+        return new float[]{base,spacing};
+    }
+
     private static boolean straightRules(byte[] gray,int width,int height,float bottom,float gap) {
         int radius=Math.max(2,Math.round(gap*.3f)),flank=Math.max(2,Math.round(gap*.32f));
         // Broad evidence from all five original rules outweighs a few narrow
