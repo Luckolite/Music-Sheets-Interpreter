@@ -3001,7 +3001,7 @@ final class OmrScoreInterpreter {
                     area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
                 }
             }
-            if(area<3)continue;
+            if(area<3||rawStrokeLeavesCrop(gray,width,height,mask,w,h,left,top,gap))continue;
             Component g=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
             if(isNaturalGlyph(mask,w,h,new AccidentalCandidate(g,OmrMeasurePostProcessor.SYMBOL),gap))return true;
         }
@@ -3045,8 +3045,29 @@ final class OmrScoreInterpreter {
             }
         }
         if(area==0)return false;
+        // A crop through an annotation can give a flat a false lower-right spine.
+        // Recovered natural endpoints must finish inside the inspected column.
+        if(rawStrokeLeavesCrop(gray,width,height,ink,w,h,left,top,gap))return false;
         Component glyph=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
         return isNaturalGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap);
+    }
+
+    private static boolean rawStrokeLeavesCrop(byte[] gray,int width,int height,byte[] ink,
+            int w,int h,int left,int top,float gap) {
+        int reach=Math.max(2,Math.round(gap*.16f));
+        for(int side:new int[]{-1,1}) {
+            int edge=side<0?0:h-1;
+            for(int x=0;x<w;x++) {
+                if(ink[edge*w+x]==0)continue;
+                boolean continues=true;
+                for(int d=1;d<=reach;d++) {
+                    int y=top+edge+side*d;
+                    if(y<0||y>=height||(gray[y*width+left+x]&255)>=225){continues=false;break;}
+                }
+                if(continues)return true;
+            }
+        }
+        return false;
     }
 
     /** A complete sharp already has stronger shape evidence than a cropped raw
