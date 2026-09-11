@@ -66,6 +66,7 @@ public final class Main {
             var event=new LinkedHashMap<String,Object>();event.put("measureIndex",bar);event.put("staffIndex",note.staffIndex());
             event.put("staffCount",note.staffCount());event.put("midi",midi);event.put("clefInferred",guessed);
             event.put("startBeat",starts[bar]+ScoreNoteTiming.beatInMeasure(note,score.notes(),beats[bar]));
+            if(NoteOrnament.tremoloBeams(note.articulations())>0)event.put("tremoloBeats",NoteOrnament.tremoloBeats(note.articulations()));
             event.put("durationBeats",duration);event.put("durationFallback",estimated);event.put("tiedFromPrevious",note.tiedFromPrevious());
             event.put("x",(region.left()+note.positionInMeasure()*(region.right()-region.left()))*width);
             event.put("y",note.pageY()*height);events.add(event);

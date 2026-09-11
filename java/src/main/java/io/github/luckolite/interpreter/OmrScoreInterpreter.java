@@ -128,6 +128,10 @@ final class OmrScoreInterpreter {
             float localBottom=localPitch[0],localGap=localPitch[1];
             int step = Math.round((localBottom - head.centerY()) / (localGap * 0.5f));
             int beamCount = detectBeamCount(labels, gray, width, height, head, staff);
+            int[] tremolo = tremoloStrokeCounts(gray,width,height,head,staff.gap,heads);
+            beamCount = Math.max(0,beamCount-tremolo[1]);
+            if(tremolo[0]>0)beamCount=Math.max(beamCount,
+                    beamsBeyondTremolo(gray,labels,width,height,head,staff));
             float unbeamedDuration = detectUnbeamedDuration(labels, gray, width, height,
                     head, staff.gap, beamCount);
             // Beamed notes cannot have open heads. If a staff line, slur, or artwork edge near
@@ -151,16 +155,24 @@ final class OmrScoreInterpreter {
                     Math.max(-32, Math.min(32, step)), staff.index, staff.count,
                     clamp(normalizedY), false, augmentationDots, beamCount,
                     writtenAccidental, unbeamedDuration);
+            if(tremolo[0]>0)event=event.withArticulations(NoteOrnament.withTremolo(
+                    event.articulations(),beamCount+tremolo[0]));
             List<Component> unison=sideBySideUnison(labels,gray,width,height,head,staff.gap);
             if(!unison.isEmpty()) {
                 // Opposite stems share a printed pitch/attack but have separate durations.
                 for(int partIndex=0;partIndex<unison.size();partIndex++) {
                     Component part=unison.get(partIndex);
                     int partBeams=partIndex==0?detectBeamCount(labels,gray,width,height,part,staff):0;
+                    int[] partTremolo=tremoloStrokeCounts(gray,width,height,part,staff.gap,heads);
+                    if(partIndex==0&&partTremolo[0]>0)partBeams=Math.max(
+                            Math.max(0,partBeams-partTremolo[1]),
+                            beamsBeyondTremolo(gray,labels,width,height,part,staff));
                     float partDuration=partIndex==0?(partBeams>0?0:1):2;
                     int partDots=partIndex==0?0:countAugmentationDots(dotCandidates,part,staff.gap,gray,width,height,true);
                     var separate=new ScoreNoteEvent(measureIndex,clamp(position),step,staff.index,staff.count,
                             clamp(normalizedY),false,partDots,partBeams,writtenAccidental,partDuration);
+                    if(partTremolo[0]>0)separate=separate.withArticulations(
+                            NoteOrnament.withTremolo(0,partBeams+partTremolo[0]));
                     detected.add(new DetectedNote(separate,part,staff.gap));
                 }
                 continue;
@@ -171,7 +183,8 @@ final class OmrScoreInterpreter {
                 int partStep=Math.round((localBottom-part.centerY)/(localGap*.5f));
                 // Displaced seconds share the stem/attack, despite their two horizontal centres.
                 var chord=new ScoreNoteEvent(measureIndex,clamp(position),partStep,staff.index,staff.count,
-                        clamp(part.centerY/height),false,augmentationDots,beamCount,writtenAccidental,unbeamedDuration);
+                        clamp(part.centerY/height),false,augmentationDots,beamCount,writtenAccidental,unbeamedDuration)
+                        .withArticulations(event.articulations());
                 detected.add(new DetectedNote(chord,part,staff.gap));
             }
         }
@@ -315,7 +328,8 @@ final class OmrScoreInterpreter {
                 note.head.centerX, note.head.centerY, note.staffGap,
                 staffs.indexOf(staffForHead(labels,gray,width,height,staffs,note.head))));
         int[] marks = NoteArticulationDetector.detect(labels,gray,width,height,anchors);
-        for (int i=0;i<withRests.size();i++) withRests.set(i,withRests.get(i).withArticulations(marks[i]));
+        for (int i=0;i<withRests.size();i++) withRests.set(i,withRests.get(i).withArticulations(
+                withRests.get(i).articulations()|marks[i]));
         markGraceHeads(labels, gray, width, height, joined, withRests);
         for (int i=1;i<joined.size();i++) {
             int prior=i-1;
@@ -2366,18 +2380,31 @@ final class OmrScoreInterpreter {
                 float distance = Math.abs(main.centerY-candidate.centerY);
                 if (main == candidate || main.area < candidate.area * 2.2f
                         || main.maxX-main.minX+1 < gap
-                        || distance < gap * 1.2f || distance > gap * 4.5f
-                        || Math.abs(main.centerX-candidate.centerX) > gap) continue;
+                        || distance < gap * 1.2f || distance > gap * 7f
+                        || Math.abs(main.centerX-candidate.centerX) > gap*1.5f) continue;
                 int[] stem = attachedRawStem(gray, width, height, main, gap);
                 if (stem == null || (candidate.centerY-main.centerY)*stem[2] <= 0
                         || (candidate.centerY-stem[1])*stem[2] > gap * .3f
                         || Math.abs(candidate.centerX-stem[0]) > gap * .9f) continue;
                 int edge = stem[2] > 0 ? main.maxY : main.minY;
+                // A staff rule through the stroke can hide both of its far ends.
+                // Follow only thick ink on either side of the stem in that case.
+                boolean isolatedStroke=false;
+                int radius=Math.max(2,Math.round(gap*.35f)),wing=Math.max(2,Math.round(gap*.5f));
+                for(int y=Math.max(0,Math.round(candidate.centerY)-radius);
+                        y<=Math.min(height-1,Math.round(candidate.centerY)+radius);y++) {
+                    if(stem[0]-Math.round(gap*1.5f)<0||stem[0]+Math.round(gap*1.5f)>=width)break;
+                    if(thickStrokeInk(gray,width,height,stem[0]-wing,y,gap)
+                            &&thickStrokeInk(gray,width,height,stem[0]+wing,y,gap)
+                            &&boundedStrokeWing(gray,width,height,stem[0],y,gap,-1)
+                            &&boundedStrokeWing(gray,width,height,stem[0],y,gap,1)) {isolatedStroke=true;break;}
+                }
+                if(isolatedStroke) {fragments.add(candidate);break;}
                 int first = Math.max(1, Math.min(edge + stem[2]*Math.round(gap*.25f), stem[1]));
                 int last = Math.min(height-2, Math.max(edge + stem[2]*Math.round(gap*.25f), stem[1]));
                 int side = Math.max(2, Math.round(gap*.42f)), far = Math.round(gap*2f);
                 if (stem[0]-far < 0 || stem[0]+far >= width) continue;
-                int run = 0, bands = 0; boolean touches = false;
+                int run = 0, bands = 0; boolean touches = false, provenCrossStroke=false;
                 for (int y=first; y<=last+1; y++) {
                     boolean shortStroke = y<=last
                             && rawColumnInk(gray,width,stem[0]-side,y)
@@ -2389,12 +2416,16 @@ final class OmrScoreInterpreter {
                         if (run >= Math.max(2, Math.round(gap*.18f)) && run <= gap*.85f) {
                             bands++;
                             float center = y-(run+1)*.5f;
-                            if (Math.abs(center-candidate.centerY) < gap*.75f) touches=true;
+                            if (Math.abs(center-candidate.centerY) < gap*.75f) {
+                                touches=true;
+                                provenCrossStroke|=boundedStrokeWing(gray,width,height,stem[0],center,gap,-1)
+                                        &&boundedStrokeWing(gray,width,height,stem[0],center,gap,1);
+                            }
                         }
                         run=0;
                     }
                 }
-                if (bands >= 2 && touches) { fragments.add(candidate); break; }
+                if (touches&&(bands>=2||provenCrossStroke)) { fragments.add(candidate); break; }
             }
         }
         return fragments;
@@ -3446,7 +3477,100 @@ final class OmrScoreInterpreter {
         return result;
     }
 
-    /** Counts horizontal beam bands at the far end of the stem: 1=eighth through 3=32nd. */
+    /** Isolated thick strokes cross BOTH sides of their own stem and end before
+     * neighboring stems. Rhythmic beams and one-sided beam hooks fail those bounds. */
+    private static int[] tremoloStrokeCounts(byte[] gray,int width,int height,
+            Component head,float gap,List<Component> heads) {
+        int[] empty={0,0};
+        if(gray==null||head.maxX-head.minX+1<gap*.95f)return empty;
+        int[] stem=attachedRawStem(gray,width,height,head,gap);
+        if(stem==null)return empty;
+        int side=Math.max(2,Math.round(gap*.38f)),far=Math.max(side+2,Math.round(gap*1.4f));
+        if(stem[0]-far<0||stem[0]+far>=width)return empty;
+        int edge=stem[2]>0?head.maxY:head.minY;
+        int a=edge+stem[2]*Math.round(gap*.65f),b=stem[1]+stem[2]*Math.round(gap*.15f);
+        int first=Math.max(1,Math.min(a,b)),last=Math.min(height-2,Math.max(a,b));
+        java.util.Set<Long> strokeKeys=new java.util.HashSet<>(),nearKeys=new java.util.HashSet<>();
+        int run=0;
+        for(int y=first;y<=last+1;y++) {
+            boolean shortStroke=y<=last&&(gray[y*width+stem[0]-side]&255)<170
+                    &&(gray[y*width+stem[0]+side]&255)<170;
+            if(shortStroke)run++;
+            else {
+                if(run>=Math.max(2,Math.round(gap*.18f))&&run<=gap*.85f) {
+                    float center=y-(run+1)*.5f;boolean otherHead=false;
+                    for(Component other:heads)if(other!=head
+                            &&Math.abs(other.centerX-stem[0])<gap*1.5f
+                            &&center>=other.minY-gap*.25f&&center<=other.maxY+gap*.25f){otherHead=true;break;}
+                    int leftKey=otherHead?-1:strokeWingKey(gray,width,height,stem[0],center,gap,-1);
+                    int rightKey=otherHead?-1:strokeWingKey(gray,width,height,stem[0],center,gap,1);
+                    if(leftKey>=0&&rightKey>=0) {
+                        // A nearby staff rule can seed this same pair of wings twice.
+                        long key=((long)leftKey<<32)|(rightKey&0xffffffffL);strokeKeys.add(key);
+                        if((stem[1]-center)*stem[2]>=-gap*.2f
+                                &&(stem[1]-center)*stem[2]<=Math.max(4,Math.round(gap*1.85f)))nearKeys.add(key);
+                    }
+                }
+                run=0;
+            }
+        }
+        return strokeKeys.size()>3?empty:new int[]{strokeKeys.size(),nearKeys.size()};
+    }
+
+    private static boolean boundedStrokeWing(byte[] gray,int width,int height,int stemX,
+            float center,float gap,int side) {
+        return strokeWingKey(gray,width,height,stemX,center,gap,side)>=0;
+    }
+
+    private static int strokeWingKey(byte[] gray,int width,int height,int stemX,
+            float center,float gap,int side) {
+        int inner=Math.max(2,Math.round(gap*.32f)),outer=Math.round(gap*1.5f);
+        int top=Math.max(0,Math.round(center-gap)),bottom=Math.min(height-1,Math.round(center+gap));
+        int w=outer-inner+1,h=bottom-top+1;
+        if(w<2||h<2)return -1;
+        boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];int size=0,take=0;
+        int seedX=Math.max(inner,Math.round(gap*.5f))-inner;
+        for(int y=Math.max(top,Math.round(center)-2);y<=Math.min(bottom,Math.round(center)+2);y++) {
+            int at=(y-top)*w+seedX;
+            if(thickStrokeInk(gray,width,height,stemX+side*(inner+seedX),y,gap)){seen[at]=true;queue[size++]=at;}
+        }
+        if(size==0)return -1;
+        int key=Integer.MAX_VALUE;
+        while(take<size) {
+            int at=queue[take++],x=at%w,y=at/w;
+            if(x==w-1||y==0||y==h-1)return -1;
+            key=Math.min(key,(top+y)*width+stemX+side*(inner+x));
+            for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                int nx=x+dx,ny=y+dy;if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                int next=ny*w+nx;
+                if(!seen[next]&&thickStrokeInk(gray,width,height,stemX+side*(inner+nx),top+ny,gap)){seen[next]=true;queue[size++]=next;}
+            }
+        }
+        return key;
+    }
+
+    private static boolean thickStrokeInk(byte[] gray,int width,int height,int x,int y,float gap) {
+        if((gray[y*width+x]&255)>=170)return false;
+        int count=1,radius=Math.max(3,Math.round(gap*.45f));
+        for(int dy=1;dy<=radius&&y-dy>=0&&(gray[(y-dy)*width+x]&255)<170;dy++)count++;
+        for(int dy=1;dy<=radius&&y+dy<height&&(gray[(y+dy)*width+x]&255)<170;dy++)count++;
+        return count>=Math.max(3,Math.ceil(gap*.30f));
+    }
+
+    /** A numeral/head prediction painted over a stroke can hide that stroke from
+     * the original band count. Confirm the actual long beams outside its wings. */
+    private static int beamsBeyondTremolo(byte[] gray,byte[] labels,int width,int height,
+            Component head,Staff staff) {
+        float gap=staff.gap;int[] stem=attachedRawStem(gray,width,height,head,gap);
+        if(stem==null)return 0;
+        int a=stem[1]-stem[2]*Math.round(gap*2.3f),b=stem[1]+stem[2]*Math.round(gap*.6f);
+        int top=Math.max(0,Math.min(a,b)),bottom=Math.min(height-1,Math.max(a,b)),beams=0;
+        for(float offset:new float[]{-1.45f,-1.7f,1.45f,1.7f})
+            beams=Math.max(beams,thickNonHeadBands(gray,labels,width,height,
+                    stem[0]+Math.round(gap*offset),top,bottom,staff));
+        return Math.min(3,beams);
+    }
+
     private static int detectBeamCount(byte[] labels, byte[] gray, int width, int height,
                                        Component head, Staff staff) {
         float gap=staff.gap;

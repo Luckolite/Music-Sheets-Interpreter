@@ -12,7 +12,18 @@ public final class NoteOrnament {
     public static final int GRACE=1<<15;
     public static final int FROM_ABOVE=1<<13, FROM_PREVIOUS=1<<14;
     private static final int UPPER_SHIFT=9, LOWER_SHIFT=11;
-    public static final int ALL=GRACE|TYPE_MASK|DELAYED|FROM_ABOVE|FROM_PREVIOUS|(3<<UPPER_SHIFT)|(3<<LOWER_SHIFT);
+    private static final int TREMOLO_SHIFT=16, TREMOLO_MASK=7<<TREMOLO_SHIFT;
+    /** Number of beams in the performed subdivision; the printed note keeps its duration. */
+    public static int tremoloBeams(int marks) {
+        int beams=(marks&TREMOLO_MASK)>>>TREMOLO_SHIFT;return beams<=4?beams:0;
+    }
+    public static int withTremolo(int marks,int beams) {
+        return (marks&~TREMOLO_MASK)|(Math.max(0,Math.min(4,beams))<<TREMOLO_SHIFT);
+    }
+    public static double tremoloBeats(int marks) {
+        int beams=tremoloBeams(marks);return beams==0?0:1.0/(1<<beams);
+    }
+    public static final int ALL=TREMOLO_MASK|GRACE|TYPE_MASK|DELAYED|FROM_ABOVE|FROM_PREVIOUS|(3<<UPPER_SHIFT)|(3<<LOWER_SHIFT);
     private NoteOrnament() { }
     public static int type(int marks) { return marks&TYPE_MASK; }
     public static int accidental(int marks,boolean upper) {

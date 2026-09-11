@@ -42,16 +42,28 @@ def write_midi(document, path, bpm=120):
             start = max(0, round((offset + note["startBeat"]) * ppq))
             end = max(start + 1, round((offset + note["startBeat"] + note["durationBeats"]) * ppq))
             lane = (note["staffCount"], note["staffIndex"], pitch)
+            subdivision = note.get("tremoloBeats", 0)
+            if subdivision not in (0, .5, .25, .125, .0625):
+                raise ValueError("Unsupported tremolo subdivision")
+            step = round(subdivision * ppq)
             previous_tone = previous.get(lane)
-            if note["tiedFromPrevious"] and previous_tone is not None and abs(previous_tone[1] - start) <= ppq // 8:
+            if (note["tiedFromPrevious"] and previous_tone is not None
+                    and (step == 0 or previous_tone[3] == step)
+                    and abs(previous_tone[1] - start) <= ppq // 8):
                 previous_tone[1] = max(previous_tone[1], end)
             else:
-                tone = [start, end, pitch]
+                tone = [start, end, pitch, step]
                 tones.append(tone)
                 previous[lane] = tone
         offset += page["totalBeats"]
     active = {}
-    for start, end, pitch in sorted(tones):
+    performed = []
+    for start, end, pitch, step in tones:
+        if step:
+            performed.extend((tick, min(end, tick + step), pitch) for tick in range(start, end, step))
+        else:
+            performed.append((start, end, pitch))
+    for start, end, pitch in sorted(performed):
         # Simultaneous same-pitch voices need separate channels: one note-off must not
         # cut off another held voice. Other pitches can safely share those channels.
         channels = active.setdefault(pitch, {})
