@@ -1217,7 +1217,7 @@ final class OmrScoreInterpreter {
                             || glyph.centerY > staff.bottom + staff.gap * 2.25f) continue;
                     // A fragmented semantic double bar may resemble a flat bowl.
                     // Its source column still crosses the complete staff.
-                    if (glyph.maxX - glyph.minX + 1 <= staff.gap * .65f
+                    if (glyph.maxX - glyph.minX + 1 <= Math.round(staff.gap * .65f)
                             && fullStaffRule(gray, width, height, Math.round(glyph.centerX), staff)) continue;
                     int accidental = isNaturalGlyph(labels, width, height, candidate, staff.gap)
                             ? ScoreNoteEvent.ACCIDENTAL_NATURAL
