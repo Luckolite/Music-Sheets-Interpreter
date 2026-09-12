@@ -26,8 +26,11 @@ def main():
     classes = ROOT / 'build/test-classes'
     classes.mkdir(exist_ok=True)
     cp = os.pathsep.join(map(str, [ROOT / 'build/classes', *jars]))
+    source_list = ROOT / 'build/test-sources.txt'
+    source_list.write_text('\n'.join('"' + p.relative_to(ROOT).as_posix() + '"' for p in sources),
+                           encoding='utf-8')
     subprocess.run([jdk_tool('javac'), '--release', '17', '-encoding', 'UTF-8', '-cp', cp,
-                    '-d', str(classes), *map(str, sources)], check=True)
+                    '-d', str(classes), '@' + str(source_list)], cwd=ROOT, check=True)
     subprocess.run([jdk_tool('java'), '-cp', os.pathsep.join([str(classes), cp]),
                     'org.junit.runner.JUnitCore', *['io.github.luckolite.interpreter.' + p.stem for p in sources]], check=True)
 

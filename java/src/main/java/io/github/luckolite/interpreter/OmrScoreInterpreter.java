@@ -4368,9 +4368,14 @@ final class OmrScoreInterpreter {
             float horizontal = dot.centerX - head.maxX;
             if (horizontal < gap * .12f || horizontal > gap * 2.2f) continue;
             // Raw antialiasing often leaves a 2-4 px island just beyond the semantic oval.
-            // A printed augmentation dot has its own engraving slot at least one staff gap
-            // from the head centre; the edge island is still part of the notehead.
-            if (dot.centerX - head.centerX < gap) continue;
+            // A compact engraving slot can fall just inside one staff gap. Require a
+            // separated round body there; tiny edge islands remain part of the head.
+            if (dot.centerX - head.centerX < gap
+                    && (gray == null || dot.centerX - head.centerX < gap * .85f
+                    || dot.minX - head.maxX < gap * .18f
+                    || Math.min(dotWidth, dotHeight) < gap * .22f
+                    || dot.area < gap * gap * .045f
+                    || dot.area >= dotWidth * dotHeight)) continue;
             // Augmentation dots sit beside the head (with at most the usual line-to-space
             // engraving offset). A detached bowing/staccato mark near the next note is not a dot.
             if (Math.abs(dot.centerY - head.centerY) > gap * .65f) continue;
