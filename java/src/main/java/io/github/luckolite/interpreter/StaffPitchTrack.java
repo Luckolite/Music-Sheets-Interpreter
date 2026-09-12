@@ -217,6 +217,18 @@ final class StaffPitchTrack {
         return null;
     }
 
+    /** A beam may cover one rule beside a head near the printed staff edge.
+     * Keep nine independently contrasted side/rule observations and require
+     * thick ink plus a staff label at the single covered observation. */
+    static float[] localOccludedRules(byte[] labels,byte[] gray,int width,int height,float x,int headLeft,int headRight,
+                                     float referenceBottom,float gap) {
+        for(float slope:new float[]{0,.04f,-.04f,.08f,-.08f,.12f,-.12f,.16f,-.16f}) {
+            float[] found=localRulesWithSlope(labels,gray,width,height,x,headLeft,headRight,referenceBottom,gap,slope,true,true);
+            if(found!=null)return found;
+        }
+        return null;
+    }
+
     private static float[] localRulesWithSlope(byte[] labels,byte[] gray,int width,int height,float x,int headLeft,int headRight,
                               float referenceBottom,float gap,float slope) {
         return localRulesWithSlope(labels,gray,width,height,x,headLeft,headRight,referenceBottom,gap,slope,false);
@@ -224,8 +236,12 @@ final class StaffPitchTrack {
 
     private static float[] localRulesWithSlope(byte[] labels,byte[] gray,int width,int height,float x,int headLeft,int headRight,
                               float referenceBottom,float gap,float slope,boolean bilateral) {
+        return localRulesWithSlope(labels,gray,width,height,x,headLeft,headRight,referenceBottom,gap,slope,bilateral,false);
+    }
+    private static float[] localRulesWithSlope(byte[] labels,byte[] gray,int width,int height,float x,int headLeft,int headRight,
+                              float referenceBottom,float gap,float slope,boolean bilateral,boolean occluded) {
         if(gray==null)return null;
-        int radius=Math.max(4,Math.round(gap*3.5f)),exclusion=Math.max(1,Math.round(gap*.45f));
+        int radius=Math.max(4,Math.round(gap*(occluded?2.5f:3.5f))),exclusion=Math.max(1,Math.round(gap*.45f));
         int left=Math.max(0,Math.round(x)-radius),right=Math.min(width-1,Math.round(x)+radius);
         int top=Math.max(0,Math.round(referenceBottom-gap*5.5f)),bottom=Math.min(height-1,Math.round(referenceBottom+gap*1.5f));
         if(bottom<top)return null;
@@ -242,7 +258,7 @@ final class StaffPitchTrack {
             }
         }
         if(samples<8)return null;
-        int minimum=Math.max(8,Math.round(samples*(bilateral?.60f:.45f))),band=Math.max(2,Math.round(gap*.25f));
+        int minimum=Math.max(8,Math.round(samples*(occluded?.35f:bilateral?.60f:.45f))),band=Math.max(2,Math.round(gap*.25f));
         // Reject beam-only peaks before selecting a five-line group, so a stronger beam
         // cannot hide a valid staff group through overlap suppression.
         for(int row=0;row<strength.length;row++)if(strength[row]>=minimum) {
@@ -279,9 +295,10 @@ final class StaffPitchTrack {
                 if(Math.abs(outside-expected)<gap*.35f&&printedRuleOnBothSides(gray,width,height,x,
                         headLeft,headRight,outside,slope,left,right,exclusion,band,flank))continue;
             }
+            if(occluded&&Math.abs(base-referenceBottom)>gap*.45f)continue;
             if(consistent==5&&Math.abs(base-referenceBottom)<=gap*1.5f
                     &&(!bilateral||supportedOnBothSides(labels,gray,width,height,x,headLeft,headRight,
-                            base,spacing,slope,left,right,exclusion,band,flank)))return new float[]{base,spacing};
+                            base,spacing,slope,left,right,exclusion,band,flank,occluded)))return new float[]{base,spacing};
         }
         return null;
     }
@@ -308,11 +325,12 @@ final class StaffPitchTrack {
 
     private static boolean supportedOnBothSides(byte[] labels,byte[] gray,int width,int height,
             float x,int headLeft,int headRight,float base,float gap,float slope,
-            int left,int right,int exclusion,int band,int flank) {
+            int left,int right,int exclusion,int band,int flank,boolean occluded) {
+        int covered=0;
         for(int side=0;side<2;side++)for(int line=0;line<5;line++) {
             int first=side==0?left:headRight+exclusion+1;
             int last=side==0?headLeft-exclusion-1:right;
-            int samples=0,inkColumns=0,labelColumns=0;
+            int samples=0,inkColumns=0,labelColumns=0,thickColumns=0;
             for(int xx=first;xx<=last;xx++) {
                 if(xx<0||xx>=width)continue;
                 samples++;boolean ink=false,label=false;
@@ -324,8 +342,16 @@ final class StaffPitchTrack {
                     if(labels[yy*width+xx]==4)label=true;
                 }
                 if(ink)inkColumns++;if(label)labelColumns++;
+                int thick=Math.max(2,Math.round(gap*.25f));
+                for(int yy=Math.max(thick,center-band);yy<=Math.min(height-1-thick,center+band);yy++) {
+                    if((gray[yy*width+xx]&255)<140&&((gray[(yy-thick)*width+xx]&255)<140
+                            ||(gray[(yy+thick)*width+xx]&255)<140)){thickColumns++;break;}
+                }
             }
-            if(samples<8||inkColumns<samples*.5f||labelColumns<samples*.35f)return false;
+            if(samples<8||labelColumns<samples*.35f)return false;
+            if(inkColumns<samples*.5f) {
+                if(!occluded||thickColumns<samples*.6f||++covered>1)return false;
+            }
         }
         return true;
     }
