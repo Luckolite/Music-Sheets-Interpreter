@@ -2978,26 +2978,38 @@ final class OmrScoreInterpreter {
         return false;
     }
 
+    private static int slurInkThreshold(byte[] gray,int width,int height,Component head,float gap) {
+        int[] values=new int[256];int count=0;
+        int left=Math.max(0,Math.round(head.centerX-gap*2)),right=Math.min(width-1,Math.round(head.centerX+gap*2));
+        int top=Math.max(0,Math.round(head.centerY-gap*1.2f)),bottom=Math.min(height-1,Math.round(head.centerY+gap*1.2f));
+        for(int y=top;y<=bottom;y++)for(int x=left;x<=right;x++){values[gray[y*width+x]&255]++;count++;}
+        int cumulative=0,paper=255;
+        for(int i=0;i<256;i++){cumulative+=values[i];if(cumulative>=count*.85f){paper=i;break;}}
+        return Math.min(165,Math.max(40,paper-30));
+    }
+
     private static boolean flatStemlessFragment(byte[] gray, int width, int height,
                                                 Component head, float gap) {
         if(gray==null)return false;
+        int inkThreshold=slurInkThreshold(gray,width,height,head,gap);
         float w = head.maxX - head.minX + 1f, h = head.maxY - head.minY + 1f;
         if(h < gap*.65f && w > h*2.2f
-                && attachedRawStem(gray,width,height,head,gap)==null)return true;
+                && attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),inkThreshold)==null)return true;
         if(w>gap*1.2f || h>gap*.95f || head.area>gap*gap*.5f
-                || attachedRawStem(gray,width,height,head,gap*.65f)!=null)return false;
+                || attachedRawStem(gray,width,height,head,gap*.65f,Math.max(1,Math.round(gap*.65f*.16f)),inkThreshold)!=null)return false;
         return rawSlurBowl(gray,width,height,head,gap);
     }
 
     /** A segmentation island can cover only the roundest part of a longer slur.
      * Inspect its complete raw component after removing thin, continuous staff rules. */
     private static boolean rawSlurBowl(byte[] gray,int width,int height,Component head,float gap) {
+        int inkThreshold=slurInkThreshold(gray,width,height,head,gap);
         int left=Math.max(0,Math.round(head.centerX-gap*2)),right=Math.min(width-1,Math.round(head.centerX+gap*2));
         int top=Math.max(0,Math.round(head.centerY-gap*1.2f)),bottom=Math.min(height-1,Math.round(head.centerY+gap*1.2f));
         int w=right-left+1,h=bottom-top+1;
         boolean[] rules=new boolean[h];
         for(int y=0;y<h;y++) {
-            int count=0;for(int x=left;x<=right;x++)if((gray[(top+y)*width+x]&255)<=165)count++;
+            int count=0;for(int x=left;x<=right;x++)if((gray[(top+y)*width+x]&255)<=inkThreshold)count++;
             rules[y]=count>=w*.9f;
         }
         for(int y=0;y<h;) {
@@ -3008,7 +3020,7 @@ final class OmrScoreInterpreter {
         boolean[] visited=new boolean[w*h];int[] stack=new int[w*h];
         for(int origin=0;origin<visited.length;origin++) {
             int ox=origin%w,oy=origin/w;
-            if(visited[origin]||rules[oy]||(gray[(top+oy)*width+left+ox]&255)>165)continue;
+            if(visited[origin]||rules[oy]||(gray[(top+oy)*width+left+ox]&255)>inkThreshold)continue;
             int size=0;stack[size++]=origin;visited[origin]=true;
             int minX=w,maxX=-1,minY=h,maxY=-1,overlap=0;
             int[] counts=new int[w],sums=new int[w];
@@ -3021,14 +3033,14 @@ final class OmrScoreInterpreter {
                     int xx=x+dx,yy=y+dy;
                     if(xx<0||xx>=w||yy<0||yy>=h||rules[yy])continue;
                     int next=yy*w+xx;
-                    if(!visited[next]&&(gray[(top+yy)*width+left+xx]&255)<=165) {
+                    if(!visited[next]&&(gray[(top+yy)*width+left+xx]&255)<=inkThreshold) {
                         visited[next]=true;stack[size++]=next;
                     }
                 }
             }
             int span=maxX-minX+1,rise=maxY-minY+1;
             if(minX==0||maxX==w-1||minY==0||maxY==h-1||overlap<head.area*.55f
-                    ||span<gap*1.4f||span<(head.maxX-head.minX+1)*1.5f||rise>gap*1.2f||span<rise*1.6f)continue;
+                    ||span<gap*1.25f||span<(head.maxX-head.minX+1)*1.5f||rise>gap*1.2f||span<rise*1.6f)continue;
             float[] centers=new float[3];int[] bins=new int[3];
             for(int x=minX;x<=maxX;x++)if(counts[x]>0) {
                 int bin=Math.min(2,(x-minX)*3/span);centers[bin]+=sums[x]/(float)counts[x];bins[bin]++;
@@ -3039,7 +3051,8 @@ final class OmrScoreInterpreter {
             // Compact grace slurs can be deeper than a shallow tie. Require a stronger
             // returning bend and closer endpoint heights when admitting that geometry.
             boolean deep=rise>gap*.85f||span<rise*2.4f;
-            if(Math.abs(centers[1]-(centers[0]+centers[2])*.5f)>=Math.max(1.25f,gap*(deep?.25f:.1f))
+            float shallowBend=span<gap*1.4f&&Math.abs(centers[0]-centers[2])<gap*.1f?.09f:.1f;
+            if(Math.abs(centers[1]-(centers[0]+centers[2])*.5f)>=Math.max(1.25f,gap*(deep?.25f:shallowBend))
                     &&Math.abs(centers[0]-centers[2])<=gap*(deep?.4f:.65f))return true;
         }
         return false;
