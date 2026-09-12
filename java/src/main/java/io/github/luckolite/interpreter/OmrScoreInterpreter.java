@@ -167,7 +167,8 @@ final class OmrScoreInterpreter {
             // promote a tempo digit or other text into an extreme pitch.
             // Cross-staff stems may assign a note to the other voice. Validate
             // its printed position against the nearest physical staff instead.
-            Staff physicalStaff = nearestHeadStaff(staffs,head.centerY);
+            Staff physicalStaff = printedLedgerOwner(gray,width,height,staffs,head);
+            if(physicalStaff==null)physicalStaff=nearestHeadStaff(staffs,head.centerY);
             if (gray != null && physicalStaff != null
                     && (head.centerY < physicalStaff.top-physicalStaff.gap*1.8f
                     || head.centerY > physicalStaff.bottom+physicalStaff.gap*1.8f)
@@ -2356,6 +2357,8 @@ final class OmrScoreInterpreter {
      */
     private static Staff staffForHead(byte[] labels, byte[] gray, int width, int height,
                                       List<Staff> staffs, Component head) {
+        Staff ledgerOwner = printedLedgerOwner(gray,width,height,staffs,head);
+        if (ledgerOwner != null) return ledgerOwner;
         Staff nearest = nearestHeadStaff(staffs, head.centerY);
         if (nearest == null) return null;
         Staff upper = null, lower = null;
@@ -2391,6 +2394,24 @@ final class OmrScoreInterpreter {
         if (upward >= minimum && upward >= downward + advantage) return upper;
         if (downward >= minimum && downward >= upward + advantage) return lower;
         return nearest;
+    }
+
+    /** A complete distant ledger chain can be stronger than proximity to another staff. */
+    private static Staff printedLedgerOwner(byte[] gray,int width,int height,
+                                            List<Staff> staffs,Component head) {
+        if(gray==null)return null;
+        Staff upper=null,lower=null;
+        for(Staff staff:staffs) {
+            if(head.centerY>=staff.top&&head.centerY<=staff.bottom)return null;
+            if(staff.bottom<head.centerY&&(upper==null||staff.bottom>upper.bottom))upper=staff;
+            if(staff.top>head.centerY&&(lower==null||staff.top<lower.top))lower=staff;
+        }
+        if(upper==null||lower==null)return null;
+        int above=innerLedgerCount(gray,width,height,head,upper);
+        int below=innerLedgerCount(gray,width,height,head,lower);
+        if(above>=3&&above>=below+2&&head.centerY-upper.bottom<=upper.gap*MAX_HEAD_LEDGER_GAPS)return upper;
+        if(below>=3&&below>=above+2&&lower.top-head.centerY<=lower.gap*MAX_HEAD_LEDGER_GAPS)return lower;
+        return null;
     }
 
     private static int innerLedgerCount(byte[] gray,int width,int height,Component head,Staff staff) {
