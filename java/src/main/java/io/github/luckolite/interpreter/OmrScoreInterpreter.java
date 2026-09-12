@@ -4873,8 +4873,17 @@ final class OmrScoreInterpreter {
     }
 
     private static int thickNonHeadBands(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff,int threshold) {
-        float gap=staff.gap;
+        float gap=staff.gap,lineTop=staff.top;
         if(x<1||x>=width-1)return 0;
+        float[] track=staff.pitchTrack==null?null:staff.pitchTrack.at(x);
+        if(track!=null){gap=track[1];lineTop=track[0]-4*gap;}
+        int span=Math.round(gap*2),firstOffset=Math.round(gap);
+        int[] leftShift=new int[span],rightShift=new int[span];
+        if(track!=null)for(int i=0;i<span;i++) {
+            int dx=firstOffset+i;
+            leftShift[i]=Math.round(staff.pitchTrack.at(x-dx)[0]-track[0]);
+            rightShift[i]=Math.round(staff.pitchTrack.at(x+dx)[0]-track[0]);
+        }
         int bands=0,strongBands=0,run=0,staffRows=0;
         for(int y=top;y<=bottom+1;y++) {
             boolean ink=y<=bottom && (gray[y*width+x-1]&255)<threshold
@@ -4882,10 +4891,11 @@ final class OmrScoreInterpreter {
                     &&labels[y*width+x]!=OmrMeasurePostProcessor.NOTEHEAD;
             if(ink) {
                 run++;
-                int span=Math.round(gap*2),leftInk=0,rightInk=0;
-                for(int dx=Math.round(gap);dx<Math.round(gap)+span;dx++) {
-                    if(x-dx>=0&&(gray[y*width+x-dx]&255)<threshold)leftInk++;
-                    if(x+dx<width&&(gray[y*width+x+dx]&255)<threshold)rightInk++;
+                int leftInk=0,rightInk=0;
+                for(int i=0;i<span;i++) {
+                    int dx=firstOffset+i;
+                    if(x-dx>=0&&bandRuleInk(gray,width,height,x-dx,y+leftShift[i],threshold,track!=null))leftInk++;
+                    if(x+dx<width&&bandRuleInk(gray,width,height,x+dx,y+rightShift[i],threshold,track!=null))rightInk++;
                 }
                 if(leftInk>=span*.85f&&rightInk>=span*.85f)staffRows++;
             } else {
@@ -4893,7 +4903,7 @@ final class OmrScoreInterpreter {
                 // crossing a staff, where most of the band extends beyond the staff ink.
                 float bandCenter=y-(run+1)*.5f;
                 boolean onStaff=false;
-                for(int line=0;line<5;line++)if(Math.abs(bandCenter-(staff.top+line*gap))<=gap*.3f)onStaff=true;
+                for(int line=0;line<5;line++)if(Math.abs(bandCenter-(lineTop+line*gap))<=gap*.3f)onStaff=true;
                 // The middle of a long beam also has ink on both sides. Suppress it only
                 // where an actual staff line runs; horizontal shape alone loses inner eighths.
                 boolean onlyStaff=onStaff&&(staffRows==run||(staffRows>=3&&staffRows+1==run))
@@ -4906,6 +4916,13 @@ final class OmrScoreInterpreter {
         // Preserve a single narrow flag. Adding a second beam needs the full
         // thickness threshold so a thinner slur terminal cannot shorten the note.
         return bands > 1 ? Math.max(1,strongBands) : bands;
+    }
+
+    /** Follow a printed staff's slope when testing whether a short band is only rule ink. */
+    private static boolean bandRuleInk(byte[] gray,int width,int height,int x,int y,int threshold,boolean curved) {
+        for(int yy=Math.max(0,y-(curved?1:0));yy<=Math.min(height-1,y+(curved?1:0));yy++)
+            if((gray[yy*width+x]&255)<threshold)return true;
+        return false;
     }
 
     private static int thickBeamBands(byte[] gray,int width,int height,int x,int top,int bottom,float gap) {
