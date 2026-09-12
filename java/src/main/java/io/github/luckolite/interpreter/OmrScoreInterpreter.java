@@ -1831,7 +1831,8 @@ final class OmrScoreInterpreter {
             if (rows[y] < peak * .85f) { y++; continue; }
             int start = y;
             while (y < height && rows[y] >= peak * .85f) y++;
-            if (y - start < Math.max(2, Math.round(gap * .20f))) return List.of();
+            // A one-row contour island is not another oval lobe.
+            if (y - start < Math.max(2, Math.round(gap * .20f))) continue;
             centers.add(component.minY + (start + y - 1) * .5f);
         }
         if (centers.size() < 2 || centers.size() > 4) return List.of();
