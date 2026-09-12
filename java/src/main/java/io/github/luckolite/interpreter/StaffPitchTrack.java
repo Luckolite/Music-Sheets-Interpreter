@@ -14,7 +14,7 @@ final class StaffPitchTrack {
 
     static StaffPitchTrack detect(byte[] gray,int width,int height,float top,float bottom,float gap) {
         if(gray==null||gap<3)return null;
-        if(straightRules(gray,width,height,bottom,gap))return null;
+        if(straightRules(gray,width,height,bottom,gap,true))return null;
         int stripWidth=Math.min(width,Math.max(80,Math.round(gap*10)));
         int first=Math.max(0,Math.round(top-gap*6)),last=Math.min(height,Math.round(bottom+gap*6));
         if(last<=first)return null;
@@ -106,21 +106,32 @@ final class StaffPitchTrack {
     }
 
     private static boolean straightRules(byte[] gray,int width,int height,float bottom,float gap) {
+        return straightRules(gray,width,height,bottom,gap,false);
+    }
+
+    private static boolean straightRules(byte[] gray,int width,int height,float bottom,float gap,boolean throughout) {
         int radius=Math.max(2,Math.round(gap*.3f)),flank=Math.max(2,Math.round(gap*.32f));
         // Broad evidence from all five original rules outweighs a few narrow
         // strips where darker beams displace a faded outer rule. Do not require
         // complete semantic labels: curved scans can lose entire labelled rules.
         for(int line=0;line<5;line++) {
             int supported=0,samples=0,row=Math.round(bottom-line*gap);
-            for(int x=Math.round(width*.1f);x<Math.round(width*.94f);x+=2) {
-                samples++;
+            int first=Math.round(width*.1f),last=Math.round(width*.94f);
+            int[] regionSamples=new int[4],regionSupport=new int[4];
+            for(int x=first;x<last;x+=2) {
+                int region=Math.min(3,(x-first)*4/Math.max(1,last-first));
+                samples++;regionSamples[region]++;
                 for(int y=Math.max(flank,row-radius);y<=Math.min(height-1-flank,row+radius);y++) {
                     int ink=gray[y*width+x]&255;
                     if(ink<=205&&(gray[(y-flank)*width+x]&255)>=ink+12
-                            &&(gray[(y+flank)*width+x]&255)>=ink+12){supported++;break;}
+                            &&(gray[(y+flank)*width+x]&255)>=ink+12){supported++;regionSupport[region]++;break;}
                 }
             }
             if(samples<24||supported<samples*.8f)return false;
+            // Reject a curved track only when the edge regions also support straight rules.
+            // Broad scale calibration can still bridge a locally obscured group.
+            if(throughout)for(int region=0;region<4;region++)
+                if(regionSamples[region]<6||regionSupport[region]<regionSamples[region]*.8f)return false;
         }
         return true;
     }
