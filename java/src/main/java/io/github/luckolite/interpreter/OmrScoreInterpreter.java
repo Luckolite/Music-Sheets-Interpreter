@@ -54,6 +54,7 @@ final class OmrScoreInterpreter {
         rawHeadComponents.removeIf(head -> isWholeMeasureRestHead(gray,width,height,head,staffs));
         rawHeadComponents.removeIf(head -> isThickBarlineHead(gray,width,height,head,staffs));
         rawHeadComponents.removeIf(head -> isHeaderFlatHead(labels,gray,width,height,head,staffs,clefOrKeyComponents));
+        rawHeadComponents.removeIf(head -> isTrebleTailHead(labels,width,height,head,staffs,clefOrKeyComponents));
         List<Component> headComponents = splitStackedHeads(labels, gray, width, height,
                 rawHeadComponents, staffs);
         List<Component> symbolComponents = findComponents(labels, width, height,
@@ -521,6 +522,36 @@ final class OmrScoreInterpreter {
             }
         }
         return result;
+    }
+
+    /** A treble clef's round lower tip may be split into the notehead class. */
+    private static boolean isTrebleTailHead(byte[] labels,int width,int height,
+            Component head,List<Staff> staffs,List<Component> glyphs) {
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
+        float gap=staff.pitchGap;
+        if(head.centerY<staff.pitchBottom+gap*.25f||head.centerY>staff.pitchBottom+gap*1.6f
+                ||head.maxX-head.minX+1>gap*1.2f||head.maxY-head.minY+1>gap*1.2f)return false;
+        for(Component original:glyphs) {
+            Component glyph=joinTrebleCurl(joinSmallTrebleFragments(original,glyphs,staff),glyphs,staff);
+            float gh=glyph.maxY-glyph.minY+1,gw=glyph.maxX-glyph.minX+1;
+            if(gh<gap*4.8f||gh>gap*8.8f||gw<gap*1.25f||gw>gap*3.4f
+                    ||glyph.area<gap*gap*1.65f||glyph.minY>=staff.top-gap*.35f
+                    ||glyph.maxY<=staff.bottom+gap*.2f
+                    ||Math.abs(glyph.centerY-(staff.top+staff.bottom)*.5f)>=gap*1.1f
+                    ||head.minX<glyph.minX||head.maxX>glyph.maxX
+                    ||head.maxY>glyph.maxY+gap*.3f)continue;
+            // Require direct contact with clef ink, not merely a nearby note below it.
+            for(int y=head.minY;y<=head.maxY;y++)for(int x=head.minX;x<=head.maxX;x++) {
+                if(labels[y*width+x]!=OmrMeasurePostProcessor.NOTEHEAD)continue;
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int xx=x+dx,yy=y+dy;
+                    if(xx<glyph.minX||xx>glyph.maxX||yy<glyph.minY||yy>glyph.maxY
+                            ||xx<0||xx>=width||yy<0||yy>=height)continue;
+                    if(labels[yy*width+xx]==OmrMeasurePostProcessor.CLEF_OR_KEY)return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** A key flat can be split between an accidental spine and a note-labelled bowl.
