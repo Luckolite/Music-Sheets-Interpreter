@@ -1,12 +1,14 @@
 # Generate data, train and export
 
-The generator authors new MEI exercises; it does not download scores. Labels come
-from renderer geometry. Seeds are assigned to a split before augmentation, with
-Leland held out from the Bravura training/validation sets.
+Use Python 3.10 or 3.11. Keep PyTorch training and TensorFlow export in separate
+environments if their dependencies conflict. Inference uses the TFLite model;
+training tools and fonts are not needed in a deployed application.
 
-Use Python 3.10 or 3.11. Keep training and TensorFlow export in separate virtual
-environments if their numerical dependencies conflict. The recorded training used
-PyTorch 2.1.2+cu121; ordinary CPU PyTorch works too, with lower throughput.
+## Load or fine-tune the current v4 checkpoint
+
+`model_v4.py` defines the current architecture. `train_v4.py` loads the published
+checkpoint, trains semantic and auxiliary centre outputs on original labelled pages,
+and selects a checkpoint with validation data. It does not evaluate test pages.
 
 From the repository root:
 
@@ -14,48 +16,54 @@ From the repository root:
 python -m pip install -r training/requirements-training.txt
 python training/generate.py --out training/corpus-new --count 600 --workers 4 --start 5000000
 python training/audit_corpus.py training/corpus-new --out training/corpus-new-audit.json
-python training/train.py --corpus training/corpus-new --out training/runs/new --steps 3000 --batch 8
-python training/evaluate_pages.py --corpus training/corpus-new --checkpoint training/runs/new/best.pt --out training/runs/new-pages
+python training/train_v4.py --corpus training/corpus-new --checkpoint models/best.pt --out training/runs/new-v4 --steps 3000 --batch 8
 ```
 
-Choose a new output directory per experiment. `--resume models/best.pt` continues
-the published checkpoint's weights, but restarts the optimizer; it is not an exact
-training-state resume. Without `--resume`, a fresh model is randomly initialized.
-The generator checks bounding boxes and writes seeds, renderer/font identifiers,
-hashes and split metadata into its manifest. The trainer verifies the corpus hashes.
+Choose a new output directory for each run. The generator authors new MEI exercises
+and derives labels from renderer geometry. It records seeds, splits, font identifiers
+and hashes. Fine-tuning checks those hashes and starts a fresh optimizer.
 
-Export in a TensorFlow environment:
+To load tensors directly, put `training/` on Python's import path:
+
+```python
+import torch
+from model_v4 import Segmenter
+
+checkpoint = torch.load("models/best.pt", map_location="cpu", weights_only=True)
+model = Segmenter()
+model.load_state_dict(checkpoint["state_dict"])
+model.eval()
+```
+
+The auxiliary centre output is available through `forward_with_centres`. The default
+deployment model uses only semantic classes. Validate centre predictions separately
+before using them to reject or create notes.
+
+## Export
 
 ```sh
 python -m pip install -r training/requirements-export.txt
-python training/export_tflite.py training/runs/new/weights.npz training/runs/new-export
+python training/export_v4.py models/weights.npz training/runs/v4-export
 ```
 
-The exporter mirrors the original graph, checks logits against stored PyTorch
-reference samples, then exercises the actual exported TFLite interpreter. The
-published `models/weights.npz` contains our numeric weights plus original synthetic
-parity inputs/logits and can be passed to this exporter directly.
+Use a fine-tuned run's `weights.npz` to export its model. The exporter checks both
+outputs against stored PyTorch reference tensors, then verifies the TFLite tensor
+contract. Its float16 semantic model is the default deployment format. Calibration
+samples are original synthetic training crops; export parity is not a recognition
+accuracy test.
 
-`--quantize` additionally exports calibrated int8. Int8 was not selected for the
-current model because it failed musical regression checks. Export parity on training
-samples is not an independent accuracy evaluation. Treat every new model as an
-experimental candidate and evaluate it on representative scores you have rights to use.
-
-To recreate the small public demonstration:
-
-```sh
-python -m pip install -r training/requirements-generator.txt
-python scripts/generate_example.py
-```
+The legacy `model.py`, `train.py` and `export_tflite.py` remain for the smaller v3
+architecture. Use a v3 checkpoint from release v0.1.0 with those tools. The current
+v4 checkpoint requires the corresponding v4 scripts above.
 
 ## Licenses and reproducibility
 
-Verovio 6.3.0 (LGPL-3.0) and resvg-py 0.3.0 are external rendering tools. Noto Serif,
-Bravura and Leland retain SIL OFL notices. None of these font files or rendering
-libraries are required by the inference JAR or Python wheel.
+Code and weights are Apache-2.0. Verovio and resvg are external rendering tools;
+Noto Serif, Bravura and Leland retain their SIL OFL notices. See
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
-The current weights were trained through three generations of our own experiment;
-see [the model card](../models/MODEL_CARD.md). Running this current generator and
-training from scratch produces a new model, not the exact published checkpoint.
-GPU drivers, hardware, dependency builds and floating-point kernels can affect
-results even with fixed seeds. The provided hashes identify the released artifacts.
+The current weights inherit several generations of our own synthetic experiment;
+[lineage.json](../models/lineage.json) records their hashes and training sources.
+These portable tools support model reuse and further training. They do not replay
+every historical corpus generation or optimizer update, and bit-for-bit retraining
+is not claimed. GPU kernels and dependency versions can also change numerical results.

@@ -34,7 +34,7 @@ def main():
                     '-C', str(ROOT), 'LICENSE', '-C', str(ROOT), 'NOTICE'], check=True)
     data = ROOT / 'src/sheet_interpreter/data'
     data.mkdir(exist_ok=True)
-    for source in (ROOT / 'models/music_sheets_v3_float16.tflite', ROOT / 'LICENSE', ROOT / 'NOTICE'):
+    for source in (ROOT / 'models/music_sheets_v4_float16.tflite', ROOT / 'LICENSE', ROOT / 'NOTICE'):
         shutil.copyfile(source, data / source.name)
     print(target)
 

@@ -58,8 +58,685 @@
         "test": 60
       },
       "test_scope": "six fixed foreground-biased crops per held-out Leland page; not real-score or phone accuracy"
+    },
+    {
+      "stage": "candidate-19",
+      "checkpoint_sha256": "fc8b31e938122a727bf7d23692bf4a4d7972ba122cedcb79e424b019ea357446",
+      "weights_sha256": "df9bfc9d63e999e64013df2a76f06012e4fb04f16b1366bccf3d765cb7ae4c10",
+      "parent_checkpoint_sha256": "44a79c2d4d63742945c288dd9287167e9f918de669184bfd13679b372adc8d85",
+      "architecture": "musicsheets-tiny-unet-v1-centres-experiment",
+      "selected_step": 5000,
+      "updates": 8200,
+      "seed": 9192026,
+      "initialization": "Released backbone plus new randomly initialized auxiliary centre head",
+      "training_data": "Original generated exercise training splits and procedural appearance augmentation only",
+      "validation_eligible": false
+    },
+    {
+      "stage": "candidate-20",
+      "checkpoint_sha256": "116e3704a6c5190dbb787258f488d197973983eaa0f2ef20f3af6217d7d3a344",
+      "weights_sha256": "eafb603747244aaa547604f7144424c5365b84494947cb2cf10d16ceddf97b96",
+      "parent_checkpoint_sha256": "fc8b31e938122a727bf7d23692bf4a4d7972ba122cedcb79e424b019ea357446",
+      "architecture": {
+        "architecture": "musicsheets-wide-context-v2-experiment",
+        "widths": [
+          32,
+          64,
+          128,
+          256
+        ],
+        "input_size": 320,
+        "dilations": {
+          "d.0": 2,
+          "d.2": 4
+        }
+      },
+      "selected_step": 9500,
+      "updates": 10000,
+      "seed": 9202026,
+      "initialization": "Channel duplication preserves width-only function; bottleneck dilation increases context, then1e-4 Gaussian weight noise breaks clone symmetry.",
+      "training_data": "Original generated exercise training splits and procedural appearance augmentation only",
+      "validation_eligible": false
+    },
+    {
+      "stage": "candidate-21",
+      "checkpoint_sha256": "9ffc0163a1150026d557654152bbad615d7c7acd3630ef6d4d420be9faa07f5d",
+      "weights_sha256": "008f2690ab878d49637f4ca21bd1cb2e61dc55cf1f27928a21f708ab2193b59b",
+      "parent_checkpoint_sha256": "116e3704a6c5190dbb787258f488d197973983eaa0f2ef20f3af6217d7d3a344",
+      "architecture": {
+        "architecture": "musicsheets-wide-context-v2-experiment",
+        "widths": [
+          32,
+          64,
+          128,
+          256
+        ],
+        "input_size": 320,
+        "dilations": {
+          "d.0": 2,
+          "d.2": 4
+        }
+      },
+      "selected_step": 6500,
+      "updates": 10000,
+      "seed": 9212026,
+      "initialization": "Exact selected candidate20 state; same architecture, loss and optimizer schedule, with controlled original-data coverage revision.",
+      "training_data": "Original generated exercise training splits and procedural appearance augmentation only",
+      "validation_eligible": false
+    },
+    {
+      "stage": "candidate-22",
+      "checkpoint_sha256": "0393187e131d86939877c3040ae3efb10d1fd75165cafa7d8688035236e7b312",
+      "weights_sha256": "e18d7564527a2ea9a2b33161210c3413131a76be762bd50dca146c5e1749deac",
+      "parent_checkpoint_sha256": "9ffc0163a1150026d557654152bbad615d7c7acd3630ef6d4d420be9faa07f5d",
+      "architecture": {
+        "architecture": "musicsheets-wide-context-v2-experiment",
+        "widths": [
+          32,
+          64,
+          128,
+          256
+        ],
+        "input_size": 320,
+        "dilations": {
+          "d.0": 2,
+          "d.2": 4
+        }
+      },
+      "selected_step": 5000,
+      "updates": 10000,
+      "seed": 9222026,
+      "initialization": "Exact selected candidate21 state; same architecture, loss and optimizer schedule, with controlled original-data coverage revision.",
+      "training_data": "Original generated exercise training splits and procedural appearance augmentation only",
+      "validation_eligible": false
+    },
+    {
+      "stage": "candidate-23",
+      "checkpoint_sha256": "b0981eacf68b9ec8c2f036b47c07c2d1853e498911f492384c4647746f39f482",
+      "weights_sha256": "cdf17fe2376ea0b03a478635c38537f442bd0f7d77906373093522103086b29d",
+      "parent_checkpoint_sha256": "0393187e131d86939877c3040ae3efb10d1fd75165cafa7d8688035236e7b312",
+      "architecture": {
+        "architecture": "musicsheets-wide-context-v2-experiment",
+        "widths": [
+          32,
+          64,
+          128,
+          256
+        ],
+        "input_size": 320,
+        "dilations": {
+          "d.0": 2,
+          "d.2": 4
+        }
+      },
+      "selected_step": 9500,
+      "updates": 10000,
+      "seed": 9232026,
+      "initialization": "Exact selected candidate22 state; same architecture, loss and optimizer schedule; half of original replay remains exactly crisp, plus original hollow-head and slur-intersection coverage.",
+      "training_data": "Original generated exercise training splits and procedural appearance augmentation only",
+      "validation_eligible": true
+    },
+    {
+      "stage": "candidate-24",
+      "checkpoint_sha256": "924f2482f5209ef83f45390167d723d10ec3fa81d915db4605f37d50a66bdf7b",
+      "weights_sha256": "4bb0029870a7d297f877ec697a12a31c222b4065c1b935fcd270bc2c388c7bbb",
+      "parent_checkpoint_sha256": "b0981eacf68b9ec8c2f036b47c07c2d1853e498911f492384c4647746f39f482",
+      "architecture": {
+        "architecture": "musicsheets-wide-context-v2-experiment",
+        "widths": [
+          32,
+          64,
+          128,
+          256
+        ],
+        "input_size": 320,
+        "dilations": {
+          "d.0": 2,
+          "d.2": 4
+        }
+      },
+      "selected_step": 8000,
+      "updates": 10000,
+      "seed": 9242026,
+      "initialization": "Exact selected candidate23 state; unchanged architecture, loss, schedule and replay mix. Independently randomized original near/touching marks added before appearance transforms; crisp replay and genuine head supervision preserved.",
+      "training_data": "Original generated exercise training splits and procedural appearance augmentation only",
+      "validation_eligible": true
     }
   ],
   "v1_synthetic_metrics_withdrawn": true,
-  "weights_license": "Apache-2.0"
+  "weights_license": "Apache-2.0",
+  "training_corpora": [
+    {
+      "name": "original",
+      "manifest_sha256": "a996100dfa84b4c16bc9ed26aeae329e0ae940333afdddea17f1f9d01eeb9483",
+      "exercise_splits": {
+        "train": 480,
+        "validation": 60,
+        "test": 60
+      },
+      "fonts": [
+        "Bravura",
+        "Leland"
+      ],
+      "verified_train_files": 960,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    },
+    {
+      "name": "broad",
+      "manifest_sha256": "5b635e6a5980f82e87dd6b803efb56e4c2325d32b62df1a07cd6d3ccdbe7d991",
+      "exercise_splits": {
+        "train": 240,
+        "validation": 32,
+        "test": 32
+      },
+      "fonts": [
+        "Bravura",
+        "Leland"
+      ],
+      "verified_train_files": 720,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    },
+    {
+      "name": "ledger",
+      "manifest_sha256": "a5cdc5000388ecb5cb878a5a25df35a7f1d3a3a82889ee1db51dfe4268441305",
+      "exercise_splits": {
+        "train": 96,
+        "validation": 16,
+        "test": 16
+      },
+      "fonts": [
+        "Bravura",
+        "Leland"
+      ],
+      "verified_train_files": 288,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    },
+    {
+      "name": "soft-staff",
+      "manifest_sha256": "b3772e694f804c8260e6d35022d6b53787cc288c72e73d261825dfee5475b5e3",
+      "exercise_splits": {
+        "train": 96,
+        "validation": 16,
+        "test": 16
+      },
+      "fonts": [
+        "Bravura",
+        "Leland"
+      ],
+      "verified_train_files": 288,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    },
+    {
+      "name": "accidental",
+      "manifest_sha256": "f195e9116a48cda6d020a3061b0cca41e506b2124a8f09a1aa91614543093d6b",
+      "exercise_splits": {
+        "train": 96,
+        "validation": 16,
+        "test": 16
+      },
+      "fonts": [
+        "Bravura",
+        "Leland"
+      ],
+      "verified_train_files": 288,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    },
+    {
+      "name": "courtesy-clef",
+      "manifest_sha256": "fa7a450f849f3b2c3f4106e4ac8c867103aab5abb3f6590d8d89bd9e7da93be1",
+      "exercise_splits": {
+        "train": 96,
+        "validation": 16,
+        "test": 16
+      },
+      "fonts": [
+        "Bravura",
+        "Leland"
+      ],
+      "verified_train_files": 288,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    },
+    {
+      "name": "beam-replay",
+      "manifest_sha256": "98f0a726e000f0d1defff1f34c9e6a59b32629639107a07299bcad3ecbd12a27",
+      "exercise_splits": {
+        "train": 256
+      },
+      "fonts": [
+        "Bravura"
+      ],
+      "verified_train_files": 512,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    },
+    {
+      "name": "rest-shape",
+      "manifest_sha256": "7307163f824568ab4068e07c1b5fa3393108ab579f38314ce766a1c6b8564019",
+      "exercise_splits": {
+        "train": 96,
+        "validation": 16,
+        "test": 16
+      },
+      "fonts": [
+        "Bravura",
+        "Leland"
+      ],
+      "verified_train_files": 288,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    },
+    {
+      "name": "clef-context",
+      "manifest_sha256": "30b62d4673a5feb402bc073d45d00a7abcf22763f2b102f58e3749491234ade7",
+      "exercise_splits": {
+        "train": 96,
+        "validation": 16,
+        "test": 16
+      },
+      "fonts": [
+        "Bravura",
+        "Leland"
+      ],
+      "verified_train_files": 288,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    },
+    {
+      "name": "hollow-head",
+      "manifest_sha256": "404463f07a95c7b3eff1419d1bab4776b895e2ed6ed74b9bd9675cfef8c0cbcd",
+      "exercise_splits": {
+        "train": 96,
+        "validation": 16,
+        "test": 16
+      },
+      "fonts": [
+        "Bravura",
+        "Leland"
+      ],
+      "verified_train_files": 288,
+      "third_party_score_sources": [],
+      "pretrained_model_sources": []
+    }
+  ],
+  "calibration": {
+    "shape": [
+      32,
+      3,
+      320,
+      320
+    ],
+    "sample_inputs_sha256": "eadc0c2e9f9a9422a9d856b5827e38937be0f51255a7a412404d8c763cbd738e",
+    "original_training_crops": [
+      {
+        "index": 0,
+        "original_training_image": "3100000/page-1.png",
+        "image_sha256": "0e6d35c2dd27858e52eb5d50ebfb0feec41f9a71462b0caa6e79046e4d34a1b3",
+        "crop": [
+          298,
+          1602,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 1,
+        "original_training_image": "3100001/page-1.png",
+        "image_sha256": "1747c00c69beab07d867f8b2b92d65ae746edeb18d4fe1e1bd2998ce54f97d66",
+        "crop": [
+          0,
+          116,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 2,
+        "original_training_image": "3100002/page-1.png",
+        "image_sha256": "933495514d252f2085fcff5f95fa17b89120bf82b1eefe82ac1aa972dcb180bb",
+        "crop": [
+          1221,
+          1158,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 3,
+        "original_training_image": "3100003/page-1.png",
+        "image_sha256": "05eb8254dd797bb5cd624bfc9e131ce5a5de2681d447f1a47f0f26efd118aa4d",
+        "crop": [
+          607,
+          139,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 4,
+        "original_training_image": "3100004/page-1.png",
+        "image_sha256": "018df39b33873f194b6d1cdd0db76ceace5d300fa84119154ee8a04c9686a9a2",
+        "crop": [
+          447,
+          450,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 5,
+        "original_training_image": "3100005/page-1.png",
+        "image_sha256": "bf2205081910acec36826139245edcfa9db88898e60ef8d9162c88f1eeafcd1a",
+        "crop": [
+          224,
+          1054,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 6,
+        "original_training_image": "3100006/page-1.png",
+        "image_sha256": "36b69a8a67c6804d9e92e64bdf42f457af3d9baa936f124fbaa928622d4df2c0",
+        "crop": [
+          386,
+          58,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 7,
+        "original_training_image": "3100007/page-1.png",
+        "image_sha256": "3ec9ce436a4d5132671e09f1757d10ffcd762a7237607ee955ea04f4cb081adc",
+        "crop": [
+          992,
+          1353,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 8,
+        "original_training_image": "3100010/page-1.png",
+        "image_sha256": "b67728982fe2397a9d7dbeecde83104f9f3075bc122d722641e04f94a358b14d",
+        "crop": [
+          1650,
+          1369,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 9,
+        "original_training_image": "3100011/page-1.png",
+        "image_sha256": "a767743adedff0515d78bdbca0b2070b6a7399290d3531cec5bd2c21cde49030",
+        "crop": [
+          193,
+          690,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 10,
+        "original_training_image": "3100012/page-1.png",
+        "image_sha256": "e92ebbb92117d764932c011a8d043fb31a1194870562f91e776102738940727b",
+        "crop": [
+          0,
+          459,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 11,
+        "original_training_image": "3100013/page-1.png",
+        "image_sha256": "1343f64d41ccd419cc0bb51bd27ef9393b7be0e1fc1298de37d113f9666c9a6f",
+        "crop": [
+          1071,
+          433,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 12,
+        "original_training_image": "3100014/page-1.png",
+        "image_sha256": "2cc6a744dba358b3ce35079865e90200beeb3e59f4944ac38bdc2856e484341f",
+        "crop": [
+          418,
+          413,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 13,
+        "original_training_image": "3100015/page-1.png",
+        "image_sha256": "5e04dc09e7ed27bea81c9a8d4153a93718ebfffe591a208d0384053aa4c8231d",
+        "crop": [
+          375,
+          938,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 14,
+        "original_training_image": "3100016/page-1.png",
+        "image_sha256": "952e9f96f3a44360849bb305aa1015738aa8575518f4e8f2a4f0d3e937dabf81",
+        "crop": [
+          696,
+          0,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 15,
+        "original_training_image": "3100017/page-1.png",
+        "image_sha256": "4f71ac2044601bbdd769d8f90a26847c889f7d5fa00b0950385f8d3f26d33388",
+        "crop": [
+          668,
+          1875,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 16,
+        "original_training_image": "3100020/page-1.png",
+        "image_sha256": "f26fde3317a9d1b101b2027606f348e46856829d36ae7013e17ea39f087a91de",
+        "crop": [
+          590,
+          1380,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 17,
+        "original_training_image": "3100021/page-1.png",
+        "image_sha256": "200fa2b7603e26c0b86c6bfbc5926160d671d8112447162d5c13dd448a72d9ca",
+        "crop": [
+          720,
+          1217,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 18,
+        "original_training_image": "3100022/page-1.png",
+        "image_sha256": "c151fff3de8e99e2cfdce616f32cfaef7436c9c063aed68f4249d0f269605824",
+        "crop": [
+          800,
+          838,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 19,
+        "original_training_image": "3100023/page-1.png",
+        "image_sha256": "facb2b1650428add6775aa8a14781f86fdaf33fbc178fc6925eee0e70a201a1b",
+        "crop": [
+          1239,
+          624,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 20,
+        "original_training_image": "3100024/page-1.png",
+        "image_sha256": "4c96af27bbf093cce8d80447433ae711dc65cb841e02272e9e6df8eb33e33e11",
+        "crop": [
+          177,
+          1275,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 21,
+        "original_training_image": "3100025/page-1.png",
+        "image_sha256": "b87b5ba0e09d5c7b9c7df5a25817a1a5ce33445e896e87a33cb8da1238c9b49b",
+        "crop": [
+          718,
+          359,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 22,
+        "original_training_image": "3100026/page-1.png",
+        "image_sha256": "0589be76e74d8df2d82c7cd4fb56034867a1fbc896b0c8128ce5e100f86e4c68",
+        "crop": [
+          1439,
+          1565,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 23,
+        "original_training_image": "3100027/page-1.png",
+        "image_sha256": "960225ef5d249b1b4b66bac861124b686f396c10e0a2dab211514e0f97ccac3f",
+        "crop": [
+          1351,
+          676,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 24,
+        "original_training_image": "3100030/page-1.png",
+        "image_sha256": "9a9986903b7e3131b2acaf382bc4db1fd5bc308afda458555efb9c82c31d52f8",
+        "crop": [
+          0,
+          276,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 25,
+        "original_training_image": "3100031/page-1.png",
+        "image_sha256": "24ca37744ad3646e9f5138a2abefd0f473558c129523433763bd4451b0ee99be",
+        "crop": [
+          1064,
+          918,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 26,
+        "original_training_image": "3100032/page-1.png",
+        "image_sha256": "ca74169bcf120d8008cf2be0a4f550bcb1a8730416cf9dece40315dd0d402a35",
+        "crop": [
+          1031,
+          52,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 27,
+        "original_training_image": "3100033/page-1.png",
+        "image_sha256": "af89b3869cf6c0d4ff3ace105f2520ce5b78eaded160eeada7bcc86d429662b0",
+        "crop": [
+          1392,
+          636,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 28,
+        "original_training_image": "3100034/page-1.png",
+        "image_sha256": "038f9c75a19546a9b3dd80b4a7b799dc45400bddb1e38edf983754d4a6ef6b73",
+        "crop": [
+          0,
+          246,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 29,
+        "original_training_image": "3100035/page-1.png",
+        "image_sha256": "adfae1349e3e25e976282578a0e7e71b1aff24b8ed50dce0e6bb408feeaab52c",
+        "crop": [
+          747,
+          405,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 30,
+        "original_training_image": "3100036/page-1.png",
+        "image_sha256": "801b799af3a113b3287d0ee588eba3aad02574f308b0a6bb31102cc0dad08be1",
+        "crop": [
+          356,
+          357,
+          320,
+          320
+        ]
+      },
+      {
+        "index": 31,
+        "original_training_image": "3100037/page-1.png",
+        "image_sha256": "627849b503461dbb090021c643c7564fa8ac0b1ffcdef4bed118baaa155c2535",
+        "crop": [
+          69,
+          87,
+          320,
+          320
+        ]
+      }
+    ]
+  },
+  "published_checkpoint": {
+    "sha256": "dece0e04c14552483427c00f81110f148f1dc5d46378b7953381bbb287ff178e",
+    "raw_checkpoint_sha256": "924f2482f5209ef83f45390167d723d10ec3fa81d915db4605f37d50a66bdf7b",
+    "all_model_tensors_identical": true,
+    "removed_fields": [
+      "optimizer",
+      "scaler",
+      "training_config"
+    ]
+  },
+  "reproduction": "Architecture, tensor checkpoint and exporter support inference and further training. This minimal support does not replay every historical original-corpus generation and optimizer update; bit-for-bit retraining is not claimed.",
+  "heldout_status": "New frozen raw-model heldout split remains unevaluated; development and source-anchor metrics are not whole-library accuracy."
 }

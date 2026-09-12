@@ -14,8 +14,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageOps
 
-MODEL_SHA256 = "1287f50f769e8f96164636941fa3c5f61ba9debe357130a5c45642dac207bd07"
-MODEL_NAME = "music_sheets_v3_float16.tflite"
+MODEL_SHA256 = "92ab7c34c27cb704d95f0cde247b3611d1563fdf1c114b9f9817abb18a7b6a93"
+MODEL_NAME = "music_sheets_v4_float16.tflite"
 
 
 def tile_starts(size):

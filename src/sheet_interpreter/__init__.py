@@ -3,5 +3,5 @@
 """Offline OMR. The inference runtime is imported only when an Interpreter is created."""
 from .reader import Interpreter
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 __all__ = ["Interpreter"]

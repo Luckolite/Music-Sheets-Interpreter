@@ -1,19 +1,27 @@
 {
   "best.pt": {
-    "sha256": "44a79c2d4d63742945c288dd9287167e9f918de669184bfd13679b372adc8d85",
-    "bytes": 1957206,
-    "license": "Apache-2.0"
+    "sha256": "dece0e04c14552483427c00f81110f148f1dc5d46378b7953381bbb287ff178e",
+    "bytes": 7795914,
+    "license": "Apache-2.0",
+    "raw_checkpoint_sha256": "924f2482f5209ef83f45390167d723d10ec3fa81d915db4605f37d50a66bdf7b",
+    "all_model_tensors_identical": true,
+    "optimizer_and_private_config_removed": true
+  },
+  "weights.npz": {
+    "sha256": "e9bf5b4b651fbcb4d0778dd7ac9bf6dcb6a12e7158e727c3438f0aef8c07a275",
+    "bytes": 84593727,
+    "license": "Apache-2.0",
+    "original_uncompressed_sha256": "4bb0029870a7d297f877ec697a12a31c222b4065c1b935fcd270bc2c388c7bbb",
+    "numeric_arrays_unchanged": true
   },
   "music_sheets_v3_float16.tflite": {
     "sha256": "1287f50f769e8f96164636941fa3c5f61ba9debe357130a5c45642dac207bd07",
     "bytes": 988676,
     "license": "Apache-2.0"
   },
-  "weights.npz": {
-    "sha256": "8940b22a20e3ace01e8cd7701d11380281d2132d8c1a4d731bf233def91504b8",
-    "bytes": 58206064,
-    "license": "Apache-2.0",
-    "original_uncompressed_sha256": "49c88826b6ccb98966189342505be4600ad086a17452e298ae59cc394b02731d",
-    "numeric_arrays_unchanged": true
+  "music_sheets_v4_float16.tflite": {
+    "sha256": "92ab7c34c27cb704d95f0cde247b3611d1563fdf1c114b9f9817abb18a7b6a93",
+    "bytes": 3907460,
+    "license": "Apache-2.0"
   }
 }

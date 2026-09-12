@@ -1,68 +1,144 @@
 {
-  "architecture": "musicsheets-tiny-unet-v1",
-  "parameters": 487094,
-  "best_step": 1000,
-  "steps_run": 3000,
-  "elapsed_seconds": 1105.8328381000028,
-  "device": "cuda",
-  "pretrained_model_sources": [],
-  "initialization": {
-    "type": "continued_own_pilot",
-    "checkpoint_sha256": "aa2dd1594847d7a3756a0f9bbc3c6c88f9f8c1ac9a0146e7ebc761d83c13b6a2",
-    "parent_corpus_sha256": "3fbe433150815cc59f40382cacdd5522bb59954735c47bae21abfc0774c3e24d",
-    "parent_step": 1500
+  "model": "Music Sheets independent v4",
+  "development_candidate": 24,
+  "selected_step": 8000,
+  "updates": 10000,
+  "seed": 9242026,
+  "architecture": "musicsheets-wide-context-v2-experiment",
+  "architecture_config": {
+    "widths": [
+      32,
+      64,
+      128,
+      256
+    ],
+    "input_size": 320,
+    "dilations": {
+      "d.0": 2,
+      "d.2": 4
+    }
   },
-  "corpus_sha256": "a996100dfa84b4c16bc9ed26aeae329e0ae940333afdddea17f1f9d01eeb9483",
-  "pages": {
-    "train": 480,
-    "validation": 60,
-    "test": 60
-  },
-  "validation_best_foreground_iou": 0.7273355775149005,
-  "heldout_font_test": {
-    "mean_iou": 0.7791607708393995,
-    "foreground_mean_iou": 0.7402895363226065,
-    "per_class": {
-      "background": {
-        "iou": 0.9735169434233636,
-        "recall": 0.9807852671222094,
-        "precision": 0.9924451934989694,
-        "pixels": 33952905
+  "parameters_including_auxiliary_head": 1946503,
+  "initialization": "Continued own selected candidate23 checkpoint",
+  "parent_checkpoint_sha256": "b0981eacf68b9ec8c2f036b47c07c2d1853e498911f492384c4647746f39f482",
+  "training_data": "Ten original generated training corpora and procedural augmentations; see lineage.json",
+  "external_pretrained_sources": [],
+  "validation_eligible": true,
+  "new_raw_heldout_evaluated": false,
+  "reproduction": "Provided scripts load, fine-tune and export this architecture; they do not replay every historical corpus and optimizer step.",
+  "development_comparison": {
+    "scope": "Repeated original development strata, not heldout or full-page accuracy.",
+    "baseline": "candidate-23",
+    "candidate": "candidate-24",
+    "strata": {
+      "accidental": {
+        "iou_change": 0.006775922330962136,
+        "centre_f1_change": 0.0,
+        "class_iou_changes": {
+          "background": 0.0007575424978969458,
+          "stems_rests_barlines": 0.011583098934455083,
+          "noteheads": 0.002672798909430729,
+          "clefs_keys_accidentals": 0.013951535685728711,
+          "staff": -0.002540880970518744,
+          "other_symbols": 0.008213059095714903
+        }
       },
-      "stems_rests_barlines": {
-        "iou": 0.6566560966385521,
-        "recall": 0.8226652499250042,
-        "precision": 0.7649319096577757,
-        "pixels": 356687
+      "soft-staff": {
+        "iou_change": -0.0018518477905538067,
+        "centre_f1_change": 0.0006285354570424451,
+        "class_iou_changes": {
+          "background": -0.0007526090829234056,
+          "stems_rests_barlines": -0.005474714098213651,
+          "noteheads": -0.0015230870314932865,
+          "clefs_keys_accidentals": -0.004698908738610008,
+          "staff": -0.0033320565528055512,
+          "other_symbols": 0.005769527468353353
+        }
       },
-      "noteheads": {
-        "iou": 0.8699194571172757,
-        "recall": 0.9630667280178549,
-        "precision": 0.89994253612589,
-        "pixels": 465082
+      "courtesy-clef": {
+        "iou_change": 0.01708047889013098,
+        "centre_f1_change": -0.00030665434286991644,
+        "class_iou_changes": {
+          "background": 0.0010134502539346224,
+          "stems_rests_barlines": 0.009867048978823068,
+          "noteheads": 0.003958620868543039,
+          "clefs_keys_accidentals": 0.01675805535891861,
+          "staff": 0.003935418148737102,
+          "other_symbols": 0.05088325109563252
+        }
       },
-      "clefs_keys_accidentals": {
-        "iou": 0.7914798206278026,
-        "recall": 0.8997198446858258,
-        "precision": 0.8680563082592673,
-        "pixels": 142421
+      "rest-shape": {
+        "iou_change": -0.0016218068805821106,
+        "centre_f1_change": 0.00016053938762017328,
+        "class_iou_changes": {
+          "background": -0.00013016257216380556,
+          "stems_rests_barlines": -0.0012045574135832737,
+          "noteheads": -0.003347120129797432,
+          "clefs_keys_accidentals": -0.0009125613855772707,
+          "staff": -0.0034771492536971316,
+          "other_symbols": 0.0008323537797439995
+        }
       },
-      "staff": {
-        "iou": 0.562883790526853,
-        "recall": 0.8246648669046998,
-        "precision": 0.6394058805152901,
-        "pixels": 861225
+      "clef-context": {
+        "iou_change": 0.012317249813645126,
+        "centre_f1_change": -0.000538062917404325,
+        "class_iou_changes": {
+          "background": 0.0009707468773844097,
+          "stems_rests_barlines": 0.009836062177973837,
+          "noteheads": 0.0036771180271798487,
+          "clefs_keys_accidentals": 0.013268657735651668,
+          "staff": 0.0026007073166516292,
+          "other_symbols": 0.0322037038107682
+        }
       },
-      "other_symbols": {
-        "iou": 0.8205085167025497,
-        "recall": 0.9365411539311768,
-        "precision": 0.8688115004836301,
-        "pixels": 1085680
+      "paper-appearance": {
+        "iou_change": -0.017197813033341447,
+        "centre_f1_change": -0.0001301231529982072,
+        "class_iou_changes": {
+          "background": -0.0021040664754725658,
+          "stems_rests_barlines": -0.024403093050240354,
+          "noteheads": -0.005952175619183708,
+          "clefs_keys_accidentals": -0.01660271295520488,
+          "staff": -0.022085243811331978,
+          "other_symbols": -0.016945839730746814
+        }
+      },
+      "hollow-head": {
+        "iou_change": -9.455697879279246e-05,
+        "centre_f1_change": 0.0008655389493376076,
+        "class_iou_changes": {
+          "background": 0.0001135666731595375,
+          "stems_rests_barlines": -0.0009767932135787971,
+          "noteheads": 0.0004939717226896123,
+          "clefs_keys_accidentals": -0.0025566257480118537,
+          "staff": -0.00031431405391357803,
+          "other_symbols": 0.0028809763988507653
+        }
+      },
+      "slur-intersection": {
+        "iou_change": 0.0012079334934118613,
+        "centre_f1_change": 0.0012165413980571582,
+        "class_iou_changes": {
+          "background": 0.0003315687550533575,
+          "stems_rests_barlines": -0.0010438930096680066,
+          "noteheads": 0.0002860425744034556,
+          "clefs_keys_accidentals": 0.005156432511268294,
+          "staff": 0.0025880947205709215,
+          "other_symbols": -0.0009470093295147475
+        }
+      },
+      "annotation-attachment": {
+        "iou_change": 0.010648687902335086,
+        "centre_f1_change": 0.003626659589205272,
+        "class_iou_changes": {
+          "background": -0.00034085639061520734,
+          "stems_rests_barlines": 0.002887350494610752,
+          "noteheads": 0.012776951254559243,
+          "clefs_keys_accidentals": 0.022238050853192748,
+          "staff": -0.003997212729880406,
+          "other_symbols": 0.019338299639192535
+        }
       }
-    },
-    "evaluated_crops": 360
-  },
-  "test_scope": "six fixed foreground-biased crops per held-out Leland page; not real-score or phone accuracy",
-  "quality_approved": false,
-  "production_install_allowed": false
+    }
+  }
 }

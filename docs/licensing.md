@@ -2,7 +2,7 @@
 
 The original code, documentation, synthetic examples and model weights are licensed
 under **Apache License 2.0**. This includes `models/best.pt`, `models/weights.npz` and
-`models/music_sheets_v3_float16.tflite`, and the copies distributed in release packages.
+the TFLite models listed in `models/artifacts.json`, and the copies distributed in release packages.
 
 You can embed the decoder or weights in a commercial application, run them locally
 or on your own servers, charge for your product and keep your application's source

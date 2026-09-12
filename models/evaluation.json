@@ -1,0 +1,65 @@
+{
+  "model": "music_sheets_v4_float16.tflite",
+  "checkpoint": "candidate24, selected step 8000 after 10000 updates",
+  "status": "experimental",
+  "independent_heldout_evaluated": false,
+  "development_segmentation": {
+    "metric": "mean intersection over union",
+    "repeated_development_data": true,
+    "candidate23": {
+      "clean": 0.90563,
+      "broad": 0.87476,
+      "ledger": 0.73083,
+      "dim_paper": 0.73073
+    },
+    "candidate24": {
+      "clean": 0.93762,
+      "broad": 0.91319,
+      "ledger": 0.72971,
+      "dim_paper": 0.71354
+    }
+  },
+  "real_score_pitch_review": {
+    "decoder_guide": 174,
+    "decoded_pages": 22,
+    "pages_with_pitch_anchors": 17,
+    "pitch_anchors": 2418,
+    "correct": 2417,
+    "remaining_missed_anchor": 1,
+    "scope": "Mixture of passages and full-page pitch references. Five decoded pages have no pitch anchors. Timing and extra-note coverage are incomplete. These are development checks, not a held-out benchmark or whole-library accuracy."
+  },
+  "additional_native_page_review": {
+    "pages": 8,
+    "anchors": 933,
+    "correct": 931,
+    "scope": "Mixed passage and full-page references; may overlap the other review. Run and Beautiful checks cover selected anchors only. Extra notes are checked only in the reviewed regions. Do not combine these counts into a general accuracy percentage.",
+    "remaining_errors": [
+      "One Hedwig accidental pitch error and one extra note in the reviewed first system",
+      "One Sonata pitch error in the reviewed piano passage"
+    ]
+  },
+  "retention_check": {
+    "cached_pages": 22,
+    "unchanged_pages": 21,
+    "changed_page": "Twelve corrected MIDI pitches; all event counts, onsets and durations unchanged",
+    "additional_native_pages_unchanged": 8,
+    "curved_staff_reference": {
+      "anchors": 112,
+      "correct": 112
+    }
+  },
+  "runtime_validation": {
+    "java_tests": 1096,
+    "python_tests": 19,
+    "original_png_and_pdf_scale": "Eight pitches, onsets and durations each; MIDI generation checked",
+    "portable_export": "Contract and numerical parity checks passed",
+    "portable_fine_tuning": "One CPU update changed backbone and both heads, then saved and reloaded successfully. Initial logits match the selected checkpoint exactly."
+  },
+  "known_limitations": [
+    "Dim/paper appearance and ledger development IoU regressed versus candidate23",
+    "A damaged notehead remains missed in the Kesh reference",
+    "False notes remain, including an Isabella hollow-note duplicate",
+    "Accidentals, complex polyphony, faint scans, ties, rhythm and repeats remain imperfect"
+  ],
+  "data_boundary": "Only aggregate private-score review results are published. No score images, source coordinates or phone logs are included. Model training and calibration use original synthetic material."
+}

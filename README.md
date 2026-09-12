@@ -15,7 +15,7 @@ exhaustive transcription accuracy, automatic text OCR, or MusicXML export.
 
 ## What is included
 
-- A 988,676-byte float16 TFLite segmentation model, trained from our own synthetic exercises.
+- A 3,907,460-byte float16 TFLite segmentation model, trained from our own synthetic exercises.
 - A Java 17 recognition library for measures, staffs, noteheads, clefs, key signatures,
   accidentals, written durations, ties, articulations and selected triplets.
 - Optional interpretation of measure numbers, tempos, dynamics and techniques from
@@ -37,7 +37,7 @@ compiled decoder and float16 weights. Download it from [Releases](https://github
 ```sh
 python -m venv .venv
 # Activate .venv for your shell, then:
-python -m pip install "./music_sheets_interpreter-0.1.0-py3-none-any.whl[inference,pdf]"
+python -m pip install "./music_sheets_interpreter-0.1.2-py3-none-any.whl[inference,pdf]"
 sheet-interpreter score.pdf --output score.json --midi preview.mid --meter 4/4 --bpm 120
 ```
 
@@ -94,10 +94,12 @@ See [integration and JSON format](docs/integration.md).
 
 ## Weights, training and limitations
 
-The default model is [models/music_sheets_v3_float16.tflite](models/music_sheets_v3_float16.tflite).
-Its SHA-256 is `1287f50f769e8f96164636941fa3c5f61ba9debe357130a5c45642dac207bd07`.
+The default model is [models/music_sheets_v4_float16.tflite](models/music_sheets_v4_float16.tflite).
+Its SHA-256 is `92ab7c34c27cb704d95f0cde247b3611d1563fdf1c114b9f9817abb18a7b6a93`.
 The package verifies this hash before loading the bundled model. PyTorch `best.pt`
-and exporter `weights.npz` are also provided in `models/`.
+and exporter `weights.npz` are also provided in `models/`. The current v4 model is the
+selected candidate24 checkpoint. The previous v3 TFLite remains available for comparison
+and rollback; its original package and checkpoint remain in release v0.1.0.
 
 The network was randomly initialized within our own training lineage; no HOMR, Andromr,
 oemer or other pretrained OMR weights, pseudo-labels or distillation targets were used.
@@ -126,7 +128,7 @@ python scripts/smoke_test.py
 The Java tests use JUnit only for testing, downloaded with pinned checksums. Runtime
 inference does not need JUnit. The smoke test reads the original synthetic scale through
 the actual model, decoder and MIDI writer. See the
-[v0.1.0 validation record](docs/validation-v0.1.0.json) for the checks and their limits.
+[current model evaluation](models/evaluation.json) for the checks and their limits.
 
 Bug reports with a small original or redistributable score, expected notes and observed
 JSON are welcome. Please do not upload copyrighted scores without permission, credentials,
