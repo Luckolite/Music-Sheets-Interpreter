@@ -52,6 +52,7 @@ final class OmrScoreInterpreter {
         rawHeadComponents.removeIf(head -> isTempoUnitHead(gray, width, height, head, staffs));
         rawHeadComponents.removeIf(head -> isHeavyRestBarFragment(gray, width, height, head, staffs));
         rawHeadComponents.removeIf(head -> isWholeMeasureRestHead(gray,width,height,head,staffs));
+        rawHeadComponents.removeIf(head -> isThickBarlineHead(gray,width,height,head,staffs));
         rawHeadComponents.removeIf(head -> isHeaderFlatHead(labels,gray,width,height,head,staffs,clefOrKeyComponents));
         List<Component> headComponents = splitStackedHeads(labels, gray, width, height,
                 rawHeadComponents, staffs);
@@ -597,6 +598,38 @@ final class OmrScoreInterpreter {
                 y<=Math.min(height-1,Math.round(staff.pitchBottom-gap*1.3f));y++)
             if(heavyRestBarAtRow(gray,width,height,Math.round(head.centerX),y,gap))return true;
         return false;
+    }
+
+    /** A small semantic oval can lie entirely inside a thick ending barline. */
+    private static boolean isThickBarlineHead(byte[] gray,int width,int height,
+            Component head,List<Staff> staffs) {
+        if(gray==null)return false;
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
+        float gap=staff.pitchGap,top=staff.pitchBottom-gap*4,bottom=staff.pitchBottom;
+        if(head.minY<top||head.maxY>bottom||head.maxX-head.minX+1>gap*.85f)return false;
+        int cx=Math.round(head.centerX),first=Math.round(top+gap*.2f),last=Math.round(bottom-gap*.2f);
+        if(cx<0||cx>=width||first<0||last>=height)return false;
+        int minLeft=width,maxLeft=-1,minRight=width,maxRight=-1,rows=0;
+        for(int y=first;y<=last;y++) {
+            float ruleDistance=Math.abs((y-top)/gap-Math.round((y-top)/gap))*gap;
+            if(ruleDistance<gap*.18f)continue;
+            if((gray[y*width+cx]&255)>=165)return false;
+            int left=cx,right=cx;
+            while(left>0&&(gray[y*width+left-1]&255)<165)left--;
+            while(right+1<width&&(gray[y*width+right+1]&255)<165)right++;
+            int span=right-left+1;
+            if(span<gap*.25f||span>gap*.85f)return false;
+            minLeft=Math.min(minLeft,left);maxLeft=Math.max(maxLeft,left);
+            minRight=Math.min(minRight,right);maxRight=Math.max(maxRight,right);rows++;
+        }
+        int tolerance=Math.max(1,Math.round(gap*.12f));
+        if(rows<gap||maxLeft-minLeft>tolerance||maxRight-minRight>tolerance
+                ||head.minX<minLeft-1||head.maxX>maxRight+1)return false;
+        // A true head protrudes from its stem; a plain bar ends at the outer staff rules.
+        for(int y:new int[]{Math.round(top-gap*.3f),Math.round(bottom+gap*.3f)}) {
+            if(y<0||y>=height||(gray[y*width+cx]&255)<165)return false;
+        }
+        return true;
     }
 
     /** A whole-measure rest hangs as a filled rectangle below the second rule. */
