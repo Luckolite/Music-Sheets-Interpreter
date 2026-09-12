@@ -457,6 +457,63 @@ final class OmrScoreInterpreter {
                 }
             }
         }
+        return normalizeDoubleBarSharps(result,gray,width,height,measures,staffs);
+    }
+
+    /** Recover a mixed-label sharp only in a separated slot after a full double bar. */
+    private static byte[] normalizeDoubleBarSharps(byte[] labels,byte[] gray,int width,int height,
+            List<MeasureRegion> measures,List<Staff> staffs) {
+        byte[] result=labels;
+        List<Component> noteHeads=findComponents(labels,width,height,(byte)2); List<Component> seeds=new ArrayList<>();
+        for(byte label:new byte[]{2,3,5})seeds.addAll(findComponents(labels,width,height,label));
+        for(Staff staff:staffs)for(MeasureRegion measure:measures) {
+            float cy=(staff.top+staff.bottom)*.5f,gap=staff.pitchGap;
+            if(cy<measure.top()*height||cy>measure.bottom()*height)continue;
+            float boundary=measure.left()*width;
+            if(!hasDoubleBar(labels,gray,width,height,boundary,staff))continue;
+            for(Component seed:seeds) {
+                if(seed.centerX<boundary+gap*.2f||seed.centerX>boundary+gap*2.1f
+                        ||seed.centerY<staff.top-gap*1.7f||seed.centerY>staff.bottom+gap*1.7f)continue;
+                int left=Math.max(0,Math.round(seed.centerX-gap*.7f)),right=Math.min(width-1,Math.round(seed.centerX+gap*.7f));
+                int top=Math.max(0,Math.round(seed.centerY-gap*2.5f)),bottom=Math.min(height-1,Math.round(seed.centerY+gap*2.5f));
+                if(left<boundary+gap*.05f)continue;
+                int w=right-left+1,h=bottom-top+1;byte[] ink=new byte[w*h];
+                for(int y=0;y<h;y++)for(int x=0;x<w;x++) {
+                    byte v=labels[(top+y)*width+left+x];
+                    if(v!=0&&v!=4)ink[y*w+x]=3;
+                }
+                // Keep only the largest eight-connected glyph; nearby isolated marks stay unchanged.
+                byte[] remaining=ink.clone();int[] queue=new int[ink.length],largest=new int[ink.length];int largestSize=0;
+                for(int origin=0;origin<remaining.length;origin++) {
+                    if(remaining[origin]==0)continue;
+                    int tail=1;queue[0]=origin;remaining[origin]=0;
+                    for(int head=0;head<tail;head++) {
+                        int at=queue[head],xx=at%w,yy=at/w;
+                        for(int ny=Math.max(0,yy-1);ny<=Math.min(h-1,yy+1);ny++)
+                            for(int nx=Math.max(0,xx-1);nx<=Math.min(w-1,xx+1);nx++) {
+                                int next=ny*w+nx;
+                                if(remaining[next]!=0){remaining[next]=0;queue[tail++]=next;}
+                            }
+                    }
+                    if(tail>largestSize){largestSize=tail;System.arraycopy(queue,0,largest,0,tail);}
+                }
+                java.util.Arrays.fill(ink,(byte)0);
+                for(int i=0;i<largestSize;i++)ink[largest[i]]=3;
+                int area=0,l=w,r=-1,t=h,b=-1;
+                for(int y=0;y<h;y++)for(int x=0;x<w;x++)if(ink[y*w+x]==3){area++;l=Math.min(l,x);r=Math.max(r,x);t=Math.min(t,y);b=Math.max(b,y);}
+                if(area==0||l==0||r==w-1||t==0||b==h-1)continue;
+                Component glyph=null; for(Component piece:findComponents(ink,w,h,(byte)3))if(glyph==null||piece.area>glyph.area)glyph=piece; if(glyph==null)continue;
+                if(!isSharpGlyph(ink,w,h,new AccidentalCandidate(glyph,(byte)3),gap))continue;
+                // A first played chord must not be swallowed as a signature.
+                float firstHead=Float.POSITIVE_INFINITY;
+                for(Component head:noteHeads)if(head.centerX>right&&Math.abs(head.centerY-cy)<gap*5
+                        &&head.minY<=staff.bottom+gap*3&&head.maxY>=staff.top-gap*3)
+                    firstHead=Math.min(firstHead,head.minX);
+                if(!Float.isFinite(firstHead)||firstHead-(left+glyph.centerX)<gap*1.35f)continue;
+                if(result==labels)result=labels.clone();
+                for(int y=t;y<=b;y++)for(int x=l;x<=r;x++)if(ink[y*w+x]==3)result[(top+y)*width+left+x]=3;
+            }
+        }
         return result;
     }
 
@@ -4311,6 +4368,7 @@ final class OmrScoreInterpreter {
                     // Allow that slightly heavier ink only beside a verified hollow head.
                     || dot.area > gap * gap * (hollowHead?.34f:.26f)) continue;
             if (gray != null && fadedRuleFragment(gray, width, height, dot, gap)) continue;
+            if (gray != null && fadedStemFragment(gray, width, height, dot, gap)) continue;
             float dotFill = dot.area / Math.max(1f, dotWidth * dotHeight);
             if (Math.max(dotWidth, dotHeight) / Math.max(1f, Math.min(dotWidth, dotHeight)) > 1.5f
                     || dotFill < .44f) continue;
@@ -4328,6 +4386,28 @@ final class OmrScoreInterpreter {
         float spacing = second.centerX - first.centerX;
         return spacing >= gap * .18f && spacing <= gap * 1.45f
                 && Math.abs(second.centerY - first.centerY) <= gap * .40f ? 2 : 1;
+    }
+
+    /** Thresholding can isolate the darker crossing of a shaded stem and rule. */
+    private static boolean fadedStemFragment(byte[] gray,int width,int height,Component dot,float gap) {
+        int cx=Math.round(dot.centerX),cy=Math.round(dot.centerY);
+        int band=Math.max(1,Math.round(gap*.12f)),flank=Math.max(2,Math.round(gap*.45f));
+        int first=Math.max(Math.round(gap*.4f),(dot.maxY-dot.minY+1)/2+2);
+        int last=Math.round(gap*1.3f);
+        if(last-first<4||cx-band-flank<0||cx+band+flank>=width||cy-last<0||cy+last>=height)return false;
+        for(int direction:new int[]{-1,1}) {
+            int support=0;
+            for(int distance=first;distance<=last;distance++) {
+                int y=cy+direction*distance;
+                for(int x=cx-band;x<=cx+band;x++) {
+                    int ink=gray[y*width+x]&255;
+                    int paper=Math.max(gray[y*width+x-flank]&255,gray[y*width+x+flank]&255);
+                    if(ink<=210&&paper>=ink+12){support++;break;}
+                }
+            }
+            if(support<(last-first+1)*.8f)return false;
+        }
+        return true;
     }
 
     /** Thresholding can isolate a darker fleck along a faded staff rule. */
