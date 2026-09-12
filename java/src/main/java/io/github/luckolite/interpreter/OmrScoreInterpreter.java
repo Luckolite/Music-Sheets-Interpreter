@@ -109,6 +109,7 @@ final class OmrScoreInterpreter {
                 labels, gray, width, height, accidentalCandidates, staffs));
         localAccidentals.removeIf(candidate->attachedGraceFlag(labels,gray,width,height,candidate,heads,staffs));
         localAccidentals.removeAll(noteParentheses(gray,width,height,localAccidentals,heads,staffs));
+        localAccidentals=splitTouchingChordAccidentals(labels,width,height,localAccidentals,heads,staffs);
         List<Component> accidentalInk = new ArrayList<>();
         for (AccidentalCandidate candidate : localAccidentals) {
             Staff staff = nearestHeadStaff(staffs, candidate.component.centerY);
@@ -3667,6 +3668,63 @@ final class OmrScoreInterpreter {
     }
 
     /** Returns a local accidental immediately left of this head, or key-signature fallback. */
+    /** Separate touching chord accidentals only when both pieces explain distinct chord heads. */
+    private static List<AccidentalCandidate> splitTouchingChordAccidentals(byte[] labels,
+            int width,int height,List<AccidentalCandidate> candidates,List<Component> heads,List<Staff> staffs) {
+        List<AccidentalCandidate> result=new ArrayList<>(candidates);
+        for(AccidentalCandidate candidate:candidates) {
+            Component box=candidate.component;
+            Staff staff=nearestHeadStaff(staffs,box.centerY);
+            if(staff==null)continue;
+            float gap=staff.gap;
+            int glyphWidth=box.maxX-box.minX+1,glyphHeight=box.maxY-box.minY+1;
+            if(glyphWidth<gap*1.65f||glyphWidth>gap*3.8f
+                    ||glyphHeight<gap*2f||glyphHeight>gap*5.5f
+                    ||isNaturalGlyph(labels,width,height,candidate,gap)
+                    ||isSharpGlyph(labels,width,height,candidate,gap)
+                    ||isFlatGlyph(labels,width,height,candidate,gap))continue;
+            AccidentalCandidate bestLeft=null,bestRight=null;
+            int bestBridges=Integer.MAX_VALUE,bestArea=0;
+            int margin=Math.max(2,(int)Math.ceil(gap*.45f));
+            for(int cut=box.minX+margin;cut<box.maxX-margin;cut++) {
+                AccidentalCandidate left=signatureSlice(labels,width,candidate,box.minX,cut);
+                AccidentalCandidate right=signatureSlice(labels,width,candidate,cut+1,box.maxX);
+                if(left==null||right==null)continue;
+                int retained=left.component.area+right.component.area;
+                if(retained<box.area*.90f)continue;
+                Component leftHead=chordAccidentalHead(labels,width,height,left,heads,staffs,staff);
+                if(leftHead==null)continue;
+                Component rightHead=chordAccidentalHead(labels,width,height,right,heads,staffs,staff);
+                if(rightHead==null||leftHead==rightHead
+                        ||Math.abs(leftHead.centerX-rightHead.centerX)>gap*.70f
+                        ||Math.abs(leftHead.centerY-rightHead.centerY)<gap*.45f)continue;
+                int bridges=0;
+                for(int y=box.minY;y<=box.maxY;y++)
+                    if(candidate.matches(labels[y*width+cut])
+                            &&candidate.matches(labels[y*width+cut+1]))bridges++;
+                if(bridges<bestBridges||(bridges==bestBridges&&retained>bestArea)) {
+                    bestBridges=bridges;bestArea=retained;bestLeft=left;bestRight=right;
+                }
+            }
+            if(bestLeft!=null){result.add(bestLeft);result.add(bestRight);}
+        }
+        return result;
+    }
+
+    private static Component chordAccidentalHead(byte[] labels,int width,int height,
+            AccidentalCandidate candidate,List<Component> heads,List<Staff> staffs,Staff staff) {
+        Component best=null;float distance=Float.MAX_VALUE;
+        for(Component head:heads) {
+            if(nearestHeadStaff(staffs,head.centerY)!=staff)continue;
+            if(detectWrittenAccidental(labels,width,height,List.of(candidate),head,staff.gap)
+                    ==ScoreNoteEvent.ACCIDENTAL_FROM_KEY)continue;
+            float dx=head.centerX-candidate.component.centerX;
+            if(dx<distance){distance=dx;best=head;}
+        }
+        return best;
+    }
+
+
     private static int detectWrittenAccidental(byte[] labels, int width, int height,
                                                List<AccidentalCandidate> candidates,
                                                Component head, float gap) {
