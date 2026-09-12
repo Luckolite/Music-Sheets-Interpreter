@@ -161,6 +161,7 @@ final class OmrScoreInterpreter {
         for (Component head : heads) {
             Staff staff = staffForHead(labels, gray, width, height, staffs, head);
             if (staff == null) continue;
+            if (isHeavyRestCount(gray,width,height,head,staff)) continue;
             if (isUnpitchedCrossHead(gray,width,height,head,staff)) continue;
             // Heads far outside a staff require printed ledger lines. A nearby
             // text stroke can look like a stem, so a semantic stem alone cannot
@@ -568,6 +569,29 @@ final class OmrScoreInterpreter {
                     &&isFlatGlyph(ink,w,h,flat,gap)
                     &&Math.abs(top+flatPitchCenter(ink,w,flat,gap)-head.centerY)<=gap*.5f)return true;
         }
+        return false;
+    }
+
+    /** A tall detached count above a fully capped multimeasure-rest bar. */
+    private static boolean isHeavyRestCount(byte[] gray,int width,int height,
+            Component head,Staff staff) {
+        if(gray==null)return false;
+        float gap=staff.pitchGap,top=staff.pitchBottom-gap*4;
+        if(head.maxY>=top-gap*.1f||head.centerY<top-gap*3.5f)return false;
+        boolean countShape=false;
+        for(TempoInk glyph:tempoInk(gray,width,height,Math.round(head.centerX-gap*2.5f),
+                Math.round(head.centerX+gap*2.5f),Math.round(top-gap*4),Math.round(top))) {
+            if(head.centerX<glyph.left||head.centerX>glyph.right
+                    ||head.centerY<glyph.top||head.centerY>glyph.bottom)continue;
+            if(glyph.height()>gap*1.3f&&glyph.height()<gap*3.3f
+                    &&glyph.width()>gap*.4f&&glyph.width()<glyph.height()*.95f)countShape=true;
+        }
+        if(!countShape)return false;
+        int[] stem=attachedRawStem(gray,width,height,head,gap);
+        if(stem!=null&&Math.abs(stem[1]-head.centerY)>gap*2)return false;
+        for(int y=Math.max(0,Math.round(staff.pitchBottom-gap*2.7f));
+                y<=Math.min(height-1,Math.round(staff.pitchBottom-gap*1.3f));y++)
+            if(heavyRestBarAtRow(gray,width,height,Math.round(head.centerX),y,gap))return true;
         return false;
     }
 
