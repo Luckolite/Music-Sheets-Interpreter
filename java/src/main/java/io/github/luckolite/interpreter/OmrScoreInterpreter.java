@@ -2582,7 +2582,10 @@ final class OmrScoreInterpreter {
 
     private static boolean hasLedgerInk(byte[] gray,int width,int height,Component head,float gap,boolean roundedGrace) {
         int[] limits=ledgerInkLimits(gray,width,height,head,gap);
-        boolean stemless=attachedRawStem(gray,width,height,head,gap)==null;
+        // Use the same local contrast for a ledger note's stem and horizontal rules.
+        int stemInk=Math.min(limits[1],limits[0]+10);
+        boolean stemless=attachedRawStem(gray,width,height,head,gap,
+                Math.max(1,Math.round(gap*.16f)),stemInk)==null;
         boolean reduced=roundedGrace||reducedLedgerHead(gray,width,height,head,gap);
         float minimum=ledgerRunMinimum(head,gap,reduced);
         int left=Math.max(0,Math.round(head.centerX-gap*1.2f));
@@ -4806,6 +4809,10 @@ final class OmrScoreInterpreter {
     }
 
     private static int[] attachedRawStem(byte[] gray,int width,int height,Component head,float gap,int maxBlank) {
+        return attachedRawStem(gray,width,height,head,gap,maxBlank,170);
+    }
+
+    private static int[] attachedRawStem(byte[] gray,int width,int height,Component head,float gap,int maxBlank,int inkThreshold) {
         if(gray==null)return null;
         int bestLength=0;int[] best=null;
         for(int direction:new int[]{-1,1}) {
@@ -4815,7 +4822,7 @@ final class OmrScoreInterpreter {
                 for(int d=0;d<Math.round(gap*9);d++) {
                     int y=Math.round(head.centerY)+direction*d;
                     if(y<0||y>=height)break;
-                    boolean ink=(gray[y*width+x]&255)<170;
+                    boolean ink=(gray[y*width+x]&255)<inkThreshold;
                     if(ink){end=y;blank=0;}else if(++blank>maxBlank)break;
                 }
                 int length=Math.abs(end-Math.round(head.centerY));
