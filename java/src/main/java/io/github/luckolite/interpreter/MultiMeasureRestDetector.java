@@ -26,7 +26,7 @@ final class MultiMeasureRestDetector {
         List<MeasureNumberReconciler.NumberToken> readings = new ArrayList<>(tokens);
         for (RestBarCandidate candidate : restBars) {
             var count = standaloneCount(gray, width, height, candidate);
-            if (count != null && aboveStaff(count, labels, width, height, candidate.region())) readings.add(count);
+            if (count != null && aboveStaff(count, labels, gray, width, height, candidate.region())) readings.add(count);
         }
         List<MeasureNumberReconciler.NumberToken> result = new ArrayList<>();
         boolean[] claimedMeasures = new boolean[measures.size()];
@@ -70,7 +70,7 @@ final class MultiMeasureRestDetector {
             if (noteheadPixels[index] > noteFreeLimit && hasThickHorizontalBar(gray, width, height, parent)) {
                 MeasureNumberReconciler.NumberToken count = standaloneCount(gray, width, height,
                         new RestBarCandidate(index, parent));
-                if (count != null && aboveStaff(count, labels, width, height, parent))
+                if (count != null && aboveStaff(count, labels, gray, width, height, parent))
                     countGlyph = count;
             }
             // A real multi-measure rest owns an otherwise note-free visual measure. Looking only
@@ -191,7 +191,7 @@ final class MultiMeasureRestDetector {
                 new MeasureRegion(left, right, top, bottom), OmrMeasurePostProcessor.NOTEHEAD);
     }
 
-    private static boolean aboveStaff(MeasureNumberReconciler.NumberToken token, byte[] labels,
+    private static boolean aboveStaff(MeasureNumberReconciler.NumberToken token, byte[] labels, byte[] gray,
                                       int width, int height, MeasureRegion region) {
         int left = Math.round(region.left() * width), right = Math.min(width - 1, Math.round(region.right() * width));
         for (int y = Math.round(region.top() * height); y < Math.min(height, Math.round(region.bottom() * height)); y++) {
@@ -199,7 +199,17 @@ final class MultiMeasureRestDetector {
             for (int x = left; x <= right; x++) if (labels[y * width + x] == OmrMeasurePostProcessor.STAFF) ink++;
             if (ink > (right - left) * .55f) return token.bottom() * height < y;
         }
-        return false;
+        // The model can omit every staff rule in a silent measure. Require a
+        // complete printed five-line group rather than accepting an isolated bar.
+        int top=clamp(Math.round(region.top()*height),0,height-1);
+        int bottom=clamp(Math.round(region.bottom()*height),top,height-1);
+        left=clamp(left,0,width-1);right=clamp(right,left,width-1);
+        int w=right-left+1,h=bottom-top+1;
+        byte[] crop=new byte[w*h];
+        for(int y=0;y<h;y++)System.arraycopy(gray,(top+y)*width+left,crop,y*w,w);
+        int first=RawStaffLineDetector.detect(crop,w,h).stream()
+                .mapToInt(RawStaffLineDetector.StaffLines::top).min().orElse(-1);
+        return first>=0&&token.bottom()*height<top+first;
     }
 
     /** An eight has two enclosed white bowls stacked vertically; a notehead has only one. */

@@ -1,5 +1,5 @@
 {
-  "source_commit": "a788da1bd749bc6041d10dc81a21a9679117cf06",
+  "source_commit": "ea54b769876966a9efad6c67d5399d7e058f75a1",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -32,7 +32,7 @@
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
-      "source_sha256": "b10e6cc2bb455c439127cd0f85c4ee2ff555e24f73b21cbf48b8483f19fafbcf"
+      "source_sha256": "5f19a1a4c7a6cf0d06f8a4292bdb3d5e6250cb27611635b6d317fd15c78d93fc"
     },
     "NoteArticulation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulation.java",
