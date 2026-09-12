@@ -1283,7 +1283,11 @@ final class OmrScoreInterpreter {
                             : isFlatGlyph(labels, width, height, candidate, staff.gap)
                             ? ScoreNoteEvent.ACCIDENTAL_FLAT
                             : ScoreNoteEvent.ACCIDENTAL_FROM_KEY;
-                    if(accidental==ScoreNoteEvent.ACCIDENTAL_FLAT
+                    // Recover a substantial fragment in a verified header from the printed
+                    // sharp. Tiny semantic specks can also occur on nearby meter digits.
+                    if((accidental==ScoreNoteEvent.ACCIDENTAL_FLAT
+                            || accidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY && clef!=null
+                            && glyph.area>=staff.gap*staff.gap*.18f)
                             &&printedSignatureSharp(gray,width,height,candidate,staff.gap))
                         accidental=ScoreNoteEvent.ACCIDENTAL_SHARP;
                     if (accidental != ScoreNoteEvent.ACCIDENTAL_FROM_KEY)
