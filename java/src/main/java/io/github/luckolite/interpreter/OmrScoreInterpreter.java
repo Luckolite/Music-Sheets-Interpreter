@@ -3736,7 +3736,9 @@ final class OmrScoreInterpreter {
                     minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
                 }
             }
-            if(area==0)continue;
+            // An arpeggio arrow or another tall mark can resemble a flat when clipped.
+            // Its printed stroke must finish inside the inspected column.
+            if(area==0||rawStrokeLeavesCrop(gray,width,height,ink,w,h,left,top,gap))continue;
             var glyph=new AccidentalCandidate(new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area),OmrMeasurePostProcessor.SYMBOL);
             if(!isNaturalGlyph(ink,w,h,glyph,gap)&&!isSharpGlyph(ink,w,h,glyph,gap)
                     &&isFlatGlyph(ink,w,h,glyph,gap)&&Math.abs(top+flatPitchCenter(ink,w,glyph,gap)-head.centerY)<=gap*.45f)
