@@ -340,8 +340,21 @@ final class SixteenthRestDetector {
         double a=bandCenter(centers,0,.18),b=bandCenter(centers,.22,.38),
                 c=bandCenter(centers,.43,.58),d=bandCenter(centers,.62,.73),
                 e=bandCenter(centers,.80,.91),f=bandCenter(centers,.94,1);
-        return b-a>gap*.10 && b-c>gap*.055 && d-c>gap*.055
-                && d-e>gap*.12 && f-e>gap*.10;
+        if(b-a>gap*.10 && b-c>gap*.055 && d-c>gap*.055
+                && d-e>gap*.12 && f-e>gap*.10)return true;
+        // Some engravings end the lower hook with a straight downstroke, without a curled foot.
+        double hookRight=-Double.MAX_VALUE,hookLeft=Double.MAX_VALUE;
+        int window=Math.max(2,Math.round(gap*.18f));
+        for(int i=(int)(h*.58);i+window<=h*.80;i++) {
+            double mean=0;for(int j=0;j<window;j++)mean+=centers[i+j];
+            hookRight=Math.max(hookRight,mean/window);
+        }
+        for(int i=(int)(h*.78);i+window<=h*.94;i++) {
+            double mean=0;for(int j=0;j<window;j++)mean+=centers[i+j];
+            hookLeft=Math.min(hookLeft,mean/window);
+        }
+        return b-a>gap*.10 && b-c>gap*.055 && hookRight-c>gap*.08
+                && hookRight-hookLeft>gap*.18 && f-hookLeft>=-gap*.06 && f-hookLeft<gap*.15;
     }
 
     private static double bandCenter(double[] rows,double from,double to) {

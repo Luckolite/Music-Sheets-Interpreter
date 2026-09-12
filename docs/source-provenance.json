@@ -1,5 +1,5 @@
 {
-  "source_commit": "46d862cdb5fcdc7949538cd9bb52d2e3acd94b65",
+  "source_commit": "0c812d8bbc001e0afd57a5222062ef927262306e",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -104,7 +104,7 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "22af4317c67d0abbf3cd53bf6738d498b7a23a7fbe3076b524ab165c9b10f8f2"
+      "source_sha256": "2d88eece3cb43c61ee2f568003aceda46cfad182e85b5517afff55b450ce5d86"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
