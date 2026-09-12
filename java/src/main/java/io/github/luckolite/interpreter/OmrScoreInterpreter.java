@@ -2407,10 +2407,13 @@ final class OmrScoreInterpreter {
             if(staff.top>head.centerY&&(lower==null||staff.top<lower.top))lower=staff;
         }
         if(upper==null||lower==null)return null;
+        // A nearby staff outweighs ledgers belonging to another tone of the same chord.
+        if(head.centerY-upper.bottom<=upper.gap*1.5f||lower.top-head.centerY<=lower.gap*1.5f)return null;
         int above=innerLedgerCount(gray,width,height,head,upper);
         int below=innerLedgerCount(gray,width,height,head,lower);
-        if(above>=3&&above>=below+2&&head.centerY-upper.bottom<=upper.gap*MAX_HEAD_LEDGER_GAPS)return upper;
-        if(below>=3&&below>=above+2&&lower.top-head.centerY<=lower.gap*MAX_HEAD_LEDGER_GAPS)return lower;
+        // Two inner rules can establish ownership; the rule beside/through the head is excluded.
+        if(above>=2&&above>=below+2&&head.centerY-upper.bottom<=upper.gap*MAX_HEAD_LEDGER_GAPS)return upper;
+        if(below>=2&&below>=above+2&&lower.top-head.centerY<=lower.gap*MAX_HEAD_LEDGER_GAPS)return lower;
         return null;
     }
 
