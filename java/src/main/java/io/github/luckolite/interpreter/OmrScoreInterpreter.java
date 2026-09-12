@@ -1076,9 +1076,10 @@ final class OmrScoreInterpreter {
                 ||body.maxY<staff.bottom-gap||body.maxY>staff.bottom+gap*.20f
                 ||Math.abs(body.centerY-(staff.top+staff.bottom)*.5f)>=gap*1.1f)return body;
         Component joined=body;
+        // Compare integer row coordinates with a distance rounded to the same raster grid.
         for(Component tail:glyphs) {
             if(tail==body||tail.minX<body.minX-gap*.2f||tail.maxX>body.maxX+gap*.2f
-                    ||tail.minY<staff.bottom-gap||tail.minY>body.maxY+gap*.45f
+                    ||tail.minY<staff.bottom-gap||tail.minY>body.maxY+Math.round(gap*.45f)
                     ||tail.maxY<=staff.bottom+gap*.2f||tail.maxY>staff.bottom+gap*2.2f
                     ||tail.area<gap*gap*.15f||tail.area>body.area*.75f)continue;
             int area=joined.area+tail.area;
