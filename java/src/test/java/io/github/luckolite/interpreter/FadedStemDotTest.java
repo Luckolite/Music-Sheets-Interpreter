@@ -27,4 +27,8 @@ public class FadedStemDotTest {
  @Test public void actualDotOnGrayPaperSurvives()throws Exception{Arrays.fill(gray,(byte)200);core();assertEquals(1,dots());}
  @Test public void actualDotOnDarkerPaperSurvives()throws Exception{Arrays.fill(gray,(byte)175);core();assertEquals(1,dots());}
  @Test public void rasterIsNeverChanged()throws Exception{rule();stem(150,70,150);core();byte[] before=gray.clone();dots();assertArrayEquals(before,gray);}
+ @Test public void crossingNearLowerStemTipIsNotADot()throws Exception{rule();stem(190,70,122);core();assertEquals(0,dots());}
+ @Test public void crossingNearUpperStemTipIsNotADot()throws Exception{rule();stem(190,102,150);core();assertEquals(0,dots());}
+ @Test public void aGapAboveRealDotBreaksStemContinuation()throws Exception{rule();stem(190,70,105);stem(190,116,122);core();assertEquals(1,dots());}
+ @Test public void aGapBelowRealDotBreaksStemContinuation()throws Exception{rule();stem(190,102,108);stem(190,119,150);core();assertEquals(1,dots());}
 }

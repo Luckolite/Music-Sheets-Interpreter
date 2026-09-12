@@ -4437,6 +4437,8 @@ final class OmrScoreInterpreter {
         int first=Math.max(Math.round(gap*.4f),(dot.maxY-dot.minY+1)/2+2);
         int last=Math.round(gap*1.3f);
         if(last-first<4||cx-band-flank<0||cx+band+flank>=width||cy-last<0||cy+last>=height)return false;
+        int longSides=0,shortSides=0;
+        int nearFirst=Math.max(2,(dot.maxY-dot.minY+1)/2+1),nearLast=Math.round(gap*.65f);
         for(int direction:new int[]{-1,1}) {
             int support=0;
             for(int distance=first;distance<=last;distance++) {
@@ -4447,9 +4449,21 @@ final class OmrScoreInterpreter {
                     if(ink<=210&&paper>=ink+12){support++;break;}
                 }
             }
-            if(support<(last-first+1)*.8f)return false;
+            if(support>=(last-first+1)*.8f)longSides++;
+            int nearSupport=0;
+            for(int distance=nearFirst;distance<=nearLast;distance++) {
+                int y=cy+direction*distance;
+                for(int x=cx-band;x<=cx+band;x++) {
+                    int ink=gray[y*width+x]&255;
+                    int paper=Math.max(gray[y*width+x-flank]&255,gray[y*width+x+flank]&255);
+                    if(ink<=210&&paper>=ink+12){nearSupport++;break;}
+                }
+            }
+            if(nearLast-nearFirst>=3&&nearSupport>=(nearLast-nearFirst+1)*.8f)shortSides++;
         }
-        return true;
+        // A crossing near a stem tip has a shorter continuation on one side.
+        // Require a long stem plus close, continuous support on both sides of the dot core.
+        return longSides==2||(longSides>=1&&shortSides==2);
     }
 
     /** Thresholding can isolate a darker fleck along a faded staff rule. */
