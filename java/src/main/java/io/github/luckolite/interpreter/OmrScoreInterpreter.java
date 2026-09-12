@@ -4770,6 +4770,18 @@ final class OmrScoreInterpreter {
                 thick = Math.max(thick, thickNonHeadBands(gray, labels, width, height, x, near, far, staff));
             }
             if (thick == 0 && hasCurvedFlag(labels, gray, width, height, head, gap, bestX, stemEnd, upward)) thick = 1;
+            // The returning edge of one curved flag can intersect an outer column twice.
+            // Multiple flags also need separate thick roots close to their shared stem.
+            // Very long traces can follow dark paper beyond the actual stem.
+            // They do not establish a trustworthy endpoint for counting flag roots.
+            if (thick > 1 && Math.abs(stemEnd-head.centerY) < gap*7
+                    && hasCurvedFlag(labels, gray, width, height, head, gap, bestX, stemEnd, upward)) {
+                int near = Math.max(0, stemEnd - (upward ? Math.round(gap*.2f) : inside));
+                int far = Math.min(height-1, stemEnd + (upward ? inside : Math.round(gap*.2f)));
+                int roots = thickNonHeadBands(gray, labels, width, height,
+                        bestX + Math.round(gap*.4f), near, far, staff);
+                if (roots == 1) thick = 1;
+            }
             return Math.min(3, thick);
         }
         return Math.min(3, beams);
