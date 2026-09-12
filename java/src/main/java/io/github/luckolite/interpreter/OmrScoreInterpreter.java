@@ -4306,6 +4306,7 @@ final class OmrScoreInterpreter {
                     // Run's dotted half has a round 8x8, 52-pixel dot at a 13.75-pixel staff gap.
                     // Allow that slightly heavier ink only beside a verified hollow head.
                     || dot.area > gap * gap * (hollowHead?.34f:.26f)) continue;
+            if (gray != null && fadedRuleFragment(gray, width, height, dot, gap)) continue;
             float dotFill = dot.area / Math.max(1f, dotWidth * dotHeight);
             if (Math.max(dotWidth, dotHeight) / Math.max(1f, Math.min(dotWidth, dotHeight)) > 1.5f
                     || dotFill < .44f) continue;
@@ -4323,6 +4324,30 @@ final class OmrScoreInterpreter {
         float spacing = second.centerX - first.centerX;
         return spacing >= gap * .18f && spacing <= gap * 1.45f
                 && Math.abs(second.centerY - first.centerY) <= gap * .40f ? 2 : 1;
+    }
+
+    /** Thresholding can isolate a darker fleck along a faded staff rule. */
+    private static boolean fadedRuleFragment(byte[] gray,int width,int height,Component dot,float gap) {
+        if(dot.maxY-dot.minY+1>gap*.25f)return false;
+        int row=Math.round(dot.centerY),flank=Math.max(2,Math.round(gap*.3f)),band=Math.max(1,Math.round(gap*.16f));
+        if(row<flank||row+flank>=height)return false;
+        int matching=0;
+        for(int line=-4;line<=4;line++) {
+            if(line==0)continue;
+            int center=Math.round(row+line*gap),supported=0,samples=0;
+            if(center<flank+band||center+flank+band>=height)continue;
+            for(int x=Math.max(0,Math.round(dot.centerX-gap*1.5f));x<=Math.min(width-1,Math.round(dot.centerX+gap*1.5f));x++) {
+                samples++;boolean ink=false;
+                for(int y=center-band;y<=center+band;y++) {
+                    int value=gray[y*width+x]&255;
+                    if(value<=240&&(gray[(y-flank)*width+x]&255)>=value+12
+                            &&(gray[(y+flank)*width+x]&255)>=value+12)ink=true;
+                }
+                if(ink)supported++;
+            }
+            if(samples>=12&&supported>=samples*.55f)matching++;
+        }
+        return matching>=3;
     }
 
     private static List<Component> findDarkDotComponents(byte[] gray, int width, int height,
