@@ -390,9 +390,14 @@ final class OmrMeasurePostProcessor {
             // and rely on the absence of an attached notehead to reject ordinary note stems.
             boolean semanticCandidate = covered >= Math.max(gap * 1.65f, span * 0.36f)
                     && (touchesTop || touchesBottom);
-            boolean rawSpansStaff = gray != null && semanticCandidate && rawBarlineSpansStaff(gray, width, height,
-                    x, rows, gap, shift, slope);
+            int rawColumn = gray != null && semanticCandidate ? rawBarlineColumn(gray, width, height,
+                    x, rows, gap, shift, slope) : Integer.MIN_VALUE;
+            boolean rawSpansStaff = rawColumn != Integer.MIN_VALUE;
             boolean semanticBar = semanticCandidate && (gray == null || rawSpansStaff);
+            // Validate stem ownership at the same printed column that proved the rule.
+            // A semantic halo can lie a pixel beyond the long stem's labelled edge.
+            if (!attachedHead && rawSpansStaff && rawColumn != x)
+                attachedHead = distantHeadOnSameStem(labels, width, height, rawColumn, top, bottom, gap);
             // Raw pixels validate a semantic candidate, but never create one by themselves:
             // aligned note stems can span all five lines on dense music such as Humoresque.
             boolean bar = semanticBar && !attachedHead;
@@ -550,10 +555,15 @@ final class OmrMeasurePostProcessor {
      * nearly continuous raw-ink path through both outer staff lines. */
     private static boolean rawBarlineSpansStaff(byte[] gray, int width, int height, int centerX,
                                                 int[] rows, float gap, float shift, float slope) {
+        return rawBarlineColumn(gray, width, height, centerX, rows, gap, shift, slope) != Integer.MIN_VALUE;
+    }
+
+    private static int rawBarlineColumn(byte[] gray, int width, int height, int centerX,
+                                                int[] rows, float gap, float shift, float slope) {
         shift += printedRuleOffset(gray,width,height,centerX,rows,gap,shift);
         int top = Math.max(0, Math.round(rows[0] + shift - gap * .12f));
         int bottom = Math.min(height - 1, Math.round(rows[4] + shift + gap * .12f));
-        if (bottom <= top) return false;
+        if (bottom <= top) return Integer.MIN_VALUE;
         // Gray paper must not supply the missing parts of a rest's vertical stroke.
         int[] inkCutoff = new int[bottom - top + 1], paperTones = new int[bottom - top + 1];
         int surround = Math.max(4, Math.round(gap * 2));
@@ -598,7 +608,7 @@ final class OmrMeasurePostProcessor {
         }
         int span = bottom - top + 1;
         if (!(touchesTop && touchesBottom && darkRows >= span * .68f
-                && longest >= span * .48f)) return false;
+                && longest >= span * .48f)) return Integer.MIN_VALUE;
         // A rest plus the five horizontal staff lines can satisfy the aggregate
         // coverage test while leaving an entire staff space empty. A barline
         // must also cross each of the four spaces between those lines. Ignore
@@ -649,9 +659,9 @@ final class OmrMeasurePostProcessor {
             // wide branches occupy many staff-space rows; a thin bar may intersect
             // an occasional beam or slur, but does not have that repeated width.
             if (sampled > 0 && everySpace && covered >= sampled * .90f
-                    && branched <= widthSamples * .35f) return true;
+                    && branched <= widthSamples * .35f) return origin;
         }
-        return false;
+        return Integer.MIN_VALUE;
     }
 
     private static boolean hasVerticalInk(byte[] labels, int width, int height, int centerX,
