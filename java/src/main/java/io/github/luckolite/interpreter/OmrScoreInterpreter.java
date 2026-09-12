@@ -51,6 +51,7 @@ final class OmrScoreInterpreter {
                 head, staffs, clefOrKeyComponents) != null);
         rawHeadComponents.removeIf(head -> isTempoUnitHead(gray, width, height, head, staffs));
         rawHeadComponents.removeIf(head -> isHeavyRestBarFragment(gray, width, height, head, staffs));
+        rawHeadComponents.removeIf(head -> isWholeMeasureRestHead(gray,width,height,head,staffs));
         rawHeadComponents.removeIf(head -> isHeaderFlatHead(labels,gray,width,height,head,staffs,clefOrKeyComponents));
         List<Component> headComponents = splitStackedHeads(labels, gray, width, height,
                 rawHeadComponents, staffs);
@@ -596,6 +597,50 @@ final class OmrScoreInterpreter {
                 y<=Math.min(height-1,Math.round(staff.pitchBottom-gap*1.3f));y++)
             if(heavyRestBarAtRow(gray,width,height,Math.round(head.centerX),y,gap))return true;
         return false;
+    }
+
+    /** A whole-measure rest hangs as a filled rectangle below the second rule. */
+    private static boolean isWholeMeasureRestHead(byte[] gray,int width,int height,
+            Component head,List<Staff> staffs) {
+        if(gray==null)return false;
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
+        float gap=staff.pitchGap,rule=staff.pitchBottom-gap*3;
+        if(head.centerY<rule+gap*.12f||head.centerY>rule+gap*.7f
+                ||attachedRawStem(gray,width,height,head,gap)!=null)return false;
+        int cx=Math.round(head.centerX),start=Math.max(0,Math.round(rule+gap*.15f));
+        int end=Math.min(height-1,Math.round(rule+gap*.8f));
+        int minX=width,maxX=-1,first=-1,last=-1;
+        int[] lefts=new int[end-start+1],rights=new int[end-start+1];
+        java.util.Arrays.fill(lefts,-1);
+        for(int y=start;y<=end;y++) {
+            if((gray[y*width+cx]&255)>=180)continue;
+            int left=cx,right=cx;
+            while(left>0&&(gray[y*width+left-1]&255)<180)left--;
+            while(right+1<width&&(gray[y*width+right+1]&255)<180)right++;
+            if(right-left+1>gap*1.8f)return false;
+            lefts[y-start]=left;rights[y-start]=right;
+            minX=Math.min(minX,left);maxX=Math.max(maxX,right);
+            if(first<0)first=y;last=y;
+        }
+        int w=maxX-minX+1,h=last-first+1;
+        if(first<0||first>rule+gap*.25f||last>=end||w<gap*.9f
+                ||h<gap*.3f||h>gap*.65f)return false;
+        int tolerance=Math.max(1,Math.round(gap*.1f));
+        for(int y=first;y<=last;y++) {
+            int left=lefts[y-start],right=rights[y-start];
+            if(left<0||left-minX>tolerance||maxX-right>tolerance)return false;
+        }
+        Component block=new Component(w*h,minX,maxX,first,last,(minX+maxX)*.5f,(first+last)*.5f);
+        if(attachedRawStem(gray,width,height,block,gap)!=null)return false;
+        // The supporting staff rule must continue on both sides of the block.
+        int lineY=Math.round(rule),support=0;
+        for(int side:new int[]{-1,1}) {
+            int x=Math.round((side<0?minX:maxX)+side*gap*.5f);
+            if(x<0||x>=width)continue;
+            for(int y=Math.max(0,lineY-2);y<=Math.min(height-1,lineY+2);y++)
+                if((gray[y*width+x]&255)<180){support++;break;}
+        }
+        return support==2;
     }
 
     /** A compact prediction inside the thick centre of a two-capped multimeasure rest.
