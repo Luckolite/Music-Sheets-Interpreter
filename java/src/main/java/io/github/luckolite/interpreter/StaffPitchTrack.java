@@ -15,6 +15,7 @@ final class StaffPitchTrack {
     static StaffPitchTrack detect(byte[] gray,int width,int height,float top,float bottom,float gap) {
         if(gray==null||gap<3)return null;
         if(straightRules(gray,width,height,bottom,gap,true))return null;
+        boolean broadlyStraight=straightRules(gray,width,height,bottom,gap);
         int stripWidth=Math.min(width,Math.max(80,Math.round(gap*10)));
         int first=Math.max(0,Math.round(top-gap*6)),last=Math.min(height,Math.round(bottom+gap*6));
         if(last<=first)return null;
@@ -28,8 +29,11 @@ final class StaffPitchTrack {
             RawStaffLineDetector.StaffLines best=null;float distance=Float.MAX_VALUE;
             for(var lines:RawStaffLineDetector.detect(local,stripWidth,last-first)) {
                 if(lines.gap()<gap*.8f||lines.gap()>gap*1.25f)continue;
-                if(!completeRules(local,stripWidth,last-first,lines))continue;
                 float d=Math.abs(lines.bottom()+first-bottom);
+                // Broad straight-rule evidence anchors the physical staff phase.
+                // A locally shifted group must be unambiguous before replacing
+                // it; nearby tilted groups can safely keep their existing track.
+                if(!completeRules(local,stripWidth,last-first,lines,broadlyStraight&&d>gap*.6f))continue;
                 // Incomplete semantic stripes can compress or widen the seed's
                 // spacing. A complete raw group may recalibrate that seed only
                 // while its outer rule remains close to the same physical staff.
@@ -136,8 +140,20 @@ final class StaffPitchTrack {
         return true;
     }
 
-    private static boolean completeRules(byte[] gray,int width,int height,RawStaffLineDetector.StaffLines lines) {
+    private static boolean completeRules(byte[] gray,int width,int height,RawStaffLineDetector.StaffLines lines,boolean requireUnambiguousPhase) {
         int radius=Math.max(1,Math.round(lines.gap()*.2f)),flank=Math.max(2,Math.round(lines.gap()*.32f));
+        // Six equally spaced rules do not establish which five belong to the
+        // staff. A beam extending the group must not shift the sampled phase.
+        for(int outside:requireUnambiguousPhase?new int[]{Math.round(lines.rows()[0]-lines.gap()),Math.round(lines.bottom()+lines.gap())}:new int[0]) {
+            int columns=0;
+            for(int x=0;x<width;x++)for(int y=Math.max(flank,outside-radius);y<=Math.min(height-1-flank,outside+radius);y++) {
+                int ink=gray[y*width+x]&255;
+                if(ink<=170&&(gray[(y-flank)*width+x]&255)>=ink+12&&(gray[(y+flank)*width+x]&255)>=ink+12) {
+                    columns++;break;
+                }
+            }
+            if(columns>=width*.6f)return false;
+        }
         for(int row:lines.rows()) {
             int columns=0;
             for(int x=0;x<width;x++)for(int y=Math.max(flank,row-radius);y<=Math.min(height-1-flank,row+radius);y++) {
