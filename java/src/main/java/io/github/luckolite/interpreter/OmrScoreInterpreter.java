@@ -3486,7 +3486,11 @@ final class OmrScoreInterpreter {
             enclosed += rowHoles;
             if (rowHoles >= 2) pocketRows++;
         }
-        return pocketRows >= 2 && enclosed >= Math.max(4, Math.round(headWidth * headHeight * .055f));
+        // Heavy outlines can leave small pockets above and below a staff rule.
+        // Require more enclosed rows before accepting their smaller combined area.
+        return pocketRows >= 2 && enclosed >= Math.max(4, Math.round(headWidth * headHeight * .055f))
+                || pocketRows >= Math.max(4, Math.round(gap * .22f))
+                && enclosed >= Math.max(8, Math.round(headWidth * headHeight * .04f));
     }
 
     /** Reconnect narrow cuts in an accidental's semantic mask using the printed ink. */
