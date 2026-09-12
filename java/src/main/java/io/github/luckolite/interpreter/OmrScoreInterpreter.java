@@ -212,7 +212,7 @@ final class OmrScoreInterpreter {
                     &&rawFlatFromBowl(gray,width,height,withoutRecognizedSharps(labels,width,height,localAccidentals,localPitch[1]),head,localPitch[1]))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_FLAT;
             if((writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
-                    ||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FLAT)
+                    ||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FLAT||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_SHARP)
                     &&rawNaturalFromCrossbars(gray,width,height,localAccidentals,head,localPitch[1]))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_NATURAL;
             ScoreNoteEvent event = new ScoreNoteEvent(measureIndex, clamp(position),
