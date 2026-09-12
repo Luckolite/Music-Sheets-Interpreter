@@ -209,6 +209,9 @@ final class OmrScoreInterpreter {
             int writtenAccidental = detectWrittenAccidental(labels, width, height,
                     localAccidentals, head, localPitch[1]);
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                    &&rawSharpFromSeed(gray,width,height,localAccidentals,head,localPitch[1]))
+                writtenAccidental=ScoreNoteEvent.ACCIDENTAL_SHARP;
+            if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                     &&rawFlatFromBowl(gray,width,height,withoutRecognizedSharps(labels,width,height,localAccidentals,localPitch[1]),head,localPitch[1]))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_FLAT;
             if((writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
@@ -3589,6 +3592,45 @@ final class OmrScoreInterpreter {
             }
         }
         return joined;
+    }
+
+    /** Restore shared stem/crossbar pixels only inside an accidental-labelled glyph. */
+    private static boolean rawSharpFromSeed(byte[] gray,int width,int height,
+            List<AccidentalCandidate> candidates,Component head,float gap) {
+        if(gray==null)return false;
+        for(AccidentalCandidate seed:candidates) {
+            Component c=seed.component;
+            if(seed.label!=OmrMeasurePostProcessor.CLEF_OR_KEY
+                    ||head.minX-c.maxX<gap*.10f||head.minX-c.maxX>gap*1.35f
+                    ||Math.abs(c.centerY-head.centerY)>gap*.9f
+                    ||c.maxY-c.minY+1<gap*1.55f||c.maxY-c.minY+1>gap*3.65f
+                    ||c.maxX-c.minX+1<gap*.65f||c.maxX-c.minX+1>gap*1.8f)continue;
+            int left=Math.max(0,c.minX),right=Math.min(width-1,c.maxX);
+            int top=Math.max(0,c.minY),bottom=Math.min(height-1,c.maxY);
+            int w=right-left+1,h=bottom-top+1;
+            int reach=Math.max(3,Math.round(gap*.6f)),probe=Math.max(2,Math.round(gap*.2f));
+            for(int threshold:new int[]{180,225}) {
+                byte[] mask=new byte[w*h];int area=0,minX=w,maxX=-1,minY=h,maxY=-1;long sx=0,sy=0;
+                for(int y=top;y<=bottom;y++) {
+                    int outside=0,total=0;
+                    for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
+                        if(x<left||x>right){total++;if((gray[y*width+x]&255)<threshold)outside++;}
+                    boolean rule=total>0&&outside>total*.8f;
+                    for(int x=left;x<=right;x++) {
+                        if((gray[y*width+x]&255)>=threshold)continue;
+                        if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>=threshold
+                                ||(gray[(y+probe)*width+x]&255)>=threshold))continue;
+                        int xx=x-left,yy=y-top;mask[yy*w+xx]=OmrMeasurePostProcessor.CLEF_OR_KEY;
+                        area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
+                    }
+                }
+                if(area==0)continue;
+                Component glyph=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
+                float center=sharpPitchCenter(mask,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.CLEF_OR_KEY),gap);
+                if(Float.isFinite(center)&&Math.abs(center+top-head.centerY)<gap*.4f)return true;
+            }
+        }
+        return false;
     }
 
     /** Two surviving crossbars can locate a faded natural whose thin spines were
