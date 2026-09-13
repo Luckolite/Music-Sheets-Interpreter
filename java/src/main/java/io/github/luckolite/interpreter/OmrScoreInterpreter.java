@@ -45,6 +45,8 @@ final class OmrScoreInterpreter {
                 OmrMeasurePostProcessor.NOTEHEAD);
         List<Component> clefOrKeyComponents = findComponents(labels, width, height,
                 OmrMeasurePostProcessor.CLEF_OR_KEY);
+        List<Component> symbolComponents = findComponents(labels, width, height,
+                OmrMeasurePostProcessor.SYMBOL);
         rawHeadComponents.removeIf(head->isRoundedHeaderMeter(labels,gray,width,height,
                 head,staffs,clefOrKeyComponents));
         rawHeadComponents.removeIf(head -> commonTimeGlyphBounds(labels, gray, width, height,
@@ -54,11 +56,10 @@ final class OmrScoreInterpreter {
         rawHeadComponents.removeIf(head -> isWholeMeasureRestHead(gray,width,height,head,staffs));
         rawHeadComponents.removeIf(head -> isThickBarlineHead(gray,width,height,head,staffs));
         rawHeadComponents.removeIf(head -> isHeaderFlatHead(labels,gray,width,height,head,staffs,clefOrKeyComponents));
+        rawHeadComponents.removeIf(head -> isForteHookHead(gray,width,height,head,staffs,symbolComponents));
         rawHeadComponents.removeIf(head -> isTrebleTailHead(labels,width,height,head,staffs,clefOrKeyComponents));
         List<Component> headComponents = splitStackedHeads(labels, gray, width, height,
                 rawHeadComponents, staffs);
-        List<Component> symbolComponents = findComponents(labels, width, height,
-                OmrMeasurePostProcessor.SYMBOL);
         List<Component> heads = new ArrayList<>();
         List<Component> rejectedSlurHeads = new ArrayList<>();
         for (Component head : headComponents) {
@@ -70,6 +71,7 @@ final class OmrScoreInterpreter {
         }
         List<Component> rejectedBeamHeads=beamJunctionHeads(gray,width,height,heads,staffs);
         rejectedBeamHeads.addAll(mergedBeamInteriorHeads(gray,width,height,heads,staffs));
+        rejectedBeamHeads.addAll(singleBeamInteriorHeads(gray,width,height,heads,staffs));
         heads.removeAll(rejectedBeamHeads);
         byte[] beamLabels=withoutBeamHeadIslands(labels,width,rejectedBeamHeads);
         heads.removeAll(straightEntranceFragments(gray,width,height,heads,staffs));
@@ -446,6 +448,7 @@ final class OmrScoreInterpreter {
         List<Staff> staffs = findStaffs(labels, gray, width, height, measures);
         List<Component> heads = findComponents(labels, width, height, OmrMeasurePostProcessor.NOTEHEAD);
         List<Component> glyphs = findComponents(labels, width, height, OmrMeasurePostProcessor.CLEF_OR_KEY);
+        List<Component> symbols = findComponents(labels, width, height, OmrMeasurePostProcessor.SYMBOL);
         byte[] result = labels;
         for (Component head : heads) {
             int[] bounds = commonTimeGlyphBounds(labels, gray, width, height, head, staffs, glyphs);
@@ -456,6 +459,8 @@ final class OmrScoreInterpreter {
             if (bounds == null && isHeavyRestBarFragment(gray, width, height, head, staffs))
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null && isHeaderFlatHead(labels,gray,width,height,head,staffs,glyphs))
+                bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
+            if (bounds == null && isForteHookHead(gray,width,height,head,staffs,symbols))
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null) continue;
             for (int y = bounds[2]; y <= bounds[3]; y++) for (int x = bounds[0]; x <= bounds[1]; x++) {
@@ -679,6 +684,59 @@ final class OmrScoreInterpreter {
                     (joined.centerY*joined.area+part.centerY*part.area)/area);
         }
         return joined;
+    }
+
+    /** A tiny upper hook can belong to an italic forte rather than a note.
+     * Require the descending symbol body, separate cross-stroke and lower hook. */
+    private static boolean isForteHookHead(byte[] gray,int width,int height,Component head,
+            List<Staff> staffs,List<Component> symbols) {
+        if(gray==null||gray.length!=width*height)return false;
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
+        float gap=staff.pitchGap;
+        if(head.minY<staff.pitchBottom+gap*.75f||head.centerY>staff.pitchBottom+gap*3.5f
+                ||head.maxX-head.minX+1>gap||head.maxY-head.minY+1>gap*.8f
+                ||head.area>gap*gap*.55f||attachedRawStem(gray,width,height,head,gap)!=null)return false;
+        for(Component body:symbols) {
+            if(body.area<head.area*2||body.maxY<head.maxY+gap*1.2f
+                    ||body.minY>head.maxY+gap*.3f||body.maxY>head.maxY+gap*3
+                    ||body.minX>head.minX-gap*.6f||body.maxX<head.minX
+                    ||body.maxX>head.maxX+gap*.5f||body.maxX-body.minX<gap)continue;
+            int margin=Math.max(2,Math.round(gap*.2f));
+            int left=Math.max(0,Math.min(body.minX,head.minX)-margin);
+            int right=Math.min(width-1,Math.max(body.maxX,head.maxX)+margin);
+            int top=Math.max(0,Math.min(body.minY,head.minY)-margin);
+            int bottom=Math.min(height-1,Math.max(body.maxY,head.maxY)+margin);
+            int w=right-left+1,h=bottom-top+1;
+            if(w>gap*3.2f||h>gap*4.2f)continue;
+            byte[] ink=new byte[w*h];
+            for(int y=top;y<=bottom;y++)for(int x=left;x<=right;x++)
+                if((gray[y*width+x]&255)<=205)ink[(y-top)*w+x-left]=5;
+            Component glyph=retainSeedConnectedInk(ink,w,h,head,left,top);
+            if(glyph==null||rawStrokeLeavesCrop(gray,width,height,ink,w,h,left,top,gap))continue;
+            int gh=glyph.maxY-glyph.minY+1,gw=glyph.maxX-glyph.minX+1;
+            if(gh<gap*1.8f||gh>gap*3.8f||gw<gap||gw>gap*3
+                    ||head.centerY>top+glyph.minY+gh*.3f)continue;
+            int[] spans=new int[gh],centers=new int[gh];
+            for(int y=0;y<gh;y++) {
+                int lo=w,hi=-1;
+                for(int x=glyph.minX;x<=glyph.maxX;x++)if(ink[(y+glyph.minY)*w+x]!=0){lo=Math.min(lo,x);hi=x;}
+                if(hi>=lo){spans[y]=hi-lo+1;centers[y]=lo+hi;}
+            }
+            int upper=0,cross=Math.round(gh*.2f),lower=Math.round(gh*.75f);
+            for(int y=1;y<gh*.25f;y++)if(spans[y]>spans[upper])upper=y;
+            for(int y=cross+1;y<gh*.45f;y++)if(spans[y]>spans[cross])cross=y;
+            for(int y=lower+1;y<gh;y++)if(spans[y]>spans[lower])lower=y;
+            int[] middle=java.util.Arrays.copyOfRange(spans,Math.round(gh*.45f),Math.round(gh*.75f));
+            java.util.Arrays.sort(middle);int stem=middle[middle.length/2];
+            if(stem<2||spans[upper]<stem*1.4f||spans[cross]<stem*1.65f||spans[lower]<stem*1.5f
+                    ||cross-upper<gap*.3f||centers[upper]-centers[cross]<gap*.4f
+                    ||centers[cross]-centers[lower]<gap*1.2f)continue;
+            int valley=Integer.MAX_VALUE;
+            for(int y=upper+1;y<cross;y++)valley=Math.min(valley,spans[y]);
+            if(valley>Math.min(spans[upper],spans[cross])*.65f)continue;
+            return true;
+        }
+        return false;
     }
 
     /** A tall detached count above a fully capped multimeasure-rest bar. */
@@ -3173,6 +3231,64 @@ final class OmrScoreInterpreter {
         return rejected;
     }
 
+    /** A small stemless mask fragment can sit inside a single printed beam.
+     * Two larger heads must independently anchor both ends of a thin beam. */
+    private static List<Component> singleBeamInteriorHeads(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> rejected=new ArrayList<>();if(gray==null)return rejected;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.area>gap*gap*.36f||head.maxX-head.minX+1>gap*.85f
+                    ||head.maxY-head.minY+1>gap*.65f
+                    ||attachedRawStem(gray,width,height,head,gap)!=null)continue;
+            List<int[]> stems=new ArrayList<>();
+            for(Component main:heads) {
+                if(main==head||main.area<head.area*3||nearestHeadStaff(staffs,main.centerY)!=staff
+                        ||Math.abs(main.centerX-head.centerX)>gap*6
+                        ||Math.abs(main.centerY-head.centerY)<gap*2
+                        ||Math.abs(main.centerY-head.centerY)>gap*6)continue;
+                int[] stem=attachedRawStem(gray,width,height,main,gap);
+                if(stem!=null&&Math.abs(stem[1]-head.centerY)<gap*1.5f)stems.add(stem);
+            }
+            boolean found=false;
+            for(int[] left:stems)for(int[] right:stems) {
+                if(found||left[2]!=right[2]||left[0]>=head.minX-gap*.2f
+                        ||right[0]<=head.maxX+gap*.2f||right[0]-left[0]<gap*2
+                        ||right[0]-left[0]>gap*6)continue;
+                if(thinBeamBetween(gray,width,height,left[0],left[1],right[0],right[1],
+                        head.centerX,head.centerY,gap)){rejected.add(head);found=true;}
+            }
+        }
+        return rejected;
+    }
+
+    static boolean thinBeamBetween(byte[] gray,int width,int height,int left,int leftY,
+            int right,int rightY,float headX,float headY,float gap) {
+        if(gray==null||gap<8||right-left<gap*2)return false;
+        float slope=(rightY-leftY)/(float)(right-left);if(Math.abs(slope)>.6f)return false;
+        int margin=Math.max(3,Math.round(gap*.3f)),core=Math.max(1,Math.round(gap*.08f));
+        int search=Math.max(2,Math.round(gap*.45f)),radius=Math.round(gap);
+        for(int offset=-search;offset<=search;offset++) {
+            if(Math.abs(leftY+offset+slope*(headX-left)-headY)>gap*.25f)continue;
+            int valid=0,total=0,near=0,nearValid=0;
+            for(int x=left+margin;x<=right-margin;x++) {
+                int y=Math.round(leftY+offset+slope*(x-left));
+                if(x<0||x>=width||y-radius<0||y+radius>=height)return false;
+                total++;boolean ink=true;
+                for(int d=-core;d<=core;d++)if((gray[(y+d)*width+x]&255)>=165)ink=false;
+                int top=y,bottom=y;
+                while(top>y-radius&&(gray[(top-1)*width+x]&255)<165)top--;
+                while(bottom<y+radius&&(gray[(bottom+1)*width+x]&255)<165)bottom++;
+                int span=bottom-top+1;boolean thin=ink&&span>=gap*.25f&&span<=gap*.8f;
+                if(thin)valid++;
+                if(Math.abs(x-headX)<=gap*.4f){near++;if(thin)nearValid++;}
+            }
+            if(total>=gap&&valid>=total*.93f&&near>=3&&nearValid==near)return true;
+        }
+        return false;
+    }
+
     private static byte[] withoutBeamHeadIslands(byte[] labels,int width,List<Component> rejected) {
         if(rejected.isEmpty())return labels;
         byte[] result=labels.clone();
@@ -4786,6 +4902,8 @@ final class OmrScoreInterpreter {
                 ?StaffPitchTrack.localRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap,staff.pitchTrack!=null)
                 :StaffPitchTrack.localPrintedRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap);
         if(complete==null)complete=StaffPitchTrack.localOccludedRules(labels,gray,width,height,head.centerX,
+                head.minX,head.maxX,referenceBottom,gap);
+        if(complete==null)complete=StaffPitchTrack.localFadedRules(labels,gray,width,height,head.centerX,
                 head.minX,head.maxX,referenceBottom,gap);
         if(complete!=null&&(!staff.printedPhase||Math.abs(complete[0]-referenceBottom)<gap*.5f))return complete;
         int radius = Math.max(4, Math.round(gap * 3.5f));
