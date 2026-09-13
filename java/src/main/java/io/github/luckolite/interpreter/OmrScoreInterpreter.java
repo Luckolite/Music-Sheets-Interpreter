@@ -5911,6 +5911,7 @@ final class OmrScoreInterpreter {
         // Trace the attached ink, not a fixed-height semantic window. In a wide chord the
         // upper head lies inside that window and used to masquerade as the lower head's beam.
         int[] attached = faintStem!=null?faintStem:attachedRawStem(gray, width, height, head, gap);
+        if(attached==null&&!smallHead)attached=paleStemToDoubleBeam(labels,gray,width,height,head,staff);
         attached = stemBelowDetachedBow(gray,width,height,head,gap,attached);
         attached = stemBeforePaperTail(labels,gray,width,height,head,gap,attached);
         attached = stemToReturningFlag(labels,gray,width,height,head,gap,attached);
@@ -6115,9 +6116,10 @@ final class OmrScoreInterpreter {
         if(gray==null)return null;
         float gap=staff.gap;
         int[] trace=attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),245);
-        if(trace==null||Math.abs(trace[1]-head.centerY)>gap*5.5f)return null;
+        if(trace==null||Math.abs(trace[1]-head.centerY)>gap*7.5f)return null;
         int flank=Math.max(3,Math.round(gap*.45f)),direction=trace[2];
-        for(int offset:new int[]{0,-1,1,-2,2}) {
+        int centerRadius=Math.max(2,Math.round(gap*.3f));
+        for(int offset=-centerRadius;offset<=centerRadius;offset++) {
             int x=trace[0]+offset;
             int edge=direction<0?head.maxX:head.minX;
             if(x-flank<0||x+flank>=width||Math.abs(x-edge)>Math.round(gap*.3f))continue;

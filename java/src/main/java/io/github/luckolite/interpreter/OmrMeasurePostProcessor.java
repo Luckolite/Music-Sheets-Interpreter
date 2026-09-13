@@ -393,6 +393,12 @@ final class OmrMeasurePostProcessor {
                     && (touchesTop || touchesBottom);
             int rawColumn = gray != null && semanticCandidate ? rawBarlineColumn(gray, width, height,
                     x, rows, gap, shift, slope) : Integer.MIN_VALUE;
+            // A nearly complete semantic rule can survive a scan whose raw core
+            // is slightly paler. Keep all raw continuity, space and branch gates,
+            // plus note ownership, instead of accepting the semantic trace alone.
+            if (gray != null && rawColumn == Integer.MIN_VALUE && touchesTop && touchesBottom
+                    && covered >= span * .85f)
+                rawColumn = rawBarlineColumn(gray,width,height,x,rows,gap,shift,slope,220);
             boolean rawSpansStaff = rawColumn != Integer.MIN_VALUE;
             boolean semanticBar = semanticCandidate && (gray == null || rawSpansStaff);
             // Validate stem ownership at the same printed column that proved the rule.
@@ -561,6 +567,11 @@ final class OmrMeasurePostProcessor {
 
     private static int rawBarlineColumn(byte[] gray, int width, int height, int centerX,
                                                 int[] rows, float gap, float shift, float slope) {
+        return rawBarlineColumn(gray,width,height,centerX,rows,gap,shift,slope,RAW_BARLINE_DARK);
+    }
+
+    private static int rawBarlineColumn(byte[] gray,int width,int height,int centerX,
+            int[] rows,float gap,float shift,float slope,int inkLimit) {
         shift += printedRuleOffset(gray,width,height,centerX,rows,gap,shift);
         int top = Math.max(0, Math.round(rows[0] + shift - gap * .12f));
         int bottom = Math.min(height - 1, Math.round(rows[4] + shift + gap * .12f));
@@ -587,7 +598,7 @@ final class OmrMeasurePostProcessor {
             int paper = 0;
             for (int j = Math.max(0, i - paperRadius); j <= Math.min(paperTones.length - 1, i + paperRadius); j++)
                 paper = Math.max(paper, paperTones[j]);
-            inkCutoff[i] = Math.min(RAW_BARLINE_DARK, Math.max(0, paper - 12));
+            inkCutoff[i] = Math.min(inkLimit, Math.max(0, paper - 12));
         }
         int darkRows = 0, longest = 0, current = 0;
         boolean touchesTop = false, touchesBottom = false;
