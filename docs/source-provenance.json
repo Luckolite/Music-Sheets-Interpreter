@@ -1,5 +1,5 @@
 {
-  "source_commit": "cbe134b695e4fb5eaa63bbe416bf303884817d8c",
+  "source_commit": "ecd38de479ad448a453472de17cfd03251d4855d",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -134,7 +134,7 @@
     },
     "StaffPitchTrack.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
-      "source_sha256": "47bc1d4fc837818cc5cb0587728049ed8c8e7293fffa1158c0b2f61cc6af8a45"
+      "source_sha256": "fca69f6baa88a48c4e3383a49b97522bdc50c889d5d0c70c7e712139f55d5b01"
     },
     "OpeningMeasureLayout.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpeningMeasureLayout.java",

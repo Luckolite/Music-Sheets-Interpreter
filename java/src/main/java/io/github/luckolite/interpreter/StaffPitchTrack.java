@@ -289,7 +289,7 @@ final class StaffPitchTrack {
             // A beam and four rules can outscore a faded outer rule. If that
             // omitted rule continues on both sides at the original staff edge,
             // the shifted group is ambiguous and must not replace the reference.
-            if(bilateral&&Math.abs(base-referenceBottom)>gap*.6f) {
+            if(Math.abs(base-referenceBottom)>gap*.6f) {
                 float outside=base<referenceBottom?base+spacing:base-5*spacing;
                 float expected=base<referenceBottom?referenceBottom:referenceBottom-4*gap;
                 if(Math.abs(outside-expected)<gap*.35f&&printedRuleOnBothSides(gray,width,height,x,
