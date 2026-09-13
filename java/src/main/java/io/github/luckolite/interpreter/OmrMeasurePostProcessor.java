@@ -610,7 +610,8 @@ final class OmrMeasurePostProcessor {
         int span = bottom - top + 1;
         if (!(touchesTop && touchesBottom && darkRows >= span * .68f
                 && longest >= span * .48f)) return Integer.MIN_VALUE;
-        if(stackedFourCounters(gray,width,height,centerX,top,bottom,gap))return Integer.MIN_VALUE;
+        if(stackedFourCounters(gray,width,height,centerX,top,bottom,gap)
+                ||threeOverFourCounters(gray,width,height,centerX,top,bottom,gap))return Integer.MIN_VALUE;
         // A rest plus the five horizontal staff lines can satisfy the aggregate
         // coverage test while leaving an entire staff space empty. A barline
         // must also cross each of the four spaces between those lines. Ignore
@@ -681,9 +682,23 @@ final class OmrMeasurePostProcessor {
     /** A stacked pair of fours can have a continuous right stroke. Its two
      * aligned triangular counters are stronger evidence than that stroke. */
     static boolean stackedFourCounters(byte[] gray,int width,int height,int column,int top,int bottom,float gap) {
+        var counters=triangularStaffCounters(gray,width,height,column,top,bottom,gap);
+        if(counters.size()!=2)return false;
+        float[] a=counters.get(0),b=counters.get(1);
+        return Math.abs(a[0]-b[0])<=gap*.25f&&b[1]-a[1]>=gap*1.65f&&b[1]-a[1]<=gap*2.35f
+                &&a[1]<(top+bottom)*.5f-gap*.2f&&b[1]>(top+bottom)*.5f+gap*.2f;
+    }
+
+    private static List<float[]> triangularStaffCounters(byte[] gray,int width,int height,
+            int column,int top,int bottom,float gap) {
+        return triangularStaffCounters(gray,width,height,column,top,bottom,gap,false);
+    }
+
+    private static List<float[]> triangularStaffCounters(byte[] gray,int width,int height,
+            int column,int top,int bottom,float gap,boolean allowClipped) {
         int left=Math.max(0,column-Math.round(gap*1.6f)),right=Math.min(width-1,column+Math.round(gap*.5f));
         int first=Math.max(0,top-Math.round(gap*.2f)),last=Math.min(height-1,bottom+Math.round(gap*.2f));
-        int w=right-left+1,h=last-first+1;if(w<5||h<10)return false;
+        int w=right-left+1,h=last-first+1;if(w<5||h<10)return List.of();
         boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];List<float[]> counters=new ArrayList<>();
         for(int seed=0;seed<seen.length;seed++) {
             if(seen[seed]||(gray[(first+seed/w)*width+left+seed%w]&255)<=160)continue;
@@ -698,18 +713,59 @@ final class OmrMeasurePostProcessor {
                 }
             }
             int cw=maxX-minX+1,ch=maxY-minY+1;
+            // A staff rule can clip the top of the four's counter. Its surviving
+            // widening pocket still corroborates the two open bowls above it.
+            boolean clipped=allowClipped&&Math.abs(first+minY-(top+bottom)*.5f-gap)<=gap*.2f
+                    &&ch>=Math.floor(gap*.15f);
             if(minX==0||maxX==w-1||minY==0||maxY==h-1||write<gap*gap*.05f||write>gap*gap*.4f
-                    ||cw<gap*.2f||cw>gap||ch<gap*.2f||ch>gap*.85f||left+maxX>column+gap*.3f)continue;
+                    ||cw<gap*.2f||cw>gap||(ch<gap*.2f&&!clipped)||ch>gap*.85f||left+maxX>column+gap*.3f)continue;
             int half=ch/2;float upper=0,lower=0;
             for(int j=0;j<half;j++){upper+=rows[minY+j];lower+=rows[maxY-j];}
             // Parallel double bars enclose rectangular spaces, not widening counters.
-            if((lower-upper)/Math.max(1,half)<Math.max(1f,gap*.1f))continue;
+            if((lower-upper)/Math.max(1,half)<Math.max(1f,gap*(clipped?.05f:.1f)))continue;
             counters.add(new float[]{left+(minX+maxX)*.5f,first+(minY+maxY)*.5f});
         }
-        if(counters.size()!=2)return false;
-        float[] a=counters.get(0),b=counters.get(1);
-        return Math.abs(a[0]-b[0])<=gap*.25f&&b[1]-a[1]>=gap*1.65f&&b[1]-a[1]<=gap*2.35f
-                &&a[1]<(top+bottom)*.5f-gap*.2f&&b[1]>(top+bottom)*.5f+gap*.2f;
+        return counters;
+    }
+
+    /** A three above a four has two open left bowls over one enclosed triangular counter. */
+    static boolean threeOverFourCounters(byte[] gray,int width,int height,int column,
+            int top,int bottom,float gap) {
+        var counters=triangularStaffCounters(gray,width,height,column,top,bottom,gap,true);
+        if(counters.size()!=1)return false;
+        float y=counters.get(0)[1],middle=(top+bottom)*.5f;
+        if(y<middle+gap*.2f||y>middle+gap*1.6f)return false;
+        for(int bowl=0;bowl<2;bowl++) {
+            int support=0;
+            int first=Math.max(0,Math.round(top+gap*(bowl+.2f)));
+            int last=Math.min(height-1,Math.round(top+gap*(bowl+.88f)));
+            for(int row=first;row<=last;row++)
+                if(separatedNumeralInk(gray,width,row,column,gap))support++;
+            if(support<Math.max(2,Math.floor(gap*.22f)))return false;
+        }
+        return true;
+    }
+
+    private static boolean separatedNumeralInk(byte[] gray,int width,int y,int column,float gap) {
+        int left=Math.max(0,column-Math.round(gap*1.4f));
+        int right=Math.min(width-1,column+Math.round(gap*.65f));
+        int previousStart=-1,previousEnd=-1;
+        for(int x=left;x<=right;) {
+            if((gray[y*width+x]&255)>160){x++;continue;}
+            int start=x;while(x<=right&&(gray[y*width+x]&255)<=160)x++;
+            int end=x-1,span=end-start+1;
+            if(start==left||end==right){previousStart=-1;continue;}
+            if(previousStart>=0) {
+                int earlier=previousEnd-previousStart+1,space=start-previousEnd-1;
+                float center=(previousStart+previousEnd)*.5f;
+                if(earlier>=gap*.15f&&earlier<=gap*.8f&&span>=gap*.15f&&span<=gap*.8f
+                        &&space>=gap*.12f&&space<=gap*.6f
+                        &&center>=column-gap*1.1f&&center<=column-gap*.25f
+                        &&start<=column+gap*.15f&&end>=column-gap*.15f)return true;
+            }
+            previousStart=start;previousEnd=end;
+        }
+        return false;
     }
 
     private static int countLabel(byte[] labels, int width, int height, byte wanted,

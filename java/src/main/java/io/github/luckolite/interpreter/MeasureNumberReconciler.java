@@ -364,7 +364,7 @@ final class MeasureNumberReconciler {
                     continue;
                 int candidateLength = length[before] + 1;
                 float candidateError = error[before] + transitionCountError(
-                        candidates.get(before), difference, layout);
+                        candidates.get(before), candidates.get(index), difference, layout);
                 if (candidateLength > length[index]
                         || (candidateLength == length[index] && candidateError < error[index])) {
                     length[index] = candidateLength;
@@ -433,19 +433,15 @@ final class MeasureNumberReconciler {
 
     /** Uses detected row count only to break equal-length OCR sequences. Printed anchors remain
      * authoritative when they form a longer run, even if semantic barlines are badly damaged. */
-    private static float transitionCountError(NumberToken from, int printedDifference,
-                                              List<Row> layout) {
+    private static float transitionCountError(NumberToken from, NumberToken to,
+                                              int printedDifference, List<Row> layout) {
         if (layout == null || layout.isEmpty()) return 0;
-        float centerY = (from.top + from.bottom) * .5f;
-        Row closest = null;
-        float distance = Float.MAX_VALUE;
-        for (Row row : layout) {
-            float next = Math.abs(centerY - row.top);
-            if (next < distance) { distance = next; closest = row; }
-        }
-        if (closest == null || distance > Math.max(.045f,
-                (closest.bottom - closest.top) * .85f)) return 0;
-        return Math.abs(printedDifference - closest.measures.size());
+        int first = headerRow(from, layout), next = headerRow(to, layout);
+        if (first < 0 || next <= first) return 0;
+        int visual = 0;
+        for (int index = first; index < next; index++)
+            visual += layout.get(index).measures.size();
+        return Math.abs(printedDifference - visual);
     }
 
     /** A system number is printed outside the staff. Tempo values, time signatures, tuplets, and
