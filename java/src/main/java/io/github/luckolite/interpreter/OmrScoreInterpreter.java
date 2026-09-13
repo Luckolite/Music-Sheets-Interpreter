@@ -74,7 +74,7 @@ final class OmrScoreInterpreter {
         rejectedBeamHeads.addAll(singleBeamInteriorHeads(gray,width,height,heads,staffs));
         heads.removeAll(rejectedBeamHeads);
         byte[] beamLabels=withoutBeamHeadIslands(labels,width,rejectedBeamHeads);
-        heads.removeAll(straightEntranceFragments(gray,width,height,heads,staffs));
+        heads.removeAll(entranceStrokeFragments(gray,width,height,heads,staffs));
         List<Component> shortTies=shortTieBowlHeads(labels,gray,width,height,heads,staffs);
         heads.removeAll(shortTies);
         rejectedSlurHeads.addAll(shortTies);
@@ -2065,27 +2065,42 @@ final class OmrScoreInterpreter {
                     &&componentHeight<=staff.gap*2.6f&&component.maxX-component.minX+1<=staff.gap*1.7f) {
                 // A semantic bridge can fill the neck between two solid heads.
                 // The printed silhouette must independently contain two lobes.
-                int[] rawRows=new int[rowInk.length];
-                for(int y=component.minY;y<=component.maxY;y++)
-                    for(int x=component.minX;x<=component.maxX;x++)
-                        if((gray[y*width+x]&255)<=165)rawRows[y-component.minY]++;
-                int neck=-1,minimum=Integer.MAX_VALUE;
-                for(int y=firstSplit;y<=lastSplit;y++)if(rawRows[y-component.minY]<minimum) {
-                    minimum=rawRows[y-component.minY];neck=y;
-                }
-                int peakAbove=0,peakBelow=0;
-                for(int y=component.minY;y<neck;y++)peakAbove=Math.max(peakAbove,rawRows[y-component.minY]);
-                for(int y=neck+1;y<=component.maxY;y++)peakBelow=Math.max(peakBelow,rawRows[y-component.minY]);
-                Component a=neck<0?null:componentSlice(labels,width,component,component.minY,neck);
-                Component b=neck<0?null:componentSlice(labels,width,component,neck+1,component.maxY);
-                if(a!=null&&b!=null&&minimum<=Math.min(peakAbove,peakBelow)*.78f
-                        &&peakAbove>=staff.gap*.65f&&peakBelow>=staff.gap*.65f
-                        &&plausibleHead(a,staff.gap)&&plausibleHead(b,staff.gap)
-                        &&!hasOpenCenter(labels,gray,width,height,a,staff.gap)
-                        &&!hasOpenCenter(labels,gray,width,height,b,staff.gap)
-                        &&b.centerY-a.centerY>=staff.gap*.58f&&b.centerY-a.centerY<=staff.gap*2.25f
-                        &&Math.abs(a.centerX-b.centerX)<=staff.gap*1.45f) {
-                    upper=a;lower=b;twoLobes=true;
+                // A darker core can reveal the neck when pale edge ink joins it.
+                for(int inkThreshold:new int[]{165,120}) {
+                    int[] rawRows=new int[rowInk.length];
+                    for(int y=component.minY;y<=component.maxY;y++)
+                        for(int x=component.minX;x<=component.maxX;x++)
+                            if((gray[y*width+x]&255)<=inkThreshold)rawRows[y-component.minY]++;
+                    int neck=-1,minimum=Integer.MAX_VALUE;
+                    for(int y=firstSplit;y<=lastSplit;y++)if(rawRows[y-component.minY]<minimum) {
+                        minimum=rawRows[y-component.minY];neck=y;
+                    }
+                    int peakAbove=0,peakBelow=0;
+                    for(int y=component.minY;y<neck;y++)peakAbove=Math.max(peakAbove,rawRows[y-component.minY]);
+                    for(int y=neck+1;y<=component.maxY;y++)peakBelow=Math.max(peakBelow,rawRows[y-component.minY]);
+                    if(inkThreshold<165) {
+                        int upperCore=0,lowerCore=0,coreRun=0;
+                        for(int y=component.minY;y<neck;y++) {
+                            coreRun=rawRows[y-component.minY]>=peakAbove*.6f?coreRun+1:0;upperCore=Math.max(upperCore,coreRun);
+                        }
+                        coreRun=0;
+                        for(int y=neck+1;y<=component.maxY;y++) {
+                            coreRun=rawRows[y-component.minY]>=peakBelow*.6f?coreRun+1:0;lowerCore=Math.max(lowerCore,coreRun);
+                        }
+                        // Isolated dark rules or strokes cannot supply filled oval cores.
+                        if(upperCore<staff.gap*.35f||lowerCore<staff.gap*.35f)continue;
+                    }
+                    Component a=neck<0?null:componentSlice(labels,width,component,component.minY,neck);
+                    Component b=neck<0?null:componentSlice(labels,width,component,neck+1,component.maxY);
+                    if(a!=null&&b!=null&&minimum<=Math.min(peakAbove,peakBelow)*.78f
+                            &&peakAbove>=staff.gap*.65f&&peakBelow>=staff.gap*.65f
+                            &&plausibleHead(a,staff.gap)&&plausibleHead(b,staff.gap)
+                            &&!hasOpenCenter(labels,gray,width,height,a,staff.gap)
+                            &&!hasOpenCenter(labels,gray,width,height,b,staff.gap)
+                            &&b.centerY-a.centerY>=staff.gap*.58f&&b.centerY-a.centerY<=staff.gap*2.25f
+                            &&Math.abs(a.centerX-b.centerX)<=staff.gap*1.45f) {
+                        upper=a;lower=b;twoLobes=true;break;
+                    }
                 }
             }
             if (!twoLobes && gray != null && componentHeight>=staff.gap*1.7f
@@ -2504,6 +2519,7 @@ final class OmrScoreInterpreter {
             calibrateInterruptedStaffs(gray,width,height,staffs,interruptedRows,semanticSlope);
         }
         recoverFadedStaffAliases(gray,width,height,staffs,measures,semanticSlope);
+        calibrateContrastedFadedStaffs(gray,width,height,staffs,semanticSlope);
         staffs.sort(Comparator.comparingDouble(staff -> staff.top));
         for(Staff staff:staffs) {
             if(!staff.printedPhase&&!staff.printedSlope) {
@@ -2597,6 +2613,58 @@ final class OmrScoreInterpreter {
                 recovered.pitchSlope=slope;recovered.printedPhase=true;staffs.set(i,recovered);
             }
         }
+    }
+
+    /** Thin pale rules can establish scale despite a moderately compressed mask.
+     * Three independent systems must corroborate the complete printed group. */
+    private static void calibrateContrastedFadedStaffs(byte[] gray,int width,int height,
+            List<Staff> staffs,float slope) {
+        if(gray==null||staffs.size()<4)return;
+        List<Float> gaps=new ArrayList<>();for(Staff staff:staffs)gaps.add(staff.pitchGap);
+        gaps.sort(Float::compare);float typical=gaps.get(gaps.size()/2);
+        int flank=Math.max(2,Math.round(typical*.22f));
+        int[] rows=new int[height];
+        for(int y=flank;y<height-flank;y++)for(int x=0;x<width;x++) {
+            int ink=gray[y*width+x]&255;
+            if(ink>225||(gray[(y-flank)*width+x]&255)<ink+12
+                    ||(gray[(y+flank)*width+x]&255)<ink+12)continue;
+            int row=Math.round(y-slope*(x-width*.5f));if(row>=0&&row<height)rows[row]++;
+        }
+        for(var raw:RawStaffLineDetector.detectFromStrength(rows,Math.max(24,Math.round(width*.25f)),height)) {
+            if(Math.abs(raw.gap()-typical)>typical*.08f)continue;
+            int corroboration=0;for(float originalGap:gaps)
+                if(Math.abs(originalGap-raw.gap())<=raw.gap()*.08f)corroboration++;
+            if(corroboration<3||!completeContrastedFadedStaff(gray,width,height,raw,slope))continue;
+            for(Staff staff:staffs) {
+                int independent=corroboration-(Math.abs(staff.pitchGap-raw.gap())<=raw.gap()*.08f?1:0);
+                if(independent<3)continue;
+                if(staff.printedPhase||staff.printedSlope||staff.pitchTrack!=null
+                        ||staff.pitchGap<raw.gap()*.8f||staff.pitchGap>raw.gap()*1.2f
+                        ||Math.abs(staff.pitchBottom-raw.bottom())>raw.gap()*.45f
+                        ||Math.abs(staff.pitchGap-raw.gap())<raw.gap()*.035f)continue;
+                staff.pitchBottom=raw.bottom();staff.pitchGap=raw.gap();
+                staff.pitchSlope=slope;staff.printedPhase=true;
+            }
+        }
+    }
+
+    private static boolean completeContrastedFadedStaff(byte[] gray,int width,int height,
+            RawStaffLineDetector.StaffLines staff,float slope) {
+        int radius=Math.max(1,Math.round(staff.gap()*.15f)),flank=Math.max(2,Math.round(staff.gap()*.22f));
+        for(int i=-2;i<=10;i++) {
+            float row=staff.top()+i*staff.gap()*.5f;int supported=0,samples=0;
+            for(int x=Math.round(width*.1f);x<width*.94f;x+=Math.max(1,width/512)) {
+                int center=Math.round(row+slope*(x-width*.5f));samples++;
+                for(int y=Math.max(flank,center-radius);y<=Math.min(height-1-flank,center+radius);y++) {
+                    int ink=gray[y*width+x]&255;
+                    if(ink<=225&&(gray[(y-flank)*width+x]&255)>=ink+12
+                            &&(gray[(y+flank)*width+x]&255)>=ink+12){supported++;break;}
+                }
+            }
+            boolean rule=i>=0&&i<=8&&i%2==0;
+            if(samples<24||(rule?supported<samples*.75f:supported>=samples*.4f))return false;
+        }
+        return true;
     }
 
     private static boolean completeFadedStaff(byte[] gray,int width,int height,
@@ -3424,8 +3492,8 @@ final class OmrScoreInterpreter {
         return false;
     }
 
-    /** A small mask island on an ascending entrance stroke is not a separate attack. */
-    private static List<Component> straightEntranceFragments(byte[] gray,int width,int height,
+    /** A small mask island on a straight or curved entrance stroke is not a separate attack. */
+    private static List<Component> entranceStrokeFragments(byte[] gray,int width,int height,
             List<Component> heads,List<Staff> staffs) {
         List<Component> rejected=new ArrayList<>();
         if(gray==null)return rejected;
@@ -3433,7 +3501,7 @@ final class OmrScoreInterpreter {
             Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
             float gap=staff.gap;
             if(head.area>gap*gap*.3f||head.maxX-head.minX+1>gap*.85f
-                    ||head.maxY-head.minY+1>gap*.65f
+                    ||head.maxY-head.minY+1>gap*.9f
                     ||attachedRawStem(gray,width,height,head,gap*.65f)!=null)continue;
             for(Component main:heads) {
                 float dx=main.centerX-head.centerX,dy=head.centerY-main.centerY;
@@ -3441,10 +3509,70 @@ final class OmrScoreInterpreter {
                         ||main.area<head.area*3||main.maxX-main.minX+1<gap
                         ||dx<gap||dx>gap*3||dy<gap*.5f||dy>gap*2.5f
                         ||attachedRawStem(gray,width,height,main,gap*.65f)==null)continue;
-                if(rawStraightEntrance(gray,width,height,head,main,gap)){rejected.add(head);break;}
+                if(head.maxY-head.minY+1<=gap*.65f&&rawStraightEntrance(gray,width,height,head,main,gap)
+                        ||rawCurvedEntrance(gray,width,height,head,main,gap)){rejected.add(head);break;}
             }
         }
         return rejected;
+    }
+
+    /** A scoop has one thin rising curve ending beside the destination, not an oval attack. */
+    private static boolean rawCurvedEntrance(byte[] gray,int width,int height,Component head,
+            Component main,float gap) {
+        int left=head.minX-Math.round(gap),right=main.minX-Math.max(2,Math.round(gap*.2f));
+        int top=Math.round(main.centerY-gap*.5f),bottom=head.maxY+Math.round(gap*.65f);
+        int ruleLeft=left-Math.round(gap*2),ruleRight=right+Math.round(gap*2);
+        if(ruleLeft<0||ruleRight>=width||top<1||bottom>=height-1||right-left<gap)return false;
+        int w=right-left+1,h=bottom-top+1;byte[] ink=new byte[w*h];boolean[] rules=new boolean[h];
+        for(int y=top;y<=bottom;y++) {
+            int dark=0;for(int x=ruleLeft;x<=ruleRight;x++)if((gray[y*width+x]&255)<165)dark++;
+            rules[y-top]=dark>=(ruleRight-ruleLeft+1)*.9f;
+        }
+        for(int y=0;y<h;) {
+            int start=y;while(y<h&&rules[y])y++;
+            if(y-start>Math.max(3,Math.round(gap*.3f)))java.util.Arrays.fill(rules,start,y,false);
+            if(y==start)y++;
+        }
+        for(int y=0;y<h;y++)for(int x=0;x<w;x++)
+            if(!rules[y]&&(gray[(top+y)*width+left+x]&255)<165)ink[y*w+x]=OmrMeasurePostProcessor.SYMBOL;
+        // Restore only crossings supported on both sides of a narrow staff stripe.
+        for(int y=0;y<h;) {
+            if(!rules[y]){y++;continue;}
+            int first=y;while(y<h&&rules[y])y++;
+            if(first==0||y==h)continue;
+            for(int x=1;x<w-1;x++) {
+                if(ink[(first-1)*w+x]!=0&&ink[y*w+x]!=0)
+                    for(int yy=first;yy<y;yy++)ink[yy*w+x]=OmrMeasurePostProcessor.SYMBOL;
+            }
+        }
+        Component curve=retainSeedConnectedInk(ink,w,h,head,left,top);
+        if(curve==null)return false;
+        int span=curve.maxX-curve.minX+1,rise=curve.maxY-curve.minY+1;
+        if(curve.minX==0||curve.maxX==w-1||curve.minY==0||curve.maxY==h-1
+                ||span<gap*1.2f||span>gap*2.5f||rise<gap*.9f||rise>gap*2.2f
+                ||span<(head.maxX-head.minX+1)*1.6f||rise<(head.maxY-head.minY+1)*1.5f
+                ||curve.area>span*rise*.6f||main.minX-(left+curve.maxX)>gap*.65f
+                ||Math.abs(top+curve.minY-main.centerY)>gap*.6f)return false;
+        float[] centers=new float[3],columnCenters=new float[w];int[] bins=new int[3],columnCounts=new int[w];
+        for(int x=curve.minX;x<=curve.maxX;x++) {
+            int count=0,sum=0,runs=0;boolean previous=false;
+            for(int y=curve.minY;y<=curve.maxY;y++) {
+                boolean dark=ink[y*w+x]!=0;if(dark){count++;sum+=y;if(!previous)runs++;}previous=dark;
+            }
+            if(count==0||runs>1)return false;
+            columnCenters[x]=sum/(float)count;columnCounts[x]=count;
+            int bin=Math.min(2,(x-curve.minX)*3/span);centers[bin]+=columnCenters[x];bins[bin]++;
+        }
+        int checked=0,thin=0;
+        for(int x=curve.minX+2;x<=curve.maxX-2;x++) {
+            float slope=(columnCenters[x+2]-columnCenters[x-2])*.25f;
+            checked++;if(columnCounts[x]/Math.sqrt(1+slope*slope)<=Math.max(3,gap*.35f))thin++;
+        }
+        if(checked<gap*.7f||thin<checked*.85f)return false;
+        for(int i=0;i<3;i++){if(bins[i]==0)return false;centers[i]/=bins[i];}
+        return centers[0]-centers[1]>=gap*.08f&&centers[1]-centers[2]>=gap*.25f
+                &&centers[0]-centers[2]>=gap*.6f
+                &&centers[1]-(centers[0]+centers[2])*.5f>=gap*.08f;
     }
 
     private static boolean rawStraightEntrance(byte[] gray,int width,int height,Component head,
