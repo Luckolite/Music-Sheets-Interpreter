@@ -4852,6 +4852,7 @@ final class OmrScoreInterpreter {
     private static boolean rawFlatFromBowl(byte[] gray,int width,int height,
             List<AccidentalCandidate> candidates,Component head,float gap) {
         return recoverFlatFromBowl(gray,width,height,candidates,head,gap,180)
+                ||recoverFlatFromBowl(gray,width,height,candidates,head,gap,225)
                 ||recoverFlatFromBowl(gray,width,height,candidates,head,gap,235);
     }
 
@@ -4870,20 +4871,7 @@ final class OmrScoreInterpreter {
             int left=Math.max(0,c.minX-margin),right=Math.min(width-1,Math.min(c.maxX+margin,head.minX-2));
             int top=Math.max(0,Math.round(head.centerY-gap*2.7f)),bottom=Math.min(height-1,Math.round(head.centerY+gap*.8f));
             int w=right-left+1,h=bottom-top+1;if(w<=0||h<=0)continue;
-            byte[] ink=new byte[w*h];
-            int reach=Math.max(3,Math.round(gap*.6f)),probe=Math.max(2,Math.round(gap*.2f));
-            for(int y=top;y<=bottom;y++) {
-                int outside=0,dark=0;
-                for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
-                    if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=threshold)dark++;}
-                boolean rule=outside>0&&dark>=outside*.8f;
-                for(int x=left;x<=right;x++) {
-                    if((gray[y*width+x]&255)>threshold)continue;
-                    if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>threshold
-                            ||(gray[(y+probe)*width+x]&255)>threshold))continue;
-                    int xx=x-left,yy=y-top;ink[yy*w+xx]=OmrMeasurePostProcessor.SYMBOL;
-                }
-            }
+            byte[] ink=flatInkAtThreshold(gray,width,height,left,right,top,bottom,gap,threshold);
             // An arpeggio arrow or another tall mark can resemble a flat when clipped.
             // Its printed stroke must finish inside the inspected column.
             Component connected=retainSeedConnectedInk(ink,w,h,c,left,top);
@@ -4891,10 +4879,55 @@ final class OmrScoreInterpreter {
                     Math.max(224,threshold)))continue;
             var glyph=new AccidentalCandidate(connected,OmrMeasurePostProcessor.SYMBOL);
             if(!isNaturalGlyph(ink,w,h,glyph,gap)&&!isSharpGlyph(ink,w,h,glyph,gap)
-                    &&isFlatGlyph(ink,w,h,glyph,gap)&&Math.abs(top+flatPitchCenter(ink,w,glyph,gap)-head.centerY)<=gap*.45f)
+                    &&isFlatGlyph(ink,w,h,glyph,gap)&&Math.abs(top+flatPitchCenter(ink,w,glyph,gap)-head.centerY)<=gap*.45f) {
+                // An intermediate cutoff must not hide a faint second spine or
+                // a continued stroke that disproves the complete flat shape.
+                if(threshold==225) {
+                    byte[] fullInk=flatInkAtThreshold(gray,width,height,left,right,top,bottom,gap,235);
+                    Component full=retainSeedConnectedInk(fullInk,w,h,c,left,top);
+                    if(full==null||rawStrokeLeavesCropAtThreshold(gray,width,height,fullInk,w,h,left,top,gap,235))continue;
+                    var fullGlyph=new AccidentalCandidate(full,OmrMeasurePostProcessor.SYMBOL);
+                    if(isNaturalGlyph(fullInk,w,h,fullGlyph,gap)||isSharpGlyph(fullInk,w,h,fullGlyph,gap)
+                            ||separatedUpperFlatStrokes(fullInk,w,full,gap))continue;
+                }
                 return true;
+            }
         }
         return false;
+    }
+
+    /** A light second upright must not disappear when recovering a flat's darker spine. */
+    private static boolean separatedUpperFlatStrokes(byte[] ink,int width,Component glyph,float gap) {
+        int end=glyph.minY+Math.max(2,Math.round((glyph.maxY-glyph.minY+1)*.45f));
+        int required=Math.max(2,(int)Math.ceil((end-glyph.minY)*.68f));
+        int last=-1;
+        for(int x=glyph.minX;x<=glyph.maxX;x++) {
+            int count=0;for(int y=glyph.minY;y<end;y++)if(ink[y*width+x]!=0)count++;
+            if(count<required)continue;
+            if(last>=0&&x-last>Math.max(2,Math.round(gap*.2f)))return true;
+            last=x;
+        }
+        return false;
+    }
+
+    private static byte[] flatInkAtThreshold(byte[] gray,int width,int height,int left,int right,
+            int top,int bottom,float gap,int threshold) {
+        int w=right-left+1,h=bottom-top+1;
+        byte[] ink=new byte[w*h];
+        int reach=Math.max(3,Math.round(gap*.6f)),probe=Math.max(2,Math.round(gap*.2f));
+        for(int y=top;y<=bottom;y++) {
+            int outside=0,dark=0;
+            for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
+                if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=threshold)dark++;}
+            boolean rule=outside>0&&dark>=outside*.8f;
+            for(int x=left;x<=right;x++) {
+                if((gray[y*width+x]&255)>threshold)continue;
+                if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>threshold
+                        ||(gray[(y+probe)*width+x]&255)>threshold))continue;
+                ink[(y-top)*w+x-left]=OmrMeasurePostProcessor.SYMBOL;
+            }
+        }
+        return ink;
     }
 
     /** Raster rounding can make a beamed grace group nearly one staff space tall.
