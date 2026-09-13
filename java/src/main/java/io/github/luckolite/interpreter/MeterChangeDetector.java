@@ -1,14 +1,14 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /** Bounded crops of stacked signature glyphs, including signatures inside a system. */
-final class MeterChangeDetector {
-    record Crop(int left, int top, int right, int bottom, int firstLine, float gap) { }
+public final class MeterChangeDetector {
+    public record Crop(int left, int top, int right, int bottom, int firstLine, float gap) { }
+    private record SignatureStaff(RawStaffLineDetector.StaffLines lines,float slope) { }
 
     /** Resolve contradictory staff copies only when two complete written bars support one reading. */
     static ScoreMeterChange resolveConflict(java.util.Set<ScoreMeterChange> choices,
@@ -44,11 +44,12 @@ final class MeterChangeDetector {
         return winner;
     }
 
-    static List<Crop> candidates(byte[] labels, byte[] gray, int width, int height) {
+    public static List<Crop> candidates(byte[] labels, byte[] gray, int width, int height) {
         List<Crop> result = new ArrayList<>();
         if (labels == null || gray == null || labels.length != width*height || gray.length != width*height)
             return result;
-        for (RawStaffLineDetector.StaffLines staff : RawStaffLineDetector.detect(gray,width,height)) {
+        for (var geometry : signatureStaffs(labels,gray,width,height)) {
+            var staff=geometry.lines();float slope=geometry.slope();
             float gap=staff.gap();
             int top=Math.max(0,staff.top()), bottom=Math.min(height-1,staff.bottom());
             int radius=Math.max(1,Math.round(gap*.12f));
@@ -57,7 +58,10 @@ final class MeterChangeDetector {
                 boolean line=false;
                 for(int row:staff.rows()) if(Math.abs(y-row)<=radius) {line=true;break;}
                 if(line) continue;
-                for(int x=0;x<width;x++) if((gray[y*width+x]&255)<155) ink[x]++;
+                for(int x=0;x<width;x++) {
+                    int yy=y+Math.round(slope*(x-width*.5f));
+                    if(yy>=0&&yy<height&&(gray[yy*width+x]&255)<155)ink[x]++;
+                }
             }
             int maxBlank=Math.max(1,Math.round(gap*.22f));
             for(int x=0;x<width;x++) {
@@ -72,12 +76,14 @@ final class MeterChangeDetector {
                 int key=0,head=0,upper=0,lower=0;
                 int minY=height,maxY=0;
                 for(int y=top;y<=bottom;y++) for(int xx=left;xx<=last;xx++) {
-                    byte label=labels[y*width+xx];
+                    int yy=y+Math.round(slope*(xx-width*.5f));
+                    if(yy<0||yy>=height)continue;
+                    byte label=labels[yy*width+xx];
                     if(label==OmrMeasurePostProcessor.CLEF_OR_KEY) key++;
                     if(label==OmrMeasurePostProcessor.NOTEHEAD) head++;
                     boolean onLine=false;
                     for(int row:staff.rows()) if(Math.abs(y-row)<=radius) {onLine=true;break;}
-                    if(!onLine && (gray[y*width+xx]&255)<155) {
+                    if(!onLine && (gray[yy*width+xx]&255)<155) {
                         minY=Math.min(minY,y);maxY=Math.max(maxY,y);
                         if(y<top+gap*1.8f)upper++;
                         if(y>top+gap*2.2f)lower++;
@@ -89,16 +95,65 @@ final class MeterChangeDetector {
                 if(head>gap*gap*.20f || upper<gap*2 || lower<gap*2
                         || maxY-minY<gap*3.1f) continue;
                 int pad=Math.max(2,Math.round(gap*.18f));
-                result.add(new Crop(Math.max(0,left-pad),Math.max(0,top-pad),
-                        Math.min(width,last+pad+1),Math.min(height,bottom+pad+1),staff.top(),gap));
+                int shiftLeft=Math.round(slope*(left-width*.5f));
+                int shiftRight=Math.round(slope*(last-width*.5f));
+                int firstLine=staff.top()+Math.round(slope*((left+last)*.5f-width*.5f));
+                result.add(new Crop(Math.max(0,left-pad),Math.max(0,top+Math.min(shiftLeft,shiftRight)-pad),
+                        Math.min(width,last+pad+1),Math.min(height,bottom+Math.max(shiftLeft,shiftRight)+pad+1),firstLine,gap));
                 if(result.size()>=48) return List.copyOf(result);
             }
         }
         return List.copyOf(result);
     }
 
+    /** Faded rules can retain semantic staff evidence while falling below the raw ink cutoff. */
+    private static List<SignatureStaff> signatureStaffs(byte[] labels,byte[] gray,
+                                                                       int width,int height) {
+        var staffs=new ArrayList<SignatureStaff>();
+        for(var raw:RawStaffLineDetector.detect(gray,width,height))staffs.add(new SignatureStaff(raw,0));
+        float slope=OmrMeasurePostProcessor.estimateStaffSlope(labels,width,height);
+        int[] strength=new int[height];
+        for(int y=0;y<height;y++)for(int x=0;x<width;x++)
+            if(labels[y*width+x]==OmrMeasurePostProcessor.STAFF) {
+                int row=Math.round(y-slope*(x-width*.5f));
+                if(row>=0&&row<height)strength[row]++;
+            }
+        for(var candidate:RawStaffLineDetector.detectFromStrength(strength,Math.max(10,width/80),height)) {
+            boolean represented=false;
+            for(var geometry:staffs) {
+                var existing=geometry.lines();
+                if(Math.abs(existing.center()-candidate.center())<Math.max(existing.gap(),candidate.gap())*2) {
+                    represented=true;break;
+                }
+            }
+            if(!represented&&printedStaffSupport(gray,width,height,candidate,slope))staffs.add(new SignatureStaff(candidate,slope));
+        }
+        staffs.sort(java.util.Comparator.comparingInt(item->item.lines().top()));
+        return List.copyOf(staffs);
+    }
+
+    /** Require long thin printed rules; model labels alone cannot turn text or artwork into a staff. */
+    private static boolean printedStaffSupport(byte[] gray,int width,int height,
+                                                RawStaffLineDetector.StaffLines staff,float slope) {
+        int radius=Math.max(1,Math.round(staff.gap()*.15f));
+        int flank=Math.max(2,Math.round(staff.gap()*.35f)),supported=0;
+        for(int row:staff.rows()) {
+            int hits=0;
+            for(int x=0;x<width;x++) {
+                int center=row+Math.round(slope*(x-width*.5f));
+                for(int y=Math.max(flank,center-radius);y<=Math.min(height-1-flank,center+radius);y++) {
+                    int ink=gray[y*width+x]&255;
+                    if(ink<=225&&(gray[(y-flank)*width+x]&255)>=ink+12
+                            &&(gray[(y+flank)*width+x]&255)>=ink+12) {hits++;break;}
+                }
+            }
+            if(hits>=Math.max(24,Math.round(width*.2f)))supported++;
+        }
+        return supported>=3;
+    }
+
     /** Signature precedes the first note of its bar; repeated multi-rest rectangles use the first. */
-    static int followingMeasure(Crop crop, int width, int height, List<MeasureRegion> measures) {
+    public static int followingMeasure(Crop crop, int width, int height, List<MeasureRegion> measures) {
         float center=(crop.left()+crop.right())*.5f/width;
         float y=(crop.top()+crop.bottom())*.5f/height;
         int best=-1;
@@ -114,7 +169,7 @@ final class MeterChangeDetector {
         return best;
     }
 
-    static boolean precedesNotes(Crop crop,int width,int height,int measure,
+    public static boolean precedesNotes(Crop crop,int width,int height,int measure,
             List<MeasureRegion> measures,List<ScoreNoteEvent> notes) {
         MeasureRegion region=measures.get(measure);
         for(var note:notes) {

@@ -1,5 +1,5 @@
 {
-  "source_commit": "16a26b3dc5cb7c7f9d2dba1d7405fd43e058a384",
+  "source_commit": "5a8dd22f68e0c28918d71ef519b80282e02cb1ae",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -28,7 +28,7 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "417dee778052d43168fba36371f2c4e0781936eebbb0f833aee739fd0377657a"
+      "source_sha256": "11989b571f41d043d810163cda45bd11e55d855462965d6ab60577010eb587b7"
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
@@ -151,6 +151,18 @@
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",
       "source_sha256": "d5cd7ea44ad51b241855e6d5cda0620485747f3845d3631edec4636b70ec9bb2"
+    },
+    "MeterOcrEvidence.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterOcrEvidence.java",
+      "source_sha256": "94737373da13423a27faa5b454ff9770d3a6145b91af1f4e8a10a95ce19c72ac"
     }
+  },
+  "ocr_adapter_review": {
+    "app_adapter": "app/src/main/java/com/musicsheets/app/importer/SheetOcr.java",
+    "shared_support": [
+      "MeterChangeDetector.java",
+      "MeterOcrEvidence.java"
+    ],
+    "boundary": "Android ML Kit, Bitmap cleanup and raster reflow remain app adapters. Standalone callers can obtain bounded signature crops and following measure indices, apply the shared ink threshold, submit horizontally reflowed crop OCR to MeterOcrEvidence, and pass accepted readings through Annotations.meters. The standalone package does not bundle an OCR engine."
   }
 }
