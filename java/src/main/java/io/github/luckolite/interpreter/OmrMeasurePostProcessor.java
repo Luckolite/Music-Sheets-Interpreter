@@ -688,7 +688,7 @@ final class OmrMeasurePostProcessor {
             if (!systems.isEmpty()) {
                 SystemRun previous = systems.get(systems.size() - 1);
                 float verticalGap = staff.top - previous.bottom;
-                float gap = Math.max(previous.gap, staff.gap);
+                float gap = Math.max(previous.lastStaff.gap, staff.gap);
                 boolean compactAligned = verticalGap <= gap
                         * MAX_GRAND_STAFF_SEPARATION_GAPS
                         && aligned(previous.boundaries, staff.boundaries, width, gap);
@@ -697,13 +697,14 @@ final class OmrMeasurePostProcessor {
                         && connectedByVerticalRule(gray, width, height, previous, staff, gap);
                 if ((compactAligned && (gray == null || verticalGap < 0)) || visiblyConnected) {
                     previous.bottom = staff.bottom;
+                    previous.lastStaff = staff;
                     previous.gap = (previous.gap + staff.gap) / 2f;
                     previous.boundaries = mergeBoundaries(previous.boundaries, staff.boundaries,
                             width, previous.gap);
                     continue;
                 }
             }
-            systems.add(new SystemRun(staff.top, staff.bottom, staff.gap, staff.boundaries, staff.slope));
+            systems.add(new SystemRun(staff));
         }
         return systems;
     }
@@ -732,8 +733,8 @@ final class OmrMeasurePostProcessor {
                 if (checked[x]) continue;
                 checked[x] = true;
                 if (verticalRuleAt(gray, width, x, top, bottom, gap)
-                        && horizontalStaffBeside(gray,width,height,x,upper.bottom-upper.gap*4,
-                            upper.gap,upper.slope)
+                        && horizontalStaffBeside(gray,width,height,x,upper.lastStaff.top,
+                            upper.lastStaff.gap,upper.lastStaff.slope)
                         && horizontalStaffBeside(gray,width,height,x,lower.top,lower.gap,lower.slope))return true;
             }
         }
@@ -937,9 +938,12 @@ final class OmrMeasurePostProcessor {
         float gap;
         List<Integer> boundaries;
         final float slope;
-        SystemRun(int top, int bottom, float gap, List<Integer> boundaries, float slope) {
-            this.top = top; this.bottom = bottom; this.gap = gap;
-            this.boundaries = boundaries; this.slope = slope;
+        // Connector evidence belongs to the adjacent staff, not the system's average scale.
+        StaffRun lastStaff;
+        SystemRun(StaffRun staff) {
+            this.top = staff.top; this.bottom = staff.bottom; this.gap = staff.gap;
+            this.boundaries = staff.boundaries; this.slope = staff.slope;
+            this.lastStaff = staff;
         }
     }
 }
