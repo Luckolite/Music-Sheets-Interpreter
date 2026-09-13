@@ -6921,6 +6921,12 @@ final class OmrScoreInterpreter {
         float centerY = (previous.head.centerY + current.head.centerY) * .5f;
         if (gray != null && gray.length == labels.length) {
             if (hasPrintedTieArc(labels, gray, width, height, left, right, centerY, gap))return true;
+            // Engraved ties may begin below the heads, before their horizontal edges.
+            // Recover the returning shoulders instead of testing only the flattened middle.
+            int overlap = Math.round(gap * .6f);
+            int arcLeft = Math.max(Math.round(previous.head.centerX), left - overlap);
+            int arcRight = Math.min(Math.round(current.head.centerX), right + overlap);
+            if (hasPrintedTieArc(labels, gray, width, height, arcLeft, arcRight, centerY, gap))return true;
             if (!ScoreNoteTiming.hasIndependentSustain(previous.event))return false;
         }
         ArcStats above = arcStats(labels, gray, width, height, left, right,
