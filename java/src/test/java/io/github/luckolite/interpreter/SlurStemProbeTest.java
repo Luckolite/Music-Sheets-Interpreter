@@ -47,6 +47,14 @@ public class SlurStemProbeTest {
     @Test public void anAttachedBeamBesideTheSameSlurIsRetained()throws Exception {
         setup(false,false);slur();for(int yy=50;yy<=58;yy++)for(int xx=100;xx<185;xx++)ink(xx,yy,1);assertEquals(1,beams());
     }
+    private void joinedBeamRoots(boolean down)throws Exception {
+        setup(down,false);
+        for(int start:new int[]{50,68})for(int yy=start;yy<start+8;yy++)for(int xx=100;xx<185;xx++)ink(xx,yy,1);
+        for(int yy=50;yy<=76;yy++)for(int xx=100;xx<=110;xx++)ink(xx,yy,1);
+        assertEquals(2,beams());
+    }
+    @Test public void twoBeamsJoinedAtAnUpStemKeepBothSubdivisions()throws Exception {joinedBeamRoots(false);}
+    @Test public void twoBeamsJoinedAtADownStemKeepBothSubdivisions()throws Exception {joinedBeamRoots(true);}
     @Test public void detectionDoesNotChangeTheImage()throws Exception {
         setup(false,false);slur();var g=gray.clone();var l=labels.clone();beams();assertArrayEquals(g,gray);assertArrayEquals(l,labels);
     }

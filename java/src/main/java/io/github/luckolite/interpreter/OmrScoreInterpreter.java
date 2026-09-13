@@ -4954,6 +4954,7 @@ final class OmrScoreInterpreter {
         // upper head lies inside that window and used to masquerade as the lower head's beam.
         int[] attached = attachedRawStem(gray, width, height, head, gap);
         attached = stemBelowDetachedBow(gray,width,height,head,gap,attached);
+        attached = stemBeforePaperTail(labels,gray,width,height,head,gap,attached);
         if (attached != null) {
             bestX = attached[0]; stemEnd = attached[1]; upward = attached[2] < 0;
         }
@@ -5011,16 +5012,18 @@ final class OmrScoreInterpreter {
             if(leftProof&&rightProof)beams=2;
         }
         if (attached != null && gray != null) {
-            int thick = 0;
-            // Count attachments close to the stem. Outer probes can cross a
-            // nearby slur and add a beam that has no root on this note.
-            for (float distance : new float[]{-.4f, .4f}) {
+            int thick = 0, innerThick = 0;
+            for (float distance : new float[]{-.65f, -.4f, .4f, .65f}) {
                 int x = bestX + Math.round(distance * gap);
                 int near = Math.max(0, stemEnd - (upward ? Math.round(gap*.2f) : inside));
                 int far = Math.min(height-1, stemEnd + (upward ? inside : Math.round(gap*.2f)));
                 // Do not count any head on the chord's attached stem as a beam.
-                thick = Math.max(thick, thickNonHeadBands(gray, labels, width, height, x, near, far, staff));
+                int innerX=bestX+Math.round(Math.copySign(.4f,distance)*gap);
+                int count=thickNonHeadBands(gray,labels,width,height,x,near,far,staff,innerX);
+                thick=Math.max(thick,count);
+                if(Math.abs(distance)<.5f)innerThick=Math.max(innerThick,count);
             }
+            if(thick==1&&innerThick==0)thick=0;
             if (thick == 0 && hasCurvedFlag(labels, gray, width, height, head, gap, bestX, stemEnd, upward)) thick = 1;
             // The returning edge of one curved flag can intersect an outer column twice.
             // Multiple flags also need separate thick roots close to their shared stem.
@@ -5037,6 +5040,39 @@ final class OmrScoreInterpreter {
             return Math.min(3, thick);
         }
         return Math.min(3, beams);
+    }
+
+    /** A tolerant stem trace can bridge a white gap into dark page artwork.
+     * Shorten an unusually long trace only at a printed beam, with no semantic
+     * stem continuing through the supposed tail. */
+    private static int[] stemBeforePaperTail(byte[] labels,byte[] gray,int width,int height,
+            Component head,float gap,int[] original) {
+        if(original==null||Math.abs(original[1]-head.centerY)<=gap*7)return original;
+        int end=Math.round(head.centerY),blank=0;
+        for(int y=end;(original[1]-y)*original[2]>=0;y+=original[2]) {
+            if((gray[y*width+original[0]]&255)<170){end=y;blank=0;}
+            else if(++blank>1)break;
+        }
+        int[] strict={original[0],end,original[2]};
+        if(Math.abs(end-head.centerY)<gap*2.3f||(original[1]-end)*original[2]<gap*.75f)return original;
+        int start=strict[1]+original[2]*Math.max(2,Math.round(gap*.4f)),ink=0;
+        for(int y=start;(original[1]-y)*original[2]>=0;y+=original[2])
+            for(int x=Math.max(0,original[0]-1);x<=Math.min(width-1,original[0]+1);x++)
+                if(labels[y*width+x]==OmrMeasurePostProcessor.STEM_OR_REST)ink++;
+        if(ink>gap*.3f)return original;
+        int left=Math.max(0,strict[0]-Math.round(gap*3)),right=Math.min(width-1,strict[0]+Math.round(gap*3));
+        int margin=Math.max(2,Math.round(gap*.35f)),run=0,thick=0,stemInk=0;
+        for(int y=Math.max(0,strict[1]-margin);y<=Math.min(height-1,strict[1]+margin);y++) {
+            if(darkRunAtStem(gray,width,y,left,right,strict[0],margin,1)>=gap*1.5f)run++;
+            else run=0;
+            thick=Math.max(thick,run);
+        }
+        for(int d=margin;d<=Math.round(gap);d++) {
+            int y=strict[1]-original[2]*d;if(y<0||y>=height)continue;
+            for(int x=Math.max(0,strict[0]-1);x<=Math.min(width-1,strict[0]+1);x++)
+                if(labels[y*width+x]==OmrMeasurePostProcessor.STEM_OR_REST)stemInk++;
+        }
+        return thick>=Math.max(3,Math.ceil(gap*.3f))&&stemInk>=gap*.6f?strict:original;
     }
 
     /** A small white gap tolerated in a stem trace can lead into a separate
@@ -5112,7 +5148,11 @@ final class OmrScoreInterpreter {
     }
 
     private static int thickNonHeadBands(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff) {
-        int normal=thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,165);
+        return thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,x);
+    }
+
+    private static int thickNonHeadBands(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff,int stemwardX) {
+        int normal=thickNonHeadBandsAtThreshold(gray,labels,width,height,x,top,bottom,staff,165,stemwardX);
         if(normal!=1||x<1||x>=width-1)return normal;
         // A lighter antialiased staff rule can fill the gap between two dark beams.
         // Require two full-thickness dark cores before splitting that connected ink;
@@ -5121,7 +5161,7 @@ final class OmrScoreInterpreter {
         for(int y=top;y<=bottom;y++)darkest=Math.min(darkest,gray[y*width+x]&255);
         for(float fraction:new float[]{.5f,.25f}) {
             int coreThreshold=darkest+Math.round((165-darkest)*fraction);
-            int cores=thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,coreThreshold);
+            int cores=thickNonHeadBandsAtThreshold(gray,labels,width,height,x,top,bottom,staff,coreThreshold,stemwardX);
             if(cores==2&&separateBeamCores(gray,labels,width,x,top,bottom,staff,coreThreshold))return 2;
         }
         return normal;
@@ -5151,7 +5191,7 @@ final class OmrScoreInterpreter {
         return false;
     }
 
-    private static int thickNonHeadBands(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff,int threshold) {
+    private static int thickNonHeadBandsAtThreshold(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff,int threshold,int stemwardX) {
         float gap=staff.gap,lineTop=staff.top;
         if(x<1||x>=width-1)return 0;
         float[] track=staff.pitchTrack==null?null:staff.pitchTrack.at(x);
@@ -5187,14 +5227,41 @@ final class OmrScoreInterpreter {
                 // where an actual staff line runs; horizontal shape alone loses inner eighths.
                 boolean onlyStaff=onStaff&&(staffRows==run||(staffRows>=3&&staffRows+1==run))
                         &&run<=gap*.55f;
-                if(run>=Math.max(3,Math.round(gap*.30f))&&!onlyStaff)bands++;
-                if(run>=Math.max(3,Math.ceil(gap*.30f))&&!onlyStaff)strongBands++;
+                boolean rooted=run>=3&&bandReachesInnerProbe(gray,width,height,x,stemwardX,y-run,y-1,threshold);
+                if(run>=Math.max(3,Math.round(gap*.30f))&&!onlyStaff&&rooted)bands++;
+                if(run>=Math.max(3,Math.ceil(gap*.30f))&&!onlyStaff&&rooted)strongBands++;
                 run=0;staffRows=0;
             }
         }
         // Preserve a single narrow flag. Adding a second beam needs the full
         // thickness threshold so a thinner slur terminal cannot shorten the note.
         return bands > 1 ? Math.max(1,strongBands) : bands;
+    }
+
+    /** Follow a thick ink path toward the stem. Two beams can merge at the
+     * inner probe; a nearby slur cannot supply another unattached outer band. */
+    private static boolean bandReachesInnerProbe(byte[] gray,int width,int height,
+            int fromX,int toX,int firstY,int lastY,int threshold) {
+        if(fromX==toX)return true;
+        int distance=Math.abs(toX-fromX),direction=Integer.signum(toX-fromX);
+        int top=Math.max(1,firstY-distance),bottom=Math.min(height-2,lastY+distance);
+        boolean[] reachable=new boolean[bottom-top+1];
+        for(int y=Math.max(top,firstY+1);y<=Math.min(bottom,lastY-1);y++)reachable[y-top]=true;
+        for(int step=1;step<=distance;step++) {
+            int x=fromX+direction*step;if(x<1||x>=width-1)return false;
+            boolean[] next=new boolean[reachable.length];boolean any=false;
+            for(int y=top;y<=bottom;y++) {
+                int i=y-top;
+                if(!reachable[i]&&(i==0||!reachable[i-1])&&(i+1==reachable.length||!reachable[i+1]))continue;
+                boolean solid=true;
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)
+                    if((gray[(y+dy)*width+x+dx]&255)>=threshold)solid=false;
+                if(!solid)continue;
+                next[i]=true;any=true;
+            }
+            if(!any)return false;reachable=next;
+        }
+        return true;
     }
 
     /** Follow a printed staff's slope when testing whether a short band is only rule ink. */
