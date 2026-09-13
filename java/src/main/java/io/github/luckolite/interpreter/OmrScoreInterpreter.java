@@ -2323,6 +2323,7 @@ final class OmrScoreInterpreter {
                 }
             }
         }
+        recoverFadedStaffAliases(gray,width,height,staffs,measures,semanticSlope);
         staffs.sort(Comparator.comparingDouble(staff -> staff.top));
         for(Staff staff:staffs) {
             if(!staff.printedPhase&&!staff.printedSlope) {
@@ -2340,6 +2341,50 @@ final class OmrScoreInterpreter {
         }
         assignSystemPositions(staffs, measures, height);
         return staffs;
+    }
+
+    /** Pale rules can leave a compressed semantic group. Require three other
+     * systems to confirm its true scale and broad printed support for every rule. */
+    private static void recoverFadedStaffAliases(byte[] gray,int width,int height,
+            List<Staff> staffs,List<MeasureRegion> measures,float slope) {
+        if(gray==null||staffs.size()<4)return;
+        List<Float> gaps=new ArrayList<>();for(Staff s:staffs)gaps.add(s.pitchGap);
+        gaps.sort(Float::compare);float typical=gaps.get(gaps.size()/2);
+        if(staffs.stream().noneMatch(s->s.pitchGap<typical*.8f))return;
+        int[] rows=new int[height];
+        for(int y=0;y<height;y++)for(int x=0;x<width;x++)if((gray[y*width+x]&255)<205) {
+            int row=Math.round(y-slope*(x-width*.5f));if(row>=0&&row<height)rows[row]++;
+        }
+        for(var raw:RawStaffLineDetector.detectFromStrength(rows,Math.max(24,Math.round(width*.25f)),height)) {
+            if(Math.abs(raw.gap()-typical)>typical*.08f)continue;
+            int corroboration=0;for(Staff s:staffs)if(Math.abs(s.pitchGap-raw.gap())<=raw.gap()*.08f)corroboration++;
+            if(corroboration<3||!completeFadedStaff(gray,width,height,raw,slope))continue;
+            for(int i=0;i<staffs.size();i++) {
+                Staff prior=staffs.get(i);
+                if(prior.pitchGap>=raw.gap()*.8f||prior.pitchGap<raw.gap()*.45f
+                        ||prior.top<raw.top()-raw.gap()*.8f||prior.bottom>raw.bottom()+raw.gap()*.8f
+                        ||Math.abs((prior.top+prior.bottom-raw.top()-raw.bottom())*.5f)>raw.gap()*1.75f)continue;
+                Staff recovered=new Staff(raw.top(),raw.bottom(),raw.gap());
+                if(!alignedWithMeasureRow(recovered,measures,height))continue;
+                recovered.pitchSlope=slope;recovered.printedPhase=true;staffs.set(i,recovered);
+            }
+        }
+    }
+
+    private static boolean completeFadedStaff(byte[] gray,int width,int height,
+            RawStaffLineDetector.StaffLines staff,float slope) {
+        int step=Math.max(1,width/512),radius=Math.max(1,Math.round(staff.gap()*.15f));
+        for(int i=0;i<9;i++) {
+            float row=i<5?staff.rows()[i]:(staff.rows()[i-5]+staff.rows()[i-4])*.5f;
+            int dark=0,samples=0;
+            for(int x=0;x<width;x+=step) {
+                int y=Math.round(row+slope*(x-width*.5f));samples++;
+                for(int yy=Math.max(0,y-radius);yy<=Math.min(height-1,y+radius);yy++)
+                    if((gray[yy*width+x]&255)<205){dark++;break;}
+            }
+            if(i<5?dark<samples*.75f:dark>=samples*.4f)return false;
+        }
+        return true;
     }
 
     /** Verify all five sloped rules in the printed page, with clear spaces between them. */
@@ -5694,6 +5739,12 @@ final class OmrScoreInterpreter {
             if(b-a<gap*1.3f)continue;
             if(hasContinuousTieArc(labels,gray,width,height,a,b,centerY,gap))return true;
         }
+        // Long ties may leave a little more clearance and fade near the heads.
+        // Keep short-arc limits and require a dark core within the complete curve.
+        if(right-left>=gap*5)for(int first=0;first<=4;first++)for(int last=0;last<=4;last++) {
+            int a=left+first*step,b=right-last*step;
+            if(hasContinuousTieArc(labels,gray,width,height,a,b,centerY,gap,null,205))return true;
+        }
         return false;
     }
 
@@ -5705,18 +5756,23 @@ final class OmrScoreInterpreter {
 
     private static boolean hasContinuousTieArc(byte[] labels, byte[] gray, int width, int height,
             int left, int right, float centerY, float gap,Component target) {
+        return hasContinuousTieArc(labels,gray,width,height,left,right,centerY,gap,target,165);
+    }
+
+    private static boolean hasContinuousTieArc(byte[] labels, byte[] gray, int width, int height,
+            int left, int right, float centerY, float gap,Component target,int inkLimit) {
         int radius=Math.max(1,Math.round(gap*.09f));
         boolean[] straightRows=new boolean[height];
         for(int y=Math.max(0,Math.round(centerY-gap*3.2f));y<=Math.min(height-1,Math.round(centerY+gap*3.2f));y++) {
             int dark=0;
-            for(int x=left;x<=right;x++)if((gray[y*width+x]&255)<=165)dark++;
+            for(int x=left;x<=right;x++)if((gray[y*width+x]&255)<=inkLimit)dark++;
             straightRows[y]=dark>=(right-left+1)*.85f;
         }
         for(int side:new int[]{-1,1}) for(float offset=.2f;offset<=1.15f;offset+=.15f)
             for(float bend=-.75f;bend<=1.8f;bend+=.1f) {
                 if(Math.abs(bend)<.24f || offset+bend<.12f)continue;
                 if(target!=null&&Math.abs(centerY+side*gap*(offset+bend)-target.centerY)>gap*.25f)continue;
-                int hits=0,obscured=0;int[] bins=new int[5],coveredBins=new int[5];
+                int hits=0,obscured=0,strong=0;int[] bins=new int[5],coveredBins=new int[5];
                 float[] centers=new float[50],supportedCenters=new float[50];
                 java.util.Arrays.fill(centers,Float.NaN);
                 java.util.Arrays.fill(supportedCenters,Float.NaN);
@@ -5729,14 +5785,16 @@ final class OmrScoreInterpreter {
                         int dy=(search+1)/2*(search%2==0?1:-1);
                         int yy=y+dy;if(yy<0||yy>=height)continue;
                         int at=yy*width+x;
-                        if((gray[at]&255)>165||labels[at]==OmrMeasurePostProcessor.NOTEHEAD)continue;
+                        if((gray[at]&255)>inkLimit||labels[at]==OmrMeasurePostProcessor.NOTEHEAD)continue;
                         if(straightRows[yy]||labels[at]==OmrMeasurePostProcessor.STAFF) {
                             if(obscuredY<0)obscuredY=yy;
-                        } else {ink=true;centers[sample]=yy;supportedCenters[sample]=yy;break;}
+                        } else {ink=true;centers[sample]=yy;supportedCenters[sample]=yy;
+                            if((gray[at]&255)<=165)strong++;break;}
                     }
                     if(ink){hits++;bins[sample/10]++;coveredBins[sample/10]++;}
                     else if(obscuredY>=0){obscured++;coveredBins[sample/10]++;supportedCenters[sample]=obscuredY;}
                 }
+                if(inkLimit>165&&strong<30)continue;
                 if(hits>=43&&bins[0]>=7&&bins[1]>=7&&bins[2]>=7&&bins[3]>=7&&bins[4]>=7
                         &&arcCurvature(centers,0,0,49)>=Math.max(.8f,gap*.12f))return true;
                 // A short returning arc can cross a staff rule at one end. Treat a
