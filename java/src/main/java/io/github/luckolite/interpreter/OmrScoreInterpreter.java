@@ -5012,7 +5012,9 @@ final class OmrScoreInterpreter {
         }
         if (attached != null && gray != null) {
             int thick = 0;
-            for (float distance : new float[]{-.65f, -.4f, .4f, .65f}) {
+            // Count attachments close to the stem. Outer probes can cross a
+            // nearby slur and add a beam that has no root on this note.
+            for (float distance : new float[]{-.4f, .4f}) {
                 int x = bestX + Math.round(distance * gap);
                 int near = Math.max(0, stemEnd - (upward ? Math.round(gap*.2f) : inside));
                 int far = Math.min(height-1, stemEnd + (upward ? inside : Math.round(gap*.2f)));
