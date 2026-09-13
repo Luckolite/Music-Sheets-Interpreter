@@ -1055,12 +1055,12 @@ final class OmrScoreInterpreter {
         if (staff == null) return false;
         float gap = staff.pitchGap, top = staff.pitchBottom - gap * 4;
         float y = head.centerY, x = head.maxX;
-        if (head.maxY > top + gap * .15f || y < top - gap * 3.5f) return false;
+        if (head.maxY > top + gap * .15f || y < top - gap * MAX_HEAD_LEDGER_GAPS) return false;
         int[] stem = attachedRawStem(gray, width, height, head, gap);
         if (stem == null || stem[1] > y - gap * 1.5f) return false;
         List<TempoInk> glyphs = tempoInk(gray, width, height,
                 Math.round(x + gap * .1f), Math.round(x + gap * 5.5f),
-                Math.round(y - gap * 2), Math.round(y + gap * .3f));
+                Math.round(y - gap * 2), Math.round(y + gap));
         for (TempoInk upper : glyphs) for (TempoInk lower : glyphs) {
             if (upper.top >= lower.top || upper.width() < gap * .5f || upper.width() > gap * 1.6f
                     || lower.width() < gap * .5f || lower.width() > gap * 1.6f
