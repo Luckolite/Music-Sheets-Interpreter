@@ -83,8 +83,20 @@ final class OmrScoreInterpreter {
         // A bright paper halo can enlarge a printed augmentation dot enough for the model to label it
         // as a second plausible notehead. Demote only small, stemless components immediately to
         // the right of a substantially larger head; grace notes retain their attached stem.
+        List<AccidentalCandidate> accidentalCandidates = new ArrayList<>();
+        for (Component component : clefOrKeyComponents)
+            accidentalCandidates.add(new AccidentalCandidate(component,
+                    OmrMeasurePostProcessor.CLEF_OR_KEY));
+        for (Component component : symbolComponents)
+            accidentalCandidates.add(new AccidentalCandidate(component,
+                    OmrMeasurePostProcessor.SYMBOL));
         List<Component> demotedDotHeads = augmentationDotHeads(labels, gray, width, height, heads, staffs);
         demotedDotHeads.addAll(articulationDotHeads(labels, gray, width, height, heads, staffs));
+        List<Component> accidentalGraces=new ArrayList<>();
+        var graceSeeds=joinLocalAccidentalFragments(labels,gray,width,height,accidentalCandidates,staffs);
+        for(Component head:demotedDotHeads)
+            if(reducedSharpGrace(labels,gray,width,height,head,heads,staffs,measures,graceSeeds))accidentalGraces.add(head);
+        demotedDotHeads.removeAll(accidentalGraces);
         heads.removeAll(demotedDotHeads);
         heads.removeAll(stemSlashFragments(gray, width, height, heads, staffs));
         Map<Component,int[]> detachedTremolos=new HashMap<>();
@@ -105,13 +117,6 @@ final class OmrScoreInterpreter {
         List<Component> dotCandidates = new ArrayList<>(symbolComponents);
         for (Component component : headComponents) if (!heads.contains(component))
             dotCandidates.add(component);
-        List<AccidentalCandidate> accidentalCandidates = new ArrayList<>();
-        for (Component component : clefOrKeyComponents)
-            accidentalCandidates.add(new AccidentalCandidate(component,
-                    OmrMeasurePostProcessor.CLEF_OR_KEY));
-        for (Component component : symbolComponents)
-            accidentalCandidates.add(new AccidentalCandidate(component,
-                    OmrMeasurePostProcessor.SYMBOL));
         // A repeated key signature may sit close enough to the first note to look local.
         // Keep its recognized glyphs out of both semantic and raw accidental recovery.
         List<Component> headerAccidentals = new ArrayList<>();
@@ -125,6 +130,12 @@ final class OmrScoreInterpreter {
         localAccidentals.removeIf(candidate->attachedGraceFlag(labels,gray,width,height,candidate,heads,staffs));
         localAccidentals.removeAll(noteParentheses(gray,width,height,localAccidentals,heads,staffs));
         localAccidentals=splitTouchingChordAccidentals(labels,width,height,localAccidentals,heads,staffs);
+        // A header key glyph must not act as the local accidental of a grace head.
+        List<Component> rejectedAccidentalGraces=new ArrayList<>();
+        for(Component head:accidentalGraces)
+            if(!reducedSharpGrace(labels,gray,width,height,head,heads,staffs,measures,localAccidentals))rejectedAccidentalGraces.add(head);
+        heads.removeAll(rejectedAccidentalGraces);dotCandidates.addAll(rejectedAccidentalGraces);
+        accidentalGraces.removeAll(rejectedAccidentalGraces);
         List<Component> accidentalInk = new ArrayList<>();
         for (AccidentalCandidate candidate : localAccidentals) {
             Staff staff = nearestHeadStaff(staffs, candidate.component.centerY);
@@ -221,25 +232,27 @@ final class OmrScoreInterpreter {
                     gray, width, height,unbeamedDuration>=ScoreNoteEvent.DURATION_HALF,accidentalInk);
             if(augmentationDots>0&&beamCount>0&&hasHollowUnisonToRight(labels,gray,width,height,head,heads,staff.gap))
                 augmentationDots=0;
+            float accidentalGap=accidentalGraces.contains(head)?localPitch[1]*.65f:localPitch[1];
             int writtenAccidental = detectWrittenAccidental(labels, width, height,
-                    localAccidentals, head, localPitch[1]);
+                    localAccidentals, head, accidentalGap);
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
-                    &&rawSharpFromSeed(gray,width,height,localAccidentals,head,localPitch[1]))
+                    &&rawSharpFromSeed(gray,width,height,localAccidentals,head,accidentalGap))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_SHARP;
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
-                    &&rawFlatFromBowl(gray,width,height,withoutRecognizedSharps(labels,width,height,localAccidentals,localPitch[1]),head,localPitch[1]))
+                    &&rawFlatFromBowl(gray,width,height,withoutRecognizedSharps(labels,width,height,localAccidentals,accidentalGap),head,accidentalGap))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_FLAT;
             if((writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                     ||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FLAT||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_SHARP)
-                    &&rawNaturalFromCrossbars(gray,width,height,localAccidentals,head,localPitch[1]))
+                    &&rawNaturalFromCrossbars(gray,width,height,localAccidentals,head,accidentalGap))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_NATURAL;
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
-                    &&naturalFromUpperSpine(labels,gray,width,height,localAccidentals,head,localPitch[1]))
+                    &&naturalFromUpperSpine(labels,gray,width,height,localAccidentals,head,accidentalGap))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_NATURAL;
             ScoreNoteEvent event = new ScoreNoteEvent(measureIndex, clamp(position),
                     Math.max(-32, Math.min(32, step)), staff.index, staff.count,
                     clamp(normalizedY), false, augmentationDots, beamCount,
                     writtenAccidental, unbeamedDuration);
+            if(accidentalGraces.contains(head))event=event.withArticulations(event.articulations()|NoteOrnament.GRACE);
             if(tremolo[0]>0)event=event.withArticulations(NoteOrnament.withTremolo(
                     event.articulations(),beamCount+tremolo[0]));
             if(detachedTremolos.containsKey(head))event=event.withArticulations(
@@ -4105,6 +4118,37 @@ final class OmrScoreInterpreter {
         return width >= Math.max(2f, gap * .38f) && height >= Math.max(2f, gap * .30f)
                 && width <= gap * 3.2f && height <= gap * 3.2f
                 && head.area >= Math.max(4, Math.round(gap * gap * .11f));
+    }
+
+    /** A reduced head with its own reduced sharp and a nearby principal is a
+     * grace note even when its shaft merges with the following accidental.
+     * An augmentation dot has no local sharp of its own. */
+    private static boolean reducedSharpGrace(byte[] labels,byte[] gray,int width,int height,
+            Component head,List<Component> heads,List<Staff> staffs,List<MeasureRegion> measures,
+            List<AccidentalCandidate> candidates) {
+        Staff staff=nearestHeadStaff(staffs,head.centerY);
+        if(gray==null||staff==null)return false;
+        float gap=staff.gap;
+        if(head.maxX-head.minX+1>gap*.82f||head.maxY-head.minY+1>gap*.82f
+                ||head.area>gap*gap*.48f)return false;
+        int measure=containingMeasureForStaff(measures,head.centerX/width,head.centerY/height,staff,height);
+        if(measure<0)return false;
+        Component principal=null;
+        for(Component other:heads) {
+            float dx=other.centerX-head.centerX;
+            if(other==head||dx<gap*.65f||dx>gap*2.8f
+                    ||nearestHeadStaff(staffs,other.centerY)!=staff
+                    ||Math.abs(other.centerY-head.centerY)>gap*2.5f
+                    ||containingMeasureForStaff(measures,other.centerX/width,other.centerY/height,staff,height)!=measure)continue;
+            if(principal==null||other.centerX<principal.centerX)principal=other;
+        }
+        if(principal==null||principal.area<=head.area*1.65f
+                ||principal.maxX-principal.minX+1<=gap*1.05f
+                ||attachedRawStem(gray,width,height,principal,gap)==null)return false;
+        float reduced=gap*.65f;
+        int accidental=detectWrittenAccidental(labels,width,height,candidates,head,reduced);
+        return accidental==ScoreNoteEvent.ACCIDENTAL_SHARP
+                ||accidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY&&rawSharpFromSeed(gray,width,height,candidates,head,reduced);
     }
 
     private static List<Component> augmentationDotHeads(byte[] labels, byte[] gray, int width, int height,
