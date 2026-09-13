@@ -318,9 +318,9 @@ final class SixteenthRestDetector {
     private static boolean quarterRest(byte[] gray,int width,Staff staff,int top,boolean[] line,
             int left,int right,int minY,int maxY) {
         float gap=staff.gap();int h=maxY-minY+1;
-        if(h<gap*2.6f || h>gap*3.6f
+        if(h<gap*2.1f || h>gap*3.6f
                 ||minY<staff.top()+gap*.2f ||minY>staff.top()+gap*.9f
-                ||maxY+1<staff.bottom()-gap*.7f ||maxY>staff.bottom()-gap*.1f)return false;
+                ||maxY+1<staff.bottom()-gap*1.2f ||maxY>staff.bottom()-gap*.1f)return false;
         double[] centers=new double[h];java.util.Arrays.fill(centers,Double.NaN);
         int widest=0;
         for(int y=minY;y<=maxY;y++)if(!line[y-top]) {
