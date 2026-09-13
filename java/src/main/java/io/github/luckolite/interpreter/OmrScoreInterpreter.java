@@ -853,11 +853,40 @@ final class OmrScoreInterpreter {
         if(gray==null)return false;
         Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
         float gap=staff.pitchGap;
-        if(head.maxX-head.minX+1>gap*.8f||head.maxY-head.minY+1>gap*1.25f
-                ||head.area>gap*gap*.4f||Math.abs(head.centerY-(staff.pitchBottom-gap*2))>gap*.7f)return false;
+        if(Math.abs(head.centerY-(staff.pitchBottom-gap*2))>gap*.7f)return false;
+        boolean compact=head.maxX-head.minX+1<=gap*.8f&&head.maxY-head.minY+1<=gap*1.25f
+                &&head.area<=gap*gap*.4f;
         for(int y=head.minY;y<=head.maxY;y++)
-            if(heavyRestBarAtRow(gray,width,height,Math.round(head.centerX),y,gap))return true;
+            if(compact&&heavyRestBarAtRow(gray,width,height,Math.round(head.centerX),y,gap)
+                    ||countedRestBodyAtRow(gray,width,height,head,y,staff))return true;
         return false;
+    }
+
+    /** A readable count corroborates shorter H-rests and larger mask islands in their band. */
+    private static boolean countedRestBodyAtRow(byte[] gray,int width,int height,
+            Component head,int y,Staff staff) {
+        float gap=staff.pitchGap;int x=Math.round(head.centerX);
+        if(head.maxY-head.minY+1>gap*1.2f||(gray[y*width+x]&255)>=165)return false;
+        int left=x,right=x;
+        while(left>0&&(gray[y*width+left-1]&255)<165)left--;
+        while(right+1<width&&(gray[y*width+right+1]&255)<165)right++;
+        if(right-left<gap*4||right-left>gap*60)return false;
+        int top=y,bottom=y;
+        while(top>0&&restBandRow(gray,width,left,right,top-1))top--;
+        while(bottom+1<height&&restBandRow(gray,width,left,right,bottom+1))bottom++;
+        if(bottom-top+1<gap*.35f||bottom-top+1>gap*1.2f
+                ||head.minX<left||head.maxX>right
+                ||head.minY<top-gap*.2f||head.maxY>bottom+gap*.2f
+                ||!restEndCap(gray,width,height,left,top,bottom,gap)
+                ||!restEndCap(gray,width,height,right,top,bottom,gap))return false;
+        float staffTop=staff.pitchBottom-gap*4;
+        MeasureRegion region=new MeasureRegion(Math.max(0,(left-gap)/width),
+                Math.min(1,(right+gap)/width),Math.max(0,(staffTop-gap*2)/height),
+                Math.min(1,(staff.pitchBottom+gap*2)/height));
+        var count=MultiMeasureRestDetector.standaloneCount(gray,width,height,
+                new MultiMeasureRestDetector.RestBarCandidate(0,region));
+        return count!=null&&count.bottom()*height<staffTop
+                &&Math.abs((count.left()+count.right())*.5f*width-(left+right)*.5f)<gap;
     }
 
     private static boolean heavyRestBarAtRow(byte[] gray,int width,int height,int x,int y,float gap) {
@@ -6186,6 +6215,7 @@ final class OmrScoreInterpreter {
             // must still connect matching pitches at consecutive voice onsets.
             if (measureDistance == 1 && current.event.positionInMeasure() > .58f) continue;
             float gap = (previous.staffGap + current.staffGap) * .5f;
+            if(sameOnset(previous.event,previousOnset)&&systemBreakTieCandidate(previous,current,width))return index;
             int horizontal = current.head.minX - previous.head.maxX;
             if (horizontal < gap * 1.3f || horizontal > width * .34f) continue;
             // Quantization alone can occasionally put two heads near a step boundary in the same
@@ -6203,6 +6233,13 @@ final class OmrScoreInterpreter {
 
     private static boolean hasTieArc(byte[] labels, byte[] gray, int width, int height,
                                      DetectedNote previous, DetectedNote current) {
+        if(systemBreakTieCandidate(previous,current,width)) {
+            if(gray==null||gray.length!=labels.length)return false;
+            for(int side:new int[]{-1,1})
+                if(hasSystemEndTieArc(labels,gray,width,height,previous,true,side)
+                        &&hasSystemEndTieArc(labels,gray,width,height,current,false,side))return true;
+            return false;
+        }
         int left = Math.max(0, previous.head.maxX + 1);
         int right = Math.min(width - 1, current.head.minX - 1);
         float gap = Math.max(2f, (previous.staffGap + current.staffGap) * .5f);
@@ -6217,6 +6254,31 @@ final class OmrScoreInterpreter {
         ArcStats below = arcStats(labels, gray, width, height, left, right,
                 Math.round(centerY + gap * .12f), Math.round(centerY + gap * 3f));
         return plausibleArc(above, left, right, gap) || plausibleArc(below, left, right, gap);
+    }
+
+    private static boolean systemBreakTieCandidate(DetectedNote previous,DetectedNote current,int width) {
+        float gap=(previous.staffGap+current.staffGap)*.5f;
+        return current.event.measureIndex()==previous.event.measureIndex()+1
+                &&current.event.diatonicPitchIdentity()==previous.event.diatonicPitchIdentity()
+                &&previous.head.centerX>width*.65f&&current.head.centerX<width*.35f
+                &&current.head.centerY-previous.head.centerY>gap*6
+                &&current.head.centerY-previous.head.centerY<gap*40
+                &&Math.abs(previous.staffGap-current.staffGap)<gap*.2f;
+    }
+
+    /** System-end ties retain a returning curve at both printed endpoints.
+     * Short strokes and a lone outgoing slur cannot establish continuation. */
+    private static boolean hasSystemEndTieArc(byte[] labels,byte[] gray,int width,int height,
+            DetectedNote note,boolean outgoing,int side) {
+        float gap=note.staffGap;int step=Math.max(2,Math.round(gap*.2f));
+        for(int clearance=step;clearance<=gap*1.8f;clearance+=step)
+            for(int span=Math.round(gap*1.6f);span<=gap*7;span+=step) {
+                int left=outgoing?note.head.maxX+clearance:note.head.minX-clearance-span;
+                int right=outgoing?left+span:note.head.minX-clearance;
+                if(left<0||right>=width)continue;
+                if(hasContinuousTieArc(labels,gray,width,height,left,right,note.head.centerY,gap,null,205,side))return true;
+            }
+        return false;
     }
 
     /** Small blank clearances can separate an engraved tie from either head. */
@@ -6252,6 +6314,11 @@ final class OmrScoreInterpreter {
 
     private static boolean hasContinuousTieArc(byte[] labels, byte[] gray, int width, int height,
             int left, int right, float centerY, float gap,Component target,int inkLimit) {
+        return hasContinuousTieArc(labels,gray,width,height,left,right,centerY,gap,target,inkLimit,0);
+    }
+
+    private static boolean hasContinuousTieArc(byte[] labels, byte[] gray, int width, int height,
+            int left, int right, float centerY, float gap,Component target,int inkLimit,int requiredSide) {
         int radius=Math.max(1,Math.round(gap*.09f));
         boolean[] straightRows=new boolean[height];
         for(int y=Math.max(0,Math.round(centerY-gap*3.2f));y<=Math.min(height-1,Math.round(centerY+gap*3.2f));y++) {
@@ -6259,7 +6326,7 @@ final class OmrScoreInterpreter {
             for(int x=left;x<=right;x++)if((gray[y*width+x]&255)<=inkLimit)dark++;
             straightRows[y]=dark>=(right-left+1)*.85f;
         }
-        for(int side:new int[]{-1,1}) for(float offset=.2f;offset<=1.15f;offset+=.15f)
+        for(int side:requiredSide==0?new int[]{-1,1}:new int[]{requiredSide}) for(float offset=.2f;offset<=1.15f;offset+=.15f)
             for(float bend=-.75f;bend<=1.8f;bend+=.1f) {
                 if(Math.abs(bend)<.24f || offset+bend<.12f)continue;
                 if(target!=null&&Math.abs(centerY+side*gap*(offset+bend)-target.centerY)>gap*.25f)continue;

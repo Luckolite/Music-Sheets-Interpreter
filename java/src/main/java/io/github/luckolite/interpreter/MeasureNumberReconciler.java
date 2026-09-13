@@ -210,7 +210,7 @@ final class MeasureNumberReconciler {
      * page does not print enough system numbers to form a trusted sequence. */
     private static List<MeasureRegion> stabilizeAndExpandUnanchored(
             List<MeasureRegion> detected, List<NumberToken> multiMeasureRests) {
-        List<MeasureRegion> stabilized = stabilizeSystemCounts(detected);
+        List<MeasureRegion> stabilized = stabilizeSystemCounts(detected, multiMeasureRests);
         if (multiMeasureRests == null || multiMeasureRests.isEmpty()) return stabilized;
         List<MeasureRegion> result = new ArrayList<>();
         for (Row row : rows(stabilized))
@@ -226,7 +226,8 @@ final class MeasureNumberReconciler {
      * geometry independently proves that it contains a tiny false measure or one implausibly
      * wide merged measure. Short coda/final systems remain untouched.
      */
-    private static List<MeasureRegion> stabilizeSystemCounts(List<MeasureRegion> source) {
+    private static List<MeasureRegion> stabilizeSystemCounts(List<MeasureRegion> source,
+                                                             List<NumberToken> multiMeasureRests) {
         List<Row> layout = rows(source);
         if (layout.size() < 5) return List.copyOf(source);
 
@@ -253,6 +254,12 @@ final class MeasureNumberReconciler {
 
         List<MeasureRegion> result = new ArrayList<>();
         for (Row row : layout) {
+            // A condensed rest can be much narrower than a written bar. Preserve its
+            // boundary before expansion, or nearby sounding notes become part of the rest.
+            if (multiMeasureRests != null && !tokensInside(row, multiMeasureRests).isEmpty()) {
+                result.addAll(row.measures);
+                continue;
+            }
             int count = row.measures.size();
             float span = row.right - row.left;
             if (count == dominant || span < referenceSpan * .78f) {
