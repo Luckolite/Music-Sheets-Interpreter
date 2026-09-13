@@ -3416,6 +3416,16 @@ final class OmrScoreInterpreter {
         return dots;
     }
 
+    /** A nearby bow/rest is not a duration stem unless it reaches the head. Raw ink can
+     * independently bridge a model-label gap; do not require every stem pixel to be labelled. */
+    private static boolean hasStemAtHead(byte[] labels,int width,int height,Component head,float gap) {
+        int pad=Math.max(1,Math.round(gap*.3f));
+        for(int y=Math.max(0,head.minY-pad);y<=Math.min(height-1,head.maxY+pad);y++)
+            for(int x=Math.max(0,head.minX-pad);x<=Math.min(width-1,head.maxX+pad);x++)
+                if(labels[y*width+x]==OmrMeasurePostProcessor.STEM_OR_REST)return true;
+        return false;
+    }
+
     private static boolean hasAttachedStem(byte[] labels, int width, int height,
                                             Component head, float gap) {
         int left = Math.max(0, Math.round(head.minX - gap * .36f));
@@ -3643,6 +3653,8 @@ final class OmrScoreInterpreter {
                                                  Component head, float gap, int beamCount) {
         boolean open = hasOpenCenter(labels, gray, width, height, head, gap);
         boolean stem = hasAttachedStem(labels, width, height, head, gap);
+        if (open && stem && gray != null && !hasStemAtHead(labels,width,height,head,gap)
+                && attachedRawStem(gray,width,height,head,gap)==null) stem=false;
         if (open) return stem ? ScoreNoteEvent.DURATION_HALF : ScoreNoteEvent.DURATION_WHOLE;
         if (beamCount > 0) return ScoreNoteEvent.DURATION_UNKNOWN;
         // A filled head is a quarter even when a thin stem was missed by segmentation. Treating it
