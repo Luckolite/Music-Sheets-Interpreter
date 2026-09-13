@@ -479,10 +479,35 @@ public final class ScoreNoteTiming {
                     ||a.staffCount()!=note.staffCount()||a.beamCount()!=0||a.unbeamedDurationBeats()<1)continue;
             for(ScoreNoteEvent b:notes)if(b.measureIndex()==a.measureIndex()&&b.staffIndex()==a.staffIndex()
                     &&b.staffCount()==a.staffCount()&&b.beamCount()>0
-                    &&Math.abs(a.positionInMeasure()-b.positionInMeasure())<=SAME_ONSET_POSITION
+                    &&independentVoiceOnset(a,b,notes)
                     &&writtenDurationBeats(b)<writtenDurationBeats(a))return true;
         }
         return false;
+    }
+
+    /** In a dense passage, the fixed onset tolerance can span successive attacks.
+     * A mixed-value pair must be closer than half the ordinary attack spacing. */
+    private static boolean independentVoiceOnset(ScoreNoteEvent a,ScoreNoteEvent b,List<ScoreNoteEvent> notes) {
+        float distance=Math.abs(a.positionInMeasure()-b.positionInMeasure());
+        if(distance>SAME_ONSET_POSITION)return false;
+        if(distance<.00001f)return true;
+        List<Float> positions=new ArrayList<>();
+        for(ScoreNoteEvent n:notes)if(n.measureIndex()==a.measureIndex()&&n.staffIndex()==a.staffIndex()
+                &&n.staffCount()==a.staffCount()&&!grace(n))positions.add(n.positionInMeasure());
+        positions.sort(Float::compare);
+        List<Float> gaps=new ArrayList<>();
+        for(int i=1;i<positions.size();i++) {
+            float gap=positions.get(i)-positions.get(i-1);
+            if(gap>.00001f)gaps.add(gap);
+        }
+        if(gaps.size()<7)return true;
+        gaps.sort(Float::compare);
+        // Weight gaps by horizontal span so several slightly offset chord heads
+        // cannot outvote the spaces between their actual attacks.
+        float span=0;for(float gap:gaps)span+=gap;
+        float accumulated=0,ordinary=gaps.get(gaps.size()-1);
+        for(float gap:gaps){accumulated+=gap;if(accumulated>=span*.5f){ordinary=gap;break;}}
+        return distance<ordinary*.5f;
     }
 
     /** Only a proved beam bridge and a complete single phrase can share a cross-staff clock.

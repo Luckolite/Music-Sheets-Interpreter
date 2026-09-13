@@ -5903,6 +5903,7 @@ final class OmrScoreInterpreter {
         int[] faintStem=null;
         if (Math.max(bestAbove, bestBelow) < Math.max(3, Math.round(gap * .75f))) {
             if(!smallHead)faintStem=fadedStemToDarkBeam(labels,gray,width,height,head,staff);
+            if(!smallHead&&faintStem==null)faintStem=paleStemToDoubleBeam(labels,gray,width,height,head,staff);
             if(faintStem==null)return 0;
         }
         int stemEnd = findStemEnd(labels, width, bestX, upward,
@@ -6107,6 +6108,49 @@ final class OmrScoreInterpreter {
         return null;
     }
 
+    /** A very pale shaft needs two dark beams and a continuous centered ink path.
+     * Staff crossings cannot supply its contrast; inspect the clear spaces instead. */
+    private static int[] paleStemToDoubleBeam(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff) {
+        if(gray==null)return null;
+        float gap=staff.gap;
+        int[] trace=attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),245);
+        if(trace==null||Math.abs(trace[1]-head.centerY)>gap*5.5f)return null;
+        int flank=Math.max(3,Math.round(gap*.45f)),direction=trace[2];
+        for(int offset:new int[]{0,-1,1,-2,2}) {
+            int x=trace[0]+offset;
+            int edge=direction<0?head.maxX:head.minX;
+            if(x-flank<0||x+flank>=width||Math.abs(x-edge)>Math.round(gap*.3f))continue;
+            int blanks=0;boolean connected=true;
+            for(int y=Math.round(head.centerY);(trace[1]-y)*direction>=0;y+=direction) {
+                if((gray[y*width+x]&255)<245)blanks=0;
+                else if(++blanks>Math.max(1,Math.round(gap*.16f))){connected=false;break;}
+            }
+            if(!connected)continue;
+            float localGap=staff.pitchGap,localBottom=staff.pitchBottom+staff.pitchSlope*(x-width*.5f);
+            if(staff.pitchTrack!=null){float[] local=staff.pitchTrack.at(x);localBottom=local[0];localGap=local[1];}
+            int first=Math.round(head.centerY)+direction*Math.round(gap*.85f);
+            int last=trace[1]-direction*Math.round(gap*1.35f),samples=0,support=0;
+            for(int y=first;(last-y)*direction>=0;y+=direction) {
+                float rule=localBottom+Math.round((y-localBottom)/localGap)*localGap;
+                if(Math.abs(y-rule)<=localGap*.2f)continue;
+                int ink=gray[y*width+x]&255;samples++;
+                if(ink<245&&(gray[y*width+x-flank]&255)>=ink+8
+                        &&(gray[y*width+x+flank]&255)>=ink+8)support++;
+            }
+            if(samples<Math.max(8,Math.round(gap*.6f))||support<samples*.75f)continue;
+            int top=Math.max(0,trace[1]-Math.round(gap*(direction<0?.2f:1.85f)));
+            int bottom=Math.min(height-1,trace[1]+Math.round(gap*(direction<0?1.85f:.2f)));
+            for(int side:new int[]{-1,1}) {
+                int inner=x+side*Math.round(gap*.4f),outer=x+side*Math.round(gap*.65f);
+                if(thickNonHeadBands(gray,labels,width,height,inner,top,bottom,staff)==2
+                        &&thickNonHeadBands(gray,labels,width,height,outer,top,bottom,staff,inner)==2)
+                    return new int[]{x,trace[1],direction};
+            }
+        }
+        return null;
+    }
+
     /** A slightly leaning stem can leave every fixed column before its flag root.
      * Follow only connected ink in a narrow corridor, and require the existing
      * returning-hook proof at the recovered endpoint before changing the trace. */
@@ -6267,19 +6311,36 @@ final class OmrScoreInterpreter {
         int thinMaximum=Math.max(1,(int)Math.floor(gap*.18f));
         int witnessLength=Math.max(4,Math.round(gap*.75f));
         for(int direction:new int[]{-1,1}) {
-            int thickColumns=0,thinColumns=0,taperColumns=0;boolean proven=false;
-            for(int distance=1;distance<=Math.round(gap*12);distance++) {
+            int thickColumns=0,thinColumns=0,taperColumns=0,beamShift=0;boolean proven=false;
+            for(int distance=1;distance<=Math.round(gap*32);distance++) {
                 int column=x+direction*distance;
                 if(column<1||column>=width-1)break;
                 int shift=origin==null?0:Math.round(staff.pitchTrack.at(column)[0]-origin[0]);
-                int ink=0;
-                for(int y=first+shift;y<=last+shift;y++) {
-                    if(y<0||y>=height)return false;
-                    if((gray[y*width+column]&255)<threshold)ink++;
+                int ink=0,bestShift=beamShift;
+                for(int candidate:new int[]{beamShift,beamShift-1,beamShift+1}) {
+                    if(Math.abs(candidate)>Math.round(gap*.3f))continue;
+                    int count=0;
+                    for(int y=first+shift+candidate;y<=last+shift+candidate;y++) {
+                        if(y<0||y>=height)return false;
+                        if((gray[y*width+column]&255)<threshold)count++;
+                    }
+                    if(count>ink){ink=count;bestShift=candidate;}
+                }
+                beamShift=bestShift;shift+=beamShift;
+                // The continuing rule can be lighter than the beam's dark core.
+                // Require a narrow local core, never blank paper, beyond the body.
+                if(ink==0 && thickColumns>=Math.round(gap*2)) {
+                    if(first+shift-beamShift<0||last+shift-beamShift>=height)return false;
+                    int minimum=255;
+                    for(int y=first+shift-beamShift;y<=last+shift-beamShift;y++)minimum=Math.min(minimum,gray[y*width+column]&255);
+                    if(minimum<220) {
+                        int cutoff=Math.min(220,minimum+6);
+                        for(int y=first+shift-beamShift;y<=last+shift-beamShift;y++)if((gray[y*width+column]&255)<cutoff)ink++;
+                    }
                 }
                 if(ink>=thickMinimum) {
-                    if(thinColumns>0||taperColumns>0)break;
-                    thickColumns++;
+                    if(thinColumns>0)break;
+                    taperColumns=0;thickColumns++;
                 } else if(ink>0&&ink<=thinMaximum&&thickColumns>=Math.round(gap*2)) {
                     if(++thinColumns>=witnessLength){proven=true;break;}
                 } else if(ink>thinMaximum&&ink<thickMinimum&&thinColumns==0
