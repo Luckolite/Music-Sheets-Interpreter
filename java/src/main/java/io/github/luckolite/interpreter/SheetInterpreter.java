@@ -56,7 +56,8 @@ public final class SheetInterpreter {
         byte[] prepared=OmrScoreInterpreter.normalizeHeaderSymbols(labels,gray,width,height,measures);
         // Removing a header head can move the playable edge and the rest-count OCR crop.
         if(prepared!=labels) {
-            measures=OmrMeasurePostProcessor.process(labels,gray,width,height,prepared);
+            byte[] geometry=OmrScoreInterpreter.normalizeTextGeometry(labels,gray,width,height,measures);
+            measures=OmrMeasurePostProcessor.process(geometry,gray,width,height,prepared);
             labels=prepared;
         }
         var numbers=annotations.measureNumbers.stream().map(NumberToken::internal).toList();

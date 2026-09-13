@@ -52,6 +52,7 @@ final class OmrScoreInterpreter {
         rawHeadComponents.removeIf(head -> commonTimeGlyphBounds(labels, gray, width, height,
                 head, staffs, clefOrKeyComponents) != null);
         rawHeadComponents.removeIf(head -> isTempoUnitHead(gray, width, height, head, staffs));
+        rawHeadComponents.removeIf(head -> uprightTextBowlBounds(gray,width,height,head,staffs)!=null || staffTextBounds(gray,width,height,head,staffs)!=null);
         rawHeadComponents.removeIf(head -> isHeavyRestBarFragment(gray, width, height, head, staffs));
         rawHeadComponents.removeIf(head -> isWholeMeasureRestHead(gray,width,height,head,staffs));
         rawHeadComponents.removeIf(head -> isThickBarlineHead(gray,width,height,head,staffs));
@@ -479,7 +480,9 @@ final class OmrScoreInterpreter {
         List<Component> symbols = findComponents(labels, width, height, OmrMeasurePostProcessor.SYMBOL);
         byte[] result = labels;
         for (Component head : heads) {
-            int[] bounds = commonTimeGlyphBounds(labels, gray, width, height, head, staffs, glyphs);
+            int[] bounds = uprightTextBowlBounds(gray,width,height,head,staffs);
+            if(bounds==null && staffTextBounds(gray,width,height,head,staffs)!=null)bounds=new int[]{head.minX,head.maxX,head.minY,head.maxY};
+            if(bounds==null)bounds = commonTimeGlyphBounds(labels, gray, width, height, head, staffs, glyphs);
             if (bounds == null && isTempoUnitHead(gray, width, height, head, staffs))
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null && isRoundedHeaderMeter(labels, gray, width, height, head, staffs, glyphs))
@@ -1065,12 +1068,173 @@ final class OmrScoreInterpreter {
         return false;
     }
 
+    /** Remove only complete upright double-bowl text from geometric head vetoes.
+     * Other header removals retain their original geometry to avoid turning
+     * partial numeral stems into new barlines. */
+    static byte[] normalizeTextGeometry(byte[] labels,byte[] gray,int width,int height,
+            List<MeasureRegion> measures) {
+        if(labels==null||gray==null||labels.length!=(long)width*height
+                ||gray.length!=labels.length||measures==null||measures.isEmpty())return labels;
+        List<Staff> staffs=findStaffs(labels,gray,width,height,measures);
+        byte[] result=labels;
+        for(Component head:findComponents(labels,width,height,OmrMeasurePostProcessor.NOTEHEAD)) {
+            int[] bounds=uprightTextBowlBounds(gray,width,height,head,staffs);
+            if(bounds==null)continue;
+            for(int y=bounds[2];y<=bounds[3];y++)for(int x=bounds[0];x<=bounds[1];x++) {
+                int at=y*width+x;
+                if(result[at]!=OmrMeasurePostProcessor.NOTEHEAD)continue;
+                if(result==labels)result=labels.clone();
+                result[at]=0;
+            }
+        }
+        return result;
+    }
+
+    /** Complete upright text with two vertically elongated counters is not a note oval. */
+    private static int[] uprightTextBowlBounds(byte[] gray,int width,int height,
+            Component head,List<Staff> staffs) {
+        if(gray==null)return null;
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return null;
+        float gap=staff.pitchGap;
+        if(head.maxX-head.minX+1>gap*1.6f||head.maxY-head.minY+1>gap*2.5f)return null;
+        for(TempoInk glyph:tempoInk(gray,width,height,
+                Math.round(head.minX-gap),Math.round(head.maxX+gap),
+                Math.round(head.minY-gap*2),Math.round(head.maxY+gap*2))) {
+            int w=glyph.width(),h=glyph.height();
+            if(head.centerX<glyph.left||head.centerX>glyph.right
+                    ||head.centerY<glyph.top||head.centerY>glyph.bottom
+                    ||w<gap*.7f||w>gap*1.5f||h<gap*1.3f||h>gap*2.5f
+                    ||h<w*1.3f||h>w*2.2f||glyph.area<w*h*.25f||glyph.area>w*h*.85f)continue;
+            byte[] white=new byte[w*h];
+            for(int y=0;y<h;y++)for(int x=0;x<w;x++)
+                if((gray[(glyph.top+y)*width+glyph.left+x]&255)>=155)white[y*w+x]=1;
+            List<Component> holes=new ArrayList<>();
+            for(Component c:findComponents(white,w,h,(byte)1)) {
+                if(c.minX==0||c.minY==0||c.maxX==w-1||c.maxY==h-1)continue;
+                if(c.area>=Math.max(3,Math.round(gap*gap*.025f)))holes.add(c);
+            }
+            if(holes.size()!=2)continue;
+            holes.sort(Comparator.comparingDouble(c->c.centerY));
+            Component upper=holes.get(0),lower=holes.get(1);
+            boolean upright=true;
+            for(Component c:holes) {
+                int cw=c.maxX-c.minX+1,ch=c.maxY-c.minY+1;
+                upright &= cw>=gap*.12f&&ch>=gap*.22f&&cw<=ch*1.25f
+                        &&ch<=h*.45f&&c.area>=glyph.area*.07f;
+            }
+            if(!upright||Math.abs(upper.centerX-lower.centerX)>w*.25f
+                    ||upper.centerY>h*.45f||lower.centerY<h*.55f
+                    ||lower.minY-upper.maxY<gap*.15f||lower.minY-upper.maxY>gap*.9f
+                    ||upper.area+lower.area<glyph.area*.18f)continue;
+            return new int[]{glyph.left,glyph.right,glyph.top,glyph.bottom};
+        }
+        return null;
+    }
+
+    /** Small baseline-aligned lettering with a dotted ascender is not a group of note ovals. */
+    private static int[] staffTextBounds(byte[] gray,int width,int height,Component head,List<Staff> staffs) {
+        if(gray==null)return null;
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return null;
+        float gap=staff.pitchGap;
+        if(head.maxX-head.minX+1>gap*1.4f||head.maxY-head.minY+1>gap*.85f
+                ||attachedRawStem(gray,width,height,head,gap)!=null)return null;
+        int left=Math.max(0,Math.round(head.centerX-gap*3)),right=Math.min(width-1,Math.round(head.centerX+gap*3));
+        for(int baseline=Math.round(head.centerY);baseline<=Math.round(head.centerY+gap*.75f);baseline++) {
+            if(baseline<0||baseline>=height)continue;
+            int ink=0;for(int x=left;x<=right;x++)if((gray[baseline*width+x]&255)<155)ink++;
+            if(ink<(right-left+1)*.9f)continue;
+            // The final row is the notation rule; a one-pixel white margin keeps the
+            // original glyph edges complete after removing that rule.
+            int top=Math.max(0,Math.round(baseline-gap*1.2f)),rw=right-left+1,rh=baseline-top+1;
+            byte[] patch=new byte[rw*rh];java.util.Arrays.fill(patch,(byte)255);
+            for(int y=top;y<baseline;y++)for(int x=left;x<=right;x++)patch[(y-top)*rw+x-left]=gray[y*width+x];
+            List<TempoInk> glyphs=tempoInk(patch,rw,rh,0,rw-1,0,rh-1);
+            List<TempoInk> bodies=new ArrayList<>();
+            for(TempoInk c:glyphs)if(c.height()>gap*.4f&&c.height()<gap*1.1f
+                    &&c.width()>gap*.1f&&c.width()<gap*.85f
+                    &&baseline-(c.bottom+top)<gap*.22f)bodies.add(c);
+            bodies.sort(Comparator.comparingInt(c->c.left));
+            for(int start=0;start<bodies.size();start++) {
+                List<TempoInk> word=new ArrayList<>();word.add(bodies.get(start));
+                for(int i=start+1;i<bodies.size();i++) {
+                    TempoInk last=word.get(word.size()-1),next=bodies.get(i);
+                    if(next.left-last.right>gap*.5f)break;
+                    word.add(next);
+                }
+                if(word.size()<3)continue;
+                boolean dotted=false,ascender=false,contains=false;
+                for(TempoInk c:word) {
+                    contains |= head.centerX>=c.left+left-gap*.1f&&head.centerX<=c.right+left+gap*.1f;
+                    ascender |= c.height()>gap*.7f&&c.width()<gap*.5f;
+                    if(c.width()>gap*.4f)continue;
+                    for(TempoInk dot:glyphs)if(dot.height()>=1&&dot.height()<gap*.3f
+                            &&dot.width()<gap*.3f&&dot.area>=2&&dot.bottom<c.top
+                            &&c.top-dot.bottom<gap*.4f&&Math.abs((dot.left+dot.right)-(c.left+c.right))<gap*.3f)
+                        dotted=true;
+                }
+                if(dotted&&ascender&&contains)return new int[]{word.get(0).left+left,
+                        word.get(word.size()-1).right+left,top,baseline-1};
+            }
+        }
+        return null;
+    }
+
+
+    /** A small isolated beat symbol can be separated from its equation by the staff. */
+    private static boolean isDetachedTempoUnit(byte[] gray,int width,int height,
+            Component head,Staff staff) {
+        float gap=staff.pitchGap,top=staff.pitchBottom-4*gap;
+        if(head.maxY>=top||head.minY<top-3*gap
+                ||head.maxX-head.minX+1>gap*.9f||head.maxY-head.minY+1>gap*.75f)return false;
+        boolean smallBeat=false;
+        for(TempoInk glyph:tempoInk(gray,width,height,Math.round(head.minX-gap),
+                Math.round(head.maxX+gap),Math.round(head.minY-3*gap),Math.round(head.maxY+gap*.3f))) {
+            if(glyph.left>head.centerX||glyph.right<head.centerX||glyph.bottom<head.centerY
+                    ||glyph.width()>gap*.95f||glyph.height()<gap*1.3f||glyph.height()>gap*2.8f
+                    ||glyph.top>head.minY-gap*.7f||glyph.bottom>head.maxY+gap*.2f)continue;
+            int[] stem=attachedRawStem(gray,width,height,head,gap*.5f);
+            if(stem!=null&&stem[1]<head.minY-gap*.7f)smallBeat=true;
+        }
+        if(!smallBeat)return false;
+        List<TempoInk> ink=tempoInk(gray,width,height,Math.round(head.maxX-gap*.2f),
+                Math.round(head.maxX+gap*7),Math.round(staff.pitchBottom+gap*.3f),
+                Math.round(staff.pitchBottom+gap*3.5f));
+        for(TempoInk upper:ink)for(TempoInk lower:ink) {
+            if(upper.top>=lower.top||upper.width()<gap*.5f||upper.width()>gap*1.6f
+                    ||lower.width()<gap*.5f||lower.width()>gap*1.6f
+                    ||upper.height()>gap*.35f||lower.height()>gap*.35f
+                    ||upper.area<upper.width()*upper.height()*.7f
+                    ||lower.area<lower.width()*lower.height()*.7f
+                    ||Math.abs(upper.left-lower.left)>gap*.15f
+                    ||Math.abs(upper.right-lower.right)>gap*.2f
+                    ||lower.top-upper.bottom<gap*.08f||lower.top-upper.bottom>gap*.5f
+                    ||lower.bottom-upper.top>gap||upper.left-head.maxX>gap*1.5f)continue;
+            List<TempoInk> digits=new ArrayList<>();
+            for(TempoInk text:ink)if(text.left>lower.right+gap*.15f
+                    &&text.left<lower.right+gap*4.5f&&text.height()>gap*.9f
+                    &&text.height()<gap*2.3f&&text.width()>gap*.3f&&text.width()<gap*1.5f
+                    &&text.area>gap*gap*.18f&&text.top<upper.top&&text.bottom>=lower.bottom)
+                digits.add(text);
+            digits.sort(Comparator.comparingInt(c->c.left));
+            if(digits.size()<2||digits.size()>3||digits.get(0).left>lower.right+gap*1.5f)continue;
+            boolean aligned=true;
+            for(int i=1;i<digits.size();i++) {
+                TempoInk a=digits.get(i-1),b=digits.get(i);
+                aligned &= b.left>a.right&&b.left-a.right<gap*.75f
+                        &&Math.abs(a.top-b.top)<gap*.2f&&Math.abs(a.bottom-b.bottom)<gap*.2f;
+            }
+            if(aligned)return true;
+        }
+        return false;
+    }
+
     /** A note followed by an equals sign and text above the staff is a tempo beat unit. */
     private static boolean isTempoUnitHead(byte[] gray, int width, int height,
                                            Component head, List<Staff> staffs) {
         if (gray == null) return false;
         Staff staff = nearestHeadStaff(staffs, head.centerY);
         if (staff == null) return false;
+        if(isDetachedTempoUnit(gray,width,height,head,staff))return true;
         float gap = staff.pitchGap, top = staff.pitchBottom - gap * 4;
         float y = head.centerY, x = head.maxX;
         if (head.maxY > top + gap * .15f || y < top - gap * MAX_HEAD_LEDGER_GAPS) return false;
