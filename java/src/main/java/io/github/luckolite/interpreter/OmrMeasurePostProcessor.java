@@ -620,50 +620,51 @@ final class OmrMeasurePostProcessor {
         // Choosing a different dark pixel on every row follows the diagonal stem
         // of a multi-flag rest and can incorrectly make it look like a barline.
         int lineMargin = Math.max(1, Math.round(gap * .14f));
-        for(float ruleSlope : slope==0f?new float[]{0f}:new float[]{slope,0f})
-        for (int origin = centerX - 2; origin <= centerX + 2; origin++) {
-            int covered = 0, sampled = 0, branched = 0, widthSamples = 0;
-            boolean everySpace = true;
-            for (int line = 0; line < 4; line++) {
-                int start = Math.max(0, Math.round(rows[line] + shift) + lineMargin + 1);
-                int end = Math.min(height - 1, Math.round(rows[line + 1] + shift) - lineMargin - 1);
-                int spaceCovered = 0;
-                for (int y = start; y <= end; y++) {
-                    boolean awayFromRule = y - (rows[line] + shift) > gap * .29f
-                            && rows[line + 1] + shift - y > gap * .29f;
-                    if (awayFromRule) widthSamples++;
-                    int x = Math.round(origin - ruleSlope * (y - (top + bottom) * .5f));
-                    if (x >= 0 && x < width && (gray[y * width + x] & 0xff) <= inkCutoff[y - top]) {
-                        spaceCovered++;
-                        if (!awayFromRule) continue;
-                        int reach = Math.max(3, Math.round(gap * .65f));
-                        // Estimate the adjacent paper tone. Dark paper must not
-                        // turn every thin line into a page-wide branch.
-                        int paper = 0;
-                        for (int dx = -surround; dx <= surround; dx++)
-                            if (x + dx >= 0 && x + dx < width)
-                                paper = Math.max(paper, gray[y * width + x + dx] & 255);
-                        int branchDark = Math.min(RAW_BARLINE_DARK, Math.max(0, paper - 25));
-                        for (int direction = -1; direction <= 1; direction += 2) {
-                            int distance = 1;
-                            while (distance <= reach && x + direction * distance >= 0
-                                    && x + direction * distance < width
-                                    && (gray[y * width + x + direction * distance] & 0xff)
-                                    <= branchDark) distance++;
-                            if (distance > reach) { branched++; break; }
+        for(float ruleSlope : slope==0f?new float[]{0f}:new float[]{slope,0f}) {
+            for (int origin = centerX - 2; origin <= centerX + 2; origin++) {
+                int covered = 0, sampled = 0, branched = 0, widthSamples = 0;
+                boolean everySpace = true;
+                for (int line = 0; line < 4; line++) {
+                    int start = Math.max(0, Math.round(rows[line] + shift) + lineMargin + 1);
+                    int end = Math.min(height - 1, Math.round(rows[line + 1] + shift) - lineMargin - 1);
+                    int spaceCovered = 0;
+                    for (int y = start; y <= end; y++) {
+                        boolean awayFromRule = y - (rows[line] + shift) > gap * .29f
+                                && rows[line + 1] + shift - y > gap * .29f;
+                        if (awayFromRule) widthSamples++;
+                        int x = Math.round(origin - ruleSlope * (y - (top + bottom) * .5f));
+                        if (x >= 0 && x < width && (gray[y * width + x] & 0xff) <= inkCutoff[y - top]) {
+                            spaceCovered++;
+                            if (!awayFromRule) continue;
+                            int reach = Math.max(3, Math.round(gap * .65f));
+                            // Estimate the adjacent paper tone. Dark paper must not
+                            // turn every thin line into a page-wide branch.
+                            int paper = 0;
+                            for (int dx = -surround; dx <= surround; dx++)
+                                if (x + dx >= 0 && x + dx < width)
+                                    paper = Math.max(paper, gray[y * width + x + dx] & 255);
+                            int branchDark = Math.min(RAW_BARLINE_DARK, Math.max(0, paper - 25));
+                            for (int direction = -1; direction <= 1; direction += 2) {
+                                int distance = 1;
+                                while (distance <= reach && x + direction * distance >= 0
+                                        && x + direction * distance < width
+                                        && (gray[y * width + x + direction * distance] & 0xff)
+                                        <= branchDark) distance++;
+                                if (distance > reach) { branched++; break; }
+                            }
                         }
                     }
+                    int samples = Math.max(0, end - start + 1);
+                    covered += spaceCovered;
+                    sampled += samples;
+                    if (spaceCovered < samples * .55f) everySpace = false;
                 }
-                int samples = Math.max(0, end - start + 1);
-                covered += spaceCovered;
-                sampled += samples;
-                if (spaceCovered < samples * .55f) everySpace = false;
+                // Stacked meter digits can contain one continuous vertical stroke. Their
+                // wide branches occupy many staff-space rows; a thin bar may intersect
+                // an occasional beam or slur, but does not have that repeated width.
+                if (sampled > 0 && everySpace && covered >= sampled * .90f
+                        && branched <= widthSamples * .35f) return origin;
             }
-            // Stacked meter digits can contain one continuous vertical stroke. Their
-            // wide branches occupy many staff-space rows; a thin bar may intersect
-            // an occasional beam or slur, but does not have that repeated width.
-            if (sampled > 0 && everySpace && covered >= sampled * .90f
-                    && branched <= widthSamples * .35f) return origin;
         }
         return Integer.MIN_VALUE;
     }
