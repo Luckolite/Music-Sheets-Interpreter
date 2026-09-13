@@ -610,6 +610,7 @@ final class OmrMeasurePostProcessor {
         int span = bottom - top + 1;
         if (!(touchesTop && touchesBottom && darkRows >= span * .68f
                 && longest >= span * .48f)) return Integer.MIN_VALUE;
+        if(stackedFourCounters(gray,width,height,centerX,top,bottom,gap))return Integer.MIN_VALUE;
         // A rest plus the five horizontal staff lines can satisfy the aggregate
         // coverage test while leaving an entire staff space empty. A barline
         // must also cross each of the four spaces between those lines. Ignore
@@ -675,6 +676,40 @@ final class OmrMeasurePostProcessor {
             for (int x = Math.max(0, centerX - radiusX); x <= Math.min(width - 1, centerX + radiusX); x++)
                 if (isVerticalInk(labels[y * width + x])) return true;
         return false;
+    }
+
+    /** A stacked pair of fours can have a continuous right stroke. Its two
+     * aligned triangular counters are stronger evidence than that stroke. */
+    static boolean stackedFourCounters(byte[] gray,int width,int height,int column,int top,int bottom,float gap) {
+        int left=Math.max(0,column-Math.round(gap*1.6f)),right=Math.min(width-1,column+Math.round(gap*.5f));
+        int first=Math.max(0,top-Math.round(gap*.2f)),last=Math.min(height-1,bottom+Math.round(gap*.2f));
+        int w=right-left+1,h=last-first+1;if(w<5||h<10)return false;
+        boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];List<float[]> counters=new ArrayList<>();
+        for(int seed=0;seed<seen.length;seed++) {
+            if(seen[seed]||(gray[(first+seed/w)*width+left+seed%w]&255)<=160)continue;
+            int read=0,write=0;queue[write++]=seed;seen[seed]=true;
+            int minX=w,maxX=-1,minY=h,maxY=-1;int[] rows=new int[h];
+            while(read<write) {
+                int at=queue[read++],x=at%w,y=at/w;rows[y]++;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int xx=x+dx,yy=y+dy;if(xx<0||xx>=w||yy<0||yy>=h)continue;int next=yy*w+xx;
+                    if(!seen[next]&&(gray[(first+yy)*width+left+xx]&255)>160){seen[next]=true;queue[write++]=next;}
+                }
+            }
+            int cw=maxX-minX+1,ch=maxY-minY+1;
+            if(minX==0||maxX==w-1||minY==0||maxY==h-1||write<gap*gap*.05f||write>gap*gap*.4f
+                    ||cw<gap*.2f||cw>gap||ch<gap*.2f||ch>gap*.85f||left+maxX>column+gap*.3f)continue;
+            int half=ch/2;float upper=0,lower=0;
+            for(int j=0;j<half;j++){upper+=rows[minY+j];lower+=rows[maxY-j];}
+            // Parallel double bars enclose rectangular spaces, not widening counters.
+            if((lower-upper)/Math.max(1,half)<Math.max(1f,gap*.1f))continue;
+            counters.add(new float[]{left+(minX+maxX)*.5f,first+(minY+maxY)*.5f});
+        }
+        if(counters.size()!=2)return false;
+        float[] a=counters.get(0),b=counters.get(1);
+        return Math.abs(a[0]-b[0])<=gap*.25f&&b[1]-a[1]>=gap*1.65f&&b[1]-a[1]<=gap*2.35f
+                &&a[1]<(top+bottom)*.5f-gap*.2f&&b[1]>(top+bottom)*.5f+gap*.2f;
     }
 
     private static int countLabel(byte[] labels, int width, int height, byte wanted,

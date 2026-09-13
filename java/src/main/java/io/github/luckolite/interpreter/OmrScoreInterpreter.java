@@ -221,6 +221,9 @@ final class OmrScoreInterpreter {
                     ||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FLAT||writtenAccidental==ScoreNoteEvent.ACCIDENTAL_SHARP)
                     &&rawNaturalFromCrossbars(gray,width,height,localAccidentals,head,localPitch[1]))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_NATURAL;
+            if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                    &&naturalFromUpperSpine(labels,gray,width,height,localAccidentals,head,localPitch[1]))
+                writtenAccidental=ScoreNoteEvent.ACCIDENTAL_NATURAL;
             ScoreNoteEvent event = new ScoreNoteEvent(measureIndex, clamp(position),
                     Math.max(-32, Math.min(32, step)), staff.index, staff.count,
                     clamp(normalizedY), false, augmentationDots, beamCount,
@@ -564,7 +567,9 @@ final class OmrScoreInterpreter {
         if(head.maxX-head.minX+1>gap||head.maxY-head.minY+1>gap
                 ||head.area>gap*gap*.55f||head.centerY<staff.top-gap||head.centerY>staff.bottom+gap)return false;
         boolean header=false;
-        for(Component c:glyphs) {
+        for(Component original:glyphs) {
+            Component c=joinTrebleCurl(joinSmallTrebleFragments(original,glyphs,staff),glyphs,staff);
+            c=joinHeaderClefFragments(c,glyphs,staff);
             if(c.maxX>=head.minX||head.minX-c.maxX>gap*4)continue;
             float gh=c.maxY-c.minY+1,gw=c.maxX-c.minX+1;
             boolean treble=gh>=gap*4.8f&&gh<=gap*8.8f&&gw>=gap*1.25f&&gw<=gap*3.4f
@@ -573,39 +578,107 @@ final class OmrScoreInterpreter {
             if(treble||rawBassClef(c,gray,width,height,staff)){header=true;break;}
         }
         if(!header)return false;
-        for(Component seed:glyphs) {
+        for(Component original:glyphs) {
+            Component seed=joinHeaderFlatSpine(original,glyphs,head,gap);
             if(seed.minX>=head.minX||seed.maxX<head.minX-gap*.6f
                     ||seed.maxX-seed.minX+1>gap*.85f||seed.maxY-seed.minY+1<gap*.8f
                     ||seed.minY>head.centerY-gap*.9f||seed.maxY<head.minY-gap*.25f)continue;
-            int margin=Math.max(1,Math.round(gap*.16f));
-            int left=Math.max(0,Math.min(seed.minX,head.minX)-margin);
-            int right=Math.min(width-1,Math.max(seed.maxX,head.maxX)+margin);
-            int top=Math.max(0,Math.round(head.centerY-gap*2.7f));
-            int bottom=Math.min(height-1,Math.round(head.centerY+gap*.8f));
-            int w=right-left+1,h=bottom-top+1;if(w<=0||h<=0)continue;
-            byte[] ink=new byte[w*h];int area=0,minX=w,maxX=-1,minY=h,maxY=-1;long sx=0,sy=0;
-            int reach=Math.max(3,Math.round(gap*.6f)),probe=Math.max(2,Math.round(gap*.2f));
-            for(int y=top;y<=bottom;y++) {
-                int outside=0,dark=0;
-                for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
-                    if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=180)dark++;}
-                boolean rule=outside>0&&dark>=outside*.8f;
-                for(int x=left;x<=right;x++) {
-                    if((gray[y*width+x]&255)>180)continue;
-                    if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>180
-                            ||(gray[(y+probe)*width+x]&255)>180))continue;
-                    int xx=x-left,yy=y-top;ink[yy*w+xx]=OmrMeasurePostProcessor.SYMBOL;
-                    area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);
-                    minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
+            for(int threshold:new int[]{180,235}) {
+                int margin=Math.max(1,Math.round(gap*.16f));
+                int left=Math.max(0,Math.min(seed.minX,head.minX)-margin);
+                int right=Math.min(width-1,Math.max(seed.maxX,head.maxX)+(threshold==180?margin:Math.round(gap*.5f)));
+                int top=Math.max(0,Math.round(head.centerY-gap*2.7f));
+                int bottom=Math.min(height-1,Math.round(head.centerY+gap*.8f));
+                int w=right-left+1,h=bottom-top+1;if(w<=0||h<=0)continue;
+                byte[] ink=new byte[w*h];int area=0,minX=w,maxX=-1,minY=h,maxY=-1;long sx=0,sy=0;
+                int reach=Math.max(3,Math.round(gap*.6f)),probe=Math.max(2,Math.round(gap*.2f));
+                for(int y=top;y<=bottom;y++) {
+                    int outside=0,dark=0;
+                    for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
+                        if(x<left||x>right){outside++;if((gray[y*width+x]&255)<=threshold)dark++;}
+                    boolean rule=outside>0&&dark>=outside*.8f;
+                    for(int x=left;x<=right;x++) {
+                        if((gray[y*width+x]&255)>threshold)continue;
+                        if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>threshold
+                                ||(gray[(y+probe)*width+x]&255)>threshold))continue;
+                        if(threshold>180) {
+                            int contrastReach=Math.round(gap*.6f);
+                            if(x>=contrastReach&&x+contrastReach<width
+                                    &&headerInkContrast(gray,width,x,y,contrastReach)<12
+                                    &&(!rule||headerInkContrast(gray,width,x,y-probe,contrastReach)<12
+                                        ||headerInkContrast(gray,width,x,y+probe,contrastReach)<12))continue;
+                        }
+                        int xx=x-left,yy=y-top;ink[yy*w+xx]=OmrMeasurePostProcessor.SYMBOL;
+                        area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);
+                        minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
+                    }
                 }
+                if(threshold>180) {
+                    Component connected=retainSeedConnectedInk(ink,w,h,head,left,top);
+                    if(connected==null)continue;
+                    area=connected.area;minX=connected.minX;maxX=connected.maxX;
+                    minY=connected.minY;maxY=connected.maxY;
+                    sx=Math.round(connected.centerX*area);sy=Math.round(connected.centerY*area);
+                }
+                if(area==0)continue;
+                var flat=new AccidentalCandidate(new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area),OmrMeasurePostProcessor.SYMBOL);
+                // A fragmented note label may cover only the lower tip of a
+                // proven flat bowl, away from the accidental's pitch center.
+                if(!isNaturalGlyph(ink,w,h,flat,gap)&&!isSharpGlyph(ink,w,h,flat,gap)
+                        &&isFlatGlyph(ink,w,h,flat,gap)
+                        &&(threshold==180?Math.abs(top+flatPitchCenter(ink,w,flat,gap)-head.centerY)<=gap*.5f
+                            :head.centerY>=top+minY+(maxY-minY+1)*.55f&&head.centerY<=top+maxY))return true;
             }
-            if(area==0)continue;
-            var flat=new AccidentalCandidate(new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area),OmrMeasurePostProcessor.SYMBOL);
-            if(!isNaturalGlyph(ink,w,h,flat,gap)&&!isSharpGlyph(ink,w,h,flat,gap)
-                    &&isFlatGlyph(ink,w,h,flat,gap)
-                    &&Math.abs(top+flatPitchCenter(ink,w,flat,gap)-head.centerY)<=gap*.5f)return true;
         }
         return false;
+    }
+
+    private static float headerInkContrast(byte[] gray,int width,int x,int y,int reach) {
+        return ((gray[y*width+x-reach]&255)+(gray[y*width+x+reach]&255))*.5f-(gray[y*width+x]&255);
+    }
+
+    /** Reconnect upper and lower clef pieces only around an already large body.
+     * The complete header-clef checks still decide whether this is a clef. */
+    private static Component joinHeaderClefFragments(Component body,List<Component> glyphs,Staff staff) {
+        float gap=staff.gap;
+        if(body.maxY-body.minY<gap*3||body.maxY-body.minY>gap*7
+                ||body.maxX-body.minX<gap*1.3f||body.maxX-body.minX>gap*2.5f
+                ||body.area<gap*gap*1.65f||body.minY>staff.top+gap*.5f
+                ||body.minY<staff.top-gap*3)return body;
+        Component joined=body;
+        for(Component part:glyphs) {
+            if(part.minX>=joined.minX&&part.maxX<=joined.maxX
+                    &&part.minY>=joined.minY&&part.maxY<=joined.maxY)continue;
+            if(part==body||part.minX<body.minX-gap*.2f||part.maxX>body.maxX+gap*.6f
+                    ||part.minY<body.minY-gap*2.5f||part.maxY>body.maxY+gap*2
+                    ||part.minY>joined.maxY+gap*1.2f||part.maxY<joined.minY-gap*1.2f)continue;
+            int area=joined.area+part.area;
+            joined=new Component(area,Math.min(joined.minX,part.minX),Math.max(joined.maxX,part.maxX),
+                    Math.min(joined.minY,part.minY),Math.max(joined.maxY,part.maxY),
+                    (joined.centerX*joined.area+part.centerX*part.area)/area,
+                    (joined.centerY*joined.area+part.centerY*part.area)/area);
+        }
+        return joined;
+    }
+
+    /** Staff labels can interrupt a flat spine into several narrow pieces. */
+    private static Component joinHeaderFlatSpine(Component seed,List<Component> glyphs,Component head,float gap) {
+        if(seed.maxX-seed.minX+1>gap*.85f)return seed;
+        Component joined=seed;
+        for(Component part:glyphs) {
+            if(part.minX>=joined.minX&&part.maxX<=joined.maxX
+                    &&part.minY>=joined.minY&&part.maxY<=joined.maxY)continue;
+            if(part==seed||part.minX<seed.minX-gap*.2f||part.maxX>seed.maxX+gap*.2f
+                    ||part.minY<head.centerY-gap*2.7f||part.maxY>head.centerY+gap*.65f
+                    ||part.minY>joined.maxY+gap*.65f||part.maxY<joined.minY-gap*.65f
+                    ||Math.max(joined.maxX,part.maxX)-Math.min(joined.minX,part.minX)+1>gap*.85f)continue;
+            int area=joined.area+part.area;
+            joined=new Component(area,Math.min(joined.minX,part.minX),Math.max(joined.maxX,part.maxX),
+                    Math.min(joined.minY,part.minY),Math.max(joined.maxY,part.maxY),
+                    (joined.centerX*joined.area+part.centerX*part.area)/area,
+                    (joined.centerY*joined.area+part.centerY*part.area)/area);
+        }
+        return joined;
     }
 
     /** A tall detached count above a fully capped multimeasure-rest bar. */
@@ -3931,30 +4004,58 @@ final class OmrScoreInterpreter {
                     ||Math.abs(c.centerY-head.centerY)>gap*.9f
                     ||c.maxY-c.minY+1<gap*1.55f||c.maxY-c.minY+1>gap*3.65f
                     ||c.maxX-c.minX+1<gap*.65f||c.maxX-c.minX+1>gap*1.8f)continue;
-            int left=Math.max(0,c.minX),right=Math.min(width-1,c.maxX);
-            int top=Math.max(0,c.minY),bottom=Math.min(height-1,c.maxY);
-            int w=right-left+1,h=bottom-top+1;
-            int reach=Math.max(3,Math.round(gap*.6f)),probe=Math.max(2,Math.round(gap*.2f));
-            for(int threshold:new int[]{180,225}) {
-                byte[] mask=new byte[w*h];int area=0,minX=w,maxX=-1,minY=h,maxY=-1;long sx=0,sy=0;
-                for(int y=top;y<=bottom;y++) {
-                    int outside=0,total=0;
-                    for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
-                        if(x<left||x>right){total++;if((gray[y*width+x]&255)<threshold)outside++;}
-                    boolean rule=total>0&&outside>total*.8f;
-                    for(int x=left;x<=right;x++) {
-                        if((gray[y*width+x]&255)>=threshold)continue;
-                        if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>=threshold
-                                ||(gray[(y+probe)*width+x]&255)>=threshold))continue;
-                        int xx=x-left,yy=y-top;mask[yy*w+xx]=OmrMeasurePostProcessor.CLEF_OR_KEY;
-                        area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
-                    }
+            if(rawSharpInBounds(gray,width,height,head,gap,Math.max(0,c.minX),
+                    Math.min(width-1,c.maxX),Math.max(0,c.minY),Math.min(height-1,c.maxY),false))return true;
+        }
+        List<Component> bars=new ArrayList<>();
+        for(AccidentalCandidate candidate:candidates) {
+            Component c=candidate.component;
+            if(c.maxX>head.minX-gap*.10f||head.minX-c.maxX>gap*1.6f
+                    ||Math.abs(c.centerY-head.centerY)>gap*1.3f
+                    ||c.maxY-c.minY>gap*.6f||c.maxX-c.minX<gap*.35f
+                    ||c.maxX-c.minX>gap*1.25f)continue;
+            bars.add(c);
+        }
+        // Lost thin spines leave two separate semantic crossbars. Their aligned
+        // pair locates a crop; the printed sharp still has to prove its shape.
+        for(Component upper:bars)for(Component lower:bars) {
+            float dy=lower.centerY-upper.centerY;
+            if(dy<gap*.65f||dy>gap*1.5f||Math.abs(upper.centerX-lower.centerX)>gap*.5f)continue;
+            int left=Math.max(0,Math.round(Math.min(upper.minX,lower.minX)-gap*.10f));
+            int right=Math.min(width-1,Math.min(Math.round(head.minX-gap*.15f),
+                    Math.round(Math.max(upper.maxX,lower.maxX)+gap*.10f)));
+            int top=Math.max(0,Math.round(upper.minY-gap*.8f));
+            int bottom=Math.min(height-1,Math.round(lower.maxY+gap*.8f));
+            if(right<=left||bottom<=top)continue;
+            if(rawSharpInBounds(gray,width,height,head,gap,left,right,top,bottom,true))return true;
+        }
+        return false;
+    }
+
+    private static boolean rawSharpInBounds(byte[] gray,int width,int height,Component head,float gap,
+            int left,int right,int top,int bottom,boolean checkEdges) {
+        int w=right-left+1,h=bottom-top+1;
+        int reach=Math.max(3,Math.round(gap*.6f)),probe=Math.max(2,Math.round(gap*.2f));
+        // Preserve the original exclusive cutoffs for complete semantic seeds.
+        for(int threshold:checkEdges?new int[]{180,225}:new int[]{179,224}) {
+            byte[] mask=new byte[w*h];int area=0,minX=w,maxX=-1,minY=h,maxY=-1;long sx=0,sy=0;
+            for(int y=top;y<=bottom;y++) {
+                int outside=0,total=0;
+                for(int x=Math.max(0,left-reach);x<=Math.min(width-1,right+reach);x++)
+                    if(x<left||x>right){total++;if((gray[y*width+x]&255)<=threshold)outside++;}
+                boolean rule=total>0&&outside>total*.8f;
+                for(int x=left;x<=right;x++) {
+                    if((gray[y*width+x]&255)>threshold)continue;
+                    if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>threshold
+                            ||(gray[(y+probe)*width+x]&255)>threshold))continue;
+                    int xx=x-left,yy=y-top;mask[yy*w+xx]=OmrMeasurePostProcessor.CLEF_OR_KEY;
+                    area++;sx+=xx;sy+=yy;minX=Math.min(minX,xx);maxX=Math.max(maxX,xx);minY=Math.min(minY,yy);maxY=Math.max(maxY,yy);
                 }
-                if(area==0)continue;
-                Component glyph=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
-                float center=sharpPitchCenter(mask,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.CLEF_OR_KEY),gap);
-                if(Float.isFinite(center)&&Math.abs(center+top-head.centerY)<gap*.4f)return true;
             }
+            if(area==0||(checkEdges&&rawStrokeLeavesCrop(gray,width,height,mask,w,h,left,top,gap)))continue;
+            Component glyph=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
+            float center=sharpPitchCenter(mask,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.CLEF_OR_KEY),gap);
+            if(Float.isFinite(center)&&Math.abs(center+top-head.centerY)<gap*.4f)return true;
         }
         return false;
     }
@@ -4003,6 +4104,41 @@ final class OmrScoreInterpreter {
             if(area<3||rawStrokeLeavesCrop(gray,width,height,mask,w,h,left,top,gap))continue;
             Component g=new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area);
             if(isNaturalGlyph(mask,w,h,new AccidentalCandidate(g,OmrMeasurePostProcessor.SYMBOL),gap))return true;
+        }
+        return false;
+    }
+
+    /** Extend only the missing upper-left spine of an otherwise semantic glyph.
+     * The printed extension must end inside the crop and the completed mask must
+     * still prove both natural endpoints and both separated connectors. */
+    private static boolean naturalFromUpperSpine(byte[] labels,byte[] gray,int width,int height,
+            List<AccidentalCandidate> candidates,Component head,float gap) {
+        if(gray==null||gray.length!=width*height)return false;
+        for(AccidentalCandidate candidate:candidates) {
+            Component c=candidate.component;
+            int w=c.maxX-c.minX+1,gh=c.maxY-c.minY+1;
+            if(candidate.label!=OmrMeasurePostProcessor.CLEF_OR_KEY
+                    ||head.minX-c.maxX<gap*.1f||head.minX-c.maxX>gap*1.35f
+                    ||Math.abs(c.centerY-head.centerY)>gap*.9f
+                    ||w<gap*.48f||w>gap*1.55f||gh<gap*1.4f||gh>gap*3.2f
+                    ||isSharpGlyph(labels,width,height,candidate,gap)
+                    ||isFlatGlyph(labels,width,height,candidate,gap))continue;
+            int[] columns=new int[w];
+            for(int y=c.minY;y<=c.maxY;y++)for(int x=c.minX;x<=c.maxX;x++)
+                if(candidate.matches(labels[y*width+x]))columns[x-c.minX]++;
+            for(int spine=0;spine<w/2;spine++) {
+                if(columns[spine]<gh*.45f)continue;
+                int top=Math.max(0,Math.round(c.minY-gap*.85f)),h=c.maxY-top+1;
+                byte[] ink=new byte[w*h];
+                for(int y=c.minY;y<=c.maxY;y++)for(int x=c.minX;x<=c.maxX;x++)
+                    if(candidate.matches(labels[y*width+x]))ink[(y-top)*w+x-c.minX]=OmrMeasurePostProcessor.SYMBOL;
+                for(int y=top;y<c.minY;y++)
+                    if((gray[y*width+c.minX+spine]&255)<=225)ink[(y-top)*w+spine]=OmrMeasurePostProcessor.SYMBOL;
+                Component connected=retainSeedConnectedInk(ink,w,h,c,c.minX,top);
+                if(connected==null||connected.minY==0
+                        ||c.minY-top-connected.minY<gap*.3f)continue;
+                if(isNaturalGlyph(ink,w,h,new AccidentalCandidate(connected,OmrMeasurePostProcessor.SYMBOL),gap))return true;
+            }
         }
         return false;
     }

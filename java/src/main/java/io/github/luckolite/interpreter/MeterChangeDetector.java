@@ -72,6 +72,27 @@ public final class MeterChangeDetector {
                     else if(++blanks>maxBlank) break;
                 }
                 int span=last-left+1;
+                // Misaligned or curved rules can join digits to neighboring ink.
+                // Recover a bounded crop only from two aligned triangular counters;
+                // the OCR and note-position checks still decide its meaning.
+                if(span>gap*3.2f) {
+                    for(int xx=left;xx<=last;xx++) {
+                        if(ink[xx]<gap*1.4f)continue;
+                        int shift=Math.round(slope*(xx-width*.5f));
+                        if(!OmrMeasurePostProcessor.stackedFourCounters(gray,width,height,xx,top+shift,bottom+shift,gap))continue;
+                        int end=xx;
+                        for(int next=xx+1;next<=Math.min(last,xx+Math.round(gap*.8f));next++) {
+                            int offset=Math.round(slope*(next-width*.5f));
+                            if(OmrMeasurePostProcessor.stackedFourCounters(gray,width,height,next,top+offset,bottom+offset,gap))end=next;
+                        }
+                        int center=(xx+end)/2,localTop=top+Math.round(slope*(center-width*.5f));
+                        int pad=Math.max(2,Math.round(gap*.18f));
+                        result.add(new Crop(Math.max(0,Math.round(center-gap*1.6f)),Math.max(0,localTop-pad),
+                                Math.min(width,Math.round(center+gap)),Math.min(height,localTop+bottom-top+pad+1),localTop,gap));
+                        if(result.size()>=48)return List.copyOf(result);
+                        xx=end+Math.round(gap);
+                    }
+                }
                 if(span<gap*.5f || span>gap*3.2f) continue;
                 int key=0,head=0,upper=0,lower=0,symbols=0,upperSymbols=0,lowerSymbols=0;
                 int[] stemRows=new int[span];
