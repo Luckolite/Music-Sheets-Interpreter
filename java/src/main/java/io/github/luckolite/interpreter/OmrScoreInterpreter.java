@@ -3524,10 +3524,49 @@ final class OmrScoreInterpreter {
                         ||right[0]<=head.maxX+gap*.2f||right[0]-left[0]<gap*2
                         ||right[0]-left[0]>gap*6)continue;
                 if(thinBeamBetween(gray,width,height,left[0],left[1],right[0],right[1],
-                        head.centerX,head.centerY,gap)){rejected.add(head);found=true;}
+                        head.centerX,head.centerY,gap)
+                        ||shortParallelBeam(gray,width,height,left,right,head,gap)){rejected.add(head);found=true;}
             }
         }
         return rejected;
+    }
+
+    /** A secondary beam can end between the two stems of its complete primary beam. */
+    private static boolean shortParallelBeam(byte[] gray,int width,int height,int[] left,
+            int[] right,Component head,float gap) {
+        float slope=(right[1]-left[1])/(float)(right[0]-left[0]);
+        float primaryY=left[1]+slope*(head.centerX-left[0]);
+        float separation=(primaryY-head.centerY)*left[2];
+        if(separation<gap*.5f||separation>gap*1.35f
+                ||!thinBeamBetween(gray,width,height,left[0],left[1],right[0],right[1],
+                        head.centerX,primaryY,gap))return false;
+        int margin=Math.max(2,Math.round(gap*.18f)),radius=Math.round(gap);
+        for(int[] end:new int[][]{left,right}) {
+            float distance=Math.abs(end[0]-head.centerX);
+            if(distance<gap*.65f||distance>gap*2.3f)continue;
+            int direction=end[0]>head.centerX?1:-1;
+            int start=Math.round(head.centerX),finish=end[0]-direction*margin;
+            int low=Integer.MAX_VALUE,high=0,columns=0;boolean valid=true;
+            for(int x=start;direction*(finish-x)>=0;x+=direction) {
+                int y=Math.round(head.centerY+slope*(x-head.centerX));
+                if(x<0||x>=width||y-radius<0||y+radius>=height
+                        ||(gray[y*width+x]&255)>=165){valid=false;break;}
+                int top=y,bottom=y;
+                while(top>y-radius&&(gray[(top-1)*width+x]&255)<165)top--;
+                while(bottom<y+radius&&(gray[(bottom+1)*width+x]&255)<165)bottom++;
+                int span=bottom-top+1;
+                if(span<gap*.35f||span>gap*.8f){valid=false;break;}
+                low=Math.min(low,span);high=Math.max(high,span);columns++;
+            }
+            if(!valid||columns<gap*.65f||high-low>gap*.2f)continue;
+            // The short stroke must actually reach the already established stem.
+            for(int x=finish;direction*(end[0]-x)>=0;x+=direction) {
+                int y=Math.round(head.centerY+slope*(x-head.centerX));
+                if((gray[y*width+x]&255)>=165){valid=false;break;}
+            }
+            if(valid)return true;
+        }
+        return false;
     }
 
     static boolean thinBeamBetween(byte[] gray,int width,int height,int left,int leftY,
@@ -4975,7 +5014,7 @@ final class OmrScoreInterpreter {
         Component glyph = candidate.component;
         int glyphWidth = glyph.maxX - glyph.minX + 1;
         int glyphHeight = glyph.maxY - glyph.minY + 1;
-        if (glyphHeight < gap * 1.40f || glyphHeight > gap * 3.70f
+        if (glyphHeight < Math.floor(gap * 1.40f) || glyphHeight > gap * 3.70f
                 || glyphWidth < gap * .48f || glyphWidth > gap * 1.55f
                 || glyphHeight < glyphWidth * 1.45f
                 || glyphHeight > glyphWidth * 4.50f
