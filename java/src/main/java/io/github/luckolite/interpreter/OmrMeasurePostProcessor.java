@@ -266,7 +266,8 @@ final class OmrMeasurePostProcessor {
         float centerX = width / 2f;
         long horizontalScore=staffProjectionScore(xs,ys,height,centerX,0f);
         long bestScore=horizontalScore;
-        for (int step = -10; step <= 10; step++) {
+        // Camera angles and book gutters can exceed the old roughly three-degree range.
+        for (int step = -24; step <= 24; step++) {
             float slope = step * 0.006f;
             long score=staffProjectionScore(xs,ys,height,centerX,slope);
             if (score > bestScore) { bestScore = score; bestSlope = slope; }
@@ -613,10 +614,13 @@ final class OmrMeasurePostProcessor {
         // coverage test while leaving an entire staff space empty. A barline
         // must also cross each of the four spaces between those lines. Ignore
         // the horizontal lines themselves so they cannot supply that evidence.
-        // Use one consistent column, perpendicular to the detected staff slope.
+        // Test fixed perpendicular and upright axes: book shear can tilt the
+        // staff while leaving its barlines vertical. Each axis must independently
+        // cross all four spaces; never follow a different dark pixel on each row.
         // Choosing a different dark pixel on every row follows the diagonal stem
         // of a multi-flag rest and can incorrectly make it look like a barline.
         int lineMargin = Math.max(1, Math.round(gap * .14f));
+        for(float ruleSlope : slope==0f?new float[]{0f}:new float[]{slope,0f})
         for (int origin = centerX - 2; origin <= centerX + 2; origin++) {
             int covered = 0, sampled = 0, branched = 0, widthSamples = 0;
             boolean everySpace = true;
@@ -628,7 +632,7 @@ final class OmrMeasurePostProcessor {
                     boolean awayFromRule = y - (rows[line] + shift) > gap * .29f
                             && rows[line + 1] + shift - y > gap * .29f;
                     if (awayFromRule) widthSamples++;
-                    int x = Math.round(origin - slope * (y - (top + bottom) * .5f));
+                    int x = Math.round(origin - ruleSlope * (y - (top + bottom) * .5f));
                     if (x >= 0 && x < width && (gray[y * width + x] & 0xff) <= inkCutoff[y - top]) {
                         spaceCovered++;
                         if (!awayFromRule) continue;

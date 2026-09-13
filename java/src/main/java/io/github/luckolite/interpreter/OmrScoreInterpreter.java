@@ -2331,7 +2331,38 @@ final class OmrScoreInterpreter {
                 for(int yy=Math.max(0,y-radius);yy<=Math.min(height-1,y+radius);yy++)
                     if((gray[yy*width+x]&255)<180){dark++;break;}
             }
-            if(i<5?dark<samples*.55f:dark>=samples*.5f)return false;
+            if(i<5?dark<samples*.55f:dark>=samples*.5f)
+                return completePrintedDeskewedSpan(gray,width,height,staff,slope);
+        }
+        return true;
+    }
+
+    /** Short systems must prove five printed rules across their own extent. */
+    private static boolean completePrintedDeskewedSpan(byte[] gray,int width,int height,
+            RawStaffLineDetector.StaffLines staff,float slope) {
+        int step=Math.max(1,width/512),radius=Math.max(1,Math.round(staff.gap()*.15f));
+        int first=-1,last=-1;
+        for(int x=0;x<width;x+=step) {
+            int lines=0,spaces=0;
+            for(int i=0;i<9;i++) {
+                float row=i<5?staff.rows()[i]:(staff.rows()[i-5]+staff.rows()[i-4])*.5f;
+                int y=Math.round(row+slope*(x-width*.5f));boolean dark=false;
+                for(int yy=Math.max(0,y-radius);yy<=Math.min(height-1,y+radius);yy++)
+                    if((gray[yy*width+x]&255)<180){dark=true;break;}
+                if(dark){if(i<5)lines++;else spaces++;}
+            }
+            if(lines>=4&&spaces<=1){if(first<0)first=x;last=x;}
+        }
+        if(first<0||last-first<Math.max(staff.gap()*12,width*.18f))return false;
+        for(int i=0;i<9;i++) {
+            float row=i<5?staff.rows()[i]:(staff.rows()[i-5]+staff.rows()[i-4])*.5f;
+            int dark=0,samples=0;
+            for(int x=first;x<=last;x+=step) {
+                int y=Math.round(row+slope*(x-width*.5f));samples++;
+                for(int yy=Math.max(0,y-radius);yy<=Math.min(height-1,y+radius);yy++)
+                    if((gray[yy*width+x]&255)<180){dark++;break;}
+            }
+            if(i<5?dark<samples*.75f:dark>=samples*.35f)return false;
         }
         return true;
     }
