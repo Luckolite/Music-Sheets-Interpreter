@@ -36,6 +36,54 @@ public class FaintMeterStaffTest {
         assertTrue(MeterChangeDetector.candidates(labels,gray,W,H).isEmpty());
     }
 
+    @Test public void staggeredKeyGlyphsCannotBecomeAMeter() {
+        byte[] labels=new byte[W*H],gray=paper();staff(labels,gray,80,200);
+        flat(labels,gray,X+12,76);flat(labels,gray,X,100);
+        assertTrue(MeterChangeDetector.candidates(labels,gray,W,H).isEmpty());
+    }
+
+    @Test public void stackedDigitsMisclassifiedAsKeyInkStillReachOcr() {
+        byte[] labels=new byte[W*H],gray=paper();staff(labels,gray,80,200);digits(gray,80);
+        for(int y=80;y<=144;y++)for(int x=X;x<X+19;x++)
+            if((gray[y*W+x]&255)<100)labels[y*W+x]=OmrMeasurePostProcessor.CLEF_OR_KEY;
+        assertEquals(1,MeterChangeDetector.candidates(labels,gray,W,H).size());
+    }
+
+    @Test public void barlineBesideUnknownDigitsIsNotARhythmicSlash() {
+        byte[] labels=new byte[W*H],gray=paper();staff(labels,gray,80,200);digits(gray,80);
+        for(int y=80;y<=144;y++)for(int x=X-4;x<X-1;x++) {
+            gray[y*W+x]=30;labels[y*W+x]=OmrMeasurePostProcessor.STEM_OR_REST;
+        }
+        assertEquals(1,MeterChangeDetector.candidates(labels,gray,W,H).size());
+    }
+
+    private static void flat(byte[] labels,byte[] gray,int x,int top) {
+        for(int y=0;y<40;y++)for(int dx=0;dx<11;dx++) {
+            boolean stem=dx<2;
+            boolean bulb=y>=21&&y<39&&dx<=10-(y-21)/2
+                    &&(y<24||dx>=7-(y-21)/2||y>=36);
+            if(stem||bulb){int at=(top+y)*W+x+dx;gray[at]=30;labels[at]=OmrMeasurePostProcessor.CLEF_OR_KEY;}
+        }
+    }
+
+    @Test public void rhythmicSlashCannotBecomeOneOverFour() {
+        byte[] labels=new byte[W*H],gray=paper();staff(labels,gray,80,200);
+        for(int y=80;y<=144;y++)for(int x=X+7;x<=X+9;x++) {
+            labels[y*W+x]=OmrMeasurePostProcessor.STEM_OR_REST;gray[y*W+x]=30;
+        }
+        for(int x=X;x<X+19;x++)for(int d=-1;d<=1;d++) {
+            int y=108-(x-X)/2+d;labels[y*W+x]=OmrMeasurePostProcessor.SYMBOL;gray[y*W+x]=30;
+        }
+        assertTrue(MeterChangeDetector.candidates(labels,gray,W,H).isEmpty());
+    }
+
+    @Test public void partialKeyMisclassificationDoesNotVetoSupportedDigits() {
+        byte[] labels=new byte[W*H],gray=paper();staff(labels,gray,80,200);digits(gray,80);
+        for(int y=80;y<=144;y++)for(int x=X;x<X+19;x++)if((gray[y*W+x]&255)<100)
+            labels[y*W+x]=(x%4==0)?OmrMeasurePostProcessor.CLEF_OR_KEY:OmrMeasurePostProcessor.SYMBOL;
+        assertEquals(1,MeterChangeDetector.candidates(labels,gray,W,H).size());
+    }
+
     @Test public void tiltedFadedStaffRetainsTheSourceCropCoordinates() { tilted(.035f); }
     @Test public void oppositeTiltRetainsTheSourceCropCoordinates() { tilted(-.035f); }
 

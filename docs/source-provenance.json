@@ -1,5 +1,5 @@
 {
-  "source_commit": "5a8dd22f68e0c28918d71ef519b80282e02cb1ae",
+  "source_commit": "f535511d0b0cf29bcc41a4ea6c1803c72633d8f4",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -28,7 +28,7 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "11989b571f41d043d810163cda45bd11e55d855462965d6ab60577010eb587b7"
+      "source_sha256": "b72ae26d9d546133dd9d140ce28da7acb1ce62bbea215b6d5f53f1c5d36942bf"
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",

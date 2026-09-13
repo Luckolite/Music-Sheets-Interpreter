@@ -73,7 +73,9 @@ public final class MeterChangeDetector {
                 }
                 int span=last-left+1;
                 if(span<gap*.5f || span>gap*3.2f) continue;
-                int key=0,head=0,upper=0,lower=0;
+                int key=0,head=0,upper=0,lower=0,symbols=0,upperSymbols=0,lowerSymbols=0;
+                int[] stemRows=new int[span];
+                long upperX=0,lowerX=0;
                 int minY=height,maxY=0;
                 for(int y=top;y<=bottom;y++) for(int xx=left;xx<=last;xx++) {
                     int yy=y+Math.round(slope*(xx-width*.5f));
@@ -81,12 +83,18 @@ public final class MeterChangeDetector {
                     byte label=labels[yy*width+xx];
                     if(label==OmrMeasurePostProcessor.CLEF_OR_KEY) key++;
                     if(label==OmrMeasurePostProcessor.NOTEHEAD) head++;
+                    if(label==OmrMeasurePostProcessor.STEM_OR_REST)stemRows[xx-left]++;
+                    if(label==OmrMeasurePostProcessor.SYMBOL) {
+                        symbols++;
+                        if(y<top+gap*1.8f)upperSymbols++;
+                        if(y>top+gap*2.2f)lowerSymbols++;
+                    }
                     boolean onLine=false;
                     for(int row:staff.rows()) if(Math.abs(y-row)<=radius) {onLine=true;break;}
                     if(!onLine && (gray[yy*width+xx]&255)<155) {
                         minY=Math.min(minY,y);maxY=Math.max(maxY,y);
-                        if(y<top+gap*1.8f)upper++;
-                        if(y>top+gap*2.2f)lower++;
+                        if(y<top+gap*1.8f){upper++;upperX+=xx-left;}
+                        if(y>top+gap*2.2f){lower++;lowerX+=xx-left;}
                     }
                 }
                 // HOMR commonly leaves signature digits as background/rest and occasionally
@@ -94,6 +102,18 @@ public final class MeterChangeDetector {
                 // full-sized semantic head veto still excludes actual notes/chords.
                 if(head>gap*gap*.20f || upper<gap*2 || lower<gap*2
                         || maxY-minY<gap*3.1f) continue;
+                // Staggered key-signature flats form two apparent digits after staff removal.
+                // Require both key evidence and staggered glyph centres; real stacked digits
+                // can also be labelled as key ink, and must survive that model error.
+                if(key>gap*gap*.5f && key>symbols*2
+                        && Math.abs(upperX/(float)upper-lowerX/(float)lower)>gap*.5f)continue;
+                // A rhythmic slash has one stem through the whole staff, not two digits.
+                // Require a visible slash label as well: a barline beside unknown-label
+                // digits is not rhythmic slash notation.
+                boolean continuousStem=false;
+                if(symbols>=gap*2 && Math.min(upperSymbols,lowerSymbols)<gap)
+                    for(int count:stemRows)if(count>(bottom-top+1)*.75f){continuousStem=true;break;}
+                if(continuousStem)continue;
                 int pad=Math.max(2,Math.round(gap*.18f));
                 int shiftLeft=Math.round(slope*(left-width*.5f));
                 int shiftRight=Math.round(slope*(last-width*.5f));
