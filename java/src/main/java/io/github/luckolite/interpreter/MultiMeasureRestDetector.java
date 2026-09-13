@@ -371,7 +371,9 @@ final class MultiMeasureRestDetector {
             if(y>h*.80f)bottomSpan=Math.max(bottomSpan,span);
         }
         for(int x=Math.round(w*.70f);x<w;x++)rightSpine=Math.max(rightSpine,columns[x]);
-        return upperOpen>=Math.max(1,h*.06f)&&lowerOpen>=Math.max(1,h*.06f)
+        // Small raster glyphs can represent a fractional row quota with only one row.
+        // Both open bowls, three broad strokes and the right spine are still required.
+        return upperOpen>=Math.max(1,(int)(h*.06f))&&lowerOpen>=Math.max(1,(int)(h*.06f))
                 &&topSpan>=w*.7f&&bottomSpan>=w*.7f&&middleSpan>=w*.45f
                 &&rightSpine>=h*.55f;
     }
@@ -396,7 +398,7 @@ final class MultiMeasureRestDetector {
             if (localX <= glyphWidth * .42f && localY >= glyphHeight * .52f
                     && localY <= glyphHeight * .82f) lowerDiagonal++;
         }
-        int topStroke = 0, bottomStroke = 0, rightSpine = 0;
+        int topStroke = 0, bottomStroke = 0, rightSpine = 0, leftSpine = 0;
         for (int y = 0; y <= Math.min(glyphHeight - 1,
                 Math.round(glyphHeight * .30f)); y++) topStroke = Math.max(topStroke, rows[y]);
         for (int y = Math.max(0, Math.round(glyphHeight * .70f)); y < glyphHeight; y++)
@@ -408,12 +410,22 @@ final class MultiMeasureRestDetector {
                 rightSpine = Math.max(rightSpine, run);
             }
         }
+        for(int x=0;x<Math.round(glyphWidth*.42f);x++) {
+            int run=0;
+            for(int y=minY;y<=maxY;y++) {
+                run=(gray[y*width+minX+x]&255)<=165?run+1:0;
+                leftSpine=Math.max(leftSpine,run);
+            }
+        }
+        // A two has separated left terminals, not the long left spine of a
+        // mirrored digit. Serifs must not manufacture diagonal evidence.
         return topStroke >= glyphWidth * .46f
                 && bottomStroke >= glyphWidth * .52f
                 && rightSpine < glyphHeight * .90f
+                && leftSpine < glyphHeight * .50f
                 && upperRight >= Math.max(2, Math.round(area * .10f))
                 && lowerLeft >= Math.max(2, Math.round(area * .10f))
-                && lowerDiagonal >= Math.max(2, Math.round(area * .06f));
+                && lowerDiagonal >= Math.max(2, (int) (area * .06f));
     }
 
     private static void addOrMerge(List<RestBarCandidate> result, RestBarCandidate candidate) {
