@@ -110,8 +110,16 @@ final class OmrScoreInterpreter {
         for (Component component : symbolComponents)
             accidentalCandidates.add(new AccidentalCandidate(component,
                     OmrMeasurePostProcessor.SYMBOL));
+        // A repeated key signature may sit close enough to the first note to look local.
+        // Keep its recognized glyphs out of both semantic and raw accidental recovery.
+        List<Component> headerAccidentals = new ArrayList<>();
+        detectKeyChangesWithHeaders(labels,gray,width,height,measures,staffs,
+                accidentalCandidates,heads,headerAccidentals);
         List<AccidentalCandidate> localAccidentals = new ArrayList<>(joinLocalAccidentalFragments(
                 labels, gray, width, height, accidentalCandidates, staffs));
+        localAccidentals.removeIf(candidate->headerAccidentals.stream().anyMatch(header->
+                candidate.component.minX>=header.minX && candidate.component.maxX<=header.maxX
+                && candidate.component.minY>=header.minY && candidate.component.maxY<=header.maxY));
         localAccidentals.removeIf(candidate->attachedGraceFlag(labels,gray,width,height,candidate,heads,staffs));
         localAccidentals.removeAll(noteParentheses(gray,width,height,localAccidentals,heads,staffs));
         localAccidentals=splitTouchingChordAccidentals(labels,width,height,localAccidentals,heads,staffs);
@@ -1493,6 +1501,12 @@ final class OmrScoreInterpreter {
                                                           List<Staff> staffs,
                                                           List<AccidentalCandidate> candidates,
                                                           List<Component> heads) {
+        return detectKeyChangesWithHeaders(labels,gray,width,height,measures,staffs,candidates,heads,null);
+    }
+
+    private static List<ScoreKeyChange> detectKeyChangesWithHeaders(byte[] labels,byte[] gray,int width,int height,
+            List<MeasureRegion> measures,List<Staff> staffs,List<AccidentalCandidate> candidates,
+            List<Component> heads,List<Component> headerAccidentals) {
         List<ScoreKeyChange> result = new ArrayList<>();
         candidates = joinSignatureFragments(labels, width, candidates, staffs);
         candidates = splitSignatureSharps(labels, width, height, candidates, staffs);
@@ -1534,6 +1548,7 @@ final class OmrScoreInterpreter {
                 if (right <= left) continue;
 
                 List<SignatureGlyph> glyphs = new ArrayList<>();
+                Map<AccidentalCandidate,Float> recognized = new HashMap<>();
                 for (AccidentalCandidate candidate : candidates) {
                     Component glyph = candidate.component;
                     if (glyph.centerX < left - staff.gap * .12f || glyph.centerX > right
@@ -1564,8 +1579,10 @@ final class OmrScoreInterpreter {
                             signatureX=printedX;
                         }
                     }
-                    if (accidental != ScoreNoteEvent.ACCIDENTAL_FROM_KEY)
+                    if (accidental != ScoreNoteEvent.ACCIDENTAL_FROM_KEY) {
                         glyphs.add(new SignatureGlyph(signatureX, accidental));
+                        recognized.put(candidate,signatureX);
+                    }
                 }
                 glyphs.sort(Comparator.comparingDouble(SignatureGlyph::x));
                 List<SignatureGlyph> run = densestSignatureRun(glyphs, staff.gap);
@@ -1602,6 +1619,11 @@ final class OmrScoreInterpreter {
                         && result.get(result.size() - 1).fifths() > fifths
                         && unfinishedSharpTail(labels, width, height, candidates, run, staff, firstHead))
                     continue;
+                if (signatureHeader && headerAccidentals != null
+                        && orderedSignaturePitches(labels,width,height,run,recognized,staff))
+                    for (var entry : recognized.entrySet())
+                        if (run.stream().anyMatch(glyph->Math.abs(glyph.x-entry.getValue())<staff.gap*.1f))
+                            headerAccidentals.add(entry.getKey().component);
                 votes.put(fifths, votes.getOrDefault(fifths, 0) + 1);
             }
             int bestFifths = 0, bestVotes = 0;
@@ -1619,6 +1641,30 @@ final class OmrScoreInterpreter {
                 result.add(new ScoreKeyChange(measureIndex, bestFifths));
         }
         return List.copyOf(result);
+    }
+
+    /** Adjacent key symbols follow fourths/fifths; a nearby note accidental need not. */
+    private static boolean orderedSignaturePitches(byte[] labels,int width,int height,
+            List<SignatureGlyph> run,Map<AccidentalCandidate,Float> recognized,Staff staff) {
+        if(run.size()<2)return false;
+        int family=run.get(0).accidental;
+        float previous=0;
+        if(family!=ScoreNoteEvent.ACCIDENTAL_FLAT&&family!=ScoreNoteEvent.ACCIDENTAL_SHARP)return false;
+        for(int i=0;i<run.size();i++) {
+            SignatureGlyph symbol=run.get(i);
+            if(symbol.accidental!=family)return false;
+            AccidentalCandidate owner=null;
+            for(var entry:recognized.entrySet())
+                if(Math.abs(entry.getValue()-symbol.x)<staff.gap*.1f){owner=entry.getKey();break;}
+            if(owner==null)return false;
+            float center=family==ScoreNoteEvent.ACCIDENTAL_FLAT?flatPitchCenter(labels,width,owner,staff.pitchGap):
+                    sharpPitchCenter(labels,width,height,owner,staff.pitchGap);
+            if(!Float.isFinite(center))return false;
+            int interval=Math.round((previous-center)*2/staff.pitchGap);
+            if(i>0&&Math.floorMod(interval,7)!=(family==ScoreNoteEvent.ACCIDENTAL_FLAT?3:4))return false;
+            previous=center;
+        }
+        return true;
     }
 
     /** A staff stripe can leave only one lobe of a sharp in the semantic mask.
