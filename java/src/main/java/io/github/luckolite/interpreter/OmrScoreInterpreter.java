@@ -5081,7 +5081,15 @@ final class OmrScoreInterpreter {
                 if(connected) {
                     if(firstConnector<0)firstConnector=row;
                     if(openRows>=Math.max(2,Math.round(gap*.15f))
-                            &&row-firstConnector>=gap*.45f)return true;
+                            &&row-firstConnector>=gap*.45f) {
+                        // Small endpoint offsets also occur on printed sharps. A natural
+                        // must have a spine ending near a connector; two spines extending
+                        // well beyond both bridges still describe a sharp.
+                        int junctionTolerance=Math.max(2,Math.round(gap*.3f));
+                        int upperAtRight=firstConnector+Math.round((rightSpine-leftSpine)*slope);
+                        if(upperAtRight-rightTop<=junctionTolerance
+                                ||leftBottom-row<=junctionTolerance)return true;
+                    }
                     openRows=0;
                 } else if(firstConnector>=0)openRows++;
             }
