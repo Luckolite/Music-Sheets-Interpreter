@@ -3511,7 +3511,12 @@ final class OmrScoreInterpreter {
             for(int y=glyph.minY;y<=glyph.maxY;y++)if(candidate.matches(labels[y*width+x]))ink++;
             if(ink>strongest){strongest=ink;spine=x;}
         }
-        for(Component head:heads) {
+        for(int i=0;i<heads.size();i++) {
+            Component original=heads.get(i),head=original;
+            if(head.maxX-head.minX+1>gap*1.25f||head.maxY-head.minY+1>gap*.95f||head.area>gap*gap*.85f) {
+                head=printedGraceCore(gray,width,height,original,glyph,spine,gap);
+                if(head==null)continue;
+            }
             if(head.maxX-head.minX+1>gap*1.25f||head.maxY-head.minY+1>gap*.95f
                     ||head.area>gap*gap*.85f||nearestHeadStaff(staffs,head.centerY)!=staff
                     ||head.centerY-glyph.maxY<gap*.35f||head.centerY-glyph.maxY>gap*1.1f
@@ -3519,9 +3524,50 @@ final class OmrScoreInterpreter {
             int[] stem=attachedRawStem(gray,width,height,head,gap*.65f);
             if(stem==null||stem[2]!=-1||Math.abs(stem[0]-spine)>gap*.22f
                     ||Math.abs(stem[1]-glyph.minY)>gap*.65f)continue;
+            if(head!=original)heads.set(i,head);
             return true;
         }
         return false;
+    }
+
+    /** A short grace slur can enlarge the semantic head. Recover only a compact
+     * printed core beneath the flag, stable across three ink thresholds. */
+    private static Component printedGraceCore(byte[] gray,int width,int height,Component source,
+            Component glyph,int spine,float gap) {
+        if(gap<8||source.maxX-source.minX+1>gap*2.4f||source.maxY-source.minY+1>gap*1.8f
+                ||source.area>gap*gap*2f||source.minX>=spine||source.maxX<spine
+                ||source.centerY-glyph.maxY<0||source.centerY-glyph.maxY>gap*1.4f)return null;
+        int pad=Math.max(2,Math.round(gap*.25f)),left=Math.max(0,source.minX-pad),top=Math.max(0,source.minY-pad);
+        int w=Math.min(width,source.maxX+pad+1)-left,h=Math.min(height,source.maxY+pad+1)-top;
+        int rx=Math.max(2,Math.round(gap*.2f)),ry=Math.max(2,Math.round(gap*.18f));
+        List<int[]> kernel=new ArrayList<>();
+        for(int y=-ry;y<=ry;y++)for(int x=-rx;x<=rx;x++)
+            if(x*x/(float)(rx*rx)+y*y/(float)(ry*ry)<=1)kernel.add(new int[]{x,y});
+        Component reference=null;
+        for(int threshold:new int[]{60,100,140}) {
+            byte[] opened=new byte[w*h];
+            for(int y=ry;y<h-ry;y++)for(int x=rx;x<w-rx;x++) {
+                boolean solid=true;
+                for(int[] k:kernel)if((gray[(top+y+k[1])*width+left+x+k[0]]&255)>=threshold){solid=false;break;}
+                if(solid)for(int[] k:kernel)opened[(y+k[1])*w+x+k[0]]=1;
+            }
+            Component accepted=null;
+            for(Component c:findComponents(opened,w,h,(byte)1)) {
+                Component core=new Component(c.area,c.minX+left,c.maxX+left,c.minY+top,c.maxY+top,c.centerX+left,c.centerY+top);
+                if(core.area<gap*gap*.25f||core.area>gap*gap*.85f
+                        ||core.maxX-core.minX+1<gap*.6f||core.maxX-core.minX+1>gap*1.25f
+                        ||core.maxY-core.minY+1<gap*.4f||core.maxY-core.minY+1>Math.round(gap*.95f)
+                        ||Math.abs(core.maxX-spine)>gap*.35f||core.centerX>=spine
+                        ||core.centerY-glyph.maxY<gap*.35f||core.centerY-glyph.maxY>gap*1.1f)continue;
+                if(accepted!=null)return null;
+                accepted=core;
+            }
+            if(accepted==null)return null;
+            if(reference==null)reference=accepted;
+            else if(Math.abs(reference.centerX-accepted.centerX)>gap*.12f
+                    ||Math.abs(reference.centerY-accepted.centerY)>gap*.12f)return null;
+        }
+        return reference;
     }
 
     /** A small isolated dot above/below a full head is an articulation, not another pitch. */
