@@ -5072,6 +5072,10 @@ final class OmrScoreInterpreter {
                 || columns[rightSpine] < glyphHeight * .38f) return false;
 
         int radius = Math.max(0, Math.round(glyphWidth * .09f));
+        // Natural connectors stay between the spines. A glyph whose ink
+        // protrudes beyond both vertical sides is not proved natural merely
+        // because one sharp spine has a short extension.
+        if(leftSpine>radius&&glyphWidth-1-rightSpine>radius)return false;
         int leftTop = glyphHeight, leftBottom = -1, rightTop = glyphHeight, rightBottom = -1;
         int leftRows=0,rightRows=0;
         for (int row = 0; row < glyphHeight; row++) {
