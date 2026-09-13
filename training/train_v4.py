@@ -18,6 +18,7 @@ from torch.nn import functional as F
 
 from model_v4 import Segmenter, export_arrays
 from train import read_corpus, load_page, scores
+from book_geometry import BookGeometry, warp_book
 
 
 def crop(root, page, rng, augment):
@@ -34,11 +35,13 @@ def crop(root, page, rng, augment):
     b = cv2.resize(labels[y:y+side, x:x+side], (320, 320), interpolation=cv2.INTER_NEAREST)
     affine = cv2.getRotationMatrix2D((160, 160), float(rng.uniform(-2, 2)) if augment and rng.random() < .3 else 0, 1.)
     heat = np.zeros((320, 320), np.float32)
+    centres = []
     for head in page['noteheads']:
         left, top, right, bottom = head['box']; scale = 320 / side
         cx, cy = affine @ np.array([((left + right) / 2 - x) * scale, ((top + bottom) / 2 - y) * scale, 1.])
         if not (0 <= cx < 320 and 0 <= cy < 320): continue
         sigma = max(1., min(right-left, bottom-top) * scale / 5); ix, iy = min(319, max(0, int(round(cx)))), min(319, max(0, int(round(cy))))
+        centres.append([float(cx), float(cy), float(sigma)])
         radius = int(np.ceil(3 * sigma)); l, r = max(0, ix-radius), min(320, ix+radius+1)
         t, bot = max(0, iy-radius), min(320, iy+radius+1)
         yy, xx = np.mgrid[t:bot, l:r]
@@ -46,6 +49,9 @@ def crop(root, page, rng, augment):
     if augment:
         a = cv2.warpAffine(a, affine, (320, 320), flags=cv2.INTER_LINEAR, borderValue=255)
         b = cv2.warpAffine(b, affine, (320, 320), flags=cv2.INTER_NEAREST, borderValue=0)
+        if rng.random() < .3:
+            a, masks, _, heat = warp_book(a, [b], centres, BookGeometry.sample(rng))
+            b = masks[0]
         if rng.random() < .5: a = cv2.GaussianBlur(a, (5, 5), float(rng.uniform(.25, 1.4)))
         black, white = float(rng.uniform(0, 120)), float(rng.uniform(210, 255))
         a = black + (white-black)*a/255 + rng.normal(0, float(rng.uniform(0, 2.5)), a.shape)
@@ -111,6 +117,9 @@ def main():
     export_arrays(model, args.out/'weights.npz', samples)
     (args.out/'training.json').write_text(json.dumps(dict(parent_checkpoint_sha256=parent_sha, corpus_sha256=corpus_sha,
         selected_step=selected['step'], steps=args.steps, history=history, test_evaluated=False,
+        geometry_augmentation=dict(book_fraction=.3, tilt_degrees=[-7, 7], bend_pixels=[-12, 12],
+                                   staff_spacing_taper=[-.12, .12], gutter_curl_pixels=[-10, 10],
+                                   labels_and_centres_transformed=True),
         reproduction_scope='Portable fine-tuning recipe; not the historical v4 multi-corpus training schedule.'), indent=2)+'\n', encoding='utf-8')
 
 
