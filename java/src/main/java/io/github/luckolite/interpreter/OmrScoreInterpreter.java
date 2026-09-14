@@ -4172,7 +4172,7 @@ final class OmrScoreInterpreter {
             List<DetectedNote> detected, List<ScoreNoteEvent> events) {
         for (int i=0;i<detected.size();i++) {
             DetectedNote first=detected.get(i);
-            if (!(smallGraceHead(first)||roundedBeamedGraceHead(first,gray,width,height)) || (gray != null
+            if (!(smallGraceHead(first)||roundedBeamedGraceHead(first,gray,width,height)||compactBeamedGraceHead(first,gray,width,height)) || (gray != null
                     ? attachedRawStem(gray,width,height,first.head,first.staffGap*.65f)==null
                     : !hasAttachedStem(labels,width,height,first.head,first.staffGap))) continue;
             List<Integer> prefix=new ArrayList<>(); prefix.add(i);
@@ -4185,13 +4185,22 @@ final class OmrScoreInterpreter {
                 float dx=next.head.centerX-previous.head.centerX;
                 if(dx<first.staffGap*.65f || dx>first.staffGap*2.8f
                         ||Math.abs(next.head.centerY-previous.head.centerY)>first.staffGap*2.5f)break;
-                if(smallGraceHead(next)||roundedBeamedGraceHead(next,gray,width,height)) {
+                if(smallGraceHead(next)||roundedBeamedGraceHead(next,gray,width,height)||compactBeamedGraceHead(next,gray,width,height)) {
                     if(gray!=null
                             ? attachedRawStem(gray,width,height,next.head,next.staffGap*.65f)==null
                             : !hasAttachedStem(labels,width,height,next.head,next.staffGap))break;
                     prefix.add(j);previous=next;continue;
                 }
-                if(next.head.area>first.head.area*1.65f
+                boolean compactGroup=prefix.size()>=2;
+                for(int k=0;k<prefix.size()&&compactGroup;k++) {
+                    DetectedNote member=detected.get(prefix.get(k));
+                    compactGroup=compactBeamedGraceHead(member,gray,width,height)
+                            &&next.head.area>member.head.area*1.28f
+                            &&next.head.maxX-next.head.minX+1>(member.head.maxX-member.head.minX+1)*1.10f
+                            &&(k==0||graceStemsShareBeam(labels,gray,width,height,
+                                    detected.get(prefix.get(k-1)).head,member.head,member.staffGap));
+                }
+                if(compactGroup || next.head.area>first.head.area*1.65f
                         &&next.head.maxX-next.head.minX+1>first.staffGap*1.05f
                         &&(prefix.stream().allMatch(index->smallGraceHead(detected.get(index)))
                         ||prefix.size()>=2&&prefix.stream().allMatch(index->
@@ -4201,6 +4210,16 @@ final class OmrScoreInterpreter {
                 break;
             }
         }
+    }
+
+    /** Slightly enlarged masks still need a short, shared beam and a larger principal. */
+    private static boolean compactBeamedGraceHead(DetectedNote n,byte[] gray,int width,int height) {
+        if(gray==null||n.head.maxX-n.head.minX+1>Math.ceil(n.staffGap*1.25f)
+                ||n.head.maxY-n.head.minY+1>Math.ceil(n.staffGap*1.10f)
+                ||n.head.area>n.staffGap*n.staffGap||n.event.augmentationDots()!=0
+                ||n.event.beamCount()<1||n.event.unbeamedDurationBeats()>=ScoreNoteEvent.DURATION_HALF)return false;
+        int[] stem=attachedRawStem(gray,width,height,n.head,n.staffGap*.65f);
+        return stem!=null&&Math.abs(stem[1]-n.head.centerY)<=n.staffGap*3.1f;
     }
 
     private static boolean smallGraceHead(DetectedNote n) {
