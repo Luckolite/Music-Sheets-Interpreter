@@ -88,3 +88,5 @@ cadenza and unusual engraving timing can need correction. Cross-page ties, repea
 ornament realization and exact polyphonic voice separation are not fully handled.
 Tempo/meter arguments are explicit fallbacks, not claims of automatic recognition.
 Use the retained geometry and raw score events to implement editing and richer playback.
+
+Double-sharp notes use `writtenAccidental: 3` (two sounding semitones); `2` remains the no-local-accidental sentinel. A treble clef with an 8 above uses `clefBottomDiatonic: 37` (E5), and ends at the next printed clef. MIDI events already include these pitch changes.

@@ -339,6 +339,15 @@ final class MeasureNumberReconciler {
                     && leftOfMatchingStaff(token, layout))
                 candidates.add(token);
         }
+        // A folio above the first detected system can precede the real measure number
+        // in a perfectly increasing OCR sequence. It must not invent an extra system.
+        if (!layout.isEmpty()) {
+            Row first = layout.get(0);
+            List<NumberToken> headers = List.copyOf(candidates);
+            candidates.removeIf(token -> token.top < .065f && token.bottom < first.top - .025f
+                    && headers.stream().anyMatch(header -> header != token && header.value > token.value
+                    && headerRow(header, layout) == 0));
+        }
         candidates.sort(Comparator.comparing(NumberToken::top));
         if (candidates.isEmpty()) return List.of();
         int[] length = new int[candidates.size()];

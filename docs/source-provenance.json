@@ -20,7 +20,8 @@
     },
     "MeasureNumberReconciler.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureNumberReconciler.java",
-      "source_sha256": "b63b394f7aa8f943dbbcba3e28d7a5078cac1a4dc6c3784b8411e2b823bf5dde"
+      "source_sha256": "96c26d7ad0159cdfc9958fc4c386a4742b34ace92459576e33071ea547caac59",
+      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
     },
     "MeasureRegion.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureRegion.java",
@@ -52,7 +53,8 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "685615d071262e01b6096be988b278f3cd1bea23a7bef6f75381d23902453605"
+      "source_sha256": "8f8abf64d04649c3b0b19e25445a922fc794d2a93f8a1d91cb542ca0cf9aab7f",
+      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -80,7 +82,8 @@
     },
     "ScoreNoteEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteEvent.java",
-      "source_sha256": "8c0b02506d8374bee2dcf11a7e49ac5a454b89dc7f60f8de5af156e4f2d0a85d"
+      "source_sha256": "7f185bec428be852472e8beee0c36682e5a3f94c0930f31e3ef70cb74ea1f6f3",
+      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
@@ -155,6 +158,16 @@
     "MeterOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterOcrEvidence.java",
       "source_sha256": "94737373da13423a27faa5b454ff9770d3a6145b91af1f4e8a10a95ce19c72ac"
+    },
+    "DoubleSharpGlyph.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/DoubleSharpGlyph.java",
+      "source_sha256": "8b3f6c2fb18de6bd77eed15e12e02ae6a6206c803614dbba54cc3a6bf9b2cfc6",
+      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
+    },
+    "OctaveClefDigit.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveClefDigit.java",
+      "source_sha256": "9da7d8a5d42e2d0fb3ef5a9b00331ebfcb944482fdb32c41076d029ebc8cdf5d",
+      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
     }
   },
   "ocr_adapter_review": {
@@ -164,5 +177,9 @@
       "MeterOcrEvidence.java"
     ],
     "boundary": "Android ML Kit, Bitmap cleanup and raster reflow remain app adapters. Standalone callers can obtain bounded signature crops and following measure indices, apply the shared ink threshold, submit horizontally reflowed crop OCR to MeterOcrEvidence, and pass accepted readings through Annotations.meters. The standalone package does not bundle an OCR engine."
+  },
+  "piano_notation_review": {
+    "app_commit": "edebae3824b8df22a455eabcdaf471192b404d29",
+    "boundary": "Shared folio rejection, compact double-sharp recognition, and octave-clef numeral topology. Standalone Main and app playback both map the double-sharp token to two semitones. Android guide-cache format validation and version invalidation stay app-only. No source scores, phone logs, or private fixtures are distributed; new regressions use original generated geometry. Models and weights unchanged."
   }
 }

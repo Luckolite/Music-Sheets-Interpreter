@@ -11,6 +11,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public final class MeasureNumberReconcilerTest {
+    @Test public void pageFolioBeforeARealOpeningAnchorCannotInventMeasures() {
+        List<MeasureRegion> detected=new ArrayList<>();
+        detected.addAll(row(.10f,3));detected.addAll(row(.28f,4));
+        detected.addAll(row(.46f,3));detected.addAll(row(.64f,3));detected.addAll(row(.82f,3));
+        var numbers=List.of(number(2,.04f),number(15,.095f),number(18,.275f),
+                number(22,.455f),number(25,.635f),number(28,.815f));
+        var result=MeasureNumberReconciler.reconcile(detected,numbers);
+        assertEquals(16,result.size());assertEquals(15,MeasureNumberReconciler.firstMeasureNumber(result,numbers));
+        assertEquals(3,result.stream().filter(r->r.top()<.2f).count());
+    }
     @Test public void partNumbersInsideConnectedSystemCannotInventExtraRows() {
         List<MeasureRegion> detected=new ArrayList<>();
         for(MeasureRegion r:row(.15f,7)) detected.add(new MeasureRegion(r.left(),r.right(),.15f,.34f));

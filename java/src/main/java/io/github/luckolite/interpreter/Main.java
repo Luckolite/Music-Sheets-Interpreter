@@ -59,7 +59,7 @@ public final class Main {
                 accidental=0;int[] order=key>=0?new int[]{3,0,4,1,5,2,6}:new int[]{6,2,5,1,4,0,3};
                 for(int i=0;i<Math.abs(key);i++)if(order[i]==letter)accidental=key>0?1:-1;
             }
-            int midi=(octave+1+note.octaveShift())*12+new int[]{0,2,4,5,7,9,11}[letter]+accidental;
+            int midi=(octave+1+note.octaveShift())*12+new int[]{0,2,4,5,7,9,11}[letter]+ScoreNoteEvent.accidentalSemitones(accidental);
             double duration=ScoreNoteTiming.resolvedWrittenDurationBeats(note,score.notes(),beats[bar]);
             boolean estimated=!Double.isFinite(duration)||duration<=0;
             if(estimated)duration=.5;

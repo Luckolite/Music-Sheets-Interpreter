@@ -68,6 +68,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     }
     public static final int CLEF_UNKNOWN = -1;
     public static final int CLEF_TREBLE = 30; // E4, C=0 diatonic numbering
+    public static final int CLEF_TREBLE_OTTAVA = 37; // E5, treble clef with 8 above
     public static final int CLEF_BASS = 18;   // G2
     public ScoreNoteEvent(int measureIndex, float positionInMeasure, int staffStep,
                           int staffIndex, int staffCount, float pageY, boolean tiedFromPrevious,
@@ -110,6 +111,10 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public static final int ACCIDENTAL_FLAT = -1;
     public static final int ACCIDENTAL_NATURAL = 0;
     public static final int ACCIDENTAL_SHARP = 1;
+    public static final int ACCIDENTAL_DOUBLE_SHARP = 3;
+    public static int accidentalSemitones(int accidental) {
+        return accidental == ACCIDENTAL_DOUBLE_SHARP ? 2 : accidental;
+    }
     /** No local glyph: use the key signature unless an earlier accidental carries in the measure. */
     public static final int ACCIDENTAL_FROM_KEY = 2;
     /** Zero means the optical pass could not safely distinguish quarter/half/whole. */
@@ -171,14 +176,14 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
     public ScoreNoteEvent {
         if(octaveShift < -2 || octaveShift > 2)throw new IllegalArgumentException("Octave shift must be -2..2");
         if(!Float.isFinite(leadingRestBeats)||leadingRestBeats<0||leadingRestBeats>16)leadingRestBeats=0;
-        if(clefBottomDiatonic!=CLEF_TREBLE&&clefBottomDiatonic!=CLEF_BASS)clefBottomDiatonic=CLEF_UNKNOWN;
+        if(clefBottomDiatonic!=CLEF_TREBLE&&clefBottomDiatonic!=CLEF_BASS&&clefBottomDiatonic!=CLEF_TREBLE_OTTAVA)clefBottomDiatonic=CLEF_UNKNOWN;
         articulations &= NoteArticulation.ALL;
         if (!Float.isFinite(followingRestBeats) || followingRestBeats < 0 || followingRestBeats > 16)
             followingRestBeats = 0;
         if (tupletDivisor != 3 && tupletDivisor != 5 && tupletDivisor != 7) tupletDivisor = 1;
         augmentationDots = Math.max(0, Math.min(2, augmentationDots));
         beamCount = Math.max(0, Math.min(4, beamCount));
-        if (writtenAccidental < ACCIDENTAL_FLAT || writtenAccidental > ACCIDENTAL_FROM_KEY)
+        if (writtenAccidental < ACCIDENTAL_FLAT || writtenAccidental > ACCIDENTAL_DOUBLE_SHARP)
             writtenAccidental = ACCIDENTAL_FROM_KEY;
         if (!Float.isFinite(unbeamedDurationBeats) || unbeamedDurationBeats < .25f
                 || unbeamedDurationBeats > DURATION_WHOLE) unbeamedDurationBeats = DURATION_UNKNOWN;

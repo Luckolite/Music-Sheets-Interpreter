@@ -1642,6 +1642,8 @@ final class OmrScoreInterpreter {
                 }
                 if(clef==ScoreNoteEvent.CLEF_UNKNOWN&&rawBassClef(original,labels,gray,width,height,staff))
                     clef=ScoreNoteEvent.CLEF_BASS;
+                if(clef==ScoreNoteEvent.CLEF_TREBLE && OctaveClefDigit.above(gray,width,height,
+                        glyph.minX,glyph.minY,glyph.maxX,staff.top,gap))clef=ScoreNoteEvent.CLEF_TREBLE_OTTAVA;
                 if(clef!=ScoreNoteEvent.CLEF_UNKNOWN)clefs.add(new ClefGlyph(glyph.maxX,clef));
             }
             clefs.sort(Comparator.comparingDouble(ClefGlyph::x));
@@ -5199,7 +5201,9 @@ final class OmrScoreInterpreter {
                     ||head.centerX-glyph.centerX<gap*.65f) continue;
             if (Math.abs(glyph.centerY - head.centerY) > gap * 1.8f) continue;
             float sharpCenter=sharpPitchCenter(labels,width,height,candidate,gap);
-            int accidental = isNaturalGlyph(labels, width, height, candidate, gap)
+            int accidental = DoubleSharpGlyph.matches(labels,width,height,glyph.minX,glyph.minY,glyph.maxX,glyph.maxY,candidate.label,gap)
+                    ? ScoreNoteEvent.ACCIDENTAL_DOUBLE_SHARP
+                    : isNaturalGlyph(labels, width, height, candidate, gap)
                     ? ScoreNoteEvent.ACCIDENTAL_NATURAL
                     : Float.isFinite(sharpCenter)
                     ? ScoreNoteEvent.ACCIDENTAL_SHARP
