@@ -4204,9 +4204,12 @@ final class OmrScoreInterpreter {
     }
 
     private static boolean smallGraceHead(DetectedNote n) {
-        return n.head.maxX-n.head.minX+1<=Math.round(n.staffGap*.95f)
-                &&n.head.maxY-n.head.minY+1<=Math.round(n.staffGap*.78f)
-                &&n.head.area<=n.staffGap*n.staffGap*.60f
+        // Raster rounding can add a boundary pixel to both dimensions of a small
+        // ellipse. Round its envelope outward before checking the filled area;
+        // the attached stem and substantially larger principal remain required.
+        return n.head.maxX-n.head.minX+1<=Math.ceil(n.staffGap*.95f)
+                &&n.head.maxY-n.head.minY+1<=Math.ceil(n.staffGap*.78f)
+                &&n.head.area<=Math.ceil(n.staffGap*.95f)*Math.ceil(n.staffGap*.78f)*.8f
                 &&n.event.augmentationDots()==0
                 &&n.event.unbeamedDurationBeats()<ScoreNoteEvent.DURATION_HALF;
     }
@@ -6926,7 +6929,7 @@ final class OmrScoreInterpreter {
             int overlap = Math.round(gap * .6f);
             int arcLeft = Math.max(Math.round(previous.head.centerX), left - overlap);
             int arcRight = Math.min(Math.round(current.head.centerX), right + overlap);
-            if (hasPrintedTieArc(labels, gray, width, height, arcLeft, arcRight, centerY, gap))return true;
+            if (hasPrintedTieArc(labels, gray, width, height, arcLeft, arcRight, centerY, gap, false))return true;
             if (!ScoreNoteTiming.hasIndependentSustain(previous.event))return false;
         }
         ArcStats above = arcStats(labels, gray, width, height, left, right,
@@ -6964,18 +6967,29 @@ final class OmrScoreInterpreter {
     /** Small blank clearances can separate an engraved tie from either head. */
     private static boolean hasPrintedTieArc(byte[] labels,byte[] gray,int width,int height,
             int left,int right,float centerY,float gap) {
+        return hasPrintedTieArc(labels,gray,width,height,left,right,centerY,gap,true);
+    }
+
+    private static boolean hasPrintedTieArc(byte[] labels,byte[] gray,int width,int height,
+            int left,int right,float centerY,float gap,boolean faintShoulders) {
         if(hasContinuousTieArc(labels,gray,width,height,left,right,centerY,gap))return true;
-        int step=Math.max(1,Math.round(gap*.2f));
-        for(int first=0;first<=2;first++)for(int last=0;last<=2;last++) {
+        // Compact ties leave small gaps beside the heads. Sample both shoulders
+        // finely enough to retain the whole returning curve, even at small sizes.
+        // Faint ink is allowed only between heads: under a head it can belong
+        // to the tail of an unrelated slur. The faint path still requires a dark core.
+        int step=Math.max(1,Math.round(gap*.1f));
+        for(int first=0;first<=4;first++)for(int last=0;last<=4;last++) {
             if(first==0&&last==0)continue;
             int a=left+first*step,b=right-last*step;
-            if(b-a<gap*1.3f)continue;
-            if(hasContinuousTieArc(labels,gray,width,height,a,b,centerY,gap))return true;
+            if(b-a<gap)continue;
+            if(hasContinuousTieArc(labels,gray,width,height,a,b,centerY,gap)
+                    ||faintShoulders&&hasContinuousTieArc(labels,gray,width,height,a,b,centerY,gap,null,205))return true;
         }
         // Long ties may leave a full staff-space of clearance beside a dot and fade near the heads.
         // Keep short-arc limits and require a dark core within the complete curve.
+        int longStep=Math.max(1,Math.round(gap*.2f));
         if(right-left>=gap*5)for(int first=0;first<=5;first++)for(int last=0;last<=5;last++) {
-            int a=left+first*step,b=right-last*step;
+            int a=left+first*longStep,b=right-last*longStep;
             if(hasContinuousTieArc(labels,gray,width,height,a,b,centerY,gap,null,205))return true;
         }
         return false;
