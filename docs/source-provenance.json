@@ -29,7 +29,8 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "387fa14308b80332b90f75bb1b62291f7aebf3340a7864b5843281981b7b557f"
+      "source_sha256": "88fb779d7259f8b12b80e432216bb3eac5dbb012e33ff8b1211299c9a982e280",
+      "reviewed_app_commit": "ddb25eaf56623d471fbd03683f50244fac78881a"
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",

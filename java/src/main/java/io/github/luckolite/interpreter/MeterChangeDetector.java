@@ -44,6 +44,53 @@ public final class MeterChangeDetector {
         return winner;
     }
 
+    /**
+     * Reject a lone OCR meter reading only when two later printed bars independently agree on
+     * the same different duration. Sparse or partly unreadable passages remain inconclusive.
+     */
+    public static boolean contradictedByWrittenBars(ScoreMeterChange choice,
+            List<ScoreNoteEvent> notes,int nextChange) {
+        var alternatives=new ArrayList<Double>();
+        for(int bar=choice.measureIndex();bar<Math.min(nextChange,choice.measureIndex()+3);bar++) {
+            List<Double> totals=reliableLaneTotals(notes,bar);
+            if(totals.stream().anyMatch(total->closeDuration(total,choice.quarterBeats())))return false;
+            for(double total:totals) {
+                if(total<=0)continue;
+                int supportingBars=1;
+                for(int later=bar+1;later<Math.min(nextChange,choice.measureIndex()+3);later++)
+                    if(reliableLaneTotals(notes,later).stream().anyMatch(other->closeDuration(other,total)))
+                        supportingBars++;
+                if(supportingBars>=2)alternatives.add(total);
+            }
+        }
+        return !alternatives.isEmpty();
+    }
+
+    private static List<Double> reliableLaneTotals(List<ScoreNoteEvent> notes,int bar) {
+        java.util.Map<Integer,List<ScoreNoteEvent>> lanes=new java.util.HashMap<>();
+        for(var note:notes)if(note.measureIndex()==bar)
+            lanes.computeIfAbsent(note.staffCount()*16+note.staffIndex(),ignored->new ArrayList<>()).add(note);
+        var totals=new ArrayList<Double>();
+        for(var lane:lanes.values()) {
+            lane.sort(java.util.Comparator.comparingDouble(ScoreNoteEvent::positionInMeasure));
+            double total=0,duration=0;float position=-1;boolean reliable=true;
+            for(var note:lane) {
+                if(note.crossStaffBeam() || (note.beamCount()==0&&note.unbeamedDurationBeats()==0)) {reliable=false;break;}
+                if(position<0 || note.positionInMeasure()-position>.018f) {
+                    total+=duration;duration=0;position=note.positionInMeasure();
+                }
+                duration=Math.max(duration,ScoreNoteTiming.writtenDurationBeats(note)
+                        +note.followingRestBeats()+note.leadingRestBeats());
+            }
+            if(reliable&&position>=0)totals.add(total+duration);
+        }
+        return totals;
+    }
+
+    private static boolean closeDuration(double left,double right) {
+        return Math.abs(left-right)<.04;
+    }
+
     public static List<Crop> candidates(byte[] labels, byte[] gray, int width, int height) {
         List<Crop> result = new ArrayList<>();
         if (labels == null || gray == null || labels.length != width*height || gray.length != width*height)
