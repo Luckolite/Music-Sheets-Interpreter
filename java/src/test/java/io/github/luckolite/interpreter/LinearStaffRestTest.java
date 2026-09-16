@@ -26,6 +26,14 @@ public class LinearStaffRestTest {
     @Test public void gentlePositiveSlopeRetainsTheRest() {setup(.0045f,true);var a=analyze();assertEquals(a.rests().toString(),1,a.rests().size());assertEquals(.5,a.rests().get(0).durationBeats(),0);}
     @Test public void gentleNegativeSlopeRetainsTheRest() {setup(-.0045f,true);var a=analyze();assertEquals(a.rests().toString(),1,a.rests().size());assertEquals(.5,a.rests().get(0).durationBeats(),0);}
     @Test public void noPrintedRestDoesNotCreateSilence() {setup(.0045f,false);assertTrue(analyze().rests().isEmpty());}
+    @Test public void anEighthRestBodyPredictionDoesNotSound() {
+        setup(.0045f,true);
+        ellipse(1098,159,6,4,2);
+        var a=analyze();
+        assertEquals(a.notes().toString(),2,a.notes().size());
+        assertEquals(a.rests().toString(),1,a.rests().size());
+        assertEquals(.5,a.rests().get(0).durationBeats(),0);
+    }
     @Test public void sourceArraysArePreserved() {setup(.0045f,true);var g=gray.clone();var l=labels.clone();analyze();assertArrayEquals(g,gray);assertArrayEquals(l,labels);}
     @Test public void aLinearTrackUsesTheSameCenteredSlopeAsPitch() {
         var t=StaffPitchTrack.linear(1400,197,14.25f,.0045f);

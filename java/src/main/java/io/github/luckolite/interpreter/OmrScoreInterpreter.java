@@ -345,11 +345,11 @@ final class OmrScoreInterpreter {
             var evidence=SixteenthRestDetector.detectWithDots(gray,width,height,measures,restStaffs,owners);
             List<DetectedNote> removed=new ArrayList<>();
             List<ScoreRestEvent> verifiedBodies=new ArrayList<>();
-            // An independently recognized complete quarter-rest body can
+            // An independently recognized complete eighth- or quarter-rest body can
             // establish ownership even when its false head blocked the first
             // pass. Continuous stems remain excluded from the body candidates.
             for(DetectedNote note:restBodyHeads)for(ScoreRestEvent rest:evidence.rests()) {
-                if(rest.durationBeats()<1||rest.durationBeats()>1.75
+                if(rest.durationBeats()<.5||rest.durationBeats()>1.75
                         ||rest.measureIndex()!=note.event.measureIndex()
                         ||rest.staffIndex()!=note.event.staffIndex()
                         ||rest.staffCount()!=note.event.staffCount())continue;
