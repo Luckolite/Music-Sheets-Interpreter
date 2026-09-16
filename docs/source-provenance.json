@@ -1,5 +1,5 @@
 {
-  "source_commit": "cc4dfc6278abdebea6cec25271fb7e1fc3a899e3",
+  "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
   "source_authors": [
     "Luckolite"
@@ -168,6 +168,11 @@
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveClefDigit.java",
       "source_sha256": "9da7d8a5d42e2d0fb3ef5a9b00331ebfcb944482fdb32c41076d029ebc8cdf5d",
       "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
+    },
+    "ScorePageTimeline.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageTimeline.java",
+      "source_sha256": "23952e19ef75a98d89a6dfced5132773c681dc8652925ad3bc30c9b7a7a57326",
+      "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb"
     }
   },
   "ocr_adapter_review": {

@@ -90,6 +90,8 @@ can offer correction instead of presenting uncertain output as authoritative.
 Java hosts call `io.github.luckolite.interpreter.SheetInterpreter.analyze(labels, gray,
 width, height)`. Both pixel arrays are unsigned bytes in row-major order. The overload
 accepting `SheetInterpreter.Annotations` integrates an OCR engine of your choice.
+`ScorePageTimeline` maps per-page measure counts and printed starts across alternate parts,
+including a missed measure-one label at the start of a later instrument part.
 See [integration and JSON format](docs/integration.md).
 
 ## Weights, training and limitations
