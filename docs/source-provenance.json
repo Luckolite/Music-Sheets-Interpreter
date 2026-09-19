@@ -116,7 +116,8 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "4819e89ac176e764f403aaa2292d6d2363ae8a73f9be0d91c66a4569111a66cc"
+      "source_sha256": "e2e306a8cb6bf95856b60e0a9f00785f117105a5f11bb07db0711fc18e581493",
+      "reviewed_app_commit": "488d9a83374ff98c2c8a3e063ab32df834c9d199"
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"

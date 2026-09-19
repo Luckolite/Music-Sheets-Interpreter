@@ -464,7 +464,10 @@ final class TripletRhythmDetector {
         if (right - left < gap) return false;
         int occupied = 0;
         for (int x = left; x <= right; x++) {
-            for (int y = Math.max(0, top); y <= Math.min(height - 1, bottom); y++)
+            // Sloped brackets can rise above the numeral at their outer ends.
+            // Allow half a staff space while still requiring both long arms.
+            for (int y = Math.max(0, top - Math.round(gap * .5f));
+                    y <= Math.min(height - 1, bottom + Math.round(gap * .5f)); y++)
                 if (dark(gray, width, x, y)) { occupied++; break; }
         }
         return occupied >= (right - left + 1) * .76f;
