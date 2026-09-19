@@ -50,13 +50,13 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "5899ddc88697f597dc899da913c3b1e89e4d0cdac71b2e29972599bf217d063a",
-      "reviewed_app_commit": "4e008f0082aa72407505c25e95dc424d0209a30a"
+      "source_sha256": "b84c0c61cc18ba97ce3a4b0abdcdde5fe04d204d24298cdf5d45660b7b14bdef",
+      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "c8716564e37df8821bc9b5b47edde2e05ff7231982575afdb50edea499d04122",
-      "reviewed_app_commit": "abec26d68b40ea6043b63265067ee0cf5b533483"
+      "source_sha256": "f932e96a582b74de8fb49e2f7eb4b8b01e171dc52304709fd99b4bf1e3f63696",
+      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -170,13 +170,18 @@
     },
     "OctaveClefDigit.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveClefDigit.java",
-      "source_sha256": "cc6d26393ac219dcbb9dbafc9f90fc945eba10c4fe2186d96e399b01457f493d",
-      "reviewed_app_commit": "4e008f0082aa72407505c25e95dc424d0209a30a"
+      "source_sha256": "dd2b6c0e7d0ae03d268ac3d4bda38631e9521f3ebe230badb2e04c5c6949753b",
+      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
     },
     "ScorePageTimeline.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageTimeline.java",
       "source_sha256": "23952e19ef75a98d89a6dfced5132773c681dc8652925ad3bc30c9b7a7a57326",
       "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb"
+    },
+    "AccidentalEnclosure.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/AccidentalEnclosure.java",
+      "source_sha256": "a078de8aeb1b62c923b6ad4d0d45f7dc05d8e16994cd5db3cbce891f72cc41f5",
+      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
     }
   },
   "ocr_adapter_review": {

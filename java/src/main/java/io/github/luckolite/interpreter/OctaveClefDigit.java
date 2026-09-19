@@ -30,8 +30,23 @@ final class OctaveClefDigit {
                 }
                 int gw=b-a+1,gh=end-minY+1;
                 if(gw<gap*.3f||gw>gap*1.1f||gh<gw*1.1f)continue;
-                if(holes(gray,width,x0+a,y0+minY,gw,gh)==2)return true;
+                if(holes(gray,width,x0+a,y0+minY,gw,gh)==2
+                        && !neighboringDigit(gray,width,height,x0+a,y0+minY,gw,gh,gap))return true;
             }
+        }
+        return false;
+    }
+    private static boolean neighboringDigit(byte[] gray,int width,int height,int left,int top,int w,int h,float gap) {
+        for(int direction:new int[]{-1,1}) {
+            int x0=direction<0?Math.max(0,Math.round(left-gap*1.6f)):left+w+1;
+            int x1=direction<0?left-2:Math.min(width-1,Math.round(left+w+gap*1.6f));
+            int rows=0,area=0;
+            for(int y=top;y<Math.min(height,top+h);y++) {
+                boolean ink=false;
+                for(int x=x0;x<=x1;x++)if((gray[y*width+x]&255)<175){ink=true;area++;}
+                if(ink)rows++;
+            }
+            if(rows>=Math.min(h,gap*1.5f)*.7f&&area>=gap*gap*.15f)return true;
         }
         return false;
     }

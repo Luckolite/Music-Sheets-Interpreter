@@ -91,6 +91,27 @@ final class OmrScoreInterpreter {
         for (Component component : symbolComponents)
             accidentalCandidates.add(new AccidentalCandidate(component,
                     OmrMeasurePostProcessor.SYMBOL));
+        // A cautionary natural can be circled. Its enclosure is neither a flat
+        // beside the next chord nor a tiny independent head beneath the natural.
+        List<float[]> naturalEnclosures=new ArrayList<>();
+        List<AccidentalCandidate> enclosedCenters=new ArrayList<>();
+        for(AccidentalCandidate candidate:accidentalCandidates) {
+            Staff staff=nearestHeadStaff(staffs,candidate.component.centerY);
+            Component c=candidate.component;
+            if(staff==null||candidate.label!=OmrMeasurePostProcessor.CLEF_OR_KEY
+                    ||c.maxX-c.minX<staff.gap*.48f||c.maxX-c.minX>staff.gap*1.1f
+                    ||c.maxY-c.minY<staff.gap*1.6f||c.maxY-c.minY>staff.gap*3.2f
+                    ||c.area<staff.gap*staff.gap*.5f)continue;
+            float[] ring=AccidentalEnclosure.find(gray,width,height,c.minX,c.minY,c.maxX,c.maxY,staff.gap);
+            if(ring!=null){naturalEnclosures.add(ring);enclosedCenters.add(candidate);}
+        }
+        heads.removeIf(head->naturalEnclosures.stream().anyMatch(ring->
+                AccidentalEnclosure.contains(ring,head.minX,head.minY,head.maxX,head.maxY)));
+        accidentalCandidates.removeIf(candidate->naturalEnclosures.stream().anyMatch(ring->{
+            Component c=candidate.component;
+            return AccidentalEnclosure.contains(ring,c.minX,c.minY,c.maxX,c.maxY)
+                    &&!enclosedCenters.contains(candidate);
+        }));
         List<Component> demotedDotHeads = augmentationDotHeads(labels, gray, width, height, heads, staffs);
         demotedDotHeads.addAll(articulationDotHeads(labels, gray, width, height, heads, staffs));
         List<Component> accidentalGraces=new ArrayList<>();
@@ -3342,10 +3363,17 @@ final class OmrScoreInterpreter {
             if(staff.top>head.centerY&&(lower==null||staff.top<lower.top))lower=staff;
         }
         if(upper==null||lower==null)return null;
-        // A nearby staff outweighs ledgers belonging to another tone of the same chord.
-        if(head.centerY-upper.bottom<=upper.gap*1.5f||lower.top-head.centerY<=lower.gap*1.5f)return null;
         int above=innerLedgerCount(gray,width,height,head,upper);
         int below=innerLedgerCount(gray,width,height,head,lower);
+        // Close staves can surround a long ledger stem. Require that stem to reach
+        // its own staff before allowing the distant ledger chain to win.
+        if(head.centerY-upper.bottom<=upper.gap*1.5f||lower.top-head.centerY<=lower.gap*1.5f) {
+            int[] stem=attachedRawStem(gray,width,height,head,Math.min(upper.gap,lower.gap));
+            if(stem==null)return null;
+            if(above>=2&&below==0&&stem[2]<0&&stem[1]<=upper.bottom)return upper;
+            if(below>=2&&above==0&&stem[2]>0&&stem[1]>=lower.top)return lower;
+            return null;
+        }
         // Two inner rules can establish ownership; the rule beside/through the head is excluded.
         if(above>=2&&above>=below+2&&head.centerY-upper.bottom<=upper.gap*MAX_HEAD_LEDGER_GAPS)return upper;
         if(below>=2&&below>=above+2&&lower.top-head.centerY<=lower.gap*MAX_HEAD_LEDGER_GAPS)return lower;
@@ -6205,6 +6233,13 @@ final class OmrScoreInterpreter {
                 int x = bestX + Math.round(distance * gap);
                 int near = Math.max(0, stemEnd - (upward ? Math.round(gap*.2f) : inside));
                 int far = Math.min(height-1, stemEnd + (upward ? inside : Math.round(gap*.2f)));
+                // Very long stems can stop at the inner beam edge. Complete that
+                // clipped band, but never reach across
+                // white space into a separate slur or flag return.
+                if(Math.abs(stemEnd-head.centerY)>gap*7) {
+                    if(upward)near=completeBeamEdge(gray,width,height,x,near,-1,Math.max(0,stemEnd-outside));
+                    else far=completeBeamEdge(gray,width,height,x,far,1,Math.min(height-1,stemEnd+outside));
+                }
                 // Do not count any head on the chord's attached stem as a beam.
                 int innerX=bestX+Math.round(Math.copySign(.4f,distance)*gap);
                 int count=thickNonHeadBands(gray,labels,width,height,x,near,far,staff,innerX);
@@ -6228,6 +6263,17 @@ final class OmrScoreInterpreter {
             return Math.min(3, thick);
         }
         return Math.min(3, beams);
+    }
+
+    private static int completeBeamEdge(byte[] gray,int width,int height,int x,int y,int direction,int limit) {
+        if(x<1||x>=width-1)return y;
+        int edge=y;
+        for(int row=y;direction*(limit-row)>=0;row+=direction) {
+            if(row<0||row>=height||(gray[row*width+x-1]&255)>=165
+                    ||(gray[row*width+x]&255)>=165||(gray[row*width+x+1]&255)>=165)break;
+            edge=row;
+        }
+        return edge;
     }
 
     /** A tolerant stem trace can bridge a white gap into dark page artwork.

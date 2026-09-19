@@ -16,12 +16,12 @@ public class LongCrossStaffStemTest {
         assertEquals(2,measures.size());
     }
     private boolean owner(boolean attached,int cx)throws Exception {
-        int w=160,h=240;byte[] labels=new byte[w*h];
-        for(int y=60;y<=175;y++)labels[y*w+80]=1;
+        int w=160,h=380;byte[] labels=new byte[w*h];
+        for(int y=60;y<=315;y++)labels[y*w+80]=1;
         if(!attached)for(int y=95;y<=105;y++)labels[y*w+80]=0;
         for(int y=56;y<=64;y++)for(int x=cx-6;x<=cx+6;x++)if((x-cx)*(x-cx)/36d+(y-60)*(y-60)/16d<=1)labels[y*w+x]=2;
         var m=OmrMeasurePostProcessor.class.getDeclaredMethod("distantHeadOnSameStem",byte[].class,int.class,int.class,int.class,int.class,int.class,float.class);m.setAccessible(true);
-        return (boolean)m.invoke(null,labels,w,h,80,140,172,8f);
+        return (boolean)m.invoke(null,labels,w,h,80,280,312,8f);
     }
     @Test public void aLongContinuousStemCanReachItsHead(){try{assertTrue(owner(true,84));}catch(Exception e){throw new AssertionError(e);}}
     @Test public void gapToPreviousSystemDoesNotHideRealBar(){try{assertFalse(owner(false,84));}catch(Exception e){throw new AssertionError(e);}}

@@ -31,4 +31,10 @@ public class OctaveClefDigitTest {
     @Test public void ordinarySingleClefLoopDoesNotRaiseAnOctave() {
         assertFalse(OctaveClefDigit.above(touchingDigit(false),80,120,25,38,45,65,12));
     }
+    @Test public void measureNumberEndingInEightDoesNotRaiseAnOctave() {
+        byte[] gray=touchingDigit(true);
+        for(int y=20;y<=36;y++)gray[y*80+19]=0;
+        for(int x=19;x<=25;x++){gray[20*80+x]=0;gray[28*80+x]=0;gray[36*80+x]=0;}
+        assertFalse(OctaveClefDigit.above(gray,80,120,25,38,45,65,12));
+    }
 }

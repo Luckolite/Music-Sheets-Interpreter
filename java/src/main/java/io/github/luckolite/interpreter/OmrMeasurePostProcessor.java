@@ -506,7 +506,7 @@ final class OmrMeasurePostProcessor {
         for (int direction : new int[]{-1, 1}) {
             int start = direction < 0 ? top : bottom;
             int misses = 0;
-            for (int distance = 1; distance <= gap * MAX_CONNECTED_STAFF_SEPARATION_GAPS; distance++) {
+            for (int distance = 1; distance <= gap * MAX_CONNECTED_STAFF_SEPARATION_GAPS * 2; distance++) {
                 int y = start + direction * distance;
                 if (y < 0 || y >= height) break;
                 boolean stem = false, headTouchesStem = false;
