@@ -20,6 +20,10 @@ exhaustive transcription accuracy, automatic text OCR, or MusicXML export.
   accidentals, written durations, ties, articulations and selected triplets.
 - Optional interpretation of measure numbers, tempos, dynamics and techniques from
   **caller-supplied OCR tokens**. Time-signature changes can be supplied explicitly.
+- Six-string numeric guitar tablature: paired staff/tab measure alignment and octave
+  agreement, plus standalone fret pitches from caller-supplied OCR words. Paired notation
+  retains its written rhythm. Standalone tab rhythm and performance effects are not yet
+  decoded; its playback is estimated and reported in `tablatureWarnings`.
 - A Python image/PDF command and API producing inspectable JSON and a MIDI preview.
 - Training, synthetic data generation and TFLite export code, plus the original checkpoint.
 - Synthetic examples and geometry regression tests that can be redistributed.
@@ -50,6 +54,15 @@ single images work too. PDF input requires the `pdf` extra.
 The Python frontend uses TensorFlow 2.15.1 for the reproducible TFLite runtime. TensorFlow
 is substantially larger than the model. A mobile or embedded integration can use its own
 compatible TFLite runtime instead. The Java decoder itself has no external runtime JARs.
+
+For tablature, provide fret readings through `annotations["words"]` using the same normalized
+text boxes as other OCR. Open strings (`0`), two-digit frets, stacked chords, slide endpoint
+numbers and muted (`X`) marks are recognized. Fully muted paired strokes preserve their
+written time as silence; this release does not synthesize a percussive muted-guitar attack.
+The default is standard six-string tuning, high E to low E. Java callers can supply alternate
+open-string MIDI pitches and a capo through `TablatureDecoder.apply`'s tuning overload.
+Scans with strong curvature, non-six-string tabs, and letter-based historical tabs are not
+supported by this path. Existing segmentation weights are unchanged.
 
 ## Build from source
 

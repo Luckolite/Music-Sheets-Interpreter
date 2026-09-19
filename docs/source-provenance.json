@@ -182,6 +182,11 @@
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/AccidentalEnclosure.java",
       "source_sha256": "a078de8aeb1b62c923b6ad4d0d45f7dc05d8e16994cd5db3cbce891f72cc41f5",
       "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
+    },
+    "TablatureDecoder.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
+      "source_sha256": "eb5314fc550b2ff386901d7bc8500932cd71f4d126955c4f05fa3242f420ac93",
+      "reviewed_app_commit": "53bb9ace90dbe3ab37cafaea0296fce7d704d2b1"
     }
   },
   "ocr_adapter_review": {
@@ -195,5 +200,10 @@
   "piano_notation_review": {
     "app_commit": "edebae3824b8df22a455eabcdaf471192b404d29",
     "boundary": "Shared folio rejection, compact double-sharp recognition, and octave-clef numeral topology. Standalone Main and app playback both map the double-sharp token to two semitones. Android guide-cache format validation and version invalidation stay app-only. No source scores, phone logs, or private fixtures are distributed; new regressions use original generated geometry. Models and weights unchanged."
+  },
+  "tablature_adapter_review": {
+    "reviewed_app_commit": "53bb9ace90dbe3ab37cafaea0296fce7d704d2b1",
+    "app_adapter": "app/src/main/java/com/musicsheets/app/pdf/TablatureOcr.java",
+    "boundary": "Android ML Kit cropped string OCR remains an app adapter. Standalone callers provide normalized fret Word boxes through Annotations.words. Shared six-line detection, bar reconciliation, numeric fret decoding and paired octave reconciliation are ported. No model weights, commercial fixtures or OCR dependencies were imported. Standalone rhythms and performance effects remain unsupported; unknown durations are estimated by playback."
   }
 }

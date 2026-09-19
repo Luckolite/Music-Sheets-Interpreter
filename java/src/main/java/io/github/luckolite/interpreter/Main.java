@@ -42,6 +42,12 @@ public final class Main {
                 annotations=new SheetInterpreter.Annotations(numbers,tempos,rests,words,meters);
             }
         }
+        var tabs=TablatureDecoder.withWords(TablatureDecoder.detect(gray,width,height),
+                annotations.words().stream().map(w->new TablatureDecoder.Word(w.text(),w.left(),w.top(),w.right(),w.bottom())).toList(),width,height);
+        var tabWarnings=new ArrayList<String>();
+        if(tabs.stream().anyMatch(t->t.frets().isEmpty()))tabWarnings.add("Tablature detected but no reliable fret OCR supplied; paired notation is retained where available.");
+        if(tabs.stream().anyMatch(t->t.standardTop()<0))tabWarnings.add("Standalone tablature timing is estimated; written tab stems, rests and performance effects are not yet decoded.");
+        if(!tabs.isEmpty())tabWarnings.add("Tab pitch uses standard six-string guitar tuning unless the Java tuning/capo overload is supplied.");
         var score=SheetInterpreter.analyze(labels,gray,width,height,annotations);
         float[] beats=new float[score.measures().size()];Arrays.fill(beats,initialMeter.quarterBeats());
         for(var change:score.meterChanges().stream().sorted(Comparator.comparingInt(ScoreMeterChange::measureIndex)).toList())
@@ -73,7 +79,7 @@ public final class Main {
             event.put("y",note.pageY()*height);events.add(event);
         }
         var result=new LinkedHashMap<String,Object>();result.put("schemaVersion",1);result.put("width",width);result.put("height",height);
-        result.put("score",score);result.put("events",events);result.put("measureBeats",beats);result.put("totalBeats",starts[beats.length]);
+        result.put("score",score);result.put("events",events);result.put("tablatureWarnings",tabWarnings);result.put("measureBeats",beats);result.put("totalBeats",starts[beats.length]);
         Files.writeString(Path.of(args[1]),json(result)+"\n",StandardCharsets.UTF_8);
     }
     private static int readCount(DataInputStream in)throws IOException {
