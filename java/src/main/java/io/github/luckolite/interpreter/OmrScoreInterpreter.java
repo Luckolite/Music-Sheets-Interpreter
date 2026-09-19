@@ -1322,8 +1322,9 @@ final class OmrScoreInterpreter {
         boolean header = false;
         for (Component glyph : glyphs) {
             if (glyph.maxX < head.minX && head.minX - glyph.maxX < gap * 9
-                    && glyph.maxY - glyph.minY > gap * 4.5f && glyph.maxX - glyph.minX > gap * 1.1f
-                    && Math.abs(glyph.centerY - mid) < gap * 3) header = true;
+                    && (glyph.maxY - glyph.minY > gap * 4.5f && glyph.maxX - glyph.minX > gap * 1.1f
+                    && Math.abs(glyph.centerY - mid) < gap * 3
+                    || rawBassClef(glyph, gray, width, height, staff))) header = true;
         }
         if (!header) return null;
         int[] stem = attachedRawStem(gray, width, height, head, gap);
@@ -1339,7 +1340,7 @@ final class OmrScoreInterpreter {
                 columns[x - searchLeft]++;
         }
         int left = head.minX, right = head.maxX, blank = 0;
-        int maxBlank = Math.max(1, Math.round(gap * .15f));
+        int maxBlank = Math.max(1, Math.round(gap * .35f));
         for (int x = left - 1; x >= searchLeft; x--) {
             if (columns[x - searchLeft] > 0) { left = x; blank = 0; }
             else if (++blank > maxBlank) break;
@@ -1358,7 +1359,7 @@ final class OmrScoreInterpreter {
                 minY = Math.min(minY, y); maxY = Math.max(maxY, y);
             }
         }
-        if (noteInk > gap * gap * .55f || maxY - minY < gap * 2.2f || maxY - minY > gap * 3.8f)
+        if (noteInk > gap * gap * .55f || maxY - minY < gap * 1.5f || maxY - minY > gap * 3.8f)
             return null;
         int span = right - left;
         int[] open = headerInkBand(gray, width, height, Math.round(left + span * .65f), right,
@@ -2619,7 +2620,7 @@ final class OmrScoreInterpreter {
         int count = Math.round(span / gap);
         if (count < 3 || count > 4 || span < gap * (count - .25f)
                 || span > gap * (count + .4f)
-                || head.maxX - head.minX + 1 > gap * 1.8f) return List.of();
+                || head.maxX - head.minX + 1 > gap * 2.2f) return List.of();
         List<Component> parts = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             int top = head.minY + Math.round(i * span / (float)count);
@@ -5617,6 +5618,10 @@ final class OmrScoreInterpreter {
                 head.minX,head.maxX,referenceBottom,gap);
         if(complete==null)complete=StaffPitchTrack.localFadedRules(labels,gray,width,height,head.centerX,
                 head.minX,head.maxX,referenceBottom,gap);
+        if(complete!=null&&Math.abs(complete[1]-gap)>gap*.04f&&staff.pitchTrack==null) {
+            float[] broad=StaffPitchTrack.broadStraightPitch(gray,width,height,referenceBottom,gap,false);
+            if(broad!=null&&Math.abs(complete[1]-broad[1])>gap*.035f)return broad;
+        }
         if(complete!=null&&(!staff.printedPhase||Math.abs(complete[0]-referenceBottom)<gap*.5f))return complete;
         int radius = Math.max(4, Math.round(gap * 3.5f));
         int left = Math.max(0, Math.round(head.centerX) - radius);

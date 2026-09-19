@@ -50,12 +50,13 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "46b95b063142b5cd2ce1bcc35896752f16c6ac000774a141830416cb1ffd1798"
+      "source_sha256": "5899ddc88697f597dc899da913c3b1e89e4d0cdac71b2e29972599bf217d063a",
+      "reviewed_app_commit": "4e008f0082aa72407505c25e95dc424d0209a30a"
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "8f8abf64d04649c3b0b19e25445a922fc794d2a93f8a1d91cb542ca0cf9aab7f",
-      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
+      "source_sha256": "c8716564e37df8821bc9b5b47edde2e05ff7231982575afdb50edea499d04122",
+      "reviewed_app_commit": "abec26d68b40ea6043b63265067ee0cf5b533483"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -139,7 +140,8 @@
     },
     "StaffPitchTrack.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
-      "source_sha256": "3bcb22a83e36233d5b67a3a267e7bb77e4b9f5363dca48f72f22080915e802cc"
+      "source_sha256": "069fdad0d9eca1d718115c0ccb6d4cda57ae92bd6b79625c48db2fe53374a7a5",
+      "reviewed_app_commit": "abec26d68b40ea6043b63265067ee0cf5b533483"
     },
     "OpeningMeasureLayout.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpeningMeasureLayout.java",
@@ -168,8 +170,8 @@
     },
     "OctaveClefDigit.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveClefDigit.java",
-      "source_sha256": "9da7d8a5d42e2d0fb3ef5a9b00331ebfcb944482fdb32c41076d029ebc8cdf5d",
-      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
+      "source_sha256": "cc6d26393ac219dcbb9dbafc9f90fc945eba10c4fe2186d96e399b01457f493d",
+      "reviewed_app_commit": "4e008f0082aa72407505c25e95dc424d0209a30a"
     },
     "ScorePageTimeline.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageTimeline.java",

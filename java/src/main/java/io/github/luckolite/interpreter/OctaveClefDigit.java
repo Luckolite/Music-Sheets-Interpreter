@@ -19,9 +19,19 @@ final class OctaveClefDigit {
                     if(!seen[next]&&(gray[(y0+yy)*width+x0+xx]&255)<=175){seen[next]=true;queue[count++]=next;}
                 }
             }
-            int gw=maxX-minX+1,gh=maxY-minY+1;
-            if(gw<gap*.3f||gw>gap*1.1f||gh<gap*.6f||gh>gap*2.2f||gh<gw*1.1f)continue;
-            if(holes(gray,width,x0+minX,y0+minY,gw,gh)==2)return true;
+            // In tightly engraved clefs, the 8 can touch the clef's upper tip.
+            // Examine the narrow prefix as well as isolated components. Two closed
+            // counters must fit within a digit-sized box above the staff.
+            for(int end=minY+Math.max(1,Math.round(gap*.6f));
+                    end<=Math.min(maxY,minY+Math.round(gap*2.2f)-1);end++) {
+                int a=w,b=-1;
+                for(int i=0;i<count;i++)if(queue[i]/w<=end) {
+                    a=Math.min(a,queue[i]%w);b=Math.max(b,queue[i]%w);
+                }
+                int gw=b-a+1,gh=end-minY+1;
+                if(gw<gap*.3f||gw>gap*1.1f||gh<gw*1.1f)continue;
+                if(holes(gray,width,x0+a,y0+minY,gw,gh)==2)return true;
+            }
         }
         return false;
     }

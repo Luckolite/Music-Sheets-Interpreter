@@ -18,4 +18,17 @@ public class OctaveClefDigitTest {
         assertEquals(37,note.withLeadingRest(.25f).withCompactOpening().clefBottomDiatonic());
         assertEquals(37,note.diatonicPitchIdentity());
     }
+    private byte[] touchingDigit(boolean eight) {
+        byte[] gray=new byte[80*120];Arrays.fill(gray,(byte)255);
+        for(int y=20;y<=36;y++)for(int x=30;x<=38;x++)
+            if(x==30||x==38||y==20||y==36||(eight&&y==28))gray[y*80+x]=0;
+        for(int y=36;y<=90;y++)gray[y*80+34]=0;
+        return gray;
+    }
+    @Test public void eightTouchingTheClefTipStillRaisesAnOctave() {
+        assertTrue(OctaveClefDigit.above(touchingDigit(true),80,120,25,38,45,65,12));
+    }
+    @Test public void ordinarySingleClefLoopDoesNotRaiseAnOctave() {
+        assertFalse(OctaveClefDigit.above(touchingDigit(false),80,120,25,38,45,65,12));
+    }
 }
