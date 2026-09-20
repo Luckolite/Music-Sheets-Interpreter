@@ -103,6 +103,25 @@ final class OctaveMarkDetector {
                     boxes.add(new InkBox(left,top+y1,right,top+y2,count));
             }
             boxes.sort(Comparator.comparingInt(InkBox::left));boolean[] used=new boolean[boxes.size()];
+            for(var box:boxes) {
+                int bw=box.right-box.left+1,bh=box.bottom-box.top+1;
+                if(bw<gap*.3f||bw>gap*1.6f||bh<gap*.65f||bh>gap*2.3f||bh<bw*.9f
+                        ||OctaveClefDigit.holes(gray,width,box.left,box.top,bw,bh)!=2)continue;
+                if(dashEnd(gray,width,height,box.right+1,box.top,box.bottom,gap)<0)continue;
+                // A bare numeral has no va/vb suffix. Use only the nearest stave;
+                // do not apply the same inter-system mark to both adjacent rows.
+                PlayingTechniqueDetector.Staff nearest=null;float nearestDistance=Float.POSITIVE_INFINITY;
+                boolean nearestBelow=false;
+                for(var candidate:staffs) {
+                    float above=(candidate.top()-box.bottom)/candidate.gap();
+                    float under=(box.top-candidate.bottom())/candidate.gap();
+                    float distance=above>0?above:under;
+                    if(distance>=.25f&&distance<nearestDistance){nearest=candidate;nearestDistance=distance;nearestBelow=under>0;}
+                }
+                if(!staff.equals(nearest)||below!=nearestBelow)continue;
+                words.add(new PlayingTechniqueDetector.Word(below?"8vb":"8va",box.left/(float)width,
+                        box.top/(float)height,(box.right+1)/(float)width,(box.bottom+1)/(float)height));
+            }
             for(int i=0;i<boxes.size();i++) {
                 if(used[i])continue;var box=boxes.get(i);int left=box.left,right=box.right,a=box.top,b=box.bottom;used[i]=true;
                 for(int j=i+1;j<boxes.size();j++) {
@@ -151,18 +170,27 @@ final class OctaveMarkDetector {
         int y1=Math.max(0,Math.round(top-gap*.15f)),y2=Math.min(height-1,Math.round(bottom+gap*.4f));
         int best=-1;
         for(int y=y1;y<=y2;y++) {
-            int first=-1,last=-1,count=0,x=left;
+            int first=-1,last=-1,count=0,shortDots=0,interruptions=0,x=left;
             while(x<width) {
                 int blank=0;
                 while(x<width&&(gray[y*width+x]&255)>=165){blank++;x++;}
                 if(blank>gap*(count==0?2:1.6f))break;
                 int a=x;while(x<width&&(gray[y*width+x]&255)<165)x++;
                 int length=x-a;
-                if(length<Math.max(2,gap*.18f))continue;
+                if(length<2)continue;
                 if(length>gap*1.65f)break;
+                boolean tall=false;
+                for(int cx=a;cx<x;cx++) {
+                    int ya=y,yb=y;
+                    while(ya>0&&(gray[(ya-1)*width+cx]&255)<165)ya--;
+                    while(yb+1<height&&(gray[(yb+1)*width+cx]&255)<165)yb++;
+                    if(yb-ya+1>Math.max(3,gap*.35f)){tall=true;break;}
+                }
+                if(tall){if(count==0&&a<start)continue;if(count>0&&++interruptions<=1)continue;break;}
+                if(length<gap*.18f)shortDots++;
                 if(first<0)first=a;last=x-1;count++;
             }
-            if(count>=3&&last-first>=gap*3)best=Math.max(best,last);
+            if(count>=(shortDots>count/2?5:3)&&last-first>=gap*3)best=Math.max(best,last);
         }
         return best<0?-1:best+gap*.55f;
     }

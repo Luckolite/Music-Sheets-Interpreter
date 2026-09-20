@@ -90,7 +90,8 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "8c1e6288be65b4f1eae55278c1d95345dcb5e131bf023a0507f9e4e8168234a4"
+      "source_sha256": "fc622ed7ceeaa4b77cdbb0218a6d9ee59ecc539eae0e970f857950a78a9d931c",
+      "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
@@ -154,7 +155,8 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "1bc3a35119e2e8595ba7a9d360cee7105bda027f814b29272c0daccd447c1c47"
+      "source_sha256": "4cbb8cb025ec5a5579bd239a6ede1ba95f91fdd5d680d449a92c47baad0e70bd",
+      "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6"
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",
@@ -203,6 +205,16 @@
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ArtificialHarmonics.java",
       "source_sha256": "b8af340a061287a972514f8fd9b5101becffcc245a66af8a804ad93bd024b19c",
       "reviewed_app_commit": "c4a48f86b8a2975bf9bc7af54cbc3d14cc3a0624"
+    },
+    "ParallelBeamTip.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ParallelBeamTip.java",
+      "source_sha256": "333e82dec0caf27ecba1e467918e68fd54e19e3de6a058226e95ec9ba1597a18",
+      "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6"
+    },
+    "PrintedFlatGlyph.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedFlatGlyph.java",
+      "source_sha256": "a2193f31adeb3e6893f17373d03277cbd76de5de91a9b5784b0bd36a6fc57cb9",
+      "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6"
     }
   },
   "ocr_adapter_review": {
@@ -225,5 +237,9 @@
   "study_notation_review": {
     "reviewed_app_commit": "c4a48f86b8a2975bf9bc7af54cbc3d14cc3a0624",
     "boundary": "Original raster geometry for stopped-note plus fourth-touch artificial harmonics, with conservative diamond and stem evidence. App OmrMeasureAnalyzer and standalone SheetInterpreter invoke the same helper after octave marks. Flat signature recovery accepts ordered spine runs and does not trim a verified clef header as a barline. Only these OmrScoreInterpreter hunks were ported; its previously reported unrelated app drift remains visible. New tests use original generated glyphs. No score scans, library content, logs, model weights or external code are included."
+  },
+  "study_rhythm_review": {
+    "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6",
+    "boundary": "Original generated regressions cover fused beam tips, staff-rule fringe, equal repeated implicit triplets, partial flat signatures and bare octave numerals with dotted spans. Shared helpers ported to the app; guide cache invalidation remains Android-only. OmrScoreInterpreter prior unrelated drift is retained, not hidden by a hash update. No score images, logs, private library or model weights included. These repairs are not a claim of complete score accuracy."
   }
 }

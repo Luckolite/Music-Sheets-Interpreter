@@ -1930,6 +1930,8 @@ final class OmrScoreInterpreter {
                     // Recover a substantial fragment in a verified header from the printed
                     // sharp. Tiny semantic specks can also occur on nearby meter digits.
                     float signatureX=glyph.centerX;
+                    if(clef!=null&&PrintedFlatGlyph.matches(gray,width,height,glyph.minX,glyph.minY,
+                            glyph.maxX,glyph.maxY,staff.gap))accidental=ScoreNoteEvent.ACCIDENTAL_FLAT;
                     if(accidental==ScoreNoteEvent.ACCIDENTAL_FLAT
                             || accidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY && clef!=null
                             && glyph.area>=staff.gap*staff.gap*.18f) {
@@ -1972,9 +1974,10 @@ final class OmrScoreInterpreter {
                 if (strongest > 7 || (flats > 0 ? sharps + naturals > 0
                         : sharps > 0 ? naturals > 0 : false)) continue;
                 if (strongest < 2 && !doubleBar && !signatureHeader) continue;
-                // A single glyph pressed against the first head is a local accidental even
-                // when its own spines confused the nearby double-bar test.
-                if(strongest==1&&!signatureHeader&&firstHead-run.get(run.size()-1).x<staff.gap*1.35f)continue;
+                // Close accidentals on a chord are not a new key. Multiple glyphs
+                // need a boundary or the ordered fourth/fifth signature pattern.
+                if(!signatureHeader&&firstHead-run.get(run.size()-1).x<staff.gap*1.35f
+                        &&(strongest==1||clef==null&&!doubleBar&&!orderedSignaturePitches(labels,width,height,run,recognized,staff)))continue;
                 int fifths = naturals > 0 ? 0 : flats > 0 ? -flats : sharps;
                 if (signatureHeader && !result.isEmpty() && fifths > 0
                         && result.get(result.size() - 1).fifths() > fifths
@@ -3826,7 +3829,7 @@ final class OmrScoreInterpreter {
         for(Component head:heads) {
             Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
             float gap=staff.gap;
-            if(head.maxX-head.minX+1>gap*2||head.maxY-head.minY+1>gap*.85f
+            if(head.maxX-head.minX+1>gap*2||head.maxY-head.minY+1>gap*1.1f
                     ||head.area>gap*gap)continue;
             for(Component main:heads) {
                 if(main==head||main.area<Math.max(head.area*1.7f,gap*gap*1.2f)
@@ -3837,7 +3840,8 @@ final class OmrScoreInterpreter {
                 int[] stem=attachedRawStem(gray,width,height,main,gap);
                 if(stem==null||stem[0]<head.minX-gap*.4f||stem[0]>head.maxX+gap*.4f
                         ||Math.abs(stem[1]-head.centerY)>gap*1.85f)continue;
-                if(mergedBeamStrip(gray,width,height,head.centerX,head.centerY,gap)) {
+                if(mergedBeamStrip(gray,width,height,head.centerX,head.centerY,gap)
+                        || ParallelBeamTip.matches(gray,width,height,head.centerX,head.centerY,gap)) {
                     rejected.add(head);break;
                 }
             }
@@ -6259,6 +6263,8 @@ final class OmrScoreInterpreter {
                         bestX + Math.round(gap*.4f), near, far, staff);
                 if (roots == 1) thick = 1;
             }
+            if(thick==1&&ParallelBeamTip.matches(gray,width,height,head.centerX,
+                    stemEnd+(upward?1:-1)*gap*.55f,gap))thick=2;
             return Math.min(3, thick);
         }
         return Math.min(3, beams);
@@ -6561,6 +6567,8 @@ final class OmrScoreInterpreter {
                 // where an actual staff line runs; horizontal shape alone loses inner eighths.
                 boolean onlyStaff=onStaff&&(staffRows==run||(staffRows>=3&&staffRows+1==run))
                         &&run<=gap*.55f;
+                if(!onlyStaff&&onStaff&&staffRows>=3&&staffRows+2>=run&&run<=gap*.45f
+                        &&thinAtInnerProbe(gray,width,height,stemwardX,y-run,y-1,gap,threshold))onlyStaff=true;
                 if(onlyStaff&&run>=Math.ceil(gap*.4f)
                         &&finiteBeamOverRule(gray,width,height,x,y-run,y-1,staff,threshold))onlyStaff=false;
                 boolean rooted=run>=3&&bandReachesInnerProbe(gray,width,height,x,stemwardX,y-run,y-1,threshold);
@@ -6572,6 +6580,21 @@ final class OmrScoreInterpreter {
         // Preserve a single narrow flag. Adding a second beam needs the full
         // thickness threshold so a thinner slur terminal cannot shorten the note.
         return bands > 1 ? Math.max(1,strongBands) : bands;
+    }
+
+    /** A blurred rule may gain two fringe rows at the outer beam probe, while
+     * remaining only a thin staff line beside the actual stem. */
+    private static boolean thinAtInnerProbe(byte[] gray,int width,int height,int x,
+            int first,int last,float gap,int threshold) {
+        if(x<0||x>=width)return false;
+        int best=0;
+        for(int shift=-2;shift<=2;shift++) {
+            int ink=0;
+            for(int y=Math.max(0,first+shift);y<=Math.min(height-1,last+shift);y++)
+                if((gray[y*width+x]&255)<threshold)ink++;
+            best=Math.max(best,ink);
+        }
+        return best<Math.max(3,(int)Math.ceil(gap*.30f));
     }
 
     /** Both local side probes can lie inside a beam printed over a staff rule.
