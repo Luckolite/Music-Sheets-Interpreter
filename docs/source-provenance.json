@@ -194,8 +194,8 @@
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
-      "source_sha256": "cc5e846e4b9a43e4c285193247f80fadff357e695ea38316df012e31acfe90a4",
-      "reviewed_app_commit": "9fa8d036b1ec28f743893f0ae7220f2e9cbf0e9b"
+      "source_sha256": "72fcb4d4469c008916ae35ca40df23a1e019703a60ee6a9792820fd7eb5ac525",
+      "reviewed_app_commit": "900de4a7ea123bdf4f0f3ccd6a977f33302d77f3"
     },
     "TabNotation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabNotation.java",
@@ -226,6 +226,11 @@
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SeparateBeamGroups.java",
       "source_sha256": "a6afd5b853cac8ee18741e977276abff43c7e676a10eaadbfcd319ce62aee37a",
       "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b"
+    },
+    "TabFretRaster.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabFretRaster.java",
+      "source_sha256": "f43dee9ea6a2bcf8babefe7bab51026202b8a29f02d80fb2342ac51194790033",
+      "reviewed_app_commit": "900de4a7ea123bdf4f0f3ccd6a977f33302d77f3"
     }
   },
   "ocr_adapter_review": {
@@ -280,5 +285,9 @@
   "isolated_beam_probe_review": {
     "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a",
     "boundary": "Resolve a conflicting extra beam only when two noteheads share a physical stem and endpoint, the longer trace reads one fewer beam, and adjacent pixel probes corroborate that lower count. Single-note readings and consistent chord beams retain their existing behavior. Six original generated regressions cover scan-fringe cores, a shared chord stem, a narrow supported beam and conservative single-note handling. Existing unrelated OmrScoreInterpreter drift remains reported. No model or private fixtures included."
+  },
+  "isolated_tab_fret_review": {
+    "reviewed_app_commit": "900de4a7ea123bdf4f0f3ccd6a977f33302d77f3",
+    "boundary": "Shared raster crops isolate printed frets from rules, barlines, labels, rhythm stems and dense screenshot controls. Cleaned and original OCR readings are reconciled within each crop; a long central enclosed counter corroborates open frets. Confirmed inline effects are retained. Dark and pale barline passes are combined, and unbarred opening/closing tab measures retain their notes. Android ML Kit remains an app adapter: it reads bounded glyph montages with synthetic numeric context, maps symbols back to original crops, and preserves partial results on timeouts. Standalone OCR providers may use TabFretRaster.crops, clean, openFret and reconcile before TablatureDecoder.withWords. The standalone package does not bundle an OCR engine. Synthetic tests only; no private scores, fret transcriptions, phone logs, or fonts are included. Model weights unchanged; printed fret correctness does not establish unwritten rhythm or graphical bend/slur performance."
   }
 }

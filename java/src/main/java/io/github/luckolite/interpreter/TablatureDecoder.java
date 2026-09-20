@@ -17,7 +17,14 @@ public final class TablatureDecoder {
         // Keep the darkest complete geometry first, then fill in missing systems.
         var found=new ArrayList<Staff>();
         for(int threshold:new int[]{180,200,220,235,245,248})for(var staff:detectAtThreshold(gray,w,h,threshold)) {
-            if(found.stream().noneMatch(old->Math.abs(old.top-staff.top)<Math.max(old.gap,staff.gap)*3))found.add(staff);
+            int match=-1;for(int i=0;i<found.size();i++)if(Math.abs(found.get(i).top-staff.top)<Math.max(found.get(i).gap,staff.gap)*3){match=i;break;}
+            if(match<0)found.add(staff);
+            else {
+                var old=found.get(match);var bars=new ArrayList<>(old.bars);
+                if(Math.abs(old.top-staff.top)<old.gap*.2f&&Math.abs(old.gap-staff.gap)<old.gap*.1f)
+                    for(float bar:staff.bars)if(bars.stream().noneMatch(x->Math.abs(x-bar)<old.gap*.6f))bars.add(bar);
+                bars.sort(Float::compare);found.set(match,new Staff(old.top,old.gap,old.standardTop,old.frets,List.copyOf(bars)));
+            }
         }
         found.sort(Comparator.comparingDouble(Staff::top));
         var result=new ArrayList<Staff>();
@@ -147,6 +154,10 @@ public final class TablatureDecoder {
                 if(!score.measures().isEmpty()||tab.frets.isEmpty())continue;
                 var bars=new ArrayList<>(tab.bars);
                 if(bars.size()<2){bars.clear();bars.add(tab.frets.get(0).x-tab.gap);bars.add(tab.frets.get(tab.frets.size()-1).x+tab.gap);}
+                else {
+                    if(tab.frets.get(0).x<bars.get(0))bars.add(0,tab.frets.get(0).x-tab.gap);
+                    if(tab.frets.get(tab.frets.size()-1).x>bars.get(bars.size()-1))bars.add(tab.frets.get(tab.frets.size()-1).x+tab.gap);
+                }
                 for(int bi=0;bi+1<bars.size();bi++) {
                     float left=bars.get(bi),right=bars.get(bi+1);if(right-left<tab.gap*2)continue;
                     int bar=measures.size();measures.add(new MeasureRegion(Math.max(0,left/w),Math.min(1,right/w),Math.max(0,(tab.top-tab.gap)/h),Math.min(1,(tab.top+tab.gap*6)/h)));
