@@ -42,14 +42,14 @@ public final class Main {
                 annotations=new SheetInterpreter.Annotations(numbers,tempos,rests,words,meters);
             }
         }
-        var tabs=TablatureDecoder.withWords(TablatureDecoder.detect(gray,width,height),
-                annotations.words().stream().map(w->new TablatureDecoder.Word(w.text(),w.left(),w.top(),w.right(),w.bottom())).toList(),width,height);
+        var tabWords=annotations.words().stream().map(w->new TablatureDecoder.Word(w.text(),w.left(),w.top(),w.right(),w.bottom())).toList();
+        var tabs=TablatureDecoder.withWords(TablatureDecoder.detect(gray,width,height),tabWords,width,height);
         var tabWarnings=new ArrayList<String>();
         if(tabs.stream().anyMatch(t->t.frets().isEmpty()))tabWarnings.add("Tablature detected but no reliable fret OCR supplied; paired notation is retained where available.");
-        tabs=TabNotation.rasterRhythm(tabs,gray,width,height);
+        tabs=TabNotation.rasterRhythm(tabs,gray,width,height,tabWords);
         if(tabs.stream().filter(t->t.standardTop()<0).flatMap(t->t.frets().stream()).anyMatch(f->f.duration()==0&&f.beams()==0))tabWarnings.add("Some standalone tab durations are unknown and playback timing is estimated.");
-        if(!tabs.isEmpty())tabWarnings.add("Guitar effects require explicit OCR symbols; unsupported graphical bend curves, ties or rhythm glyphs are not inferred.");
-        if(!tabs.isEmpty())tabWarnings.add("Tab pitch uses standard six-string guitar tuning unless the Java tuning/capo overload is supplied.");
+        if(!tabs.isEmpty())tabWarnings.add("Guitar effects require explicit OCR symbols; unsupported graphical bend curves and performance directions are not inferred.");
+        if(!tabs.isEmpty())tabWarnings.add("Tab pitch uses an explicit tuning header when available, otherwise standard six- or seven-string guitar tuning.");
         var score=SheetInterpreter.analyze(labels,gray,width,height,annotations);
         float[] beats=new float[score.measures().size()];Arrays.fill(beats,initialMeter.quarterBeats());
         for(var change:score.meterChanges().stream().sorted(Comparator.comparingInt(ScoreMeterChange::measureIndex)).toList())

@@ -52,9 +52,9 @@ public final class SheetInterpreter {
             throw new IllegalArgumentException("Expected equally sized masks and grayscale, at most 20 million pixels");
         for(byte label:labels)if(label<0||label>5)throw new IllegalArgumentException("Labels must be in 0..5");
         Objects.requireNonNull(annotations);
-        var tabs=TablatureDecoder.withWords(TablatureDecoder.detect(gray,width,height),
-                annotations.words.stream().map(w->new TablatureDecoder.Word(w.text,w.left,w.top,w.right,w.bottom)).toList(),width,height);
-        tabs=TabNotation.rasterRhythm(tabs,gray,width,height);
+        var tabWords=annotations.words.stream().map(w->new TablatureDecoder.Word(w.text,w.left,w.top,w.right,w.bottom)).toList();
+        var tabs=TablatureDecoder.withWords(TablatureDecoder.detect(gray,width,height),tabWords,width,height);
+        tabs=TabNotation.rasterRhythm(tabs,gray,width,height,tabWords);
         labels=TablatureDecoder.withoutTabs(labels,width,height,tabs,false);
         gray=TablatureDecoder.withoutTabs(gray,width,height,tabs,true);
         var measures=OmrMeasurePostProcessor.process(labels,gray,width,height);
@@ -81,14 +81,15 @@ public final class SheetInterpreter {
         var words=annotations.words.stream().map(Word::internal).toList();
         notes=OctaveMarkDetector.apply(words,staffs,measures,notes,gray,width,height);
         notes=ArtificialHarmonics.apply(gray,width,height,measures,notes,staffs);
-        for(var meter:annotations.meters)if(meter.measureIndex()>=measures.size())
-            throw new IllegalArgumentException("Meter change is outside the detected measure range");
-        return TablatureDecoder.apply(new ScorePageInterpretation(measures,notes,
+        var decoded=TablatureDecoder.apply(new ScorePageInterpretation(measures,notes,
                 MeasureNumberReconciler.firstMeasureNumber(measures,numbers),score.keyChanges(),
                 TempoChangeDetector.detect(annotations.tempoNumbers.stream().map(NumberToken::internal).toList(),
                         gray,width,height,measures),
                 annotations.meters,rhythm.rests(),
                 PlayingTechniqueDetector.detect(words,staffs,measures,notes,width,height),
                 ScoreDynamicsDetector.detect(words,staffs,measures,notes,gray,width,height)),tabs,width,height);
+        for(var meter:annotations.meters)if(meter.measureIndex()>=decoded.measures().size())
+            throw new IllegalArgumentException("Meter change is outside the detected measure range");
+        return TabMeter.apply(decoded,tabs,tabWords,width,height);
     }
 }

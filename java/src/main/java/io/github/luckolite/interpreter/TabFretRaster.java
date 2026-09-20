@@ -15,7 +15,7 @@ public final class TabFretRaster {
             if(!v.text().matches("[0-9]{1,2}"))continue;
             float x=(v.left()+v.right())*.5f*w,y=(v.top()+v.bottom())*.5f*h;
             int string=Math.round((y-t.top())/t.gap());float cy=t.top()+string*t.gap();
-            if(string<0||string>5||Math.abs(y-cy)>t.gap()*.24f||(v.bottom()-v.top())*h<t.gap()*.5f
+            if(string<0||string>=t.stringCount()||Math.abs(y-cy)>t.gap()*.24f||(v.bottom()-v.top())*h<t.gap()*.5f
                     ||(v.bottom()-v.top())*h>t.gap()*1.1f||(v.right()-v.left())*w<t.gap()*.35f||(v.right()-v.left())*w>t.gap()*1.4f)continue;
             float first=result.stream().filter(c->Math.abs(c.stringY()-t.top()-c.string()*t.gap())<t.gap()*.2f).map(c->(float)c.left()).min(Float::compare).orElse((float)w);
             if(x<first-t.gap()*.3f||t.bars().stream().anyMatch(b->Math.abs(b-x)<t.gap()*.3f))continue;
@@ -42,10 +42,10 @@ public final class TabFretRaster {
         }
         // Preserve annotations in the rhythm lanes; numerals above a string are
         // measure numbers or bend amounts, never frets on that string.
-        for(var v:legacy)if(!v.text().matches(".*[0-9].*")&&tabs.stream().noneMatch(t->(v.top()+v.bottom())*.5f*h>=t.top()-t.gap()*.6f&&(v.top()+v.bottom())*.5f*h<=t.top()+t.gap()*5.6f))result.add(v);
+        for(var v:legacy)if(!v.text().matches(".*[0-9].*")&&tabs.stream().noneMatch(t->(v.top()+v.bottom())*.5f*h>=t.top()-t.gap()*.6f&&(v.top()+v.bottom())*.5f*h<=t.bottom()+t.gap()*.6f))result.add(v);
         for(var v:legacy)if(v.text().matches(".*[hHpPbBrR/\\\\~<>].*"))for(var t:tabs) {
             float y=(v.top()+v.bottom())*.5f*h;int string=Math.round((y-t.top())/t.gap());
-            if(string<0||string>5||Math.abs(y-t.top()-string*t.gap())>t.gap()*.35f)continue;
+            if(string<0||string>=t.stringCount()||Math.abs(y-t.top()-string*t.gap())>t.gap()*.35f)continue;
             var parsed=TabNotation.parse(v.text(),v.left()*w,v.right()*w,t.top()+string*t.gap(),string);
             if(parsed.isEmpty()||parsed.stream().noneMatch(f->f.marks()!=0))continue;
             var matched=new ArrayList<TablatureDecoder.Word>();
@@ -57,7 +57,7 @@ public final class TabFretRaster {
     }
     public static byte[] clean(byte[] gray,int w,int h,List<TablatureDecoder.Staff> tabs) {
         byte[] out=gray.clone();
-        for(var t:tabs)for(int s=0;s<6;s++) {
+        for(var t:tabs)for(int s=0;s<t.stringCount();s++) {
             int cy=Math.round(t.top()+s*t.gap()),a=h,b=-1;
             for(int y=Math.max(1,Math.round(cy-t.gap()*.18f));y<Math.min(h-1,Math.round(cy+t.gap()*.18f));y++) {
                 int ink=0;for(int x=0;x<w;x++)if((gray[y*w+x]&255)<230)ink++;
@@ -98,7 +98,7 @@ public final class TabFretRaster {
         var result=new ArrayList<Crop>();
         for(var t:tabs) {
             var row=new ArrayList<Crop>();
-            for(int s=0;s<6;s++) {
+            for(int s=0;s<t.stringCount();s++) {
                 int cy=Math.round(t.top()+s*t.gap()),lo=Math.max(0,Math.round(cy-t.gap()*.6f)),hi=Math.min(h,Math.round(cy+t.gap()*.6f));
                 boolean[] rule=new boolean[hi-lo],vertical=new boolean[w];
                 for(int y=lo;y<hi;y++) {
@@ -115,7 +115,7 @@ public final class TabFretRaster {
                 for(int x=0;x<=w;x++) {
                     boolean ink=false;if(x<w&&!vertical[x])for(int y=lo;y<hi;y++)if(!rule[y-lo]&&(gray[y*w+x]&255)<180){ink=true;break;}
                     if(ink&&start<0)start=x;
-                    if(!ink&&start>=0){if(!runs.isEmpty()&&start-runs.get(runs.size()-1)[1]<t.gap()*.27f)runs.get(runs.size()-1)[1]=x;else runs.add(new int[]{start,x});start=-1;}
+                    if(!ink&&start>=0){if(!runs.isEmpty()&&start-runs.get(runs.size()-1)[1]<t.gap()*.50f)runs.get(runs.size()-1)[1]=x;else runs.add(new int[]{start,x});start=-1;}
                 }
                 for(var run:runs) {
                     int a=run[0],b=run[1],yt=h,yb=-1;

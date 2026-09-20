@@ -35,14 +35,17 @@ Everything runs locally after installation; no account or server is required.
 ## What it supports
 
 - Standard notation: pitches, accidentals, chords, rests, ties and written timing.
-- Six-string guitar tabs, with fret readings supplied by your OCR engine.
-- Explicit tab rhythms and common hammer-on, pull-off, slide, bend, vibrato and harmonic symbols.
+- Six- and seven-string guitar tabs, using embedded PDF text or caller-supplied OCR.
+- Printed tuning headers, including alternate tunings carried across PDF pages.
+- Detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations.
+- Explicit hammer-on, pull-off, tapping, slide, bend, vibrato and harmonic symbols.
 - JSON for integration, MIDI for preview, and MusicXML for editing in notation software.
 
 MusicXML reconstructs a concert-pitch score, not the original layout or tab placement.
 Guitar effects are text annotations in MusicXML. Recognition can miss symbols, and
-missing tab rhythm remains estimated. Graphical bend curves, tab ties and tab tuplets
-are not fully supported. An OCR engine is not included.
+missing tab rhythm remains estimated. Graphical bends, quarter-tone bends, whammy-bar
+directions and strum direction are not reconstructed. Scanned tab input still needs
+fret OCR; an OCR engine is not included.
 
 ## Integration and model
 

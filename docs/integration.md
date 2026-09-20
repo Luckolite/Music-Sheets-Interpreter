@@ -77,6 +77,25 @@ and techniques such as `p`, `mf`, `pizz.` or `arco`; the decoder places supporte
 using the staff and note geometry. This interface does not reproduce the Android app's
 whole-page and repeated crop OCR strategy.
 
+For PDFs with embedded tab text, the CLI supplies normalized search boxes automatically.
+An explicit `--annotations` file remains authoritative. Scanned pages still require an
+external OCR provider. Compound fret tokens are retained, overlapping search results are
+deduplicated, and separated digits are joined only when their tab-string geometry agrees.
+
+Standalone tabs may contain six or seven strings. A `Tuning:` header lists the open strings
+from lowest to highest; the header is carried from the first PDF page even when processing
+a later page selection. Without printed octaves, conventional descending guitar registers
+are inferred. Without a header, standard six-string or seven-string guitar tuning is used.
+Reentrant tunings are not covered by this header parser.
+
+Detached stems and beams, native rests, dots, triplets, grace frets and visible ties supply
+written rhythm. A blank continuation needs both a stem and a connecting arc; a muted fret
+stops the preceding string's sustain. H/P/T letters are performance marks when positioned
+above frets, rather than duration labels. Native meter digits and quarter-note tempo marks
+are read geometrically; a bare number is not a tempo. Glyph identities follow the
+[SMuFL metronome table](https://smufl.formats.music/latest/tables/metronome-marks.html).
+Graphical bends, whammy-bar directions and strum direction remain outside this extraction.
+
 ## MIDI preview limits
 
 MIDI uses 480 ticks per quarter note, a fixed velocity and standard program 0. Recognized

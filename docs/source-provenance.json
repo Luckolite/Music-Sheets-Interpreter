@@ -208,19 +208,21 @@
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
-      "source_sha256": "6d7d1740216e2fdfb53e0339838d52cf0185468504feda18981824d6509e4464",
-      "reviewed_app_commit": "ba5df7748ee841ff79608d46ec65d1aec245d984",
-      "notes": "Reviewed standalone tab repair: tolerate enlarged pale string rules, separate antialiased rule fringes from fret crops, and discard event-free phantom measure shells before decoding unpaired tab frets. Existing notes, rests and paired notation remain authoritative. Original synthetic regressions only; model weights and Android OCR adapter unchanged."
+      "source_sha256": "6023d6fa33db6d3c59bbf95dcbbecdf2116295c8123d340c64bd848d07ccda68",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
     },
     "TabNotation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabNotation.java",
-      "source_sha256": "265903d295fb17c332be51cdf7fccb955dc5c779dac92a6b93757fbb2d118ca2",
-      "reviewed_app_commit": "19ba8a8455b517c23c5aa87f54cfff6bcc1dbfff"
+      "source_sha256": "73a8a38533e10017df27f981068bb668facd73df79af3d9d1275f01fdbd5c788",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
     },
     "TabEffect.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabEffect.java",
-      "source_sha256": "bcd6ef53adf16c0bb233854e3a82f21c3f1d580e4997cb2750188ff946dc55ac",
-      "reviewed_app_commit": "19ba8a8455b517c23c5aa87f54cfff6bcc1dbfff"
+      "source_sha256": "1e72d4ec50a46052a4e30a0844bcbf64f2bd21d806190dfdf51765ac5d8a75ca",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
     },
     "ArtificialHarmonics.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ArtificialHarmonics.java",
@@ -245,9 +247,45 @@
     },
     "TabFretRaster.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabFretRaster.java",
-      "source_sha256": "aba91e3a6b16da6c221179eb84ae16fe12c14b08ccf2d9b6f05c0f87047c4936",
-      "reviewed_app_commit": "ba5df7748ee841ff79608d46ec65d1aec245d984",
-      "notes": "Reviewed standalone tab repair: tolerate enlarged pale string rules, separate antialiased rule fringes from fret crops, and discard event-free phantom measure shells before decoding unpaired tab frets. Existing notes, rests and paired notation remain authoritative. Original synthetic regressions only; model weights and Android OCR adapter unchanged."
+      "source_sha256": "8ef1cae4a63158665c2be2f8b24fb5417acc0eeb1bd75ff9daceee91d628a076",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+    },
+    "TabMeter.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabMeter.java",
+      "source_sha256": "6f5875ad735554075b36307b32e34ea844b2d1611e3ae8cd89cdc87276cf54dc",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+    },
+    "TabTempo.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabTempo.java",
+      "source_sha256": "42ff354968a3e507c08f3cff234a9433a059fa9bc2062c125b07551c759fea99",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+    },
+    "TabPerformanceMarks.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabPerformanceMarks.java",
+      "source_sha256": "7b9bdf4d6e4d53fe38faf0520587eb5454972fe9e129ceac4e173d8774af2b7d",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+    },
+    "TabRhythmContinuations.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabRhythmContinuations.java",
+      "source_sha256": "39fa3d7ed48db749f6b90a4a589ce66aae3f640d5fc50cbf8434afd63fe8b9a6",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+    },
+    "TabTextSource.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabTextSource.java",
+      "source_sha256": "19b72b02534c7fd3106b40d95bd907add821db4d5e26fb63ba4b2123240ae792",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+    },
+    "TabTuning.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabTuning.java",
+      "source_sha256": "333eadd12e781b1bc7d404199b1b88882724705ce1569ee87937e97a5a08f899",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
     }
   },
   "ocr_adapter_review": {
@@ -306,5 +344,9 @@
   "isolated_tab_fret_review": {
     "reviewed_app_commit": "357242b1c6fd96ea3063de213c064cb1876bf96a",
     "boundary": "Shared raster crops isolate printed frets from rules, barlines, labels, rhythm stems and dense screenshot controls. Cleaned and original OCR readings are reconciled within each crop; a long central enclosed counter corroborates open frets. Confirmed inline effects are retained. Dark and pale barline passes are combined, and unbarred opening/closing tab measures retain their notes. Android ML Kit remains an app adapter: it reads bounded glyph montages with synthetic numeric context, maps symbols back to original crops, and preserves partial results on timeouts. Standalone OCR providers may use TabFretRaster.crops, clean, openFret and reconcile before TablatureDecoder.withWords. The standalone package does not bundle an OCR engine. Synthetic tests only; no private scores, fret transcriptions, phone logs, or fonts are included. Model weights unchanged; printed fret correctness does not establish unwritten rhythm or graphical bend/slur performance."
+  },
+  "native_tab_rhythm_review": {
+    "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+    "boundary": "Reviewed six/seven-string geometry, explicit tuning, native PDF token matching, detached rhythm, visible ties, muted-note tie termination, rests, grace frets, triplets, meter, tempo and H/P/T/vibrato marks. Original generated Java/PDF regressions only. Android PDF search and first-page OCR adapters remain app-specific; the standalone CLI uses optional pypdfium2 to provide equivalent normalized words and carry tuning. Guide cache invalidation and PDF lifecycle hooks are Android-only. No private scores, annotations, logs, history, new dependencies or changed model weights. Existing MeterChangeDetector, OmrScoreInterpreter and ScorePageTimeline drift remains visible and was not absorbed. Printed-symbol pitch and measure-duration checks do not establish full expressive playback: graphical bends, whammy and strum direction remain unsupported."
   }
 }

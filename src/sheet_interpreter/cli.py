@@ -48,14 +48,14 @@ def main():
         results = []
         key = args.key_fifths
 
-        def process(image, page_number):
+        def process(image, page_number, native_words=None):
             nonlocal key, meter
             index = len(results)
             if annotations is not None and index >= len(annotations):
                 raise ValueError("One annotation object is required for every selected page")
             print(f"Reading page {page_number}", file=sys.stderr)
             page = engine.interpret(image, meter=meter, key_fifths=key, width=args.width,
-                                    annotations=annotations[index] if annotations is not None else None)
+                                    annotations=annotations[index] if annotations is not None else ({"words": native_words} if native_words else None))
             page["sourcePage"] = page_number
             results.append(page)
             if page["score"]["keyChanges"]:
@@ -76,11 +76,17 @@ def main():
                     raise ValueError("PDF page number out of range")
                 if pages != sorted(set(pages)):
                     raise ValueError("Choose unique PDF pages in increasing reading order")
+                from .pdf_annotations import tab_words, tuning_header
+                first = pdf[0]
+                try:
+                    header = tuning_header(first)
+                finally:
+                    first.close()
                 for number in pages:
                     page = pdf[number]
                     bitmap = page.render(scale=2400 / page.get_width())
                     try:
-                        process(bitmap.to_pil(), number + 1)
+                        process(bitmap.to_pil(), number + 1, tab_words(page, header))
                     finally:
                         bitmap.close()
                         page.close()

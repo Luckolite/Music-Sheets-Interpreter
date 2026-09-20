@@ -18,7 +18,7 @@ public class TablatureDecoderTest {
         return new TablatureDecoder.Word(text,(x-8f)/W,(140+string*20-7f)/H,(x+8f)/W,(140+string*20+7f)/H);
     }
     @Test public void sixRulesDetectedWithoutChangingFiveRuleStaves(){assertEquals(1,TablatureDecoder.detect(page(6,true,false),W,H).size());assertTrue(TablatureDecoder.detect(page(5,false,false),W,H).isEmpty());}
-    @Test public void sevenEquallySpacedRulesAreNotTruncatedToSix(){assertTrue(TablatureDecoder.detect(page(7,false,false),W,H).isEmpty());}
+    @Test public void sevenEquallySpacedRulesAreNotTruncatedToSix(){var rows=TablatureDecoder.detect(page(7,false,false),W,H);assertEquals(1,rows.size());assertEquals(7,rows.get(0).stringCount());}
     @Test public void secondTabRowIsNotMistakenForPairedStandardStaff(){var t=TablatureDecoder.detect(page(6,false,true),W,H);assertEquals(2,t.size());assertEquals(-1,t.get(1).standardTop(),0);}
     @Test public void readsOpenStringsChordsAndTwoDigitFrets(){var t=TablatureDecoder.withWords(TablatureDecoder.detect(page(6,true,false),W,H),List.of(word("0",100,5),word("12",100,0),word("4",100,3)),W,H);assertEquals(3,t.get(0).frets().size());assertEquals(12,t.get(0).frets().get(1).fret());}
     @Test public void unknownGlyphIsNotGuessedAsZero(){var t=TablatureDecoder.withWords(TablatureDecoder.detect(page(6,false,false),W,H),List.of(word("O",100,0),word("1412",150,0),word("37",200,0)),W,H);assertTrue(t.get(0).frets().isEmpty());}

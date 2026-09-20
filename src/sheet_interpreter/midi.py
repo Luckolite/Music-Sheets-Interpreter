@@ -67,7 +67,7 @@ def write_midi(document, path, bpm=120):
     for start, end, pitch, effect in sorted(performed, key=lambda n: (n[0], n[2])):
         kind = effect.get("type", "none")
         delta = effect.get("semitones", 0)
-        if kind not in ("none", "slide", "hammer_on", "pull_off", "bend", "bend_release", "dead", "harmonic") or not isinstance(delta, (int, float)) or not math.isfinite(delta) or abs(delta) > 24:
+        if kind not in ("none", "slide", "hammer_on", "pull_off", "bend", "bend_release", "dead", "harmonic", "tap") or not isinstance(delta, (int, float)) or not math.isfinite(delta) or abs(delta) > 24:
             raise ValueError("Unsupported guitar performance effect")
         expressive = kind in ("slide", "bend", "bend_release") or effect.get("vibrato", False)
         # Pitch bend is channel-wide. Isolate it from every overlapping note, including other pitches.
@@ -78,7 +78,7 @@ def write_midi(document, path, bpm=120):
             raise ValueError("MIDI channel capacity exceeded by overlapping voices/effects")
         active[channel] = [(stop, other, bent) for stop, other, bent in active.get(channel, []) if stop > start]
         active[channel].append((end, pitch, expressive))
-        velocity = 20 if kind == "dead" else 62 if kind in ("hammer_on", "pull_off") else 80
+        velocity = 20 if kind == "dead" else 62 if kind in ("hammer_on", "pull_off", "tap") else 80
         sounding_end = start + max(1, round((end-start) * (.12 if kind == "dead" else .45 if effect.get("palmMute") else 1)))
         if expressive:
             # RPN 0: +/-24 semitones, confined to this note's exclusive channel.
