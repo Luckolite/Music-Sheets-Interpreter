@@ -276,5 +276,9 @@
   "damaged_study_notation_review": {
     "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b",
     "boundary": "Global printed-ink recovery for fragmented clefs and key symbols, partial repeated sharp signatures, ledger-attached octave numerals, fingerings opposite a longer continuous beam, and tuplets assigned across system boundaries. Single-beam mask islands are rejected only with a larger stem-owning note and a straight beam without a rounded head bulge. Original synthetic regressions cover damaged and genuine key changes, adjacent systems, brackets, octave direction, staff-rule intersections and small chord heads. No model weights, private scores, manual meter annotations, device logs or external code included. Prior unrelated OmrScoreInterpreter drift remains visible; only reviewed hunks were ported. Guide cache invalidation is Android-only. These checks do not constitute complete source-note verification."
+  },
+  "isolated_beam_probe_review": {
+    "reviewed_app_commit": "a89dfdf24b2c6f72244b31dae8e989c5cae6d23e",
+    "boundary": "An extra beam detected at one raster column now requires agreement from an adjacent column. Three original generated tests preserve narrow supported secondary beams and reject isolated scan-fringe bands. This follow-up prevents phantom-head removal from exposing shortened chord notes. Existing unrelated OmrScoreInterpreter drift remains reported. No model or private fixtures included."
   }
 }

@@ -6416,7 +6416,7 @@ final class OmrScoreInterpreter {
                 }
                 // Do not count any head on the chord's attached stem as a beam.
                 int innerX=bestX+Math.round(Math.copySign(.4f,distance)*gap);
-                int count=thickNonHeadBands(gray,labels,width,height,x,near,far,staff,innerX);
+                int count=supportedBeamBands(gray,labels,width,height,x,near,far,staff,innerX);
                 thick=Math.max(thick,count);
                 if(Math.abs(distance)<.5f)innerThick=Math.max(innerThick,count);
             }
@@ -6656,6 +6656,17 @@ final class OmrScoreInterpreter {
             }
         }
         return bestLength>=gap*2.3f?best:null;
+    }
+
+    /** An extra beam needs support beyond a single raster column. */
+    private static int supportedBeamBands(byte[] gray,byte[] labels,int width,int height,int x,
+            int top,int bottom,Staff staff,int stemwardX) {
+        int count=thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,stemwardX);
+        if(count<2)return count;
+        int left=thickNonHeadBands(gray,labels,width,height,x-1,top,bottom,staff,stemwardX);
+        if(left>=count)return count;
+        int right=thickNonHeadBands(gray,labels,width,height,x+1,top,bottom,staff,stemwardX);
+        return right>=count?count:Math.max(1,Math.max(left,right));
     }
 
     private static int thickNonHeadBands(byte[] gray,byte[] labels,int width,int height,int x,int top,int bottom,Staff staff) {
