@@ -159,6 +159,16 @@ final class TripletRhythmDetector {
                 Glyph numeral=findPrintedThree(gray,width,height,x1,x3,y1,y2,gap,
                         first.beamCount()>0,Float.NaN,Float.NaN);
                 if(numeral==null)continue;
+                // A finger number must not regroup attacks across two separate beams.
+                // A real tuplet bracket remains authoritative across beam breaks.
+                float x2=(region.left()+b.position()*(region.right()-region.left()))*width;
+                boolean bracket=bracketArm(gray,width,height,Math.round(x1-gap*.3f),
+                        numeral.left()-2,numeral.top(),numeral.bottom(),gap*.25f)
+                        &&bracketArm(gray,width,height,numeral.right()+2,
+                        Math.round(x3+gap*.3f),numeral.top(),numeral.bottom(),gap*.25f);
+                if(first.beamCount()>0&&!bracket
+                        &&(SeparateBeamGroups.between(gray,width,height,x1,a.top()*height,x2,b.top()*height,gap)
+                        ||SeparateBeamGroups.between(gray,width,height,x2,b.top()*height,x3,c.top()*height,gap)))continue;
                 // Vertically stacked small numbers assign fingers to chord tones.
                 // They do not turn the surrounding three chord attacks into a tuplet.
                 if(a.indices().size()>1&&b.indices().size()>1&&c.indices().size()>1

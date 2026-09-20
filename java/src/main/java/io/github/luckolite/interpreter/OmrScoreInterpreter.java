@@ -1890,13 +1890,17 @@ final class OmrScoreInterpreter {
                     Component c = candidate.component;
                     // An overlapping earlier rectangle can precede the real system header.
                     // A clef immediately beside this boundary still owns its full signature.
+                    // Dense signatures and their meter can place the playable edge farther
+                    // away. Unlike joined flats, a treble clef extends beyond both outer rules.
                     if ((firstInRow || boundary-c.maxX <= staff.gap*2.2f)
                             && candidate.label == OmrMeasurePostProcessor.CLEF_OR_KEY
-                            && c.maxX < boundary && c.maxX > boundary - staff.gap * 10
+                            && c.maxX < boundary && c.maxX > boundary - staff.gap * (firstInRow ? 16 : 10)
                             && c.maxY - c.minY > staff.gap * 4.5f
                             && c.maxX - c.minX > staff.gap * 1.1f
                             && c.centerY > staff.top - staff.gap && c.centerY < staff.bottom + staff.gap
-                            && (clef == null || c.maxX > clef.maxX)) clef = c;
+                            && (clef == null || completeHeaderClef(c,staff) && !completeHeaderClef(clef,staff)
+                            || completeHeaderClef(c,staff) == completeHeaderClef(clef,staff)
+                            && c.maxX > clef.maxX)) clef = c;
                 }
                 if (clef != null) left = clef.maxX + staff.gap * .2f;
                 float right = Math.min(measure.right() * width, left + staff.gap * 10.5f);
@@ -2005,6 +2009,13 @@ final class OmrScoreInterpreter {
                 result.add(new ScoreKeyChange(measureIndex, bestFifths));
         }
         return List.copyOf(result);
+    }
+
+    /** Prefer a complete treble over a later joined accidental cluster, while retaining
+     * the existing damaged-clef fallback when no complete glyph survives. */
+    private static boolean completeHeaderClef(Component glyph,Staff staff) {
+        return glyph.minY < staff.top-staff.gap*.35f
+                && glyph.maxY > staff.bottom+staff.gap*.20f;
     }
 
     /** Adjacent key symbols follow fourths/fifths; a nearby note accidental need not. */
@@ -2226,17 +2237,18 @@ final class OmrScoreInterpreter {
         }
         if(active!=null)spines.add(active);
         if(spines.isEmpty())return 0;
-        int groups=1;float[] previous=spines.get(0);
+        int groups=1;float[] previous=spines.get(0);float spacing=0;
         for(int i=1;i<spines.size();i++) {
             float[] next=spines.get(i);float dx=next[0]-previous[0];
             // A bowl edge is not another accidental. Keys have separate, closely
             // spaced spines, alternating a fourth up or a fifth down on the page.
             if(dx<staff.gap*.5f)continue;
-            if(dx>staff.gap*1.85f)break;
+            // The wider space before a meter must end a well-established flat run.
+            if(dx>staff.gap*1.85f||(groups>=4&&dx>spacing/(groups-1)*1.6f))break;
             float dy=next[1]-previous[1];
             if(Math.abs(dy+staff.gap*1.5f)>staff.gap*.55f
                     &&Math.abs(dy-staff.gap*2f)>staff.gap*.55f)continue;
-            groups++;previous=next;
+            spacing+=dx;groups++;previous=next;
         }
         return groups;
     }
