@@ -155,8 +155,8 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "4cbb8cb025ec5a5579bd239a6ede1ba95f91fdd5d680d449a92c47baad0e70bd",
-      "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6"
+      "source_sha256": "d19da9ce022863a1a1f972f3bcb785d615eba0edf0b65a6ce938661f983ce069",
+      "reviewed_app_commit": "da42441b57109ae32f0e7fdb6e1dc70ce266e27e"
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",

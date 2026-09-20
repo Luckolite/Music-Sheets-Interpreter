@@ -49,5 +49,11 @@ public class BareOctaveSpanTest {
         var notes=List.of(note(100,170));
         assertEquals(notes,apply(notes,List.of(new PlayingTechniqueDetector.Staff(150,198,12,0,1))));
     }
+    @Test public void sparseAbbreviationPeriodsCannotTranspose() {
+        mark(90,false);
+        for(int x:new int[]{76,92,108})for(int xx=x;xx<x+3;xx++)gray[93*W+xx]=0;
+        var notes=List.of(note(100,170));
+        assertEquals(notes,apply(notes,List.of(new PlayingTechniqueDetector.Staff(150,198,12,0,1))));
+    }
     @Test public void pixelsRemainUnchanged() {mark(90,true);var copy=gray.clone();apply(List.of(note(100,170)),List.of(new PlayingTechniqueDetector.Staff(150,198,12,0,1)));assertArrayEquals(copy,gray);}
 }

@@ -107,7 +107,7 @@ final class OctaveMarkDetector {
                 int bw=box.right-box.left+1,bh=box.bottom-box.top+1;
                 if(bw<gap*.3f||bw>gap*1.6f||bh<gap*.65f||bh>gap*2.3f||bh<bw*.9f
                         ||OctaveClefDigit.holes(gray,width,box.left,box.top,bw,bh)!=2)continue;
-                if(dashEnd(gray,width,height,box.right+1,box.top,box.bottom,gap)<0)continue;
+                if(dashEnd(gray,width,height,box.right+1,box.top,box.bottom,gap,6)<0)continue;
                 // A bare numeral has no va/vb suffix. Use only the nearest stave;
                 // do not apply the same inter-system mark to both adjacent rows.
                 PlayingTechniqueDetector.Staff nearest=null;float nearestDistance=Float.POSITIVE_INFINITY;
@@ -165,6 +165,9 @@ final class OctaveMarkDetector {
     }
     /** Find a horizontal chain of short printed dashes, stopping at its actual end. */
     private static float dashEnd(byte[] gray,int width,int height,float start,float top,float bottom,float gap) {
+        return dashEnd(gray,width,height,start,top,bottom,gap,3);
+    }
+    private static float dashEnd(byte[] gray,int width,int height,float start,float top,float bottom,float gap,int minimum) {
         if(gray==null||gray.length!=width*height)return -1;
         int left=Math.max(0,Math.round(start-gap*.35f));
         int y1=Math.max(0,Math.round(top-gap*.15f)),y2=Math.min(height-1,Math.round(bottom+gap*.4f));
@@ -190,7 +193,7 @@ final class OctaveMarkDetector {
                 if(length<gap*.18f)shortDots++;
                 if(first<0)first=a;last=x-1;count++;
             }
-            if(count>=(shortDots>count/2?5:3)&&last-first>=gap*3)best=Math.max(best,last);
+            if(count>=Math.max(minimum,shortDots>count/2?5:3)&&last-first>=gap*3)best=Math.max(best,last);
         }
         return best<0?-1:best+gap*.55f;
     }
