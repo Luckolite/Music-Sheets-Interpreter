@@ -224,7 +224,7 @@
     },
     "ArtificialHarmonics.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ArtificialHarmonics.java",
-      "source_sha256": "e9064ed30ef2116698921b550553072d8e829f2428410f3870dff7a56c19b18c",
+      "source_sha256": "a30b96829a54d292eb7f44823fb59dc4df7b273136a08502fb4109fef5f35792",
       "reviewed_app_commit": "8108cb615219d9e76789030fd67775b05f07d4dd",
       "notes": "Reviewed shared repair: connected down-stem fourth harmonics for filled stopped heads; reject detached fingerings and ambiguous hollow stopped chords. Original synthetic regressions. Includes equivalent outer-loop braces added concurrently in the app working tree; reviewed and mirrored."
     },
