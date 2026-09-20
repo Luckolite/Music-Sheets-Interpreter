@@ -19,6 +19,17 @@ final class SeparateBeamGroups {
    if(total>=gap*.35f&&clear>=total*.85f)return true;
   }return false;
  }
+ static boolean connected(byte[] g,int w,int h,float ax,float ay,float bx,float by,float gap,int direction){
+  Tip a=tip(g,w,h,ax,ay,gap,direction,1),b=tip(g,w,h,bx,by,gap,direction,-1);
+  if(a==null||b==null||b.x-a.x<gap*2)return false;
+  int covered=0,total=0;
+  for(int x=a.x+2;x<b.x-1;x++){
+   float t=(x-a.x)/(float)(b.x-a.x);int y=Math.round(a.y+t*(b.y-a.y));boolean ink=false;
+   for(int dy=-Math.round(gap*.2f);dy<=Math.round(gap*.2f);dy++)if(core(g,w,h,x,y+dy,gap)){ink=true;break;}
+   total++;if(ink)covered++;
+  }
+  return total>0&&covered>=total*.94f;
+ }
  private static Tip tip(byte[] g,int w,int h,float hx,float hy,float gap,int direction,int outward){
   int best=0;Tip found=null;
   for(int x=Math.round(hx-gap*.65f);x<=Math.round(hx+gap*.65f);x++){

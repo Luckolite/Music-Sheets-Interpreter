@@ -55,5 +55,35 @@ public class BareOctaveSpanTest {
         var notes=List.of(note(100,170));
         assertEquals(notes,apply(notes,List.of(new PlayingTechniqueDetector.Staff(150,198,12,0,1))));
     }
+    private void attachedItalicEight(boolean dotted,boolean bothHoles) {
+        for(int y=90;y<=110;y++)for(int x=49;x<=73;x++) {
+            double skew=(110-y)*.35;
+            double upper=Math.pow((x-59-skew)/5d,2)+Math.pow((y-95)/5d,2);
+            double lower=Math.pow((x-59-skew)/5d,2)+Math.pow((y-105)/5d,2);
+            if((upper<=1.15&&(!bothHoles||upper>=.3))||(lower<=1.15&&lower>=.3))gray[y*W+x]=0;
+        }
+        // A ledger joins the left of the numeral to a stem and note.
+        for(int x=25;x<=60;x++)gray[101*W+x]=0;
+        for(int y=80;y<=140;y++)gray[y*W+26]=0;
+        if(dotted)for(int x=80;x<210;x+=8)for(int xx=x;xx<x+3;xx++)gray[93*W+xx]=0;
+    }
+    @Test public void ledgerAttachedItalicEightKeepsItsOctaveSpan() {
+        attachedItalicEight(true,true);
+        var result=apply(List.of(note(100,170),note(180,170),note(240,170)),List.of(new PlayingTechniqueDetector.Staff(150,198,12,0,1)));
+        assertEquals(List.of(1,1,0),result.stream().map(ScoreNoteEvent::octaveShift).toList());
+    }
+    @Test public void attachedTwoHolesStillNeedADottedSpan() {
+        attachedItalicEight(false,true);var notes=List.of(note(100,170));
+        assertEquals(notes,apply(notes,List.of(new PlayingTechniqueDetector.Staff(150,198,12,0,1))));
+    }
+    @Test public void oneHoleAndADottedLineDoNotCreateAnEight() {
+        attachedItalicEight(true,false);var notes=List.of(note(100,170));
+        assertEquals(notes,apply(notes,List.of(new PlayingTechniqueDetector.Staff(150,198,12,0,1))));
+    }
+    @Test public void ambiguousAttachedEightDoesNotLowerThePrecedingSystem() {
+        attachedItalicEight(true,true);
+        var notes=List.of(note(100,50),note(100,230));
+        assertEquals(notes,apply(notes,List.of(new PlayingTechniqueDetector.Staff(20,68,12,0,1),new PlayingTechniqueDetector.Staff(200,248,12,0,1))));
+    }
     @Test public void pixelsRemainUnchanged() {mark(90,true);var copy=gray.clone();apply(List.of(note(100,170)),List.of(new PlayingTechniqueDetector.Staff(150,198,12,0,1)));assertArrayEquals(copy,gray);}
 }

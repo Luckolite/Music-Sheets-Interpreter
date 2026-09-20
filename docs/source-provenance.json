@@ -119,8 +119,8 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "7f86326973b9daef75a5fa9bb1e16df6bba0e6a741a8be1bbae170ab03a92d56",
-      "reviewed_app_commit": "f2700e49fcd69880ec38ee472fe139abdaa91845"
+      "source_sha256": "93847aa4b95e751c81b882e4c07ea4f21b1031e3cb12115ebf39dd38ab5386b4",
+      "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b"
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
@@ -155,8 +155,8 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "d19da9ce022863a1a1f972f3bcb785d615eba0edf0b65a6ce938661f983ce069",
-      "reviewed_app_commit": "da42441b57109ae32f0e7fdb6e1dc70ce266e27e"
+      "source_sha256": "3d40db613b43bfa589f0a996328bfb820d842b3627b3339788b7947e99d4a187",
+      "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b"
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",
@@ -208,8 +208,8 @@
     },
     "ParallelBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ParallelBeamTip.java",
-      "source_sha256": "333e82dec0caf27ecba1e467918e68fd54e19e3de6a058226e95ec9ba1597a18",
-      "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6"
+      "source_sha256": "9bd0a546b82071aa44adf8a62f016ba6273a6478f87d40b3a0ba57c823bdc5cd",
+      "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b"
     },
     "PrintedFlatGlyph.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedFlatGlyph.java",
@@ -218,8 +218,8 @@
     },
     "SeparateBeamGroups.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SeparateBeamGroups.java",
-      "source_sha256": "1f9923e53578120143a04697a3b0152b42c06653e27778e897417d497e8dcf11",
-      "reviewed_app_commit": "f2700e49fcd69880ec38ee472fe139abdaa91845"
+      "source_sha256": "a6afd5b853cac8ee18741e977276abff43c7e676a10eaadbfcd319ce62aee37a",
+      "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b"
     }
   },
   "ocr_adapter_review": {
@@ -266,5 +266,9 @@
   "imported_tab_layout_review": {
     "reviewed_app_commit": "9fa8d036b1ec28f743893f0ae7220f2e9cbf0e9b",
     "boundary": "Shared six-rule geometry now checks multiple grayscale thresholds, wider string spacing, pale vertical barlines, and excludes partial tab rows from standard-staff pairing. Dark notation retains strict rule-length agreement; pale interrupted rules additionally require enclosing bars. Nine original synthetic tests cover faint, dashed, enlarged and negative standard-notation cases. No weights, OCR engine or tuning changes; no private fixtures included. Geometry validation is not full fret or timing accuracy."
+  },
+  "damaged_study_notation_review": {
+    "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b",
+    "boundary": "Global printed-ink recovery for fragmented clefs and key symbols, partial repeated sharp signatures, ledger-attached octave numerals, fingerings opposite a longer continuous beam, and tuplets assigned across system boundaries. Single-beam mask islands are rejected only with a larger stem-owning note and a straight beam without a rounded head bulge. Original synthetic regressions cover damaged and genuine key changes, adjacent systems, brackets, octave direction, staff-rule intersections and small chord heads. No model weights, private scores, manual meter annotations, device logs or external code included. Prior unrelated OmrScoreInterpreter drift remains visible; only reviewed hunks were ported. Guide cache invalidation is Android-only. These checks do not constitute complete source-note verification."
   }
 }

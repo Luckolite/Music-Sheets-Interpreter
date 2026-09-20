@@ -1902,11 +1902,17 @@ final class OmrScoreInterpreter {
                             || completeHeaderClef(c,staff) == completeHeaderClef(clef,staff)
                             && c.maxX > clef.maxX)) clef = c;
                 }
+                if(firstInRow&&(clef==null||!completeHeaderClef(clef,staff))) {
+                    Component joined=fragmentedHeaderClef(candidates,gray,width,height,staff,boundary);
+                    if(joined!=null)clef=joined;
+                }
                 if (clef != null) left = clef.maxX + staff.gap * .2f;
                 float right = Math.min(measure.right() * width, left + staff.gap * 10.5f);
                 float firstHead = Float.MAX_VALUE;
                 for (Component head : heads) {
                     if (head.centerX < left - staff.gap * .2f || head.centerX > right) continue;
+                    // Ledger notes from the neighboring system cannot truncate this header.
+                    if(head.centerX<boundary&&(head.centerY<measure.top()*height||head.centerY>measure.bottom()*height))continue;
                     Staff owner = nearestHeadStaff(staffs, head.centerY);
                     if (owner == staff) firstHead = Math.min(firstHead, head.minX);
                 }
@@ -1934,11 +1940,12 @@ final class OmrScoreInterpreter {
                     // Recover a substantial fragment in a verified header from the printed
                     // sharp. Tiny semantic specks can also occur on nearby meter digits.
                     float signatureX=glyph.centerX;
-                    if(clef!=null&&PrintedFlatGlyph.matches(gray,width,height,glyph.minX,glyph.minY,
-                            glyph.maxX,glyph.maxY,staff.gap))accidental=ScoreNoteEvent.ACCIDENTAL_FLAT;
-                    if(accidental==ScoreNoteEvent.ACCIDENTAL_FLAT
+                    boolean printedFlat=clef!=null&&PrintedFlatGlyph.matches(gray,width,height,glyph.minX,glyph.minY,
+                            glyph.maxX,glyph.maxY,staff.gap);
+                    if(printedFlat)accidental=ScoreNoteEvent.ACCIDENTAL_FLAT;
+                    if(!printedFlat&&(accidental==ScoreNoteEvent.ACCIDENTAL_FLAT
                             || accidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY && clef!=null
-                            && glyph.area>=staff.gap*staff.gap*.18f) {
+                            && glyph.area>=staff.gap*staff.gap*.18f)) {
                         float printedX=printedSignatureSharpCenter(gray,width,height,candidate,staff.gap);
                         if(Float.isFinite(printedX)) {
                             accidental=ScoreNoteEvent.ACCIDENTAL_SHARP;
@@ -1950,6 +1957,18 @@ final class OmrScoreInterpreter {
                     if (accidental != ScoreNoteEvent.ACCIDENTAL_FROM_KEY) {
                         glyphs.add(new SignatureGlyph(signatureX, accidental));
                         recognized.put(candidate,signatureX);
+                    }
+                }
+                if(clef!=null&&!glyphs.isEmpty()) {
+                    var printed=printedHeaderSymbols(gray,width,height,left,right,staff);
+                    for(int pass=0;pass<7;pass++) {
+                        boolean added=false;
+                        for(var raw:printed)if(glyphs.stream().anyMatch(g->g.accidental==raw.accidental
+                                &&Math.abs(g.x-raw.x)<staff.gap*1.85f)
+                                &&glyphs.stream().noneMatch(g->Math.abs(g.x-raw.x)<staff.gap*.45f)) {
+                            glyphs.add(raw);added=true;
+                        }
+                        if(!added)break;
                     }
                 }
                 glyphs.sort(Comparator.comparingDouble(SignatureGlyph::x));
@@ -1969,7 +1988,7 @@ final class OmrScoreInterpreter {
                 // classifier. Once at least one flat establishes the run's glyph family, count
                 // the repeated tall left spines in the same pre-note slot.
                 if (flats > 0 && sharps == 0 && naturals == 0) {
-                    int spines = countFlatSpines(labels, gray, width, height, left, right, staff, doubleBar && clef == null);
+                    int spines = countHeaderFlatSpines(labels, gray, width, height, left, right, staff, doubleBar && clef == null,signatureHeader);
                     // countFlatSpines verifies the alternating fourth/fifth heights;
                     // parallel spines of one sharp cannot establish that ordered run.
                     flats = Math.max(flats, spines);
@@ -1985,9 +2004,11 @@ final class OmrScoreInterpreter {
                 if(!signatureHeader&&firstHead-run.get(run.size()-1).x<staff.gap*1.35f
                         &&(strongest==1||clef==null&&!doubleBar&&!orderedSignaturePitches(labels,width,height,run,recognized,staff)))continue;
                 int fifths = naturals > 0 ? 0 : flats > 0 ? -flats : sharps;
+                if(clef!=null&&!result.isEmpty()&&fifths>0&&result.get(result.size()-1).fifths()>fifths
+                        &&run.get(0).x-clef.maxX>staff.gap*2.2f)continue;
                 if (signatureHeader && !result.isEmpty() && fifths > 0
                         && result.get(result.size() - 1).fifths() > fifths
-                        && unfinishedSharpTail(labels, width, height, candidates, run, staff, firstHead))
+                        && unfinishedSharpTail(labels,gray, width, height, candidates, run, staff, firstHead))
                     continue;
                 if (signatureHeader && headerAccidentals != null
                         && orderedSignaturePitches(labels,width,height,run,recognized,staff))
@@ -2011,6 +2032,63 @@ final class OmrScoreInterpreter {
                 result.add(new ScoreKeyChange(measureIndex, bestFifths));
         }
         return List.copyOf(result);
+    }
+
+    private static List<SignatureGlyph> printedHeaderSymbols(byte[] gray,int width,int height,float from,float to,Staff staff) {
+        var result=new ArrayList<SignatureGlyph>(printedHeaderSymbols(gray,width,height,from,to,staff,false));
+        for(var glyph:printedHeaderSymbols(gray,width,height,from,to,staff,true))
+            if(glyph.accidental==ScoreNoteEvent.ACCIDENTAL_SHARP&&result.stream().noneMatch(g->Math.abs(g.x-glyph.x)<staff.gap*.45f))result.add(glyph);
+        return result;
+    }
+    private static List<SignatureGlyph> printedHeaderSymbols(byte[] gray,int width,int height,float from,float to,Staff staff,boolean wide) {
+        if(gray==null)return List.of();
+        int left=Math.max(0,Math.round(from)),right=Math.min(width-1,Math.round(to));
+        int top=Math.max(0,Math.round(staff.top-staff.gap*2.5f)),bottom=Math.min(height-1,Math.round(staff.bottom+staff.gap*2.5f));
+        int w=right-left+1,h=bottom-top+1;if(w<1||h<1)return List.of();
+        byte[] mask=new byte[w*h];int probe=Math.max(2,Math.round(staff.gap*(wide?.42f:.25f)));
+        for(int y=top;y<=bottom;y++)for(int x=left;x<=right;x++) {
+            if((gray[y*width+x]&255)>205)continue;
+            boolean rule=false;for(int i=0;i<5;i++)if(Math.abs(y-staff.top-i*staff.gap)<staff.gap*(wide?.35f:.16f))rule=true;
+            if(rule&&(y<probe||y+probe>=height||(gray[(y-probe)*width+x]&255)>205||(gray[(y+probe)*width+x]&255)>205))continue;
+            mask[(y-top)*w+x-left]=OmrMeasurePostProcessor.SYMBOL;
+        }
+        var result=new ArrayList<SignatureGlyph>();
+        for(var c:findComponents(mask,w,h,OmrMeasurePostProcessor.SYMBOL)) {
+            if(c.maxX-c.minX>staff.gap*1.65f||c.maxY-c.minY>staff.gap*3.65f||c.area<staff.gap*staff.gap*.25f)continue;
+            var candidate=new AccidentalCandidate(c,OmrMeasurePostProcessor.SYMBOL);
+            if(isSharpGlyph(mask,w,h,candidate,staff.gap))result.add(new SignatureGlyph(left+c.centerX,ScoreNoteEvent.ACCIDENTAL_SHARP,top+sharpPitchCenter(mask,w,h,candidate,staff.gap)));
+            else if(PrintedFlatGlyph.matches(gray,width,height,left+c.minX,top+c.minY,left+c.maxX,top+c.maxY,staff.gap))
+                result.add(new SignatureGlyph(left+c.centerX,ScoreNoteEvent.ACCIDENTAL_FLAT));
+        }
+        return result;
+    }
+
+    private static Component fragmentedHeaderClef(List<AccidentalCandidate> candidates,byte[] gray,int width,int height,Staff staff,float boundary) {
+        Component best=null;float g=staff.gap;
+        for(var lower:candidates) {
+            Component b=lower.component;
+            if(b.maxX>=boundary||b.maxX<boundary-g*16||b.maxY<staff.bottom+g*.5f
+                    ||b.minY<staff.top-g*.1f||b.maxY-b.minY<g*2.5f||b.maxY-b.minY>g*6f)continue;
+            for(var upper:candidates) {
+                Component a=upper.component;
+                if(a==b||a.minY>=staff.top-g*.35f||a.maxY<staff.top+g*.8f||a.maxY>staff.bottom
+                        ||a.maxX<b.minX||a.minX>b.maxX||Math.abs(a.centerX-b.centerX)>g*1.2f)continue;
+                int x0=Math.min(a.minX,b.minX),x1=Math.max(a.maxX,b.maxX),y0=Math.min(a.minY,b.minY),y1=Math.max(a.maxY,b.maxY);
+                if(x1-x0<g*1.6f||x1-x0>g*3.8f||y1-y0<g*6f||y1-y0>g*9f||a.area+b.area<g*g*3.5f)continue;
+                int rules=0,sampleX=Math.min(width-1,Math.round(x1+g));
+                if(gray!=null)for(int line=0;line<5;line++) {
+                    int cy=Math.round(staff.top+line*g);boolean ink=false;
+                    for(int yy=Math.max(0,Math.round(cy-g*.3f));yy<=Math.min(height-1,Math.round(cy+g*.3f));yy++)
+                        if((gray[yy*width+sampleX]&255)<=205)ink=true;
+                    if(ink)rules++;
+                }
+                if(rules<3)continue;
+                int area=a.area+b.area;
+                Component c=new Component(area,x0,x1,y0,y1,(a.centerX*a.area+b.centerX*b.area)/area,(a.centerY*a.area+b.centerY*b.area)/area);
+                if(best==null||c.area>best.area)best=c;
+            }
+        }
+        return best;
     }
 
     /** Prefer a complete treble over a later joined accidental cluster, while retaining
@@ -2049,6 +2127,10 @@ final class OmrScoreInterpreter {
      * crossbars prove a sharp; a flat's bowl alone cannot supply that evidence. */
     private static float printedSignatureSharpCenter(byte[] gray,int width,int height,
             AccidentalCandidate candidate,float gap) {
+        return printedSignatureSharp(gray,width,height,candidate,gap,false);
+    }
+    private static float printedSignatureSharp(byte[] gray,int width,int height,
+            AccidentalCandidate candidate,float gap,boolean pitch) {
         if(gray==null||gap<3)return Float.NaN;
         Component seed=candidate.component;
         if(seed.maxX-seed.minX+1>gap*1.6f||seed.maxY-seed.minY+1>gap*3.65f)return Float.NaN;
@@ -2074,13 +2156,14 @@ final class OmrScoreInterpreter {
             }
             Component glyph=retainSeedConnectedInk(ink,w,h,seed,left,top);
             if(glyph==null||rawStrokeLeavesCrop(gray,width,height,ink,w,h,left,top,gap))continue;
-            if(isSharpGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap))return left+glyph.centerX;
+            if(isSharpGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap))
+                return pitch?top+sharpPitchCenter(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap):left+glyph.centerX;
         }
         return Float.NaN;
     }
 
     /** A visibly unfinished extra sharp cannot prove that a repeated key has fewer sharps. */
-    private static boolean unfinishedSharpTail(byte[] labels, int width, int height,
+    private static boolean unfinishedSharpTail(byte[] labels,byte[] gray, int width, int height,
             List<AccidentalCandidate> candidates, List<SignatureGlyph> run, Staff staff, float firstHead) {
         float lastX = run.get(run.size() - 1).x, lastPitch = Float.NaN;
         for (AccidentalCandidate candidate : candidates)
@@ -2088,13 +2171,18 @@ final class OmrScoreInterpreter {
                     && candidate.component.centerY >= staff.top - staff.gap * 2.25f
                     && candidate.component.centerY <= staff.bottom + staff.gap * 2.25f) {
                 float pitch = sharpPitchCenter(labels, width, height, candidate, staff.gap);
+                if(!Float.isFinite(pitch))pitch=printedSignatureSharp(gray,width,height,candidate,staff.gap,true);
                 if (Float.isFinite(pitch)) lastPitch = pitch;
             }
+        if (!Float.isFinite(lastPitch))
+            for(var glyph:printedHeaderSymbols(gray,width,height,run.get(0).x-staff.gap,firstHead-staff.gap*.28f,staff))
+                if(glyph.accidental==ScoreNoteEvent.ACCIDENTAL_SHARP&&Math.abs(glyph.x-lastX)<staff.gap*.35f
+                        &&Float.isFinite(glyph.pitchY))lastPitch=glyph.pitchY;
         if (!Float.isFinite(lastPitch)) return false;
         for (AccidentalCandidate candidate : candidates) {
             Component c = candidate.component;
             float dx = c.centerX - lastX;
-            if (candidate.label != OmrMeasurePostProcessor.CLEF_OR_KEY
+            if (candidate.label != OmrMeasurePostProcessor.CLEF_OR_KEY&&candidate.label!=OmrMeasurePostProcessor.SYMBOL
                     || c.centerY < staff.top - staff.gap * 2.25f
                     || c.centerY > staff.bottom + staff.gap * 2.25f
                     || dx < staff.gap * .65f || dx > staff.gap * 1.85f
@@ -2210,12 +2298,15 @@ final class OmrScoreInterpreter {
     private static int countFlatSpines(byte[] labels, byte[] gray, int width, int height,
                                        float boundary, float right, Staff staff,
                                        boolean doubleBar) {
-        // Source recovery may add a proven broken shaft, never reduce an intact run.
-        return Math.max(countFlatSpines(labels,gray,width,height,boundary,right,staff,doubleBar,false),
-                countFlatSpines(labels,gray,width,height,boundary,right,staff,doubleBar,true));
+        return countHeaderFlatSpines(labels,gray,width,height,boundary,right,staff,doubleBar,false);
+    }
+    private static int countHeaderFlatSpines(byte[] labels,byte[] gray,int width,int height,
+            float boundary,float right,Staff staff,boolean doubleBar,boolean endpoints) {
+        return Math.max(countFlatSpines(labels,gray,width,height,boundary,right,staff,doubleBar,false,endpoints),
+                countFlatSpines(labels,gray,width,height,boundary,right,staff,doubleBar,true,endpoints));
     }
     private static int countFlatSpines(byte[] labels,byte[] gray,int width,int height,
-            float boundary,float right,Staff staff,boolean doubleBar,boolean recover) {
+            float boundary,float right,Staff staff,boolean doubleBar,boolean recover,boolean endpoints) {
         int leftX=Math.max(0,Math.round(boundary+(doubleBar?staff.gap*.42f:0f)));
         int rightX=Math.min(width-1,Math.round(right));
         int top=Math.max(0,Math.round(staff.top-staff.gap*2.25f));
@@ -2258,23 +2349,38 @@ final class OmrScoreInterpreter {
                 }
             }
             if(strong) {
-                if(active==null)active=new float[]{x,(bestTop+bestBottom)*.5f,longest};
-                else if(longest>active[2]){active[0]=x;active[1]=(bestTop+bestBottom)*.5f;active[2]=longest;}
+                if(active==null)active=new float[]{x,(bestTop+bestBottom)*.5f,longest,bestBottom,x,bestTop};
+                else if(longest>active[2]){active[0]=x;active[1]=(bestTop+bestBottom)*.5f;active[2]=longest;active[3]=bestBottom;active[5]=bestTop;}
             } else if(active!=null){spines.add(active);active=null;}
         }
         if(active!=null)spines.add(active);
+        if(!spines.isEmpty()&&gray!=null) {
+            float[] edge=spines.get(0);
+            if((endpoints||edge[1]<staff.top)&&edge[2]<staff.gap*2.4f&&edge[4]-leftX<staff.gap*.25f&&!PrintedFlatGlyph.matches(gray,width,height,
+                    Math.max(0,Math.round(edge[0])-1),Math.round(edge[5]),
+                    Math.min(width-1,Math.round(edge[0]+staff.gap*.9f)),Math.round(edge[3]),staff.gap))spines.remove(0);
+        }
         if(spines.isEmpty())return 0;
+        // Full flat shafts may pick up an extra rule at their upper end. Their lower
+        // endpoints retain the signature pattern; shorter clef/meter strokes do not.
+        var full=spines.stream().filter(p->p[2]>=staff.gap*2.4f&&p[2]<=staff.gap*3.5f)
+                .collect(java.util.stream.Collectors.toList());
+        return Math.max(orderedFlatSpines(spines,staff.gap,1),
+                endpoints&&full.size()>=3?orderedFlatSpines(full,staff.gap,3):0);
+    }
+
+    private static int orderedFlatSpines(List<float[]> spines,float gap,int ordinate) {
         int groups=1;float[] previous=spines.get(0);float spacing=0;
         for(int i=1;i<spines.size();i++) {
             float[] next=spines.get(i);float dx=next[0]-previous[0];
             // A bowl edge is not another accidental. Keys have separate, closely
             // spaced spines, alternating a fourth up or a fifth down on the page.
-            if(dx<staff.gap*.5f)continue;
+            if(dx<gap*.5f)continue;
             // The wider space before a meter must end a well-established flat run.
-            if(dx>staff.gap*1.85f||(groups>=4&&dx>spacing/(groups-1)*1.6f))break;
-            float dy=next[1]-previous[1];
-            if(Math.abs(dy+staff.gap*1.5f)>staff.gap*.55f
-                    &&Math.abs(dy-staff.gap*2f)>staff.gap*.55f)continue;
+            if(dx>gap*1.85f||(groups>=4&&dx>spacing/(groups-1)*1.6f))break;
+            float dy=next[ordinate]-previous[ordinate];
+            if(Math.abs(dy+gap*1.5f)>gap*.55f
+                    &&Math.abs(dy-gap*2f)>gap*.55f)continue;
             spacing+=dx;groups++;previous=next;
         }
         return groups;
@@ -3925,7 +4031,7 @@ final class OmrScoreInterpreter {
     static boolean narrowBeamTip(byte[] gray,int width,int height,float stemX,float centerY,float gap) {
         if(gray==null||gap<8)return false;
         int core=Math.max(1,Math.round(gap*.07f));
-        int flank=Math.max(core+2,Math.round(gap*.28f));
+        int flank=Math.max(core+2,Math.round(gap*.45f));
         int first=Math.max(3,Math.round(gap*.35f)),last=Math.round(gap*2.2f);
         int search=Math.max(2,Math.round(gap*.3f));
         for(int side:new int[]{-1,1})for(int offset=-search;offset<=search;offset++) {
@@ -3937,15 +4043,33 @@ final class OmrScoreInterpreter {
                     if(x<0||x>=width||y-flank<0||y+flank>=height)break;
                     boolean ink=true;
                     for(int dy=-core;dy<=core;dy++)if((gray[(y+dy)*width+x]&255)>=165)ink=false;
-                    boolean thin=(gray[(y-flank)*width+x]&255)>=165
-                            &&(gray[(y+flank)*width+x]&255)>=165;
+                    boolean thin=ParallelBeamTip.clearOrRule(gray,width,height,x,y-flank,gap)
+                            &&ParallelBeamTip.clearOrRule(gray,width,height,x,y+flank,gap);
                     total++;if(ink&&thin)supported++;
                     if(distance<=gap*.85f){tipTotal++;if(ink&&thin)tip++;}
                 }
-                if(total==last-first+1&&supported>=total*.88f&&tipTotal>=3&&tip>=tipTotal*.85f)return true;
+                if(total==last-first+1&&supported>=total*.88f&&tipTotal>=3&&tip>=tipTotal*.85f
+                        &&!beamTipBulges(gray,width,height,stemX,origin,side,slope,gap))return true;
             }
         }
         return false;
+    }
+
+    private static boolean beamTipBulges(byte[] gray,int width,int height,float x,float y,int side,float slope,float gap) {
+        var far=new ArrayList<Integer>();int near=0;
+        for(int d=Math.round(gap*.35f);d<=Math.round(gap*2.2f);d++) {
+            int xx=Math.round(x)+side*d,cy=Math.round(y+slope*d);
+            if(xx<0||xx>=width||cy<0||cy>=height||(gray[cy*width+xx]&255)>=165)continue;
+            int a=cy,b=cy;
+            while(a>0&&(gray[(a-1)*width+xx]&255)<165)a--;
+            while(b+1<height&&(gray[(b+1)*width+xx]&255)<165)b++;
+            int span=b-a+1;
+            if(d<=gap*.9f)near=Math.max(near,span);
+            else if(span<=gap*1.2f)far.add(span);
+        }
+        if(far.size()<gap*.5f)return true;
+        far.sort(Integer::compare);
+        return near>far.get(far.size()/2)+Math.max(2,Math.round(gap*.18f));
     }
 
     /** A small mask island on a straight or curved entrance stroke is not a separate attack. */
@@ -7322,7 +7446,9 @@ final class OmrScoreInterpreter {
             rests = rests == null ? List.of() : List.copyOf(rests);
         }
     }
-    private record SignatureGlyph(float x, int accidental) { }
+    private record SignatureGlyph(float x, int accidental,float pitchY) {
+        SignatureGlyph(float x,int accidental){this(x,accidental,Float.NaN);}
+    }
     private record Component(int area, int minX, int maxX, int minY, int maxY,
                              float centerX, float centerY) { }
     private record AccidentalCandidate(Component component, byte label) {

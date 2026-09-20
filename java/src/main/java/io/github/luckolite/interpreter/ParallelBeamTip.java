@@ -33,7 +33,7 @@ final class ParallelBeamTip {
         }
         return false;
     }
-    private static boolean clearOrRule(byte[] gray,int w,int h,int x,int y,float gap) {
+    static boolean clearOrRule(byte[] gray,int w,int h,int x,int y,float gap) {
         if((gray[y*w+x]&255)>=165)return true;
         int radius=Math.round(gap*4),ink=0;
         if(x-radius<0||x+radius>=w)return false;
