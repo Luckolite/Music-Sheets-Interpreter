@@ -54,6 +54,7 @@ public final class SheetInterpreter {
         Objects.requireNonNull(annotations);
         var tabs=TablatureDecoder.withWords(TablatureDecoder.detect(gray,width,height),
                 annotations.words.stream().map(w->new TablatureDecoder.Word(w.text,w.left,w.top,w.right,w.bottom)).toList(),width,height);
+        tabs=TabNotation.rasterRhythm(tabs,gray,width,height);
         labels=TablatureDecoder.withoutTabs(labels,width,height,tabs,false);
         gray=TablatureDecoder.withoutTabs(gray,width,height,tabs,true);
         var measures=OmrMeasurePostProcessor.process(labels,gray,width,height);

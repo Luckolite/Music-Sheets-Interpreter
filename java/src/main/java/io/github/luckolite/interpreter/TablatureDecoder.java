@@ -5,7 +5,9 @@ import java.util.*;
 
 /** Six-string numeric tablature. Frets are absolute semitone offsets, never key-signature steps. */
 public final class TablatureDecoder {
-    public record Fret(float x,float y,int string,int fret) { }
+    public record Fret(float x,float y,int string,int fret,float duration,int beams,int dots,int marks) {
+        public Fret(float x,float y,int string,int fret){this(x,y,string,fret,0,0,0,0);}
+    }
     public record Staff(float top,float gap,float standardTop,List<Fret> frets,List<Float> bars) { }
     private static final int[] STANDARD={64,59,55,50,45,40};
     private TablatureDecoder() { }
@@ -61,23 +63,16 @@ public final class TablatureDecoder {
                 float y=(word.top+word.bottom)*.5f*h;
                 int string=Math.round((y-staff.top)/staff.gap);
                 if(string<0||string>=6||Math.abs(y-staff.top-string*staff.gap)>staff.gap*.47f)continue;
-                String text=word.text.trim();
-                if(!text.matches("[0-9xX]+(?:[/\\\\hHpP~][0-9xX]+)*"))continue;
-                var matcher=java.util.regex.Pattern.compile("[0-9]{1,2}|[xX]").matcher(text);
-                while(matcher.find()) {
-                    if(matcher.end()<text.length()&&Character.isDigit(text.charAt(matcher.end())))break;
-                    int fret=matcher.group().equalsIgnoreCase("x")?-1:Integer.parseInt(matcher.group());
-                    if(fret>36)continue;
-                    float x=(word.left+(word.right-word.left)*(matcher.start()+matcher.end())/(2f*text.length()))*w;
-                    if(staff.bars.stream().noneMatch(bar->Math.abs(bar-x)<staff.gap*.25f)
-                            &&frets.stream().noneMatch(f->f.string==string&&Math.abs(f.x-x)<staff.gap*.3f))
-                        frets.add(new Fret(x,staff.top+string*staff.gap,string,fret));
+                for(var f:TabNotation.parse(word.text,word.left*w,word.right*w,staff.top+string*staff.gap,string)) {
+                    if(staff.bars.stream().anyMatch(bar->Math.abs(bar-f.x)<staff.gap*.25f))continue;
+                    int old=-1;for(int i=0;i<frets.size();i++)if(frets.get(i).string==string&&Math.abs(frets.get(i).x-f.x)<staff.gap*.3f){old=i;break;}
+                    if(old<0)frets.add(f);else if(f.marks!=0&&frets.get(old).marks==0)frets.set(old,f);
                 }
             }
             frets.sort(Comparator.comparingDouble(Fret::x));
             result.add(new Staff(staff.top,staff.gap,staff.standardTop,List.copyOf(frets),staff.bars));
         }
-        return List.copyOf(result);
+        return TabNotation.rhythmWords(List.copyOf(result),words,w,h);
     }
     public static byte[] withoutTabs(byte[] pixels,int w,int h,List<Staff> tabs,boolean grayscale) {
         if(tabs.isEmpty())return pixels;
@@ -113,6 +108,7 @@ public final class TablatureDecoder {
         if(tabs.isEmpty())return score;
         for(int string=0;string<6;string++)midi(string,0,tuning,capo);
         var notes=new ArrayList<>(score.notes());var measures=new ArrayList<>(score.measures());
+        var rests=new ArrayList<>(score.rests());
         for(Staff tab:tabs) {
             if(tab.standardTop<0) {
                 // A simple tab without written rhythm has pitches but no provable durations.
@@ -123,9 +119,13 @@ public final class TablatureDecoder {
                 for(int bi=0;bi+1<bars.size();bi++) {
                     float left=bars.get(bi),right=bars.get(bi+1);if(right-left<tab.gap*2)continue;
                     int bar=measures.size();measures.add(new MeasureRegion(Math.max(0,left/w),Math.min(1,right/w),Math.max(0,(tab.top-tab.gap)/h),Math.min(1,(tab.top+tab.gap*6)/h)));
-                    for(Fret f:tab.frets)if(f.fret>=0&&f.x>left&&f.x<right) {
-                        var n=new ScoreNoteEvent(bar,(f.x-left)/(right-left),0,0,1,f.y/h,false,0,0,0,0);
-                        notes.add(pitched(n,midi(f.string,f.fret,tuning,capo)));
+                    for(Fret f:tab.frets)if(f.x>left&&f.x<right) {
+                        float position=(f.x-left)/(right-left);
+                        if(f.fret==-2){rests.add(new ScoreRestEvent(bar,position,f.y/h,tab.gap/h,0,1,f.duration*(f.dots==0?1:f.dots==1?1.5f:1.75f)));continue;}
+                        int marks=f.marks;if(f.fret<0)marks|=TabEffect.encode(TabEffect.DEAD,0);
+                        int pitch=soundingPitch(f,tuning,capo);
+                        var n=new ScoreNoteEvent(bar,position,0,0,1,f.y/h,false,f.dots,f.beams,0,f.duration).withArticulations(marks);
+                        notes.add(pitched(n,pitch));
                     }
                 }
                 continue;
@@ -138,7 +138,7 @@ public final class TablatureDecoder {
                 int printed=printedMidi(n,score);
                 boolean lowerMatch=false,sameMatch=false;
                 for(Fret f:tab.frets)if(f.fret>=0&&Math.abs(f.x-x)<tab.gap*.65f) {
-                    int sounding=midi(f.string,f.fret,tuning,capo);lowerMatch|=printed-sounding==12;sameMatch|=printed==sounding;
+                    int sounding=soundingPitch(f,tuning,capo);lowerMatch|=printed-sounding==12;sameMatch|=printed==sounding;
                 }
                 if(lowerMatch)down++;if(sameMatch)same++;
             }
@@ -148,7 +148,22 @@ public final class TablatureDecoder {
                 var n=score.notes().get(index);notes.set(index,n.withOctaveShift(Math.max(-2,n.octaveShift()-1)));
             }
         }
-        var rests=new ArrayList<>(score.rests());
+        // Attach standalone rests to the neighboring onset, preserving silent time in the clock.
+        for(var r:rests)if(r.measureIndex()>=score.measures().size()) {
+            float previous=-1,next=2;
+            for(var n:notes)if(n.measureIndex()==r.measureIndex()){if(n.positionInMeasure()<r.positionInMeasure())previous=Math.max(previous,n.positionInMeasure());else next=Math.min(next,n.positionInMeasure());}
+            for(int i=0;i<notes.size();i++){var n=notes.get(i);if(n.measureIndex()!=r.measureIndex())continue;
+                if(previous>=0&&Math.abs(n.positionInMeasure()-previous)<.015f)notes.set(i,withRestAfter(n,(float)r.durationBeats()));
+                else if(previous<0&&Math.abs(n.positionInMeasure()-next)<.015f)notes.set(i,n.withLeadingRest(n.leadingRestBeats()+(float)r.durationBeats()));}
+        }
+        // Only attach effects to a paired note when both its position and sounding pitch agree.
+        for(var tab:tabs)if(tab.standardTop>=0)for(var f:tab.frets)if(f.fret>=0&&f.marks!=0) {
+            for(int i=0;i<notes.size();i++){var n=notes.get(i);var m=measures.get(n.measureIndex());
+                if(tab.standardTop/h<m.top()-tab.gap/h*2||tab.standardTop/h>m.bottom()||m.bottom()*h>=tab.top)continue;
+                float x=(m.left()+n.positionInMeasure()*(m.right()-m.left()))*w;
+                if(Math.abs(x-f.x)<tab.gap*.65f&&printedMidi(n,score)==soundingPitch(f,tuning,capo))notes.set(i,n.withArticulations((n.articulations()&~TabEffect.ALL)|f.marks));
+            }
+        }
         var handled=new HashSet<String>();
         for(Staff tab:tabs)if(tab.standardTop>=0)for(Fret fret:tab.frets)if(fret.fret<0) {
             if(tab.frets.stream().anyMatch(f->f.fret>=0&&Math.abs(f.x-fret.x)<tab.gap*.65f))continue;
@@ -180,6 +195,9 @@ public final class TablatureDecoder {
         }
         notes.sort(Comparator.comparingInt(ScoreNoteEvent::measureIndex).thenComparingDouble(ScoreNoteEvent::positionInMeasure).thenComparingInt(ScoreNoteEvent::staffStep));
         return new ScorePageInterpretation(measures,notes,score.firstMeasureNumber(),score.keyChanges(),score.tempoChanges(),score.meterChanges(),rests,score.techniqueChanges(),score.dynamicChanges());
+    }
+    private static int soundingPitch(Fret f,int[] tuning,int capo) {
+        return TabEffect.kind(f.marks)==TabEffect.HARMONIC?tuning[f.string]+capo+TabEffect.harmonicOffset(f.fret):midi(f.string,Math.max(0,f.fret),tuning,capo);
     }
     private static ScoreNoteEvent withRestAfter(ScoreNoteEvent n,float beats) {
         return new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),n.staffIndex(),n.staffCount(),n.pageY(),n.tiedFromPrevious(),n.augmentationDots(),n.beamCount(),n.writtenAccidental(),n.unbeamedDurationBeats(),n.tupletDivisor(),n.followingRestBeats()+beats,n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening(),n.octaveShift());

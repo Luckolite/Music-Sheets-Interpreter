@@ -22,8 +22,9 @@ exhaustive transcription accuracy, automatic text OCR, or MusicXML export.
   **caller-supplied OCR tokens**. Time-signature changes can be supplied explicitly.
 - Six-string numeric guitar tablature: paired staff/tab measure alignment and octave
   agreement, plus standalone fret pitches from caller-supplied OCR words. Paired notation
-  retains its written rhythm. Standalone tab rhythm and performance effects are not yet
-  decoded; its playback is estimated and reported in `tablatureWarnings`.
+  retains its written rhythm. Standalone external stems/beams and explicit duration/rest
+  OCR are supported; unprinted or unrecognized timing remains estimated and reported
+  in `tablatureWarnings`.
 - A Python image/PDF command and API producing inspectable JSON and a MIDI preview.
 - Training, synthetic data generation and TFLite export code, plus the original checkpoint.
 - Synthetic examples and geometry regression tests that can be redistributed.
@@ -57,10 +58,20 @@ compatible TFLite runtime instead. The Java decoder itself has no external runti
 
 For tablature, provide fret readings through `annotations["words"]` using the same normalized
 text boxes as other OCR. Open strings (`0`), two-digit frets, stacked chords, slide endpoint
-numbers and muted (`X`) marks are recognized. Fully muted paired strokes preserve their
+numbers and muted (`X`) marks are recognized. Explicit `5h7`, `7p5`, `14/16`, `7b9`,
+`7b9r7`, trailing `~`, and natural harmonic `<12>` / `<7>` / `<5>` notation carry
+performance metadata into JSON, MIDI pitch bends and app playback. Bend targets do
+not become extra plucked notes. Hammer/pull attacks are softened; dead-note playback
+uses a damped tone rather than a dedicated percussion sample. Fully muted paired strokes preserve their
 written time as silence; this release does not synthesize a percussive muted-guitar attack.
 The default is standard six-string tuning, high E to low E. Java callers can supply alternate
 open-string MIDI pitches and a capo through `TablatureDecoder.apply`'s tuning overload.
+Standalone rhythm can use external stems/beams or OCR duration tokens `W H Q E S T`
+(with up to two dots) in a rhythm lane above/below the tab. Unicode note/rest symbols
+are accepted too. Missing timing is not recoverable from simple fret-only tabs without
+another source. Graphical bend curves, curved tab ties, tuplets and ambiguous half-note
+stem variants still need further recognition work; the parser does not infer them.
+
 Scans with strong curvature, non-six-string tabs, and letter-based historical tabs are not
 supported by this path. Existing segmentation weights are unchanged.
 
