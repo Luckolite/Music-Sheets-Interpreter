@@ -135,7 +135,7 @@ public final class TabFretRaster {
             float header=0;
             if(!t.bars().isEmpty()&&t.bars().get(0)<w*.2f)header=t.bars().get(0)+t.gap()*1.8f;
             // Unbarred ASCII tabs still have a vertical column of string names.
-            for(var c:row)if(c.left()<w*.15f) {
+            for(var c:row)if(c.left()<w*.15f&&(t.bars().isEmpty()||t.bars().get(0)>=w*.2f||c.left()<t.bars().get(0))) {
                 long aligned=row.stream().filter(v->Math.abs(v.left()-c.left())<t.gap()*.2f).map(Crop::string).distinct().count();
                 if(aligned>=4)header=Math.max(header,c.right()+t.gap()*.15f);
             }

@@ -242,8 +242,8 @@
     },
     "TabFretRaster.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabFretRaster.java",
-      "source_sha256": "f43dee9ea6a2bcf8babefe7bab51026202b8a29f02d80fb2342ac51194790033",
-      "reviewed_app_commit": "900de4a7ea123bdf4f0f3ccd6a977f33302d77f3"
+      "source_sha256": "c3e0b0d114dd9db0f741a90605216efea0d8e20544737b5296c96a7de5dd831b",
+      "reviewed_app_commit": "357242b1c6fd96ea3063de213c064cb1876bf96a"
     }
   },
   "ocr_adapter_review": {
@@ -300,7 +300,7 @@
     "boundary": "Resolve a conflicting extra beam only when two noteheads share a physical stem and endpoint, the longer trace reads one fewer beam, and adjacent pixel probes corroborate that lower count. Single-note readings and consistent chord beams retain their existing behavior. Six original generated regressions cover scan-fringe cores, a shared chord stem, a narrow supported beam and conservative single-note handling. Existing unrelated OmrScoreInterpreter drift remains reported. No model or private fixtures included."
   },
   "isolated_tab_fret_review": {
-    "reviewed_app_commit": "900de4a7ea123bdf4f0f3ccd6a977f33302d77f3",
+    "reviewed_app_commit": "357242b1c6fd96ea3063de213c064cb1876bf96a",
     "boundary": "Shared raster crops isolate printed frets from rules, barlines, labels, rhythm stems and dense screenshot controls. Cleaned and original OCR readings are reconciled within each crop; a long central enclosed counter corroborates open frets. Confirmed inline effects are retained. Dark and pale barline passes are combined, and unbarred opening/closing tab measures retain their notes. Android ML Kit remains an app adapter: it reads bounded glyph montages with synthetic numeric context, maps symbols back to original crops, and preserves partial results on timeouts. Standalone OCR providers may use TabFretRaster.crops, clean, openFret and reconcile before TablatureDecoder.withWords. The standalone package does not bundle an OCR engine. Synthetic tests only; no private scores, fret transcriptions, phone logs, or fonts are included. Model weights unchanged; printed fret correctness does not establish unwritten rhythm or graphical bend/slur performance."
   }
 }

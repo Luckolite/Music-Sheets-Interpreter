@@ -10,6 +10,7 @@ public class TabFretRasterTest {
     void zero(byte[] p,int x,int y){rect(p,x,y-9,3,18);rect(p,x+10,y-9,3,18);rect(p,x,y-9,13,3);rect(p,x,y+6,13,3);}
     @Test public void isolatesSeparateOpenStringsAndDoesNotInventAnExtraFret(){var g=page(255);zero(g,100,75);zero(g,150,75);var crops=TabFretRaster.crops(g,W,H,tabs());assertEquals(2,crops.size());assertEquals(1,crops.get(0).string());assertTrue(crops.get(0).right()<crops.get(1).left());}
     @Test public void grayPaperIsNotTreatedAsAVerticalStem(){var g=page(220);zero(g,100,75);assertEquals(1,TabFretRaster.crops(g,W,H,tabs()).size());}
+    @Test public void earlyChordInsideTheBarIsNotAColumnOfStringNames(){var g=page(255);for(int s=0;s<6;s++)zero(g,70,50+s*25);assertEquals(6,TabFretRaster.crops(g,W,H,tabs()).size());}
     @Test public void cleaningRemovesTheStringThroughAnOpenFretButPreservesItsSides(){var g=page(255);zero(g,100,75);var clean=TabFretRaster.clean(g,W,H,tabs());assertEquals(255,clean[75*W+106]&255);assertEquals(0,clean[75*W+101]&255);assertEquals(190,g[75*W+106]&255);}
     @Test public void longRhythmStemIsNotAOneOnTheNextString(){var g=page(255);rect(g,150,147,4,80);assertTrue(TabFretRaster.crops(g,W,H,tabs()).isEmpty());}
     @Test public void barlineBesideFretDoesNotJoinItAsADigit(){var g=page(255);zero(g,308,100);rect(g,299,50,3,126);var t=List.of(new TablatureDecoder.Staff(TOP,GAP,-1,List.of(),List.of(20f,300f,580f)));var crops=TabFretRaster.crops(g,W,H,t);assertEquals(1,crops.size());assertTrue(crops.get(0).left()>302);}
