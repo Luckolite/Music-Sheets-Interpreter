@@ -6,6 +6,24 @@
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "files": {
+    "NativeDecoderWire.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderWire.java",
+      "source_sha256": "cde86135d9641cccd64efbbe6d4b6ad73e506280bd54d78a9f05d8375a500ca9",
+      "reviewed_app_commit": "38007cb",
+      "notes": "Reviewed working-tree addition on this base. Bounded authenticated transport for exact geometry and analysis records; package and license header adapted. Synthetic round-trip and rejection regressions only."
+    },
+    "NativeDecoderStages.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderStages.java",
+      "source_sha256": "4bec25cf043be8856a59ed76a9ed126f6e2fbc62ed89cc71b502143d6bfd51fe",
+      "reviewed_app_commit": "38007cb",
+      "notes": "Reviewed working-tree addition on this base. Extracts the existing geometry and header-normalization sequence without changing recognition thresholds or model weights."
+    },
+    "NativeDecoderServer.java": {
+      "source_path": "tools/native-worker/NativeDecoderServer.java",
+      "source_sha256": "550084fba165b9d3ebd9a7a71c0a0bb4ec06ed623617d0305ffd90046f23c512",
+      "reviewed_app_commit": "38007cb",
+      "notes": "Reviewed working-tree addition on this base. Loopback-only service with three processing threads, three bounded waiting slots, credential and source checks, and parent-stdin lifetime. Standalone build generates its own fingerprint; no private fixtures, app services or runtime configuration copied."
+    },
     "ColumnInkBounds.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ColumnInkBounds.java",
       "source_sha256": "6a09a512593843de6c2ea8918e79ba2435ee1a75092fdc37e64536be0a8a0760",

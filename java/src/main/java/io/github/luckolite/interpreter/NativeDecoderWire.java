@@ -1,0 +1,124 @@
+// Copyright 2026 Luckolite
+// SPDX-License-Identifier: Apache-2.0
+
+package io.github.luckolite.interpreter;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.zip.*;
+
+/** Versioned, bounded desktop decoder records. No Android types or Java object deserialization. */
+public final class NativeDecoderWire {
+    public static final int MAGIC=0x4d534431, PORT=45924, MAX_PIXELS=20_000_000;
+    public static final int MAX_PACKET=45_000_000, MAX_MEASURES=4000, MAX_EVENTS=100_000;
+    public static final int ANALYZE=1,GEOMETRY=2;
+    public record Request(byte[] labels,byte[] gray,int width,int height,List<MeasureRegion> measures,int operation) {
+        public Request(byte[] labels,byte[] gray,int width,int height,List<MeasureRegion> measures){this(labels,gray,width,height,measures,ANALYZE);}
+    }
+    public interface Writer {void write(DataOutputStream out)throws IOException;}
+    private interface Reader<T> {T read(DataInputStream in)throws IOException;}
+    static OmrScoreInterpreter.Analysis exchange(String host,int port,String secret,String fingerprint,Request request)throws IOException {
+        return exchange(host,port,secret,fingerprint,request,body->readAnalysis(body,request.measures.size()));
+    }
+    static NativeDecoderStages.Geometry exchangeGeometry(String host,int port,String secret,String fingerprint,Request request)throws IOException {
+        return exchange(host,port,secret,fingerprint,request,body->readGeometry(body,request.width,request.height));
+    }
+    private static <T>T exchange(String host,int port,String secret,String fingerprint,Request request,Reader<T> reader)throws IOException {
+        try(Socket socket=new Socket()) {
+            socket.connect(new InetSocketAddress(host,port),500);socket.setSoTimeout(30_000);socket.setTcpNoDelay(true);
+            var out=new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+            var in=new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+            out.writeInt(MAGIC);out.writeUTF(secret);out.writeUTF(fingerprint);out.flush();
+            if(in.readUnsignedByte()!=0)throw new IOException("Decoder source mismatch");
+            packet(out,data->writeRequest(data,request));
+            try(var body=packet(in)){return reader.read(body);}
+        }
+    }
+    public static void packet(DataOutputStream out,Writer writer)throws IOException {
+        var bytes=new ByteArrayOutputStream();
+        try(var gzip=new GZIPOutputStream(bytes);var data=new DataOutputStream(gzip)){writer.write(data);}
+        if(bytes.size()>MAX_PACKET)throw new IOException("Decoder packet limit");
+        out.writeInt(bytes.size());bytes.writeTo(out);out.flush();
+    }
+    public static DataInputStream packet(DataInputStream in)throws IOException {
+        int length=count(in,MAX_PACKET);
+        byte[] data=new byte[length];in.readFully(data);
+        var gzip=new GZIPInputStream(new ByteArrayInputStream(data));
+        // Bound decompression too: a small compressed body must not expand without limit.
+        return new DataInputStream(new FilterInputStream(gzip) {
+            int remaining=MAX_PACKET;
+            @Override public int read()throws IOException {if(remaining<=0)throw new IOException("Decoder expansion limit");int v=super.read();if(v>=0)remaining--;return v;}
+            @Override public int read(byte[] b,int off,int len)throws IOException {if(remaining<=0)throw new IOException("Decoder expansion limit");int n=in.read(b,off,Math.min(len,remaining));if(n>0)remaining-=n;return n;}
+        });
+    }
+    static int count(DataInputStream in,int limit)throws IOException {int n=in.readInt();if(n<0||n>limit)throw new IOException("Decoder count limit");return n;}
+    public static void writeRequest(DataOutputStream out,Request r)throws IOException {
+        validateDimensions(r.width,r.height);
+        if(r.labels.length!=(long)r.width*r.height||r.gray.length!=r.labels.length||r.measures.size()>MAX_MEASURES)throw new IOException("Decoder dimensions");
+        if(r.operation!=ANALYZE&&r.operation!=GEOMETRY)throw new IOException("Decoder operation");
+        out.writeInt(r.operation);out.writeInt(r.width);out.writeInt(r.height);out.write(r.labels);out.write(r.gray);out.writeInt(r.measures.size());
+        for(var m:r.measures){out.writeFloat(m.left());out.writeFloat(m.right());out.writeFloat(m.top());out.writeFloat(m.bottom());}
+    }
+    public static Request readRequest(DataInputStream in)throws IOException {
+        int operation=in.readInt();if(operation!=ANALYZE&&operation!=GEOMETRY)throw new IOException("Decoder operation");
+        int width=in.readInt(),height=in.readInt();validateDimensions(width,height);
+        byte[] labels=new byte[width*height],gray=new byte[labels.length];in.readFully(labels);in.readFully(gray);
+        for(byte label:labels)if(label<0||label>5)throw new IOException("Decoder label range");
+        int count=count(in,MAX_MEASURES);var measures=new ArrayList<MeasureRegion>(count);
+        for(int i=0;i<count;i++)measures.add(new MeasureRegion(finite(in),finite(in),finite(in),finite(in)));
+        if(in.read()!=-1)throw new IOException("Trailing decoder input");
+        return new Request(labels,gray,width,height,List.copyOf(measures),operation);
+    }
+    private static void validateDimensions(int w,int h)throws IOException {if(w<1||h<1||(long)w*h>MAX_PIXELS)throw new IOException("Decoder dimensions");}
+    private static float finite(DataInputStream in)throws IOException {float v=in.readFloat();if(!Float.isFinite(v))throw new IOException("Nonfinite decoder value");return v;}
+    static void writeGeometry(DataOutputStream out,NativeDecoderStages.Geometry geometry)throws IOException {
+        if(geometry.labels().length>MAX_PIXELS||geometry.measures().size()>MAX_MEASURES)throw new IOException("Decoder geometry limit");
+        out.writeInt(geometry.labels().length);out.write(geometry.labels());out.writeInt(geometry.measures().size());
+        for(var m:geometry.measures()){out.writeFloat(m.left());out.writeFloat(m.right());out.writeFloat(m.top());out.writeFloat(m.bottom());}
+    }
+    static NativeDecoderStages.Geometry readGeometry(DataInputStream in,int width,int height)throws IOException {
+        validateDimensions(width,height);
+        int size=count(in,MAX_PIXELS);if(size!=(long)width*height)throw new IOException("Decoder geometry dimensions");
+        byte[] labels=new byte[size];in.readFully(labels);for(byte label:labels)if(label<0||label>5)throw new IOException("Decoder label range");
+        int count=count(in,MAX_MEASURES);var measures=new ArrayList<MeasureRegion>(count);
+        for(int i=0;i<count;i++)measures.add(new MeasureRegion(finite(in),finite(in),finite(in),finite(in)));
+        if(in.read()!=-1)throw new IOException("Trailing geometry output");
+        return new NativeDecoderStages.Geometry(labels,List.copyOf(measures));
+    }
+    static void writeAnalysis(DataOutputStream out,OmrScoreInterpreter.Analysis score)throws IOException {
+        if(score.notes().size()>MAX_EVENTS||score.rests().size()>MAX_EVENTS||score.keyChanges().size()>MAX_MEASURES)throw new IOException("Decoder event limit");
+        out.writeInt(score.notes().size());
+        for(var n:score.notes()) {
+            out.writeInt(n.measureIndex());out.writeFloat(n.positionInMeasure());out.writeInt(n.staffStep());
+            out.writeInt(n.staffIndex());out.writeInt(n.staffCount());out.writeFloat(n.pageY());
+            out.writeBoolean(n.tiedFromPrevious());out.writeInt(n.augmentationDots());out.writeInt(n.beamCount());
+            out.writeInt(n.writtenAccidental());out.writeFloat(n.unbeamedDurationBeats());out.writeInt(n.tupletDivisor());
+            out.writeFloat(n.followingRestBeats());out.writeInt(n.articulations());out.writeInt(n.clefBottomDiatonic());
+            out.writeBoolean(n.crossStaffBeam());out.writeFloat(n.leadingRestBeats());out.writeBoolean(n.compactOpening());out.writeInt(n.octaveShift());
+        }
+        out.writeInt(score.keyChanges().size());for(var k:score.keyChanges()){out.writeInt(k.measureIndex());out.writeInt(k.fifths());}
+        out.writeInt(score.rests().size());for(var r:score.rests()) {
+            out.writeInt(r.measureIndex());out.writeFloat(r.positionInMeasure());out.writeFloat(r.pageY());out.writeFloat(r.pageHeight());
+            out.writeInt(r.staffIndex());out.writeInt(r.staffCount());out.writeDouble(r.durationBeats());
+        }
+    }
+    static OmrScoreInterpreter.Analysis readAnalysis(DataInputStream in,int measures)throws IOException {
+        int count=count(in,MAX_EVENTS);var notes=new ArrayList<ScoreNoteEvent>(count);
+        for(int i=0;i<count;i++)notes.add(new ScoreNoteEvent(index(in,measures),finite(in),in.readInt(),in.readInt(),in.readInt(),finite(in),
+                in.readBoolean(),in.readInt(),in.readInt(),in.readInt(),finite(in),in.readInt(),finite(in),in.readInt(),in.readInt(),
+                in.readBoolean(),finite(in),in.readBoolean(),in.readInt()));
+        count=count(in,MAX_MEASURES);var keys=new ArrayList<ScoreKeyChange>(count);
+        for(int i=0;i<count;i++) {int index=index(in,measures),fifths=in.readInt();if(fifths< -7||fifths>7)throw new IOException("Decoder key");keys.add(new ScoreKeyChange(index,fifths));}
+        count=count(in,MAX_EVENTS);var rests=new ArrayList<ScoreRestEvent>(count);
+        for(int i=0;i<count;i++) {
+            int index=index(in,measures);float position=finite(in),y=finite(in),height=finite(in);
+            int staff=in.readInt(),staffs=in.readInt();double duration=in.readDouble();
+            if(!Double.isFinite(duration)||duration<=0)throw new IOException("Decoder rest duration");
+            rests.add(new ScoreRestEvent(index,position,y,height,staff,staffs,duration));
+        }
+        if(in.read()!=-1)throw new IOException("Trailing decoder result");
+        return new OmrScoreInterpreter.Analysis(notes,keys,rests);
+    }
+    private static int index(DataInputStream in,int measures)throws IOException {int index=in.readInt();if(index<0||index>=measures)throw new IOException("Decoder measure index");return index;}
+}
