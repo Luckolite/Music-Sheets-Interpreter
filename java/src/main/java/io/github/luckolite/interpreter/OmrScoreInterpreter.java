@@ -5379,7 +5379,7 @@ final class OmrScoreInterpreter {
         // Natural connectors stay between the spines. A glyph whose ink
         // protrudes beyond both vertical sides is not proved natural merely
         // because one sharp spine has a short extension.
-        if(leftSpine>radius&&glyphWidth-1-rightSpine>radius)return false;
+        boolean overhangs=leftSpine>radius&&glyphWidth-1-rightSpine>radius;
         int leftTop = glyphHeight, leftBottom = -1, rightTop = glyphHeight, rightBottom = -1;
         int leftRows=0,rightRows=0;
         for (int row = 0; row < glyphHeight; row++) {
@@ -5400,6 +5400,8 @@ final class OmrScoreInterpreter {
         // Allow short scan breaks while requiring ink along each offset stem.
         if(leftRows<(leftBottom-leftTop+1)*.65f
                 ||rightRows<(rightBottom-rightTop+1)*.65f)return false;
+        if(overhangs&&(leftSpine>radius+1||glyphWidth-1-rightSpine>radius+1
+                ||Math.min(rightTop-leftTop,rightBottom-leftBottom)<gap*.45f))return false;
         int endpointOffset = Math.max(1, Math.round(glyphHeight * .05f));
         if (rightTop - leftTop < endpointOffset
                 || rightBottom - leftBottom < endpointOffset) return false;

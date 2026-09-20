@@ -241,5 +241,9 @@
   "study_rhythm_review": {
     "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6",
     "boundary": "Original generated regressions cover fused beam tips, staff-rule fringe, equal repeated implicit triplets, partial flat signatures and bare octave numerals with dotted spans. Shared helpers ported to the app; guide cache invalidation remains Android-only. OmrScoreInterpreter prior unrelated drift is retained, not hidden by a hash update. No score images, logs, private library or model weights included. These repairs are not a claim of complete score accuracy."
+  },
+  "natural_fringe_review": {
+    "reviewed_app_commit": "e6b9fcabffdadc1520350471d2286bf5897bd811",
+    "boundary": "Shared natural-glyph endpoint check permits only one extra fringe pixel beyond the usual spine tolerance when both endpoints have strong natural offsets. Existing asymmetric sharp regression retained; new original synthetic natural and sharp shapes added. Other OmrScoreInterpreter drift remains visible. No private score or model changes."
   }
 }
