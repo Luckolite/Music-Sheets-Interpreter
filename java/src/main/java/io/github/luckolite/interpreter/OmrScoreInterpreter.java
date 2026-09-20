@@ -6477,18 +6477,25 @@ final class OmrScoreInterpreter {
         return edge;
     }
 
-    /** A tolerant stem trace can bridge a white gap into dark page artwork.
-     * Shorten an unusually long trace only at a printed beam, with no semantic
-     * stem continuing through the supposed tail. */
+    /** A tolerant stem trace can bridge a white gap into lettering or page artwork.
+     * Shorten only at a printed beam, with no semantic stem continuing through
+     * the supposed tail. Shorter traces also exclude a genuine outer beam. */
     private static int[] stemBeforePaperTail(byte[] labels,byte[] gray,int width,int height,
             Component head,float gap,int[] original) {
-        if(original==null||Math.abs(original[1]-head.centerY)<=gap*7)return original;
+        if(original==null||Math.abs(original[1]-head.centerY)<=gap*3.5f)return original;
+        boolean shortTrace=Math.abs(original[1]-head.centerY)<=gap*7;
         int end=Math.round(head.centerY),blank=0;
         for(int y=end;(original[1]-y)*original[2]>=0;y+=original[2]) {
             if((gray[y*width+original[0]]&255)<170){end=y;blank=0;}
-            else if(++blank>1)break;
+            else if(++blank>(shortTrace?0:1))break;
         }
         int[] strict={original[0],end,original[2]};
+        if(shortTrace) {
+            int gapY=end+original[2];
+            if(gapY<0||gapY>=height)return original;
+            for(int x=Math.max(0,original[0]-1);x<=Math.min(width-1,original[0]+1);x++)
+                if((gray[gapY*width+x]&255)<205)return original;
+        }
         if(Math.abs(end-head.centerY)<gap*2.3f||(original[1]-end)*original[2]<gap*.75f)return original;
         int start=strict[1]+original[2]*Math.max(2,Math.round(gap*.4f)),ink=0;
         for(int y=start;(original[1]-y)*original[2]>=0;y+=original[2])
@@ -6496,7 +6503,18 @@ final class OmrScoreInterpreter {
                 if(labels[y*width+x]==OmrMeasurePostProcessor.STEM_OR_REST)ink++;
         if(ink>gap*.3f)return original;
         int left=Math.max(0,strict[0]-Math.round(gap*3)),right=Math.min(width-1,strict[0]+Math.round(gap*3));
-        int margin=Math.max(2,Math.round(gap*.35f)),run=0,thick=0,stemInk=0;
+        if(shortTrace) {
+            // Do not stop at an inner beam when a faint stem joins another real
+            // beam beyond the gap. Lettering lacks this long, thick horizontal run.
+            int longRows=0;
+            for(int y=start;(original[1]-y)*original[2]>=0;y+=original[2]) {
+                if(darkRunAtStem(gray,width,y,left,right,strict[0],
+                        Math.max(2,Math.round(gap*.28f)),1)>=gap*1.5f)longRows++;
+                else longRows=0;
+                if(longRows>=Math.max(3,Math.ceil(gap*.3f)))return original;
+            }
+        }
+        int margin=Math.max(2,Math.round(gap*(shortTrace?.6f:.35f))),run=0,thick=0,stemInk=0;
         for(int y=Math.max(0,strict[1]-margin);y<=Math.min(height-1,strict[1]+margin);y++) {
             if(darkRunAtStem(gray,width,y,left,right,strict[0],margin,1)>=gap*1.5f)run++;
             else run=0;

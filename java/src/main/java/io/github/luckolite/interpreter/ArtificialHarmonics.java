@@ -19,7 +19,7 @@ final class ArtificialHarmonics {
             float gap=staff.gap();
             if(!diamond(gray,w,h,x,y-1.5f*gap,gap))continue;
             // Do not treat an arbitrary diamond without a stopped, stemmed lower note as this technique.
-            if(!stem(gray,w,h,x,y,gap))continue;
+            if(!stem(gray,w,h,x,y,gap,n.unbeamedDurationBeats()<ScoreNoteEvent.DURATION_HALF))continue;
             replacements.put(n,n.withOctaveShift(2));
             for(var upper:notes)if(upper!=n&&upper.measureIndex()==n.measureIndex()&&upper.staffIndex()==n.staffIndex()
                     &&upper.staffStep()-n.staffStep()==3&&Math.abs(upper.pageY()*h-(y-1.5f*gap))<gap*.35f
@@ -29,11 +29,30 @@ final class ArtificialHarmonics {
         var result=new ArrayList<ScoreNoteEvent>();for(var n:notes)if(!remove.contains(n))result.add(replacements.getOrDefault(n,n));
         return List.copyOf(result);
     }
-    private static boolean stem(byte[] g,int w,int h,float x,float y,float gap) {
-        for(int xx=Math.round(x+gap*.3f);xx<=Math.round(x+gap*.95f);xx++) {
+    private static boolean stem(byte[] g,int w,int h,float x,float y,float gap,boolean filledStoppedHead) {
+        // Both conventional stem directions occur in artificial harmonics.
+        for(int direction:new int[]{-1,1}) {
+        for(int offset=Math.round(gap*.3f);offset<=Math.round(gap*.95f);offset++) {
+            // Hollow stopped heads need stronger shape evidence: ordinary open
+            // fourths can otherwise resemble a diamond pair in low-resolution scans.
+            if(direction>0&&!filledStoppedHead)continue;
+            int xx=Math.round(x)-direction*offset;
             int count=0,total=0;
-            for(int yy=Math.round(y-gap*1.2f);yy<=Math.round(y-gap*.2f);yy++){total++;if(dark(g,w,h,xx,yy))count++;}
-            if(total>0&&count>=total*.9)return true;
+            for(int distance=Math.round(gap*.2f);distance<=Math.round(gap*1.2f);distance++) {
+                int yy=Math.round(y)+direction*distance;
+                total++;if(dark(g,w,h,xx,yy))count++;
+            }
+            if(total>0&&count>=total*.9) {
+                if(direction<0)return true;
+                // A down-stem also joins the touch diamond above the stopped head.
+                // A detached fingering zero must not become an artificial harmonic.
+                int joined=0,span=0;
+                for(int yy=Math.round(y-gap*1.05f);yy<=Math.round(y-gap*.3f);yy++) {
+                    span++;if(dark(g,w,h,xx,yy))joined++;
+                }
+                if(span>0&&joined>=span*.85f)return true;
+            }
+        }
         }
         return false;
     }

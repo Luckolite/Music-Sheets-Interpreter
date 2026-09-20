@@ -37,6 +37,35 @@ public class ArtificialHarmonicsTest {
         shape(true);var result=apply(List.of(note(0,Y),note(3,Y-30)));
         assertEquals(1,result.size());assertEquals(2,result.get(0).octaveShift());
     }
+    private void downStem(boolean diamond) {
+        shape(diamond);
+        for(int y=Y-24;y<=Y-8;y++)for(int x=X+6;x<=X+19;x++)gray[y*W+x]=(byte)255;
+        for(int y=Y-30;y<=Y+32;y++)for(int x=X-11;x<=X-9;x++)gray[y*W+x]=0;
+    }
+    @Test public void downStemFourthSoundsTwoOctavesAboveStoppedNote() {
+        downStem(true);var result=apply(List.of(note(0,Y),note(3,Y-30)));
+        assertEquals(1,result.size());assertEquals(2,result.get(0).octaveShift());
+    }
+    @Test public void downStemOrdinaryHollowChordIsRetained() {
+        downStem(false);var notes=List.of(note(0,Y),note(3,Y-30));
+        assertEquals(notes,apply(notes));
+    }
+    @Test public void interruptedDownStemDoesNotProveHarmonic() {
+        downStem(true);
+        for(int y=Y+8;y<=Y+20;y++)for(int x=X-19;x<=X-6;x++)gray[y*W+x]=(byte)255;
+        var notes=List.of(note(0,Y),note(3,Y-30));assertEquals(notes,apply(notes));
+    }
+    @Test public void detachedFingeringAboveDownStemDoesNotTranspose() {
+        downStem(true);
+        for(int y=Y-20;y<=Y-8;y++)for(int x=X-19;x<=X-6;x++)gray[y*W+x]=(byte)255;
+        var notes=List.of(note(0,Y));assertEquals(notes,apply(notes));
+    }
+    @Test public void hollowStoppedFourthNeedsStrongerEvidence() {
+        downStem(true);var hollow=new ScoreNoteEvent(0,X/(float)W,0,0,1,Y/(float)H,
+                false,0,0,ScoreNoteEvent.ACCIDENTAL_FROM_KEY,ScoreNoteEvent.DURATION_HALF,
+                0,0,0,ScoreNoteEvent.CLEF_TREBLE);
+        var notes=List.of(hollow,note(3,Y-30));assertEquals(notes,apply(notes));
+    }
     @Test public void ordinaryHollowChordHeadIsNotAHarmonic() {
         shape(false);var notes=List.of(note(0,Y),note(3,Y-30));assertEquals(notes,apply(notes));
     }

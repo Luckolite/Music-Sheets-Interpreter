@@ -76,7 +76,8 @@
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
       "source_sha256": "f932e96a582b74de8fb49e2f7eb4b8b01e171dc52304709fd99b4bf1e3f63696",
-      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
+      "reviewed_app_commit": "8108cb615219d9e76789030fd67775b05f07d4dd",
+      "notes": "Reviewed stemBeforePaperTail change from this app commit: allow short traces separated from lettering by a fully white gap, retaining semantic-stem and long outer-beam guards. Original synthetic regressions. Pre-existing unrelated app decoder drift remains visible; source_sha256 is intentionally unchanged and is not a claim of whole-file parity."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -223,8 +224,9 @@
     },
     "ArtificialHarmonics.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ArtificialHarmonics.java",
-      "source_sha256": "b8af340a061287a972514f8fd9b5101becffcc245a66af8a804ad93bd024b19c",
-      "reviewed_app_commit": "c4a48f86b8a2975bf9bc7af54cbc3d14cc3a0624"
+      "source_sha256": "e9064ed30ef2116698921b550553072d8e829f2428410f3870dff7a56c19b18c",
+      "reviewed_app_commit": "8108cb615219d9e76789030fd67775b05f07d4dd",
+      "notes": "Reviewed shared repair: connected down-stem fourth harmonics for filled stopped heads; reject detached fingerings and ambiguous hollow stopped chords. Original synthetic regressions. Includes equivalent outer-loop braces added concurrently in the app working tree; reviewed and mirrored."
     },
     "ParallelBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ParallelBeamTip.java",
