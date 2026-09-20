@@ -1963,10 +1963,9 @@ final class OmrScoreInterpreter {
                 // classifier. Once at least one flat establishes the run's glyph family, count
                 // the repeated tall left spines in the same pre-note slot.
                 if (flats > 0 && sharps == 0 && naturals == 0) {
-                    int spines = countFlatSpines(labels, gray, width, height, left, right, staff, doubleBar);
-                    // One damaged sharp can satisfy the flat-bowl test; its two spines are
-                    // not two separate flats. Do not change the inherited key on this evidence.
-                    if (signatureHeader && run.size() == 1 && spines > flats) continue;
+                    int spines = countFlatSpines(labels, gray, width, height, left, right, staff, doubleBar && clef == null);
+                    // countFlatSpines verifies the alternating fourth/fifth heights;
+                    // parallel spines of one sharp cannot establish that ordered run.
                     flats = Math.max(flats, spines);
                 }
                 int strongest = Math.max(naturals, Math.max(flats, sharps));

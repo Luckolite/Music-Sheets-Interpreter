@@ -198,6 +198,11 @@
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabEffect.java",
       "source_sha256": "bcd6ef53adf16c0bb233854e3a82f21c3f1d580e4997cb2750188ff946dc55ac",
       "reviewed_app_commit": "19ba8a8455b517c23c5aa87f54cfff6bcc1dbfff"
+    },
+    "ArtificialHarmonics.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ArtificialHarmonics.java",
+      "source_sha256": "b8af340a061287a972514f8fd9b5101becffcc245a66af8a804ad93bd024b19c",
+      "reviewed_app_commit": "c4a48f86b8a2975bf9bc7af54cbc3d14cc3a0624"
     }
   },
   "ocr_adapter_review": {
@@ -216,5 +221,9 @@
     "reviewed_app_commit": "19ba8a8455b517c23c5aa87f54cfff6bcc1dbfff",
     "app_adapter": "app/src/main/java/com/musicsheets/app/pdf/TablatureOcr.java",
     "boundary": "Android ML Kit OCR remains an app adapter, now includes rhythm lanes. Shared TabNotation decodes explicit duration/rest words and external stems/beams; TabEffect carries numeric effect curves through existing articulation serialization. App OrnamentPerformance applies the shared pitch curve to sampled playback; standalone JSON exposes guitarEffect and MIDI export isolates bend channels. No model weights, private fixtures or external source code imported. Unsupported graphical bend curves, tab ties, tuplets and ambiguous half-note stems remain limitations; missing rhythm remains estimated."
+  },
+  "study_notation_review": {
+    "reviewed_app_commit": "c4a48f86b8a2975bf9bc7af54cbc3d14cc3a0624",
+    "boundary": "Original raster geometry for stopped-note plus fourth-touch artificial harmonics, with conservative diamond and stem evidence. App OmrMeasureAnalyzer and standalone SheetInterpreter invoke the same helper after octave marks. Flat signature recovery accepts ordered spine runs and does not trim a verified clef header as a barline. Only these OmrScoreInterpreter hunks were ported; its previously reported unrelated app drift remains visible. New tests use original generated glyphs. No score scans, library content, logs, model weights or external code are included."
   }
 }

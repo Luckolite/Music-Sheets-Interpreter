@@ -80,6 +80,7 @@ public final class SheetInterpreter {
                 OmrScoreInterpreter.techniqueStaffs(labels,gray,width,height,measures),notes,height);
         var words=annotations.words.stream().map(Word::internal).toList();
         notes=OctaveMarkDetector.apply(words,staffs,measures,notes,gray,width,height);
+        notes=ArtificialHarmonics.apply(gray,width,height,measures,notes,staffs);
         for(var meter:annotations.meters)if(meter.measureIndex()>=measures.size())
             throw new IllegalArgumentException("Meter change is outside the detected measure range");
         return TablatureDecoder.apply(new ScorePageInterpretation(measures,notes,
