@@ -37,6 +37,11 @@ public class MeterOcrEvidenceTest {
         assertEquals("3/8",MeterOcrEvidence.consensus(List.of("","3/8","3/8")));
         assertEquals("4/4",MeterOcrEvidence.consensus(List.of("4|4","4/4")));
     }
+    @Test public void threeMatchingRenderingsCanStopFurtherOcr() {
+        assertEquals("",MeterOcrEvidence.decisiveConsensus(List.of("4/4","4/4")));
+        assertEquals("4/4",MeterOcrEvidence.decisiveConsensus(List.of("4/4","4|4","4/4")));
+        assertEquals("",MeterOcrEvidence.decisiveConsensus(List.of("4/4","4/4","3/4")));
+    }
     @Test public void inkMaskMatchesCleanerThreshold() {
         assertTrue(MeterOcrEvidence.ink(0));assertTrue(MeterOcrEvidence.ink(134));
         assertFalse(MeterOcrEvidence.ink(135));assertFalse(MeterOcrEvidence.ink(255));

@@ -184,7 +184,9 @@
     },
     "MeterOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterOcrEvidence.java",
-      "source_sha256": "94737373da13423a27faa5b454ff9770d3a6145b91af1f4e8a10a95ce19c72ac"
+      "source_sha256": "f21cf45b77a678497f94044bf0c287bc1ed583ff2be10b1d32863c7d098820c0",
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "notes": "Reviewed working-tree OCR optimization on this base. Three agreeing meter renderings can terminate remaining scale probes without weakening the existing two-vote final consensus or accepting conflicting readings. Android crop generation, ML Kit scheduling and page-level fallback suppression remain app-specific. Synthetic public regression included."
     },
     "DoubleSharpGlyph.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DoubleSharpGlyph.java",

@@ -61,4 +61,18 @@ public final class MeterOcrEvidence {
         }
         return votes>=2?result:"";
     }
+
+    /** Three matching renderings are decisive; remaining scale variants cannot improve confidence. */
+    public static String decisiveConsensus(List<String> readings) {
+        String result="";int votes=0;
+        for(String reading:readings) {
+            if(reading==null||reading.isBlank())continue;
+            var valid=new HashSet<String>();addFraction(valid,reading);
+            if(valid.size()!=1)continue;
+            String meter=valid.iterator().next();
+            if(!result.isEmpty()&&!result.equals(meter))return "";
+            result=meter;votes++;
+        }
+        return votes>=3?result:"";
+    }
 }
