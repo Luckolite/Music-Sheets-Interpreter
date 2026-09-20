@@ -1,6 +1,5 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -38,8 +37,8 @@ final class TempoChangeDetector {
             position = Math.max(0f, Math.min(1f, position));
             if (measureIndex == 0 && token.bottom() <= measure.top()) position = 0f;
             if (position < .22f) position = 0f;
-            result.add(new ScoreTempoChange(measureIndex, position,
-                    Math.round(token.value() * (hasDottedQuarter(token, gray, width, height, equalsLeft) ? 1.5f : 1f))));
+            double unit = printedBeatUnit(token, gray, width, height, equalsLeft);
+            result.add(new ScoreTempoChange(measureIndex, position, token.value() * unit, unit));
         }
         result.sort(Comparator.comparingInt(ScoreTempoChange::measureIndex)
                 .thenComparingDouble(ScoreTempoChange::positionInMeasure));
@@ -149,8 +148,8 @@ final class TempoChangeDetector {
         return -1;
     }
 
-    /** A detached augmentation dot beside a filled, unflagged tempo-note head. */
-    private static boolean hasDottedQuarter(MeasureNumberReconciler.NumberToken token,
+    /** Quarter-beat length of a filled tempo note, retaining its flag and augmentation dot. */
+    private static double printedBeatUnit(MeasureNumberReconciler.NumberToken token,
             byte[] gray, int width, int height, int equalsLeft) {
         int unit=Math.max(3,Math.round((token.bottom()-token.top())*height));
         // OCR boxes may include generous vertical padding (ML Kit's 38px box surrounds
@@ -164,12 +163,12 @@ final class TempoChangeDetector {
         int top=Math.max(0,Math.round(token.top()*height)-unit);
         int bottom=Math.min(height-1,Math.round(token.bottom()*height)+unit/3);
         int rw=right-left+1,rh=bottom-top+1;
-        if(rw<=0||rh<=0)return false;
+        if(rw<=0||rh<=0)return 1;
         boolean[] seen=new boolean[rw*rh];int[] queue=new int[seen.length];
         List<int[]> parts=new ArrayList<>();
         for(int sy=0;sy<rh;sy++)for(int sx=0;sx<rw;sx++) {
             int seed=sy*rw+sx;
-            if(seen[seed]||(gray[(top+sy)*width+left+sx]&255)>125)continue;
+            if(seen[seed]||(gray[(top+sy)*width+left+sx]&255)>200)continue;
             int count=1,read=0,minX=sx,maxX=sx,minY=sy,maxY=sy;
             seen[seed]=true;queue[0]=seed;
             while(read<count) {
@@ -179,29 +178,43 @@ final class TempoChangeDetector {
                     int nx=x+dx,ny=y+dy;
                     if(nx<0||ny<0||nx>=rw||ny>=rh)continue;
                     int next=ny*rw+nx;
-                    if(!seen[next]&&(gray[(top+ny)*width+left+nx]&255)<=125){seen[next]=true;queue[count++]=next;}
+                    if(!seen[next]&&(gray[(top+ny)*width+left+nx]&255)<=200){seen[next]=true;queue[count++]=next;}
                 }
             }
             parts.add(new int[]{left+minX,left+maxX,top+minY,top+maxY,count});
         }
         for(int[] note:parts) {
             int nw=note[1]-note[0]+1,nh=note[3]-note[2]+1;
-            if(nh<unit*1.2f||nh>unit*2.8f||nw<unit*.25f||nw>unit*1.05f)continue;
+            if(nh<unit*1.2f||nh>unit*2.8f||nw<unit*.25f||nw>unit*1.5f)continue;
             // The head's centre is dark for a quarter; a half-note centre remains paper.
-            int cx=(note[0]+note[1])/2,cy=note[3]-Math.max(1,Math.round(unit*.12f));
+            int cy=note[3]-Math.max(1,Math.round(unit*.12f));
+            int headLeft=note[1],headRight=note[0];
+            for(int x=note[0];x<=note[1];x++)if((gray[cy*width+x]&255)<=200){headLeft=Math.min(headLeft,x);headRight=Math.max(headRight,x);}
+            int cx=(headLeft+headRight)/2;
             if((gray[cy*width+cx]&255)>125)continue;
-            // A flag protrudes beside the upper stem. A plain quarter has a thin upper third.
-            int upperInk=0;
-            for(int y=note[2];y<note[2]+nh/3;y++)for(int x=note[0];x<=note[1];x++)
-                if((gray[y*width+x]&255)<=125)upperInk++;
-            if(upperInk>nw*(nh/3)*.42f)continue;
+            // Locate the long upright stem independently of the flag's bounding box.
+            int stem=-1,best=0;
+            for(int x=note[0];x<=note[1];x++) {
+                int ink=0;for(int y=note[2];y<note[2]+nh*2/3;y++)if((gray[y*width+x]&255)<=200)ink++;
+                if(ink>=best){best=ink;stem=x;}
+            }
+            if(stem<0||best<nh*.5f)continue;
+            int flaggedRows=0;
+            for(int y=note[2];y<note[2]+nh*2/3;y++) {
+                boolean protrudes=false;
+                for(int x=stem+Math.max(2,Math.round(unit*.2f));x<=note[1];x++)
+                    if((gray[y*width+x]&255)<=200){protrudes=true;break;}
+                if(protrudes)flaggedRows++;
+            }
+            double beat=flaggedRows>=Math.max(3,Math.round(unit*.25f))?.5:1;
             for(int[] dot:parts) {
                 int dw=dot[1]-dot[0]+1,dh=dot[3]-dot[2]+1;
                 float gap=dot[0]-note[1],dy=Math.abs((dot[2]+dot[3])*.5f-cy);
                 if(gap>0&&gap<unit*.6f&&dw>=2&&dh>=2&&dw<=unit*.35f&&dh<=unit*.35f
-                        &&dy<=unit*.22f&&dot[4]>=dw*dh*.45f)return true;
+                        &&dy<=unit*.22f&&dot[4]>=dw*dh*.45f)return beat*1.5;
             }
+            return beat;
         }
-        return false;
+        return 1;
     }
 }

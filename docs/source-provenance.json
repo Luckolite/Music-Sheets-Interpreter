@@ -128,7 +128,9 @@
     },
     "ScoreTempoChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTempoChange.java",
-      "source_sha256": "01c827fc215a0be55e8e47d245f763398b625609bc2ed7e15de87d11880ef853"
+      "source_sha256": "a8026774482ae0f0f31bee9754b538cb4886838b178ea74a0ae73047149a3f0a",
+      "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5",
+      "notes": "Reviewed pulse-unit repair: eighth and dotted-eighth glyphs retain exact fractional quarter BPM and the printed pulse length. Standalone API retains the three-argument tempo constructor. Android binary cache generation 252, viewer propagation, and selected-tempo integration remain platform adapters. No score images or private logs included."
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
@@ -136,7 +138,9 @@
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
-      "source_sha256": "a2c8d40a1fadee65bde2cf67101a6cde86b1ae79c95c043f6cb39fe67f11d0a7"
+      "source_sha256": "e7b51aac4b2a2fd8c1ba9429991b68db0542b75923ef730323bc0f95715c8c27",
+      "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5",
+      "notes": "Reviewed pulse-unit repair: eighth and dotted-eighth glyphs retain exact fractional quarter BPM and the printed pulse length. Standalone API retains the three-argument tempo constructor. Android binary cache generation 252, viewer propagation, and selected-tempo integration remain platform adapters. No score images or private logs included."
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
@@ -291,6 +295,12 @@
       "source_sha256": "333eadd12e781b1bc7d404199b1b88882724705ce1569ee87937e97a5a08f899",
       "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
       "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+    },
+    "ScoreTempoSelection.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/playback/ScoreTempoSelection.java",
+      "source_sha256": "e507a82d4313befb20ac377503e49c9ff86ec90c229a7a1684e36315eda54587",
+      "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5",
+      "notes": "Reviewed pulse-unit repair: eighth and dotted-eighth glyphs retain exact fractional quarter BPM and the printed pulse length. Standalone API retains the three-argument tempo constructor. Android binary cache generation 252, viewer propagation, and selected-tempo integration remain platform adapters. No score images or private logs included."
     }
   },
   "ocr_adapter_review": {
