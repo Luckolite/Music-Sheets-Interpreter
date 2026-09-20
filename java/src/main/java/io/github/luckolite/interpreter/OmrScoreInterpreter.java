@@ -238,7 +238,7 @@ final class OmrScoreInterpreter {
             float localGap=localPitch[1];
             float localBottom=printedLedgerBottom(gray,width,height,head,localPitch[0],localGap);
             int step = printedPitchStep(gray,width,height,head,localBottom,localGap);
-            int beamCount = detectBeamCount(beamLabels, gray, width, height, head, staff);
+            int beamCount = detectBeamCount(beamLabels, gray, width, height, head, staff,heads);
             int[] tremolo = tremoloStrokeCounts(gray,width,height,head,staff.gap,heads);
             beamCount = Math.max(0,beamCount-tremolo[1]);
             if(tremolo[0]>0)beamCount=Math.max(beamCount,
@@ -6307,8 +6307,32 @@ final class OmrScoreInterpreter {
         return Math.min(3,beams);
     }
 
+    private static int detectBeamCount(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff,List<Component> heads) {
+        int count=detectBeamCount(labels,gray,width,height,head,staff);
+        if(count<2||gray==null)return count;
+        int[] stem=attachedRawStem(gray,width,height,head,staff.gap);
+        if(stem==null)return count;
+        for(var other:heads) {
+            float distance=(head.centerY-other.centerY)*stem[2];
+            if(other==head||distance<staff.gap||distance>staff.gap*6
+                    ||Math.abs(other.centerX-head.centerX)>staff.gap*.5f)continue;
+            int[] anchor=attachedRawStem(gray,width,height,other,staff.gap);
+            if(anchor==null||anchor[2]!=stem[2]||Math.abs(anchor[0]-stem[0])>staff.gap*.2f
+                    ||Math.abs(anchor[1]-stem[1])>staff.gap*.3f)continue;
+            int common=detectBeamCount(labels,gray,width,height,other,staff);
+            if(common==count-1&&detectBeamCount(labels,gray,width,height,head,staff,true)==common)return common;
+        }
+        return count;
+    }
+
+    private static int detectBeamCount(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff) {
+        return detectBeamCount(labels,gray,width,height,head,staff,false);
+    }
+
     private static int detectBeamCount(byte[] labels, byte[] gray, int width, int height,
-                                       Component head, Staff staff) {
+                                       Component head, Staff staff,boolean corroborate) {
         float gap=staff.gap;
         // A stem attaches to this oval's edge. A wider window can borrow the preceding
         // triplet's stem and assign its beams to the following ordinary quarter note.
@@ -6416,7 +6440,8 @@ final class OmrScoreInterpreter {
                 }
                 // Do not count any head on the chord's attached stem as a beam.
                 int innerX=bestX+Math.round(Math.copySign(.4f,distance)*gap);
-                int count=supportedBeamBands(gray,labels,width,height,x,near,far,staff,innerX);
+                int count=corroborate?supportedBeamBands(gray,labels,width,height,x,near,far,staff,innerX)
+                        :thickNonHeadBands(gray,labels,width,height,x,near,far,staff,innerX);
                 thick=Math.max(thick,count);
                 if(Math.abs(distance)<.5f)innerThick=Math.max(innerThick,count);
             }
