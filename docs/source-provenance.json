@@ -6,6 +6,12 @@
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "files": {
+    "ExactRasterMemo.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ExactRasterMemo.java",
+      "source_sha256": "6c15b90be51c29c2eb3e163eb029c1d52190fda437c0e125537e7ffa274d6859",
+      "reviewed_app_commit": "9fa8d036b1ec28f743893f0ae7220f2e9cbf0e9b",
+      "notes": "Reviewed working-tree addition on this base; bounded exact-raster memoization for caller-provided OCR adapters. Android TextRecognizer session and bitmap bulk-read integration remain platform-specific. No detector thresholds or model weights changed."
+    },
     "ActiveScoreNotes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ActiveScoreNotes.java",
       "source_sha256": "3114b89b3971ab4952a3ff48baac84dde0a2a8d9b2df98b43ea32f911e93c035"
