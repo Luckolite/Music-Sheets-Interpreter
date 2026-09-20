@@ -188,8 +188,8 @@
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
-      "source_sha256": "a00b2b6b81b61bb48d53950c983b5a0dae1475c300986fcb470f88447e908a86",
-      "reviewed_app_commit": "19ba8a8455b517c23c5aa87f54cfff6bcc1dbfff"
+      "source_sha256": "cc5e846e4b9a43e4c285193247f80fadff357e695ea38316df012e31acfe90a4",
+      "reviewed_app_commit": "9fa8d036b1ec28f743893f0ae7220f2e9cbf0e9b"
     },
     "TabNotation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabNotation.java",
@@ -262,5 +262,9 @@
   "signature_boundary_spacing_review": {
     "reviewed_app_commit": "ac1c6b73603df6105db2b3d6c3ac0e42be36fec8",
     "boundary": "Require adjacent vertical strokes for a double bar, excluding distant accidental shafts. A lone key symbol without a clef must follow its boundary locally; distant clef fragments cannot become key changes. Six original synthetic tests cover source-only bars, separated shafts, and nearby versus distant single-flat changes. Shared decoder change only. No model, private score, or phone-data changes. The three pre-existing unrelated mapped drifts remain visible."
+  },
+  "imported_tab_layout_review": {
+    "reviewed_app_commit": "9fa8d036b1ec28f743893f0ae7220f2e9cbf0e9b",
+    "boundary": "Shared six-rule geometry now checks multiple grayscale thresholds, wider string spacing, pale vertical barlines, and excludes partial tab rows from standard-staff pairing. Dark notation retains strict rule-length agreement; pale interrupted rules additionally require enclosing bars. Nine original synthetic tests cover faint, dashed, enlarged and negative standard-notation cases. No weights, OCR engine or tuning changes; no private fixtures included. Geometry validation is not full fret or timing accuracy."
   }
 }

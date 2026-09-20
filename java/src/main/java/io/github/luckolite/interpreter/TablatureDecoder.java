@@ -13,19 +13,48 @@ public final class TablatureDecoder {
     private TablatureDecoder() { }
     public static List<Staff> detect(byte[] gray,int w,int h) {
         if(gray==null||w<64||h<64||gray.length!=(long)w*h)return List.of();
+        // Imported screenshots often use pale rules or enlarged string spacing.
+        // Keep the darkest complete geometry first, then fill in missing systems.
+        var found=new ArrayList<Staff>();
+        for(int threshold:new int[]{180,200,220,235,245,248})for(var staff:detectAtThreshold(gray,w,h,threshold)) {
+            if(found.stream().noneMatch(old->Math.abs(old.top-staff.top)<Math.max(old.gap,staff.gap)*3))found.add(staff);
+        }
+        found.sort(Comparator.comparingDouble(Staff::top));
+        var result=new ArrayList<Staff>();
+        for(var staff:found) {
+            float paired=staff.standardTop;
+            // A lighter pass may see only five rules of another tablature system.
+            // Such a partial row is not paired standard notation.
+            if(paired>=0)for(var previous:found)
+                if(previous.top<staff.top&&paired>=previous.top-previous.gap*.5f
+                        &&paired<=previous.top+previous.gap*5.5f)paired=-1;
+            result.add(new Staff(staff.top,staff.gap,paired,staff.frets,staff.bars));
+        }
+        return List.copyOf(result);
+    }
+    private static List<Staff> detectAtThreshold(byte[] gray,int w,int h,int threshold) {
         var lines=new ArrayList<Integer>();var thickness=new ArrayList<Integer>();var strength=new ArrayList<Integer>();int start=-1,peak=0;
         for(int y=0;y<=h;y++) {
-            int ink=0;if(y<h)for(int x=0;x<w;x++)if((gray[y*w+x]&255)<180)ink++;
+            int ink=0;if(y<h)for(int x=0;x<w;x++)if((gray[y*w+x]&255)<threshold)ink++;
             if(ink>w*.55){if(start<0){start=y;peak=0;}peak=Math.max(peak,ink);}
             else if(start>=0){if(y-start<Math.max(6,w/180)){lines.add((start+y-1)/2);thickness.add(y-start);strength.add(peak);}start=-1;}
         }
         var result=new ArrayList<Staff>();
         for(int i=0;i+5<lines.size();i++) {
-            float gap=(lines.get(i+5)-lines.get(i))/5f;if(gap<6||gap>w*.04)continue;
+            float gap=(lines.get(i+5)-lines.get(i))/5f;if(gap<6||gap>w*.15)continue;
             boolean regular=true;for(int n=1;n<6;n++)if(Math.abs(lines.get(i+n)-lines.get(i)-n*gap)>gap*.16f)regular=false;
             int minThickness=Integer.MAX_VALUE,maxThickness=0,minInk=w,maxInk=0;
             for(int n=0;n<6;n++){minThickness=Math.min(minThickness,thickness.get(i+n));maxThickness=Math.max(maxThickness,thickness.get(i+n));minInk=Math.min(minInk,strength.get(i+n));maxInk=Math.max(maxInk,strength.get(i+n));}
-            if(!regular||maxThickness>minThickness*2+1||minInk<maxInk*.88f)continue;
+            // Preserve the stronger length agreement for dark conventional notation:
+            // five staff rules plus a shorter beam must not become six tab strings.
+            boolean strongRules=false;
+            for(int n=0;n<6;n++) {
+                int ink=0;
+                for(int x=0;x<w;x++)if((gray[lines.get(i+n)*w+x]&255)<180)ink++;
+                if(ink>w*.55f)strongRules=true;
+            }
+            if(strongRules&&minInk<maxInk*.88f)continue;
+            if(!regular||maxThickness>minThickness*2+1||minInk<maxInk*.80f)continue;
             if(i>0&&Math.abs(lines.get(i)-lines.get(i-1)-gap)<gap*.16f)continue;
             if(i+6<lines.size()&&Math.abs(lines.get(i+6)-lines.get(i+5)-gap)<gap*.16f)continue;
             float top=lines.get(i);List<Fret> frets=List.of();
@@ -39,10 +68,12 @@ public final class TablatureDecoder {
             var bars=new ArrayList<Float>();int run=-1;
             for(int x=0;x<=w;x++) {
                 int ink=0,total=0;
-                if(x<w)for(int y=Math.round(top);y<=Math.round(top+5*gap);y++){total++;if((gray[y*w+x]&255)<185)ink++;}
+                if(x<w)for(int y=Math.round(top);y<=Math.round(top+5*gap);y++){total++;if((gray[y*w+x]&255)<threshold)ink++;}
                 if(total>0&&ink>=total*.98){if(run<0)run=x;}
                 else if(run>=0){float center=(run+x-1)*.5f;if(bars.isEmpty()||center-bars.get(bars.size()-1)>gap*.6f)bars.add(center);run=-1;}
             }
+            // Pale rules interrupted by fret digits need enclosing vertical evidence.
+            if(minInk<maxInk*.88f&&bars.size()<2)continue;
             result.add(new Staff(top,gap,standard,List.copyOf(frets),List.copyOf(bars)));i+=5;
         }
         return List.copyOf(result);
