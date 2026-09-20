@@ -19,6 +19,7 @@ final class ActiveScoreNotes {
     private record TimedNote(ScoreNoteEvent note, double onset, double duration, boolean held) { }
 
     static Prepared prepare(List<ScoreNoteEvent> notes, int measureIndex, float beatsPerMeasure) {
+        try (var timing=ScoreNoteTiming.beginTimingSession()) {
         List<TimedNote> timed = new ArrayList<>();
         if (notes != null && measureIndex >= 0) for (ScoreNoteEvent note : notes) {
             if (note == null || note.measureIndex() != measureIndex) continue;
@@ -27,6 +28,7 @@ final class ActiveScoreNotes {
                     ScoreNoteTiming.hasIndependentSustain(note)));
         }
         return new Prepared(List.copyOf(timed), beatsPerMeasure);
+        }
     }
 
     /** Resolve rhythm once per measure, then select against the advancing audio clock. */

@@ -26,7 +26,8 @@
     },
     "ActiveScoreNotes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ActiveScoreNotes.java",
-      "source_sha256": "3114b89b3971ab4952a3ff48baac84dde0a2a8d9b2df98b43ea32f911e93c035"
+      "source_sha256": "d2a74f6035309ec7d1219fb027b830c1f209bd80bcb3a98d58b5ff97ff5149c3",
+      "reviewed_app_commit": "6efe21c41310c1782adfc3323370625801c296e5"
     },
     "CrossStaffBeamDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CrossStaffBeamDetector.java",
@@ -110,8 +111,8 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "fc622ed7ceeaa4b77cdbb0218a6d9ee59ecc539eae0e970f857950a78a9d931c",
-      "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6"
+      "source_sha256": "bd9fb5164f98341449b29470f1851e1c4efd7cb0e66482fb2395ec843fc0347a",
+      "reviewed_app_commit": "6efe21c41310c1782adfc3323370625801c296e5"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
@@ -350,5 +351,9 @@
   "native_tab_rhythm_review": {
     "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
     "boundary": "Reviewed six/seven-string geometry, explicit tuning, native PDF token matching, detached rhythm, visible ties, muted-note tie termination, rests, grace frets, triplets, meter, tempo and H/P/T/vibrato marks. Original generated Java/PDF regressions only. Android PDF search and first-page OCR adapters remain app-specific; the standalone CLI uses optional pypdfium2 to provide equivalent normalized words and carry tuning. Guide cache invalidation and PDF lifecycle hooks are Android-only. No private scores, annotations, logs, history, new dependencies or changed model weights. Existing MeterChangeDetector, OmrScoreInterpreter and ScorePageTimeline drift remains visible and was not absorbed. Printed-symbol pitch and measure-duration checks do not establish full expressive playback: graphical bends, whammy and strum direction remain unsupported."
+  },
+  "bounded_timing_review": {
+    "reviewed_app_commit": "6efe21c41310c1782adfc3323370625801c296e5",
+    "boundary": "Thread-confined bounded timing sessions reuse identical voice-clock and cross-staff candidate calculations; attack lists are cached within unchanged rhythm groups. Shared highlight preparation and standalone export use sessions. Synthetic equivalence, nested-session and repeated-read regressions included. Android asynchronous drawing, persisted optional audio note counts and import-only ambiguous bend-fraction metadata filtering remain app adapters. No mathematical timing rules, dependencies, weights, private scores, logs or library data included. Existing MeterChangeDetector, OmrScoreInterpreter and ScorePageTimeline drift remains visible."
   }
 }

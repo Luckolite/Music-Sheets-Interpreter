@@ -9,6 +9,35 @@ import java.util.List;
 
 /** Shared rhythmic clock for synthesized playback and its on-page note highlight. */
 public final class ScoreNoteTiming {
+    private static final ThreadLocal<TimingSession> SESSION = new ThreadLocal<>();
+    private record TimingKey(ScoreNoteEvent note, double beats, double onset, boolean candidate) {}
+
+    /** Bounded, thread-confined reuse while the caller resolves an unchanged score snapshot. */
+    public static final class TimingSession implements AutoCloseable {
+        private final TimingSession previous=SESSION.get();
+        private final java.util.IdentityHashMap<List<ScoreNoteEvent>,java.util.Map<TimingKey,Double>> values=
+                new java.util.IdentityHashMap<>();
+        private int size;
+        private boolean closed;
+        private TimingSession() { SESSION.set(this); }
+        private Double get(List<ScoreNoteEvent> notes, TimingKey key) {
+            var map=values.get(notes); return map==null?null:map.get(key);
+        }
+        private double put(List<ScoreNoteEvent> notes, TimingKey key, double value) {
+            if (size>=8192) { values.clear(); size=0; }
+            var map=values.computeIfAbsent(notes,ignored->new java.util.HashMap<>());
+            if (map.put(key,value)==null) size++;
+            return value;
+        }
+        @Override public void close() {
+            if (closed) return;
+            if (SESSION.get()!=this) throw new IllegalStateException("Timing sessions must close in nesting order");
+            closed=true; values.clear();
+            if (previous==null) SESSION.remove(); else SESSION.set(previous);
+        }
+    }
+    public static TimingSession beginTimingSession() { return new TimingSession(); }
+
     private static final float SAME_ONSET_POSITION = .018f;
     private static final float CROSS_STAFF_ONSET_POSITION = .022f;
     private static final float MAX_ORDINARY_MEASURE_INSET = .14f;
@@ -24,11 +53,16 @@ public final class ScoreNoteTiming {
 
         RhythmGroup(float position) { this.position = position; }
 
-        void add(ScoreNoteEvent note) { notes.add(note); }
+        private List<ScoreNoteEvent> attackNotes;
+        void add(ScoreNoteEvent note) { notes.add(note); attackNotes=null; }
 
         List<ScoreNoteEvent> attacks() {
-            boolean moving = notes.stream().anyMatch(n->!hasIndependentSustain(n));
-            return moving ? notes.stream().filter(n->!hasIndependentSustain(n)).collect(java.util.stream.Collectors.toList()) : notes;
+            if (attackNotes==null) {
+                boolean moving = notes.stream().anyMatch(n->!hasIndependentSustain(n));
+                attackNotes=moving ? notes.stream().filter(n->!hasIndependentSustain(n))
+                        .toList() : notes;
+            }
+            return attackNotes;
         }
 
         int beamCount() {
@@ -110,7 +144,7 @@ public final class ScoreNoteTiming {
 
     private static GracePlayback gracePlayback(ScoreNoteEvent target, List<ScoreNoteEvent> notes) {
         if(target==null || notes==null || notes.stream().noneMatch(ScoreNoteTiming::grace))return null;
-        List<ScoreNoteEvent> metrical=notes.stream().filter(n->!grace(n)).collect(java.util.stream.Collectors.toList());
+        List<ScoreNoteEvent> metrical=notes.stream().filter(n->!grace(n)).toList();
         List<ScoreNoteEvent> prefix=new ArrayList<>();
         for(ScoreNoteEvent note:measureVoice(target,notes)) {
             if(grace(note)) { prefix.add(note);continue; }
@@ -166,6 +200,14 @@ public final class ScoreNoteTiming {
     /** Builds the rhythmic clock for one staff without recursively applying cross-staff anchors. */
     private static double voiceBeatInMeasure(ScoreNoteEvent target, List<ScoreNoteEvent> notes,
                                              double safeBeats) {
+        var session=SESSION.get();
+        if (session==null) return uncachedVoiceBeat(target,notes,safeBeats);
+        var key=new TimingKey(target,safeBeats,0,false);
+        Double found=session.get(notes,key);
+        return found!=null?found:session.put(notes,key,uncachedVoiceBeat(target,notes,safeBeats));
+    }
+
+    private static double uncachedVoiceBeat(ScoreNoteEvent target,List<ScoreNoteEvent> notes,double safeBeats) {
         List<ScoreNoteEvent> voice = measureVoice(target, notes);
         List<RhythmGroup> groups = rhythmGroups(voice);
         if (groups.isEmpty()) return beatInMeasure(target, (float) safeBeats);
@@ -180,7 +222,7 @@ public final class ScoreNoteTiming {
         // A half-note melody can overlap a short beamed tail in another voice on this same
         // staff. Its sounding length must not push that tail (or its tie) later in the bar.
         if(!hasIndependentSustain(target)&&groups.get(0).notes.stream().allMatch(ScoreNoteTiming::hasIndependentSustain)) {
-            List<RhythmGroup> tail=groups.stream().filter(g->g.notes.stream().noneMatch(ScoreNoteTiming::hasIndependentSustain)).collect(java.util.stream.Collectors.toList());
+            List<RhythmGroup> tail=groups.stream().filter(g->g.notes.stream().noneMatch(ScoreNoteTiming::hasIndependentSustain)).toList();
             double[] written=tail.stream().mapToDouble(RhythmGroup::writtenDuration).toArray();
             boolean printedTail=completePrintedRestRhythm(tail,safeBeats);
             double start=printedTail?leadingRest(tail):contiguousTailRunStart(tail,written,safeBeats);
@@ -319,6 +361,16 @@ public final class ScoreNoteTiming {
 
     private static double candidateCrossStaffOnset(ScoreNoteEvent target,List<ScoreNoteEvent> allNotes,
                                                   double beatsPerMeasure,double voiceOnset) {
+        var session=SESSION.get();
+        if (session==null) return uncachedCrossStaffCandidate(target,allNotes,beatsPerMeasure,voiceOnset);
+        var key=new TimingKey(target,beatsPerMeasure,voiceOnset,true);
+        Double found=session.get(allNotes,key);
+        return found!=null?found:session.put(allNotes,key,
+                uncachedCrossStaffCandidate(target,allNotes,beatsPerMeasure,voiceOnset));
+    }
+
+    private static double uncachedCrossStaffCandidate(ScoreNoteEvent target,List<ScoreNoteEvent> allNotes,
+                                                     double beatsPerMeasure,double voiceOnset) {
         if (target.staffCount() <= 1 || !Float.isFinite(target.positionInMeasure()))
             return voiceOnset;
 
@@ -761,7 +813,7 @@ public final class ScoreNoteTiming {
                                               double beats) {
         if (!target.compactOpening()) return Double.NaN;
         List<ScoreNoteEvent> opening = notes.stream().filter(n -> n.measureIndex()==target.measureIndex()
-                && !grace(n)).collect(java.util.stream.Collectors.toList());
+                && !grace(n)).toList();
         if (opening.isEmpty() || opening.stream().anyMatch(n -> !n.compactOpening()
                 || n.leadingRestBeats()>0 || n.followingRestBeats()>0 || n.tiedFromPrevious())) return Double.NaN;
         double span=0;

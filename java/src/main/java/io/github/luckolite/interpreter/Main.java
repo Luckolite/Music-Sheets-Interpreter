@@ -56,6 +56,7 @@ public final class Main {
             Arrays.fill(beats,change.measureIndex(),beats.length,change.quarterBeats());
         double[] starts=new double[beats.length+1];for(int i=0;i<beats.length;i++)starts[i+1]=starts[i]+beats[i];
         var events=new ArrayList<Map<String,Object>>();
+        try(var timing=ScoreNoteTiming.beginTimingSession()) {
         for(var note:score.notes()) {
             int bar=note.measureIndex();var region=score.measures().get(bar);
             int key=initialKey;for(var k:score.keyChanges())if(k.measureIndex()<=bar)key=k.fifths();
@@ -81,6 +82,7 @@ public final class Main {
             event.put("durationBeats",duration);event.put("durationFallback",estimated);event.put("tiedFromPrevious",note.tiedFromPrevious());
             event.put("x",(region.left()+note.positionInMeasure()*(region.right()-region.left()))*width);
             event.put("y",note.pageY()*height);events.add(event);
+        }
         }
         var result=new LinkedHashMap<String,Object>();result.put("schemaVersion",1);result.put("width",width);result.put("height",height);
         result.put("score",score);result.put("events",events);result.put("tablatureWarnings",tabWarnings);result.put("measureBeats",beats);result.put("totalBeats",starts[beats.length]);
