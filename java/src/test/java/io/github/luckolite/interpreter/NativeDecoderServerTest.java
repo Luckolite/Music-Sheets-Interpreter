@@ -36,11 +36,32 @@ public final class NativeDecoderServerTest {
             var actualGeometry=NativeDecoderWire.exchangeGeometry("127.0.0.1",port,secret,NativeDecoderBuild.SOURCE_SHA256,geometryRequest);
             if(!Arrays.equals(expectedGeometry.labels(),actualGeometry.labels())||!expectedGeometry.measures().equals(actualGeometry.measures()))
                 throw new AssertionError("Changed geometry output");
+            preservesResponseUntilClientFinishes(port,secret,geometryRequest);
+            preservesResponseUntilClientFinishes(port,secret,request);
             stdin.close();
             if(!process.waitFor(5,TimeUnit.SECONDS)||process.exitValue()!=0)throw new AssertionError("Server outlived Hub stdin");
             expectFailure(()->NativeDecoderWire.exchange("127.0.0.1",port,secret,NativeDecoderBuild.SOURCE_SHA256,request));
             System.out.println("PASS auth, source mismatch, concurrent requests, result parity, parent lifetime, unavailable endpoint");
         }finally{if(process.isAlive())process.destroyForcibly();}
+    }
+    private static void preservesResponseUntilClientFinishes(int port,String secret,NativeDecoderWire.Request request)throws Exception {
+        try(var socket=new Socket("127.0.0.1",port)) {
+            socket.setSoTimeout(5000);
+            var out=new DataOutputStream(socket.getOutputStream());
+            var in=new DataInputStream(socket.getInputStream());
+            out.writeInt(NativeDecoderWire.MAGIC);out.writeUTF(secret);
+            out.writeUTF(NativeDecoderBuild.SOURCE_SHA256);out.flush();
+            if(in.readUnsignedByte()!=0)throw new AssertionError("Handshake rejected");
+            NativeDecoderWire.packet(out,data->NativeDecoderWire.writeRequest(data,request));
+            try(var body=NativeDecoderWire.packet(in)){body.readAllBytes();}
+            // Even after writing a response, do not close until its recipient finishes.
+            socket.setSoTimeout(150);
+            try {in.read();throw new AssertionError("Server closed before client finished");}
+            catch(SocketTimeoutException expected) { }
+            socket.shutdownOutput();
+            socket.setSoTimeout(5000);
+            if(in.read()!=-1)throw new AssertionError("Server did not close after client EOF");
+        }
     }
     private interface Action {void run()throws Exception;}
     private static void expectFailure(Action action)throws Exception {try{action.run();throw new AssertionError("Expected rejection");}catch(IOException expected){}}

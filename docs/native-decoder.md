@@ -18,6 +18,11 @@ matching class names do not establish matching interpretation behavior. A caller
 must retain local processing when the service is unavailable, mismatched or busy.
 Three requests can execute and three more can wait; further connections close.
 Packet sizes, dimensions, record counts and decompressed input are bounded.
+After flushing a reply, the server waits for the client to close its output side
+before closing the connection. This avoids truncating large replies through a
+guest network transport. The existing socket timeout bounds clients that do not
+finish. No protocol, recognition, model or result-format change is involved;
+synthetic tests verify the lifetime for both geometry and analysis responses.
 
 ## Review and verification boundary
 

@@ -45,12 +45,19 @@ public final class NativeDecoderServer {
             if(request.operation()==NativeDecoderWire.GEOMETRY) {
                 var geometry=NativeDecoderStages.geometry(request.labels(),request.gray(),request.width(),request.height());
                 NativeDecoderWire.packet(out,data->NativeDecoderWire.writeGeometry(data,geometry));
+                awaitClientClose(in);
                 System.out.println("GEOMETRY ms="+(System.nanoTime()-started)/1_000_000);return;
             }
             var score=OmrScoreInterpreter.analyze(request.labels(),request.gray(),request.width(),request.height(),request.measures());
             NativeDecoderWire.packet(out,data->NativeDecoderWire.writeAnalysis(data,score));
+            awaitClientClose(in);
             // No document identity, OCR text, credentials or score content in service logs.
             System.out.println("DECODE ms="+(System.nanoTime()-started)/1_000_000+" notes="+score.notes().size());
         }catch(Exception failure){System.err.println("Decoder request failed: "+failure.getClass().getSimpleName());}
+    }
+    private static void awaitClientClose(DataInputStream in)throws IOException {
+        // Keep large responses alive through guest NAT until the client consumes them.
+        // The accepted socket's timeout bounds clients that never close.
+        if(in.read()!=-1)throw new IOException("Unexpected trailing request data");
     }
 }

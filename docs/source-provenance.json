@@ -20,9 +20,9 @@
     },
     "NativeDecoderServer.java": {
       "source_path": "tools/native-worker/NativeDecoderServer.java",
-      "source_sha256": "550084fba165b9d3ebd9a7a71c0a0bb4ec06ed623617d0305ffd90046f23c512",
+      "source_sha256": "10fdd7ff57beeb6fa43a30a983e636b0db1d60b538d1894355d763c1cda1c8eb",
       "reviewed_app_commit": "38007cb",
-      "notes": "Reviewed working-tree addition on this base. Loopback-only service with three processing threads, three bounded waiting slots, credential and source checks, and parent-stdin lifetime. Standalone build generates its own fingerprint; no private fixtures, app services or runtime configuration copied."
+      "notes": "Reviewed working-tree addition and response-lifetime fix on this base. Loopback-only service with three processing threads, three bounded waiting slots, credential and source checks, and parent-stdin lifetime. Waits for client EOF after replies with bounded socket timeout; synthetic tests cover both operations. Standalone build generates its own fingerprint; no private fixtures, app services or runtime configuration copied."
     },
     "ColumnInkBounds.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ColumnInkBounds.java",
