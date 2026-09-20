@@ -7,6 +7,30 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class PrintedMeasureRhythmGuardTest {
+    @Test public void footerDigitsCannotCreateAnEmptyExtraSystem() {
+        var extra=new MeasureRegion(.1f,.9f,.75f,.95f);
+        var proposed=new ArrayList<>(raw);proposed.add(extra);
+        assertEquals(raw,PrintedMeasureRhythmGuard.rejectUnprintedRows(raw,proposed,new byte[800000],paper(),1000,800));
+    }
+    @Test public void printedStaffSurvivesEvenIfItsSemanticLabelsAreMissing() {
+        var extra=new MeasureRegion(.1f,.9f,.75f,.95f);
+        var proposed=new ArrayList<>(raw);proposed.add(extra);byte[] g=paper();
+        for(int line=0;line<5;line++)for(int x=100;x<900;x++)g[(620+line*10)*1000+x]=0;
+        assertEquals(proposed,PrintedMeasureRhythmGuard.rejectUnprintedRows(raw,proposed,new byte[800000],g,1000,800));
+    }
+    @Test public void wrongOcrCountCannotCompressThreePrintedBarsIntoOne() {
+        byte[] g=paper();
+        for(int y=160;y<=480;y++){g[y*1000+305]=0;g[y*1000+505]=0;}
+        var merged=List.of(new MeasureRegion(.1f,.9f,.2f,.6f));
+        assertEquals(raw,PrintedMeasureRhythmGuard.preservePrintedBoundaries(raw,merged,g,1000,800));
+    }
+    @Test public void shortStemsDoNotProtectFalseBoundaries() {
+        byte[] g=paper();
+        for(int y=200;y<=260;y++){g[y*1000+305]=0;g[y*1000+505]=0;}
+        var merged=List.of(new MeasureRegion(.1f,.9f,.2f,.6f));
+        assertEquals(merged,PrintedMeasureRhythmGuard.preservePrintedBoundaries(raw,merged,g,1000,800));
+        assertEquals(merged,PrintedMeasureRhythmGuard.preservePrintedBoundaries(raw,merged,null,1000,800));
+    }
     private final List<MeasureRegion> raw = List.of(new MeasureRegion(.1f,.3f,.2f,.6f),
             new MeasureRegion(.31f,.5f,.2f,.6f),new MeasureRegion(.51f,.9f,.2f,.6f));
     private final List<MeasureRegion> fitted = List.of(raw.get(0),raw.get(1),

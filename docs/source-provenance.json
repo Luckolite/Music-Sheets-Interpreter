@@ -172,7 +172,9 @@
     },
     "PrintedMeasureRhythmGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedMeasureRhythmGuard.java",
-      "source_sha256": "e47dd54c603800c28907a75e6f80f8e0d01db4e31a1994641fc405580287b050"
+      "source_sha256": "9015cfa5d6c887840408185e6a027beeb6b2e9dec8683cb04d67e5b60f84279e",
+      "reviewed_app_commit": "4748d4ff716948da3b0b99ae4827b83cc21ed0ca",
+      "notes": "Keep visibly separated bars when OCR counts merge them. Reject inferred extra rows lacking semantic or printed staff evidence. Four original synthetic regressions cover real bars, short stems, footer text and a missing semantic staff. Android OCR also excludes textual octave instructions from numeric anchors; that text adapter and cache invalidation remain platform-specific. No private scores, model changes or device logs included."
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",

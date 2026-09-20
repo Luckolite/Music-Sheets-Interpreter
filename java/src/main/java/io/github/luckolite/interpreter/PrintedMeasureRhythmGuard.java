@@ -12,13 +12,61 @@ final class PrintedMeasureRhythmGuard {
 
     static List<MeasureRegion> reconcile(List<MeasureRegion> raw, List<MeasureRegion> fitted,
                                          byte[] labels, byte[] gray, int width, int height) {
-        boolean split = raw.stream().anyMatch(region -> fragments(region, fitted).size() == 2);
+        fitted = preservePrintedBoundaries(raw, fitted, gray, width, height);
+        fitted = rejectUnprintedRows(raw, fitted, labels, gray, width, height);
+        final var guarded = fitted;
+        boolean split = raw.stream().anyMatch(region -> fragments(region, guarded).size() == 2);
         if (!split && mergedOpening(raw, fitted).isEmpty()) return fitted;
         var notes = OmrScoreInterpreter.analyze(labels, gray, width, height, raw).notes();
         var preserved = preserveWrittenOpening(raw, fitted, notes);
         if (!split) return preserved;
         var aligned = alignPrintedSeparators(raw, preserved, notes, gray, width, height);
         return preserveCompleteRuns(raw, aligned, notes, gray, width, height);
+    }
+
+    /** Number OCR may propose a missing row, but text in a footer is not a staff. */
+    static List<MeasureRegion> rejectUnprintedRows(List<MeasureRegion> raw,
+            List<MeasureRegion> fitted, byte[] labels, byte[] gray, int width, int height) {
+        if (raw.isEmpty() || labels == null || gray == null
+                || labels.length != width*height || gray.length != width*height) return fitted;
+        List<MeasureRegion> result = new ArrayList<>();
+        for (var region : fitted) {
+            if (raw.stream().anyMatch(r -> r.top() <= region.bottom() && r.bottom() >= region.top())) {
+                result.add(region); continue;
+            }
+            int left=Math.max(0,Math.round(region.left()*width));
+            int right=Math.min(width,Math.round(region.right()*width));
+            int top=Math.max(0,Math.round(region.top()*height));
+            int bottom=Math.min(height,Math.round(region.bottom()*height));
+            int w=right-left,h=bottom-top,staff=0;
+            if(w<=0||h<=0)continue;
+            byte[] crop=new byte[w*h];
+            for(int y=top;y<bottom;y++)for(int x=left;x<right;x++) {
+                int at=y*width+x;if(labels[at]==OmrMeasurePostProcessor.STAFF)staff++;
+                crop[(y-top)*w+x-left]=gray[at];
+            }
+            if(staff>=w*2 || !RawStaffLineDetector.detect(crop,w,h).isEmpty()) result.add(region);
+        }
+        return List.copyOf(result);
+    }
+
+    /** OCR counts cannot erase separators visibly spanning the original measure row. */
+    static List<MeasureRegion> preservePrintedBoundaries(List<MeasureRegion> raw,
+            List<MeasureRegion> fitted, byte[] gray, int width, int height) {
+        if (gray == null || gray.length != width * height) return fitted;
+        List<MeasureRegion> result = new ArrayList<>();
+        for (var region : fitted) {
+            var pieces = fragments(region, raw);
+            boolean complete = pieces.size() > 1
+                    && Math.abs(pieces.get(0).left() - region.left()) < .006f
+                    && Math.abs(pieces.get(pieces.size()-1).right() - region.right()) < .006f;
+            for (int i=1; complete && i<pieces.size(); i++) {
+                float cut=(pieces.get(i-1).right()+pieces.get(i).left())*.5f;
+                complete=printedBarline(region,cut,gray,width,height);
+            }
+            if (complete) result.addAll(pieces); else result.add(region);
+        }
+        return List.copyOf(result);
     }
 
     /** A short, note-bearing opening bar must not be merged to match later row counts. */
