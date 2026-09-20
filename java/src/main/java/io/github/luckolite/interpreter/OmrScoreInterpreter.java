@@ -1978,6 +1978,8 @@ final class OmrScoreInterpreter {
                 if (strongest > 7 || (flats > 0 ? sharps + naturals > 0
                         : sharps > 0 ? naturals > 0 : false)) continue;
                 if (strongest < 2 && !doubleBar && !signatureHeader) continue;
+                // A lone signature follows its bar closely; a distant clef fragment does not.
+                if (strongest == 1 && clef == null && run.get(0).x-boundary>staff.gap*3) continue;
                 // Close accidentals on a chord are not a new key. Multiple glyphs
                 // need a boundary or the ordered fourth/fifth signature pattern.
                 if(!signatureHeader&&firstHead-run.get(run.size()-1).x<staff.gap*1.35f
@@ -2327,13 +2329,17 @@ final class OmrScoreInterpreter {
         int bottom = Math.min(height - 1, Math.round(staff.bottom + staff.gap * .3f));
         int groups = 0;
         boolean previous = false;
+        // Two unrelated shafts spanning the search window are not a double bar.
+        int lastStrong = -10000;
         for (int x = left; x <= right; x++) {
             int ink = 0;
             for (int y = top; y <= bottom; y++)
                 if (labels[y * width + x] == OmrMeasurePostProcessor.STEM_OR_REST
                         || gray != null && (gray[y * width + x] & 0xff) < 180) ink++;
             boolean strong = ink >= (bottom - top + 1) * .72f;
-            if (strong && !previous) groups++;
+            if (strong && !previous) groups = x-lastStrong <= staff.gap*.6f ? groups+1 : 1;
+            if(strong)lastStrong=x;
+            if(groups>=2)return true;
             previous = strong;
         }
         if(groups>=2)return true;
@@ -2341,10 +2347,12 @@ final class OmrScoreInterpreter {
         // separate raw columns crossing every staff space, not just the rules
         // or the shorter parallel spines of a sharp.
         for(int threshold:new int[]{205,225}) {
-            groups=0;previous=false;
+            groups=0;previous=false;lastStrong=-10000;
             for(int x=left;x<=right;x++) {
                 boolean strong=fullStaffRule(gray,width,height,x,staff,threshold);
-                if(strong&&!previous)groups++;
+                if(strong&&!previous)groups=x-lastStrong<=staff.gap*.6f?groups+1:1;
+                if(strong)lastStrong=x;
+                if(groups>=2)return true;
                 previous=strong;
             }
             if(groups>=2)return true;

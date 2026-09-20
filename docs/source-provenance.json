@@ -258,5 +258,9 @@
   "broken_flat_shaft_review": {
     "reviewed_app_commit": "5de8d786392cee89376aaaf710c8fcfe9e6899d4",
     "boundary": "Source-ink recovery requires an existing flat family, a substantial vertical shaft and a verified lower-right bowl. Small scan gaps may connect shaft pieces; isolated staff-rule pixels cannot start a recovered shaft. Original semantic spine count remains a lower bound. Synthetic broken-shaft and absent-bowl regressions preserve prior SplitFlatSpineTest coverage. Only this shared OmrScoreInterpreter change was ported; prior unrelated drift remains visible. No model or private fixture changes."
+  },
+  "signature_boundary_spacing_review": {
+    "reviewed_app_commit": "ac1c6b73603df6105db2b3d6c3ac0e42be36fec8",
+    "boundary": "Require adjacent vertical strokes for a double bar, excluding distant accidental shafts. A lone key symbol without a clef must follow its boundary locally; distant clef fragments cannot become key changes. Six original synthetic tests cover source-only bars, separated shafts, and nearby versus distant single-flat changes. Shared decoder change only. No model, private score, or phone-data changes. The three pre-existing unrelated mapped drifts remain visible."
   }
 }
