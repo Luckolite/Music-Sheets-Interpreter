@@ -44,7 +44,7 @@ public final class TablatureDecoder {
         for(int y=0;y<=h;y++) {
             int ink=0;if(y<h)for(int x=0;x<w;x++)if((gray[y*w+x]&255)<threshold)ink++;
             if(ink>w*.55){if(start<0){start=y;peak=0;}peak=Math.max(peak,ink);}
-            else if(start>=0){if(y-start<Math.max(6,w/180)){lines.add((start+y-1)/2);thickness.add(y-start);strength.add(peak);}start=-1;}
+            else if(start>=0){if(y-start<Math.max(6,w/120)){lines.add((start+y-1)/2);thickness.add(y-start);strength.add(peak);}start=-1;}
         }
         var result=new ArrayList<Staff>();
         for(int i=0;i+5<lines.size();i++) {
@@ -145,6 +145,12 @@ public final class TablatureDecoder {
     public static ScorePageInterpretation apply(ScorePageInterpretation score,List<Staff> tabs,int w,int h,int[] tuning,int capo) {
         if(tabs.isEmpty())return score;
         for(int string=0;string<6;string++)midi(string,0,tuning,capo);
+        // OCR measure numbers can create empty standard measures after the six
+        // tab rules have been masked. They carry no musical events and must not
+        // veto the frets. Preserve real notation, rests and paired staff timing.
+        if(!score.measures().isEmpty() && score.notes().isEmpty() && score.rests().isEmpty()
+                && tabs.stream().allMatch(t->t.standardTop<0))
+            score=new ScorePageInterpretation(List.of(),List.of());
         var notes=new ArrayList<>(score.notes());var measures=new ArrayList<>(score.measures());
         var rests=new ArrayList<>(score.rests());
         for(Staff tab:tabs) {

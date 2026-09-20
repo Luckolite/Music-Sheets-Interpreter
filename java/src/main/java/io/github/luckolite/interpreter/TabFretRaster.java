@@ -101,7 +101,13 @@ public final class TabFretRaster {
             for(int s=0;s<6;s++) {
                 int cy=Math.round(t.top()+s*t.gap()),lo=Math.max(0,Math.round(cy-t.gap()*.6f)),hi=Math.min(h,Math.round(cy+t.gap()*.6f));
                 boolean[] rule=new boolean[hi-lo],vertical=new boolean[w];
-                for(int y=lo;y<hi;y++){int ink=0;for(int x=0;x<w;x++)if((gray[y*w+x]&255)<180)ink++;rule[y-lo]=ink>w*.4f;}
+                for(int y=lo;y<hi;y++) {
+                    int ink=0,ruleInk=0;
+                    for(int x=0;x<w;x++){int value=gray[y*w+x]&255;if(value<180)ink++;if(value<235)ruleInk++;}
+                    // Antialiased string fringes can join separate frets into one
+                    // overwide crop even when only the darker rule core is continuous.
+                    rule[y-lo]=ink>w*.4f || Math.abs(y-cy)<=t.gap()*.18f && ruleInk>w*.4f;
+                }
                 int va=Math.max(0,Math.round(cy-t.gap()*.8f)),vb=Math.min(h,Math.round(cy+t.gap()*.8f));
                 for(int x=0;x<w;x++){int ink=0;for(int y=va;y<vb;y++)if((gray[y*w+x]&255)<180)ink++;vertical[x]=ink>(vb-va)*.9f;}
                 for(float bar:t.bars())for(int x=Math.max(0,Math.round(bar-t.gap()*.13f));x<Math.min(w,Math.round(bar+t.gap()*.13f));x++)vertical[x]=true;

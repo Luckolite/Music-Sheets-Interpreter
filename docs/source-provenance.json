@@ -207,8 +207,9 @@
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
-      "source_sha256": "72fcb4d4469c008916ae35ca40df23a1e019703a60ee6a9792820fd7eb5ac525",
-      "reviewed_app_commit": "900de4a7ea123bdf4f0f3ccd6a977f33302d77f3"
+      "source_sha256": "6d7d1740216e2fdfb53e0339838d52cf0185468504feda18981824d6509e4464",
+      "reviewed_app_commit": "ba5df7748ee841ff79608d46ec65d1aec245d984",
+      "notes": "Reviewed standalone tab repair: tolerate enlarged pale string rules, separate antialiased rule fringes from fret crops, and discard event-free phantom measure shells before decoding unpaired tab frets. Existing notes, rests and paired notation remain authoritative. Original synthetic regressions only; model weights and Android OCR adapter unchanged."
     },
     "TabNotation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabNotation.java",
@@ -242,8 +243,9 @@
     },
     "TabFretRaster.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabFretRaster.java",
-      "source_sha256": "c3e0b0d114dd9db0f741a90605216efea0d8e20544737b5296c96a7de5dd831b",
-      "reviewed_app_commit": "357242b1c6fd96ea3063de213c064cb1876bf96a"
+      "source_sha256": "aba91e3a6b16da6c221179eb84ae16fe12c14b08ccf2d9b6f05c0f87047c4936",
+      "reviewed_app_commit": "ba5df7748ee841ff79608d46ec65d1aec245d984",
+      "notes": "Reviewed standalone tab repair: tolerate enlarged pale string rules, separate antialiased rule fringes from fret crops, and discard event-free phantom measure shells before decoding unpaired tab frets. Existing notes, rests and paired notation remain authoritative. Original synthetic regressions only; model weights and Android OCR adapter unchanged."
     }
   },
   "ocr_adapter_review": {
