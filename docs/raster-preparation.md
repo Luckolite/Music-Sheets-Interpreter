@@ -19,3 +19,18 @@ Generated tests compare every split against the original full-raster scan,
 including empty rasters and threshold edges, and compare meter cleanup across
 200 colored synthetic crops against the original operation order. No private
 scores, device logs or app services are included. No model weights changed.
+
+The barline detector also defers pure note-ownership veto scans until a column
+passes its existing semantic/raw barline checks. These scans cannot create a bar,
+so running them on rejected columns supplied no output. A 96-case seeded golden
+regression captured before the optimization checks sparse/dense, sloped, pale
+and label-only inputs, with unchanged input masks and exact boundary lists.
+
+The app now also precomputes tile-edge ownership scores instead of repeating the
+same arithmetic for each overlapping tile. This matches the standalone reader's
+existing precomputed `edge` array. Its dedicated PC-owned Android runtime uses up
+to four CPU inference threads when available; phones/tablets retain two. The
+standalone CLI already exposes `--threads` (default two), so no CLI default is
+changed. A repeated two/four-thread Android benchmark verified identical class
+arrays across eight generated tiles; this is scheduling optimization, not a new
+model or an accuracy claim.

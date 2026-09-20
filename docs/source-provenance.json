@@ -69,8 +69,9 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "b84c0c61cc18ba97ce3a4b0abdcdde5fe04d204d24298cdf5d45660b7b14bdef",
-      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
+      "source_sha256": "6d158d88760d4c6c90b4d61709dd885ff998ad879b116126bf898253249a3ab2",
+      "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a",
+      "notes": "Reviewed working-tree optimization: defer pure note-ownership veto scans until semantic/raw barline validation succeeds. The 96-case generated golden digest was captured on the previous implementation before this port; thresholds, outputs and masks are unchanged."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",

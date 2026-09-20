@@ -373,19 +373,6 @@ final class OmrMeasurePostProcessor {
                     top, Math.min(bottom, Math.round(top + gap)));
             boolean touchesBottom = hasVerticalInk(labels, width, height, x, 2,
                     Math.max(top, Math.round(bottom - gap)), bottom);
-            boolean attachedHead = countLabel(labels, width, height, NOTEHEAD,
-                    Math.round(x - gap * .88f), Math.round(x + gap * .88f),
-                    // Only heads that can attach to a stem spanning this staff matter here.
-                    // The pitch reader's six-ledger-line search reaches neighboring systems:
-                    // Hunter's Frontier's low head on the preceding row hid a real bar below it.
-                    Math.round(top - gap * 1.5f),
-                    Math.round(bottom + gap * 1.5f))
-                    >= Math.max(3, Math.round(gap * 0.65f));
-            if(attachedHead&&gray!=null&&isolatedFullHeightRule(gray,width,height,x,rows,gap,shift))
-                attachedHead=headTouchesColumn(labels,gray,width,height,x,
-                        Math.round(top-gap*1.5f),Math.round(bottom+gap*1.5f),rows,gap,shift);
-            if (!attachedHead) attachedHead = distantHeadOnSameStem(labels, width, height,
-                    x, top, bottom, gap);
             // the segmentation model's stem/rest mask often shortens true barlines to stem height. Its generic
             // symbol mask retains more of the original line, so combine both semantic outputs
             // and rely on the absence of an attached notehead to reject ordinary note stems.
@@ -401,9 +388,22 @@ final class OmrMeasurePostProcessor {
                 rawColumn = rawBarlineColumn(gray,width,height,x,rows,gap,shift,slope,220);
             boolean rawSpansStaff = rawColumn != Integer.MIN_VALUE;
             boolean semanticBar = semanticCandidate && (gray == null || rawSpansStaff);
+            // Note ownership can only veto a proven bar; it cannot create one. Avoid scanning
+            // a large head neighborhood and connected stems at every non-bar column.
+            boolean attachedHead = false;
+            if (semanticBar) {
+                attachedHead = countLabel(labels, width, height, NOTEHEAD,
+                        Math.round(x - gap * .88f), Math.round(x + gap * .88f),
+                        Math.round(top - gap * 1.5f), Math.round(bottom + gap * 1.5f))
+                        >= Math.max(3, Math.round(gap * .65f));
+                if (attachedHead && gray != null && isolatedFullHeightRule(gray,width,height,x,rows,gap,shift))
+                    attachedHead = headTouchesColumn(labels,gray,width,height,x,
+                            Math.round(top-gap*1.5f),Math.round(bottom+gap*1.5f),rows,gap,shift);
+                if (!attachedHead) attachedHead = distantHeadOnSameStem(labels,width,height,x,top,bottom,gap);
+            }
             // Validate stem ownership at the same printed column that proved the rule.
             // A semantic halo can lie a pixel beyond the long stem's labelled edge.
-            if (!attachedHead && rawSpansStaff && rawColumn != x)
+            if (semanticBar && !attachedHead && rawSpansStaff && rawColumn != x)
                 attachedHead = distantHeadOnSameStem(labels, width, height, rawColumn, top, bottom, gap);
             // Raw pixels validate a semantic candidate, but never create one by themselves:
             // aligned note stems can span all five lines on dense music such as Humoresque.
