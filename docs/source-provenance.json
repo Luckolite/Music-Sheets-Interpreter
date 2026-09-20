@@ -6,6 +6,18 @@
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "files": {
+    "ColumnInkBounds.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ColumnInkBounds.java",
+      "source_sha256": "6a09a512593843de6c2ea8918e79ba2435ee1a75092fdc37e64536be0a8a0760",
+      "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a",
+      "notes": "Reviewed working-tree addition on this base. Exact prefix/suffix ink bounds replace repeated raster scans in the Android dynamic-glyph splitter. Synthetic all-split equivalence regression included; platform bitmap adapter remains app-specific."
+    },
+    "MeterCropRaster.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterCropRaster.java",
+      "source_sha256": "9461286742eceb32457392bfbaa8f01772b70563940ed02ac436d70d048db629",
+      "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a",
+      "notes": "Reviewed working-tree addition on this base. Optional Android-independent ARGB meter cleanup, preserving per-pixel thresholds and mutation order. Bulk bitmap integration and dynamic glyph match memoization are Android-specific; no OCR variants or detector thresholds removed."
+    },
     "ExactRasterMemo.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ExactRasterMemo.java",
       "source_sha256": "6c15b90be51c29c2eb3e163eb029c1d52190fda437c0e125537e7ffa274d6859",
@@ -57,8 +69,9 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "b84c0c61cc18ba97ce3a4b0abdcdde5fe04d204d24298cdf5d45660b7b14bdef",
-      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
+      "source_sha256": "6d158d88760d4c6c90b4d61709dd885ff998ad879b116126bf898253249a3ab2",
+      "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a",
+      "notes": "Reviewed working-tree optimization: defer pure note-ownership veto scans until semantic/raw barline validation succeeds. The 96-case generated golden digest was captured on the previous implementation before this port; thresholds, outputs and masks are unchanged."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
