@@ -75,6 +75,19 @@ stem variants still need further recognition work; the parser does not infer the
 Scans with strong curvature, non-six-string tabs, and letter-based historical tabs are not
 supported by this path. Existing segmentation weights are unchanged.
 
+## Optional MusicXML export
+
+Add `--musicxml score.musicxml` to the image/PDF command alongside `--output score.json`.
+Python callers can use `from sheet_interpreter import write_musicxml` and
+`write_musicxml(document, "score.musicxml")` on the same document used for MIDI export.
+
+The dependency-free writer exports uncompressed MusicXML 4.0 in concert pitch, with
+one part per decoded staff, reconstructed voices/chords/rests, ties, and key/meter/tempo
+changes. It preserves decoded timing rather than the original engraving or enharmonic
+spelling. Estimated durations remain estimates. Guitar effects are retained as notation
+text, not a recreation of tab string/fret placement or expressive playback. Review the
+result in your notation editor before treating it as a corrected score.
+
 ## Build from source
 
 Building requires **JDK 17+** with `java`, `javac` and `jar` on `PATH`, or `JAVA_HOME` set.
