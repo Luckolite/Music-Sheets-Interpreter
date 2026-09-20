@@ -28,11 +28,10 @@ does not replace OCR or alter detection thresholds. The native core model weight
 are unchanged. The standalone build fingerprint helper is original integration
 code, not an Android service.
 
-An experimental managed-worker OCR adapter also reuses `ExactRasterMemo` for up
-to 64 small-crop results per recognizer within one page. It hashes every ARGB
-pixel and dimensions, retains no raster, and does not cache failed reads. The
-existing standalone exact-raster regressions cover this shared helper; Android
-tests additionally check copied bitmaps, mutations and recognizer isolation.
+An experiment with a bounded `ExactRasterMemo` for small OCR crops found only
+one identical crop among approximately 200 OCR calls on the measured page, with
+no end-to-end benefit. That adapter was not retained. Existing standalone
+exact-raster regressions remain available to integrations with substantial reuse.
 
 The app worktree has pre-existing differences in `MeterChangeDetector`,
 `OmrScoreInterpreter` and `ScorePageTimeline`. This service addition does not
