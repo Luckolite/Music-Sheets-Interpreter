@@ -254,5 +254,9 @@
   "beam_and_header_review": {
     "reviewed_app_commit": "f2700e49fcd69880ec38ee472fe139abdaa91845",
     "boundary": "Original raw-ink evidence preserves separate beam groups beneath fingering numerals while honoring explicit brackets. Complete clefs outrank later joined accidental masks, with damaged-clef fallback retained; dense header lookback and regular flat spacing exclude adjacent meter strokes. New synthetic regressions cover beam direction, brackets, dense keys, faded clefs and genuine key changes. Only reviewed shared changes carried over; the three pre-existing app drifts remain visible. No private scores, annotations, phone logs, model weights or external source code included."
+  },
+  "broken_flat_shaft_review": {
+    "reviewed_app_commit": "5de8d786392cee89376aaaf710c8fcfe9e6899d4",
+    "boundary": "Source-ink recovery requires an existing flat family, a substantial vertical shaft and a verified lower-right bowl. Small scan gaps may connect shaft pieces; isolated staff-rule pixels cannot start a recovered shaft. Original semantic spine count remains a lower bound. Synthetic broken-shaft and absent-bowl regressions preserve prior SplitFlatSpineTest coverage. Only this shared OmrScoreInterpreter change was ported; prior unrelated drift remains visible. No model or private fixture changes."
   }
 }

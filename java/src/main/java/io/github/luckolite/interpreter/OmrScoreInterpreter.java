@@ -2208,6 +2208,12 @@ final class OmrScoreInterpreter {
     private static int countFlatSpines(byte[] labels, byte[] gray, int width, int height,
                                        float boundary, float right, Staff staff,
                                        boolean doubleBar) {
+        // Source recovery may add a proven broken shaft, never reduce an intact run.
+        return Math.max(countFlatSpines(labels,gray,width,height,boundary,right,staff,doubleBar,false),
+                countFlatSpines(labels,gray,width,height,boundary,right,staff,doubleBar,true));
+    }
+    private static int countFlatSpines(byte[] labels,byte[] gray,int width,int height,
+            float boundary,float right,Staff staff,boolean doubleBar,boolean recover) {
         int leftX=Math.max(0,Math.round(boundary+(doubleBar?staff.gap*.42f:0f)));
         int rightX=Math.min(width-1,Math.round(right));
         int top=Math.max(0,Math.round(staff.top-staff.gap*2.25f));
@@ -2230,6 +2236,25 @@ final class OmrScoreInterpreter {
             }
             boolean strong=pixels>=threshold&&longest>=threshold
                     &&!fullStaffRule(gray,width,height,x,staff);
+            if(recover&&!strong&&gray!=null&&!fullStaffRule(gray,width,height,x,staff)) {
+                int length=0,blank=0,first=top;
+                for(int y=top;y<=bottom;y++) {
+                    if((gray[y*width+x]&255)<=165) {
+                        if(length==0) {
+                            // A staff-rule pixel alone cannot start a recovered vertical shaft.
+                            if(y+2>=height||(gray[(y+1)*width+x]&255)>165
+                                    ||(gray[(y+2)*width+x]&255)>165)continue;
+                            first=y;
+                        }
+                        length++;blank=0;
+                        if(length>=threshold&&y-first>=staff.gap*1.5f&&y-first<=staff.gap*3.5f
+                                &&PrintedFlatGlyph.matches(gray,width,height,Math.max(0,x-1),first,
+                                Math.min(width-1,x+Math.round(staff.gap*.9f)),y,staff.gap)) {
+                            strong=true;bestTop=first;bestBottom=y;longest=length;
+                        }
+                    }else if(++blank>Math.max(1,Math.round(staff.gap*.6f)))length=0;
+                }
+            }
             if(strong) {
                 if(active==null)active=new float[]{x,(bestTop+bestBottom)*.5f,longest};
                 else if(longest>active[2]){active[0]=x;active[1]=(bestTop+bestBottom)*.5f;active[2]=longest;}
