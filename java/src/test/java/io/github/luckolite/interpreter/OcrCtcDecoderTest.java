@@ -7,6 +7,11 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class OcrCtcDecoderTest {
+    @Test public void acceptsOnlyEndpointRoundingAndClampsReportedConfidence() {
+        var result=OcrCtcDecoder.decode(new float[][]{{-0.0000001f,Math.nextUp(1f)}},List.of("","f"),0);
+        assertEquals("f",result.text());assertEquals(1,result.confidence(),0);
+        assertThrows(IllegalArgumentException.class,()->OcrCtcDecoder.decode(new float[][]{{0,1.01f}},List.of("","f"),0));
+    }
     private static final List<String> DICT=List.of("", "0", "o", "p", " ", "é");
     private static float[][] sequence(int... indexes) {
         float[][] result=new float[indexes.length][DICT.size()];

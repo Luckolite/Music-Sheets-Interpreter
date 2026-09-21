@@ -6,8 +6,26 @@
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "files": {
+    "NativeOcrWire.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeOcrWire.java",
+      "source_sha256": "1f7dfc54463165967b78db342ad33b8700b2fdf1de1d16f83d6e8264397c8e98",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Reviewed working-tree addition: bounded authenticated raster/evidence transport, exact round-trip synthetic tests and buffered gzip to avoid per-pixel compressor calls. No credentials, paths or private evidence included."
+    },
+    "NativeOcrServer.java": {
+      "source_path": "tools/native-worker/NativeOcrServer.java",
+      "source_sha256": "00211cde6771f3620616b911318fae411276c2cab74c2f2998c84657d9d73132",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Optional loopback-only service with parent-stdin lifetime, source and credential checks, three bounded workers and checksum-verified models. Android and Hub lifecycle adapters are excluded."
+    },
+    "NativeOcrRoundTrip.java": {
+      "source_path": "tools/native-worker/NativeOcrRoundTrip.java",
+      "source_sha256": "bfcc3722bc8ff6c80c9024e17b495381f2de7a1e63b3949be3cf6625793580b2",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Optional acceptance harness uses a supplied synthetic image and ephemeral credential. Checks exact local/remote evidence, three clients, rejected identity and parent shutdown. No input images bundled."
+    },
     "OnnxOcrInference.java": {
-      "source_path": "tools/native-worker/ocr-android-test/com/musicsheets/app/pdf/OnnxOcrInference.java",
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OnnxOcrInference.java",
       "source_sha256": "0d27a8c9e1b8778dc176cabecba98d940a140412bdf6fcf68b13f7bd02dd83d4",
       "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
       "notes": "Optional ONNX binding only, outside the JDK-only default source set. Verifies model/dictionary hashes before sessions, reads explicit UTF-8 dictionary, bounds CPU threads, closes sessions/results/tensors. Same reviewed binding used by Android instrumentation and desktop evaluation; no runtime or model binaries copied."
@@ -32,9 +50,9 @@
     },
     "OcrCtcDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OcrCtcDecoder.java",
-      "source_sha256": "2a124de51f45483ea00093d4a49bf37bd9a3a454dd313f47389fb5f02e655326",
+      "source_sha256": "4954924b440560873f5a565ddaef291c8fae39e908d617ac0a9defb2b9e3e107",
       "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
-      "notes": "Reviewed working-tree addition: platform-independent greedy probability CTC decoding with explicit dictionary and blank index, duplicate suppression, time spans and finite-input validation. Original synthetic tests only; no external model weights or OCR runtime bundled. Not yet enabled in production interpretation."
+      "notes": "Shared greedy CTC decoding accepts only one-part-per-million endpoint roundoff and clamps reported confidence; invalid probabilities remain rejected. Synthetic endpoint regression included. Android lazy ownership, fail-closed page memoization and separate cache generation remain app adapters. No external weights or private fixtures bundled."
     },
     "NativeDecoderWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderWire.java",

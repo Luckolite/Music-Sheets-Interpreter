@@ -82,3 +82,26 @@ Model lineage and redistribution terms:
 RapidOCR documents converted artifacts under the upstream Apache-2.0 terms.
 No third-party model artifacts, fonts, runtime binaries, or private scans are
 included by this change.
+
+## Optional local worker
+
+The same optional build also provides `NativeOcrServer` on loopback port 45925.
+Its parent supplies a random 64-hex credential on stdin and keeps stdin open;
+closing the pipe stops the worker. Clients use `NativeOcrWire.exchange` with the
+same credential and `NativeDecoderBuild.SOURCE_SHA256`. Identity is checked before
+reading raster data. Compressed packets, expanded pixels, result records and the
+three-worker request queue are bounded. Buffered gzip avoids per-pixel native
+compressor calls. This endpoint is for a trusted local machine, not internet use.
+
+`NativeOcrRoundTrip MODEL_DIRECTORY SYNTHETIC_IMAGE [JAVA_EXECUTABLE]` tests local
+and remote evidence equality, three concurrent clients, identity rejection and
+parent shutdown. The caller supplies the synthetic image; no private score is
+distributed. Android integration separately uses lazy verified assets, page-scoped
+evidence reuse and the identical local engine when the PC is unavailable. Those
+lifecycle/cache adapters are not part of this standalone distribution.
+
+Validation includes exact packaged Android ARM/emulator versus Windows page
+evidence and a downstream comparison of notes, measures, meter and tempo on one
+private page. This is not a claim of whole-library equivalence or ground-truth
+accuracy. Pale tiny markings and rotated crops remain evaluation limitations.
+The standalone default CLI does not automatically run this optional OCR provider.

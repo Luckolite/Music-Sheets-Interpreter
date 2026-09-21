@@ -24,13 +24,14 @@ public final class OcrCtcDecoder {
             if(step==null||step.length!=dictionary.size())throw new IllegalArgumentException("CTC vocabulary mismatch");
             int best=0;
             for(int k=0;k<step.length;k++) {
-                if(!Float.isFinite(step[k])||step[k]<0||step[k]>1)
+                if(!Float.isFinite(step[k])||step[k]<-0.000001f||step[k]>1.000001f)
                     throw new IllegalArgumentException("Expected finite CTC probabilities");
                 if(step[k]>step[best])best=k; // Stable lowest-index tie break on every platform.
             }
             if(best!=blankIndex) {
                 if(best!=previous) {
-                    tokens.add(new Token(dictionary.get(best),t,t+1,step[best]));total+=step[best];
+                    float confidence=Math.max(0,Math.min(1,step[best]));
+                    tokens.add(new Token(dictionary.get(best),t,t+1,confidence));total+=confidence;
                 } else {
                     var old=tokens.remove(tokens.size()-1);
                     tokens.add(new Token(old.text(),old.startStep(),t+1,old.confidence()));
