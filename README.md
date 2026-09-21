@@ -57,6 +57,9 @@ Use `Interpreter` and `write_musicxml` from Python, or `SheetInterpreter.analyze
 from Java. See [API examples and output format](docs/integration.md).
 An optional [native Java decoding service](docs/native-decoder.md) supports
 bounded, source-matched geometry and analysis requests from local workers.
+An experimental [shared page OCR pipeline](docs/portable-ocr.md) and optional
+ONNX binding are available for cross-platform evaluation; they do not replace
+the default reader or automatically populate annotations.
 
 The bundled v4 model comes from our own synthetic training lineage, without pretrained
 HOMR/oemer weights or commercial score scans. Tab and export improvements do not change

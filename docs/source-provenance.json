@@ -6,6 +6,24 @@
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "files": {
+    "OnnxOcrInference.java": {
+      "source_path": "tools/native-worker/ocr-android-test/com/musicsheets/app/pdf/OnnxOcrInference.java",
+      "source_sha256": "0d27a8c9e1b8778dc176cabecba98d940a140412bdf6fcf68b13f7bd02dd83d4",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Optional ONNX binding only, outside the JDK-only default source set. Verifies model/dictionary hashes before sessions, reads explicit UTF-8 dictionary, bounds CPU threads, closes sessions/results/tensors. Same reviewed binding used by Android instrumentation and desktop evaluation; no runtime or model binaries copied."
+    },
+    "PortableOcrProbe.java": {
+      "source_path": "tools/native-worker/PortableOcrProbe.java",
+      "source_sha256": "50d6a9693b59bb228e509e892c66e128ab7b383f598922cb8015cedc528c660f",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Optional ImageIO desktop evaluation entry point; user-supplied image only. No bundled fixtures or machine paths. Package/license header adapted."
+    },
+    "PortableOcr.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableOcr.java",
+      "source_sha256": "1885010f534b4d06cb145f08efdb3fff52883ee3eb5e10baaf129cd4e3acf6d2",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Reviewed working-tree addition. Platform-independent half-pixel BGR preprocessing, bounded probability components, conservative stacked-row splitting and CTC alignment estimates. Caller supplies inference and dictionary; no runtime or weights bundled or enabled by default. Synthetic geometry/input/cancellation tests only; private score evidence excluded. Symbol boxes are alignment estimates, not measured ink. Existing three unrelated source drifts remain visible."
+    },
     "OcrText.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OcrText.java",
       "source_sha256": "f8493b749f629e21e151857fa79d636f0b8303a480aa680ec82c1e6a17bdafe2",
