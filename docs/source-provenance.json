@@ -178,8 +178,8 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "bd9fb5164f98341449b29470f1851e1c4efd7cb0e66482fb2395ec843fc0347a",
-      "reviewed_app_commit": "6efe21c41310c1782adfc3323370625801c296e5"
+      "source_sha256": "81e531c67afced77d875ebbb8448734384a228fa6077f8efbb36a9ea92cf0d34",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",

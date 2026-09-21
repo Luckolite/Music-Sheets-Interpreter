@@ -11,12 +11,16 @@ import java.util.List;
 public final class ScoreNoteTiming {
     private static final ThreadLocal<TimingSession> SESSION = new ThreadLocal<>();
     private record TimingKey(ScoreNoteEvent note, double beats, double onset, boolean candidate) {}
+    private record StaffKey(int staffIndex, int staffCount) {}
 
     /** Bounded, thread-confined reuse while the caller resolves an unchanged score snapshot. */
     public static final class TimingSession implements AutoCloseable {
         private final TimingSession previous=SESSION.get();
         private final java.util.IdentityHashMap<List<ScoreNoteEvent>,java.util.Map<TimingKey,Double>> values=
                 new java.util.IdentityHashMap<>();
+        private final java.util.IdentityHashMap<List<ScoreNoteEvent>,java.util.Map<StaffKey,Float>> leadingInsets=
+                new java.util.IdentityHashMap<>();
+        private int leadingInsetCalculations;
         private int size;
         private boolean closed;
         private TimingSession() { SESSION.set(this); }
@@ -29,10 +33,18 @@ public final class ScoreNoteTiming {
             if (map.put(key,value)==null) size++;
             return value;
         }
+        private Float leadingInset(List<ScoreNoteEvent> notes, StaffKey key) {
+            var map=leadingInsets.get(notes); return map==null?null:map.get(key);
+        }
+        private float putLeadingInset(List<ScoreNoteEvent> notes, StaffKey key, float value) {
+            leadingInsets.computeIfAbsent(notes,ignored->new java.util.HashMap<>()).put(key,value);
+            return value;
+        }
+        int leadingInsetCalculationCount() { return leadingInsetCalculations; }
         @Override public void close() {
             if (closed) return;
             if (SESSION.get()!=this) throw new IllegalStateException("Timing sessions must close in nesting order");
-            closed=true; values.clear();
+            closed=true; values.clear(); leadingInsets.clear();
             if (previous==null) SESSION.remove(); else SESSION.set(previous);
         }
     }
@@ -1232,6 +1244,13 @@ public final class ScoreNoteTiming {
      * measures that genuinely begin with rests to pull the learned inset to the right. */
     private static float learnedLeadingInset(ScoreNoteEvent target,
                                              List<ScoreNoteEvent> allNotes) {
+        TimingSession session=SESSION.get();
+        StaffKey key=new StaffKey(target.staffIndex(),target.staffCount());
+        if(session!=null) {
+            Float cached=session.leadingInset(allNotes,key);
+            if(cached!=null)return cached;
+            session.leadingInsetCalculations++;
+        }
         List<ScoreNoteEvent> sameStaff = new ArrayList<>();
         for (ScoreNoteEvent note : allNotes) if (note != null
                 && note.staffIndex() == target.staffIndex()
@@ -1246,9 +1265,11 @@ public final class ScoreNoteTiming {
             firstPositions.add(note.positionInMeasure());
             previousMeasure = note.measureIndex();
         }
-        if (firstPositions.isEmpty()) return Float.NaN;
+        if (firstPositions.isEmpty()) return session==null?Float.NaN
+                :session.putLeadingInset(allNotes,key,Float.NaN);
         firstPositions.sort(Float::compare);
-        return firstPositions.get((firstPositions.size() - 1) / 4);
+        float result=firstPositions.get((firstPositions.size() - 1) / 4);
+        return session==null?result:session.putLeadingInset(allNotes,key,result);
     }
 
     private static boolean sameDuration(double first, double second) {
