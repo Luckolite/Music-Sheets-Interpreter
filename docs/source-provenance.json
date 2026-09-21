@@ -114,9 +114,9 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "c1a70f803f2d38876716ea1ad3c513ce2411a5270c4811831f29d3e24b41f0c4",
+      "source_sha256": "c02ee6d56f3f5e73ea477c65f12044d457f7aa9d321310b61d700fd6e65e1e8e",
       "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
-      "notes": "Whole-note-denominator OCR filter rejects contradictory 1/1 or 2/1 only with two complete written bars. Existing helper alignment reviewed. Android OCR calls this shared filter; explicit standalone annotations remain authoritative. Original synthetic tests."
+      "notes": "Whole-note-denominator OCR filter rejects contradictory 1/1 or 2/1 only with two complete written bars. Existing helper alignment reviewed. Android OCR calls this shared filter; explicit standalone annotations remain authoritative. Original synthetic tests. Uses Collectors.toList for Android API 26 compatibility."
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",

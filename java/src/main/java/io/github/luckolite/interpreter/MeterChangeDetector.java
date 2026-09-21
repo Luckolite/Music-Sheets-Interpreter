@@ -96,7 +96,8 @@ public final class MeterChangeDetector {
      * remain unchanged: missed beams can make even genuine compound bars disagree. */
     public static List<ScoreMeterChange> filterWholeNoteOcrReadings(
             List<ScoreMeterChange> readings,List<ScoreNoteEvent> notes,int measureCount) {
-        var sorted=readings.stream().sorted(java.util.Comparator.comparingInt(ScoreMeterChange::measureIndex)).toList();
+        var sorted=readings.stream().sorted(java.util.Comparator.comparingInt(ScoreMeterChange::measureIndex))
+                .collect(java.util.stream.Collectors.toList());
         var result=new ArrayList<ScoreMeterChange>();
         for(int i=0;i<sorted.size();i++) {
             var choice=sorted.get(i);
