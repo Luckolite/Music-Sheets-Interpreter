@@ -6,7 +6,8 @@ a Java decoder and a Python interface. Exports JSON, MIDI and MusicXML.
 **Code and weights are Apache-2.0 licensed, including commercial and closed-source use.**
 You do not need to publish your own code. Follow the [license and notice requirements](docs/licensing.md).
 
-This is experimental software. Check recognized notes and timing against the original score.
+This is experimental software. Always compare recognized notes, octaves, measure boundaries
+and timing with the original score before relying on playback or exported notation.
 
 ## Install and use
 
@@ -39,6 +40,8 @@ Everything runs locally after installation; no account or server is required.
 ## What it supports
 
 - Standard notation: pitches, accidentals, chords, rests, ties and written timing.
+- Multi-staff piano, violin and ensemble pages, including independently barred staves.
+- Printed meter and numeric tempo changes when the symbols can be read confidently.
 - Six- and seven-string guitar tabs, using embedded PDF text or caller-supplied OCR.
 - Printed tuning headers, including alternate tunings carried across PDF pages.
 - Detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations.
@@ -50,6 +53,16 @@ Guitar effects are text annotations in MusicXML. Recognition can miss symbols, a
 missing tab rhythm remains estimated. Graphical bends, quarter-tone bends, whammy-bar
 directions and strum direction are not reconstructed. Scanned tab input still needs
 fret OCR; an OCR engine is not included.
+
+The decoder uses conservative visual checks to keep arpeggio marks from becoming
+barlines, ordinary hollow chord heads from becoming artificial harmonics, and tiny
+notation fragments from becoming implausible whole-note-denominator meters. It also
+preserves barlines drawn separately through multiple staves and beams briefly crossed
+by articulation marks. These safeguards reduce known false readings, but they are not
+a guarantee that every note or rhythm in a score is correct.
+
+Note-equals-number tempo marks are supported. Note-equals-note metric modulations are
+not yet interpreted, so passages using them can play at the wrong relative tempo.
 
 ## Integration and model
 
