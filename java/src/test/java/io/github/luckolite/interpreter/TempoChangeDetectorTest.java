@@ -11,6 +11,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public final class TempoChangeDetectorTest {
+    @Test public void openingTempoLineMayStartLeftOfTheFirstBar() {
+        int w=300,h=240;byte[] gray=new byte[w*h];Arrays.fill(gray,(byte)255);
+        for(int x=104;x<=116;x++){gray[48*w+x]=0;gray[54*w+x]=0;}
+        var token=new MeasureNumberReconciler.NumberToken(120,120f/w,42f/h,150f/w,60f/h,65f/w);
+        assertEquals(List.of(new ScoreTempoChange(0,0,120)),TempoChangeDetector.detect(List.of(token),gray,w,h,
+                List.of(new MeasureRegion(.40f,.9f,.27f,.48f))));
+    }
+    @Test public void outOfBoundsLaterTempoLineDoesNotJumpToAnotherRow() {
+        int w=300,h=400;byte[] gray=new byte[w*h];Arrays.fill(gray,(byte)255);
+        for(int x=104;x<=116;x++){gray[248*w+x]=0;gray[254*w+x]=0;}
+        var token=new MeasureNumberReconciler.NumberToken(120,120f/w,242f/h,150f/w,260f/h,65f/w);
+        assertTrue(TempoChangeDetector.detect(List.of(token),gray,w,h,List.of(
+                new MeasureRegion(.4f,.9f,.2f,.35f),new MeasureRegion(.4f,.9f,.67f,.85f))).isEmpty());
+    }
     @Test public void longDirectionStartsAtItsWordsEvenOnTheTopSystem() {
         int w=600,h=400;byte[] gray=new byte[w*h];Arrays.fill(gray,(byte)255);
         for(int x=380;x<=393;x++){gray[48*w+x]=0;gray[54*w+x]=0;}

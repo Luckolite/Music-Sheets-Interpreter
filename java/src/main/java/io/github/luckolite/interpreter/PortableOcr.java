@@ -122,7 +122,9 @@ public final class PortableOcr {
             if(Thread.currentThread().isInterrupted())throw new java.util.concurrent.CancellationException();
             if(map[y]==null||map[y].length!=mw)throw new IllegalArgumentException("Ragged detection map");
             for(int x=0;x<mw;x++) {
-                if(!Float.isFinite(map[y][x])||map[y][x]<0||map[y][x]>1)throw new IllegalArgumentException("Invalid detector probability");
+                // CPU sigmoid kernels can overshoot an endpoint by one ULP.
+                if(!Float.isFinite(map[y][x])||map[y][x]<-0.000001f||map[y][x]>1.000001f)
+                    throw new IllegalArgumentException("Invalid detector probability");
                 mask[y*mw+x]=map[y][x]>.3f;
             }
         }

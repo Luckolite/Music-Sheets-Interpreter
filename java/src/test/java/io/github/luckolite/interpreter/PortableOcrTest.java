@@ -6,6 +6,11 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class PortableOcrTest {
+    @Test public void toleratesSigmoidEndpointRoundingButNotInvalidProbabilities() {
+        float[][] map=new float[4][4];for(var row:map)Arrays.fill(row,Math.nextUp(1f));
+        assertEquals(1,PortableOcr.regions(map,40,40).size());
+        map[0][0]=1.01f;assertThrows(IllegalArgumentException.class,()->PortableOcr.regions(map,40,40));
+    }
     @Test public void paddedTempoDigitsRetainConservativePrintedEqualsDetection() {
         int width=300,height=240;int[] pixels=new int[width*height];Arrays.fill(pixels,0xffffffff);
         byte[] gray=new byte[pixels.length];Arrays.fill(gray,(byte)255);

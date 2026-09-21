@@ -28,6 +28,10 @@ final class TempoChangeDetector {
                     token.top(),token.annotationLeft()+(token.right()-token.left()),token.bottom());
             int measureIndex = nearestFollowingMeasure(anchor, measures,
                     token.annotationLeft() >= token.left()-.001f);
+            // OCR may include the tempo note/equal sign in a line starting left of
+            // the first bar. The verified digits may still clearly belong to the
+            // opening staff. Do not relax ink checks or relocate later directions.
+            if(measureIndex<0&&nearestFollowingMeasure(token,measures,true)==0)measureIndex=0;
             if (measureIndex < 0) continue;
             MeasureRegion measure = measures.get(measureIndex);
             float position = (anchor.left() - measure.left())

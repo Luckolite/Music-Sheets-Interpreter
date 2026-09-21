@@ -20,7 +20,7 @@
     },
     "PortableOcr.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableOcr.java",
-      "source_sha256": "1885010f534b4d06cb145f08efdb3fff52883ee3eb5e10baaf129cd4e3acf6d2",
+      "source_sha256": "0b540f3453258c0f62ecf43396c222fa8ceb0dec01f79741256beaf1bd34801f",
       "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
       "notes": "Reviewed working-tree addition. Platform-independent half-pixel BGR preprocessing, bounded probability components, conservative stacked-row splitting and CTC alignment estimates. Caller supplies inference and dictionary; no runtime or weights bundled or enabled by default. Synthetic geometry/input/cancellation tests only; private score evidence excluded. Symbol boxes are alignment estimates, not measured ink. Existing three unrelated source drifts remain visible."
     },
@@ -186,9 +186,9 @@
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
-      "source_sha256": "e7b51aac4b2a2fd8c1ba9429991b68db0542b75923ef730323bc0f95715c8c27",
-      "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5",
-      "notes": "Reviewed pulse-unit repair: eighth and dotted-eighth glyphs retain exact fractional quarter BPM and the printed pulse length. Standalone API retains the three-argument tempo constructor. Android binary cache generation 252, viewer propagation, and selected-tempo integration remain platform adapters. No score images or private logs included."
+      "source_sha256": "7ad23b484fefaec37c67e58c3673aa81b27a3c85178fd177519cf1e07dc2974c",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Reviewed opening-tempo OCR anchor fallback: an out-of-bounds annotation start may resolve only to the opening measure when its original verified digits independently belong there. Existing equals-ink, vertical staff exclusion and printed pulse-unit checks remain unchanged. Positive and later-row negative synthetic regressions included. Prior pulse-unit/fractional quarter-BPM behavior retained. No private evidence included."
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
