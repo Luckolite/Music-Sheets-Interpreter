@@ -2968,6 +2968,19 @@ final class OmrScoreInterpreter {
             if (!representedStaff(recovered, staffs, height)) staffs.add(recovered);
         }
         staffs.sort(Comparator.comparingDouble(staff -> staff.top));
+        float[] pageGaps=new float[staffs.size()];
+        for(int i=0;i<staffs.size();i++)pageGaps[i]=staffs.get(i).pitchGap;
+        float pageGap=pageGaps.length==0?0:median(pageGaps);
+        for(Staff staff:staffs) {
+            float[] pitch=regionalStaffPitch(gray,width,height,staff);
+            if(pitch!=null&&(pitch[2]>=3||(staffs.size()>=3&&Math.abs(pitch[1]-pageGap)<=pageGap*.08f))) {
+                // One unobscured strip may be at the sloping page edge. When other
+                // staffs corroborate its spacing, keep the central vertical anchor.
+                if(pitch[2]>=3||Math.abs(pitch[0]-staff.pitchBottom)>pitch[1]*.5f)staff.pitchBottom=pitch[0];
+                staff.pitchGap=pitch[1];
+                staff.pitchSlope=pitch[3];
+            }
+        }
         // Recover staff geometry from five continuous printed rules on a tilted page.
         // Match nearby groups and require page-scale support for compressed aliases.
         if(gray!=null&&Math.abs(semanticSlope)>.001f) {
@@ -3266,7 +3279,13 @@ final class OmrScoreInterpreter {
     /** Center complete printed rule bands instead of using whichever edge pixel wins a peak. */
     private static float[] printedStaffPitch(byte[] gray,int width,int height,
                                              RawStaffLineDetector.StaffLines raw) {
+        return printedStaffPitch(gray,width,height,raw,.25f);
+    }
+
+    private static float[] printedStaffPitch(byte[] gray,int width,int height,
+                                             RawStaffLineDetector.StaffLines raw,float support) {
         float[] centers=new float[5];int radius=Math.max(2,Math.round(raw.gap()*.28f));
+        int strongRules=0;
         for(int line=0;line<5;line++) {
             int first=Math.max(0,raw.rows()[line]-radius),last=Math.min(height-1,raw.rows()[line]+radius);
             int[] strength=new int[last-first+1];int strongest=0,peak=0;
@@ -3274,7 +3293,8 @@ final class OmrScoreInterpreter {
                 int n=0;for(int x=0;x<width;x++)if((gray[y*width+x]&255)<=170)n++;
                 strength[y-first]=n;if(n>strongest){strongest=n;peak=y-first;}
             }
-            if(strongest<width*.25f)return null;
+            if(strongest<width*support)return null;
+            if(strongest>=width*.9f)strongRules++;
             int start=peak,end=peak;
             while(start>0&&strength[start-1]>=strongest*.85f)start--;
             while(end+1<strength.length&&strength[end+1]>=strongest*.85f)end++;
@@ -3295,12 +3315,93 @@ final class OmrScoreInterpreter {
                     y=b;
                 }
             }
-            if(thinColumns<width*.25f)return null;
+            if(thinColumns<width*support)return null;
         }
+        // Regional recovery is deliberately stricter than the page-wide fallback. One
+        // interrupted rule is common under a note or dynamic; two make the vertical phase
+        // ambiguous enough that semantic staff geometry is safer than re-anchoring it.
+        if(support>.5f&&strongRules<4)return null;
         float gap=(centers[4]-centers[0])/4;
         for(int line=1;line<5;line++)if(Math.abs(centers[line]-centers[line-1]-gap)>
-                Math.max(.75f,gap*.12f))return null;
+                Math.max(.75f,gap*(support>.5f?.20f:.12f)))return null;
         return new float[]{centers[4],gap};
+    }
+
+    /** Skew spreads page-wide peaks. Several short, independent strips can still
+     * establish the complete five-rule spacing without trusting semantic paint. */
+    private static float[] regionalStaffPitch(byte[] gray,int width,int height,Staff staff) {
+        if(gray==null)return null;
+        int stripWidth=Math.min(width,Math.max(80,Math.round(staff.gap*10)));
+        int top=Math.max(0,Math.round(staff.top-staff.gap*2));
+        int bottom=Math.min(height,Math.round(staff.bottom+staff.gap*2));
+        List<float[]> pitches=new ArrayList<>();
+        for(int strip=0;strip<7;strip++) {
+            int left=Math.max(0,Math.min(width-stripWidth,Math.round(width*(.15f+strip*.12f)-stripWidth*.5f)));
+            byte[] local=new byte[stripWidth*(bottom-top)];
+            for(int y=top;y<bottom;y++)System.arraycopy(gray,y*width+left,local,(y-top)*stripWidth,stripWidth);
+            int[] thinStrength=new int[bottom-top];
+            int maxThickness=Math.max(3,Math.round(staff.gap*.4f));
+            for(int x=0;x<stripWidth;x++)for(int y=0;y<bottom-top;) {
+                if((local[y*stripWidth+x]&255)>170){y++;continue;}
+                int first=y;
+                while(y<bottom-top&&(local[y*stripWidth+x]&255)<=170)y++;
+                if(y-first<=maxThickness)for(int row=first;row<y;row++)thinStrength[row]++;
+            }
+            float[] best=null;float distance=Float.MAX_VALUE;
+            for(var raw:RawStaffLineDetector.detectFromStrength(thinStrength,Math.max(24,Math.round(stripWidth*.55f)),bottom-top)) {
+                float[] pitch=printedStaffPitch(local,stripWidth,bottom-top,raw,.55f);
+                if(pitch==null||pitch[1]<staff.gap*.75f||pitch[1]>staff.gap*1.4f
+                        ||Math.abs(raw.top()+top-staff.top)>staff.gap*1.6f
+                        ||Math.abs(raw.bottom()+top-staff.bottom)>staff.gap*1.6f)continue;
+                float d=Math.abs(pitch[0]+top-staff.pitchBottom);
+                if(d<distance){distance=d;best=new float[]{pitch[0]+top,pitch[1],left+stripWidth*.5f};}
+            }
+            if(best!=null)pitches.add(best);
+        }
+        if(pitches.isEmpty())return null;
+        float[] gaps=new float[pitches.size()],bottoms=new float[pitches.size()];
+        for(int i=0;i<pitches.size();i++){gaps[i]=pitches.get(i)[1];bottoms[i]=pitches.get(i)[0];}
+        float gap=median(gaps),base=median(bottoms);int consistent=0;
+        for(float[] pitch:pitches)if(Math.abs(pitch[1]-gap)<=gap*.08f&&Math.abs(pitch[0]-base)<=gap*.6f)consistent++;
+        float slope=0;
+        if(consistent>=3) {
+            double sx=0,sy=0,sxx=0,sxy=0;int n=0;float first=width,last=0;
+            for(float[] pitch:pitches)if(Math.abs(pitch[1]-gap)<=gap*.08f&&Math.abs(pitch[0]-base)<=gap*.6f) {
+                sx+=pitch[2];sy+=pitch[0];sxx+=pitch[2]*pitch[2];sxy+=pitch[2]*pitch[0];n++;
+                first=Math.min(first,pitch[2]);last=Math.max(last,pitch[2]);
+            }
+            if(last-first>=width*.25f&&n*sxx-sx*sx>0) {
+                float fitted=(float)((n*sxy-sx*sy)/(n*sxx-sx*sx));
+                float intercept=(float)((sy-fitted*sx)/n);int fits=0;
+                for(float[] pitch:pitches)if(Math.abs(pitch[0]-(intercept+fitted*pitch[2]))<=gap*.20f)fits++;
+                if(fits>=consistent&&Math.abs(fitted)*width<=gap*2) {
+                    slope=fitted;base=intercept+slope*width*.5f;
+                }
+            }
+        }
+        return consistent*2>pitches.size()
+                && continuousPrintedRules(gray,width,height,base,gap,slope)>=4
+                ?new float[]{base,gap,consistent,slope}:null;
+    }
+
+    /** A local strip can land entirely between repeated occlusions and make a broken rule look
+     * continuous. Recheck the fitted five rules across the page: four must remain independently
+     * traceable, leaving room for one rule to be covered by ordinary notation. */
+    private static int continuousPrintedRules(byte[] gray,int width,int height,float bottom,
+                                                float gap,float slope) {
+        int strong=0,radius=Math.max(1,Math.round(gap*.22f));
+        for(int line=0;line<5;line++) {
+            int columns=0;
+            for(int x=0;x<width;x++) {
+                int center=Math.round(bottom-line*gap+slope*(x-width*.5f));
+                boolean ink=false;
+                for(int y=Math.max(0,center-radius);y<=Math.min(height-1,center+radius);y++)
+                    if((gray[y*width+x]&255)<=170){ink=true;break;}
+                if(ink)columns++;
+            }
+            if(columns>=width*.84f)strong++;
+        }
+        return strong;
     }
 
     /** Original contiguous-band reader retained as a conservative fallback on known score rows. */
@@ -7485,7 +7586,7 @@ final class OmrScoreInterpreter {
     private static float median(float[] values) {
         float[] sorted = values.clone();
         java.util.Arrays.sort(sorted);
-        return (sorted[1] + sorted[2]) * .5f;
+        return (sorted[(sorted.length-1)/2] + sorted[sorted.length/2]) * .5f;
     }
 
     private static float clamp(float value) { return Math.max(0f, Math.min(1f, value)); }

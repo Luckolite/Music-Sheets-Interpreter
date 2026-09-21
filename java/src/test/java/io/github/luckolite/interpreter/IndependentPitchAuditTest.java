@@ -91,6 +91,12 @@ public class IndependentPitchAuditTest {
         p.rect(165,80,5,56,(byte)5);
         assertEquals(2,call("countFlatSpines",p.labels,p.gray,p.w,p.h,95f,190f,construct("Staff",80f,144f,16f),false));
     }
+    @Test public void regionalPrintedRulesRecoverSpacingOnASkewedScan()throws Exception {
+        Page p=new Page();
+        for(int x=20;x<380;x++)for(int line=0;line<5;line++)p.rect(x,80+line*16+x/150,1,2,(byte)4);
+        float[] pitch=(float[])call("regionalStaffPitch",p.gray,p.w,p.h,construct("Staff",96f,148f,13f));
+        assertNotNull(pitch);assertEquals(16,pitch[1],.2);assertEquals(148,pitch[0],3);
+    }
     @Test public void localFlatRepeatingAKeyPitchDoesNotExtendTheSignature()throws Exception {
         Page p=new Page();p.rules(80,16);
         p.rect(100,75,3,32,(byte)3);p.rect(120,51,3,32,(byte)3);

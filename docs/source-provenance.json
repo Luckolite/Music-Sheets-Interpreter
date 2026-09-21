@@ -434,5 +434,9 @@
   "bounded_timing_review": {
     "reviewed_app_commit": "6efe21c41310c1782adfc3323370625801c296e5",
     "boundary": "Thread-confined bounded timing sessions reuse identical voice-clock and cross-staff candidate calculations; attack lists are cached within unchanged rhythm groups. Shared highlight preparation and standalone export use sessions. Synthetic equivalence, nested-session and repeated-read regressions included. Android asynchronous drawing, persisted optional audio note counts and import-only ambiguous bend-fraction metadata filtering remain app adapters. No mathematical timing rules, dependencies, weights, private scores, logs or library data included. Existing MeterChangeDetector, OmrScoreInterpreter and ScorePageTimeline drift remains visible."
+  },
+  "regional_staff_continuity_review": {
+    "reviewed_app_state": "Music Sheets 1.18.248 worktree based on 38007cbb6226aedaea567cf64fc76cace4d3297c",
+    "boundary": "Regional pitch recovery checks seven independent strips, fits the staff slope, and then requires four rules to remain continuous across the page. One line may be covered by notation; two interrupted lines cannot rephase a semantic staff. Original generated regressions only. No score image, device data, Android adapter, dependency or model weight is included. Existing unrelated mapped drift remains visible."
   }
 }
