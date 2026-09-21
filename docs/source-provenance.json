@@ -178,7 +178,7 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "81e531c67afced77d875ebbb8448734384a228fa6077f8efbb36a9ea92cf0d34",
+      "source_sha256": "034bdb22df4a059ddeebec433c8f78906bb3c9e91e7c8543e7126cba412815fa",
       "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
     },
     "ScorePageInterpretation.java": {

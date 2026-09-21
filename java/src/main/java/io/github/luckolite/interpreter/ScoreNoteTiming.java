@@ -12,6 +12,27 @@ public final class ScoreNoteTiming {
     private static final ThreadLocal<TimingSession> SESSION = new ThreadLocal<>();
     private record TimingKey(ScoreNoteEvent note, double beats, double onset, boolean candidate) {}
     private record StaffKey(int staffIndex, int staffCount) {}
+    private record MeasureKey(int measureIndex, int staffCount) {}
+    private record MeasureStaffKey(int measureIndex, int staffIndex, int staffCount) {}
+    private record SystemProfile(float shift, java.util.Set<Integer> openingMeasures) {}
+
+    private static final class ScoreIndex {
+        final java.util.Map<MeasureKey,List<ScoreNoteEvent>> measures=new java.util.HashMap<>();
+        final java.util.Map<MeasureStaffKey,List<ScoreNoteEvent>> voices=new java.util.HashMap<>();
+        final java.util.Map<StaffKey,List<ScoreNoteEvent>> staves=new java.util.HashMap<>();
+        ScoreIndex(List<ScoreNoteEvent> notes) {
+            for(ScoreNoteEvent note:notes)if(note!=null) {
+                measures.computeIfAbsent(new MeasureKey(note.measureIndex(),note.staffCount()),ignored->new ArrayList<>()).add(note);
+                voices.computeIfAbsent(new MeasureStaffKey(note.measureIndex(),note.staffIndex(),note.staffCount()),ignored->new ArrayList<>()).add(note);
+                if(Float.isFinite(note.positionInMeasure()))
+                    staves.computeIfAbsent(new StaffKey(note.staffIndex(),note.staffCount()),ignored->new ArrayList<>()).add(note);
+            }
+            Comparator<ScoreNoteEvent> order=Comparator.comparingInt(ScoreNoteEvent::measureIndex)
+                    .thenComparingDouble(ScoreNoteEvent::positionInMeasure).thenComparingInt(ScoreNoteEvent::staffStep);
+            voices.values().forEach(value->value.sort(order));
+            staves.values().forEach(value->value.sort(order));
+        }
+    }
 
     /** Bounded, thread-confined reuse while the caller resolves an unchanged score snapshot. */
     public static final class TimingSession implements AutoCloseable {
@@ -20,7 +41,15 @@ public final class ScoreNoteTiming {
                 new java.util.IdentityHashMap<>();
         private final java.util.IdentityHashMap<List<ScoreNoteEvent>,java.util.Map<StaffKey,Float>> leadingInsets=
                 new java.util.IdentityHashMap<>();
+        private final java.util.IdentityHashMap<List<ScoreNoteEvent>,List<ScoreNoteEvent>> metricalNotes=
+                new java.util.IdentityHashMap<>();
+        private final java.util.IdentityHashMap<List<ScoreNoteEvent>,ScoreIndex> indexes=
+                new java.util.IdentityHashMap<>();
+        private final java.util.IdentityHashMap<List<ScoreNoteEvent>,java.util.Map<StaffKey,SystemProfile>> systemProfiles=
+                new java.util.IdentityHashMap<>();
         private int leadingInsetCalculations;
+        private int metricalListCalculations;
+        private int scoreIndexCalculations;
         private int size;
         private boolean closed;
         private TimingSession() { SESSION.set(this); }
@@ -41,10 +70,34 @@ public final class ScoreNoteTiming {
             return value;
         }
         int leadingInsetCalculationCount() { return leadingInsetCalculations; }
+        private ScoreIndex index(List<ScoreNoteEvent> notes) {
+            ScoreIndex found=indexes.get(notes);
+            if(found!=null)return found;
+            scoreIndexCalculations++;
+            ScoreIndex result=new ScoreIndex(notes);
+            indexes.put(notes,result);
+            return result;
+        }
+        private List<ScoreNoteEvent> metrical(List<ScoreNoteEvent> notes) {
+            List<ScoreNoteEvent> found=metricalNotes.get(notes);
+            if(found!=null)return found;
+            metricalListCalculations++;
+            boolean hasGrace=false;
+            for(ScoreNoteEvent note:notes)if(grace(note)){hasGrace=true;break;}
+            if(!hasGrace) { metricalNotes.put(notes,notes);return notes; }
+            List<ScoreNoteEvent> result=new ArrayList<>(notes.size());
+            for(ScoreNoteEvent note:notes)if(!grace(note))result.add(note);
+            metricalNotes.put(notes,result);
+            metricalNotes.put(result,result);
+            return result;
+        }
+        int metricalListCalculationCount() { return metricalListCalculations; }
+        int scoreIndexCalculationCount() { return scoreIndexCalculations; }
         @Override public void close() {
             if (closed) return;
             if (SESSION.get()!=this) throw new IllegalStateException("Timing sessions must close in nesting order");
-            closed=true; values.clear(); leadingInsets.clear();
+            closed=true; values.clear(); leadingInsets.clear(); metricalNotes.clear();
+            indexes.clear(); systemProfiles.clear();
             if (previous==null) SESSION.remove(); else SESSION.set(previous);
         }
     }
@@ -155,8 +208,13 @@ public final class ScoreNoteTiming {
                                  int index, int count) { }
 
     private static GracePlayback gracePlayback(ScoreNoteEvent target, List<ScoreNoteEvent> notes) {
-        if(target==null || notes==null || notes.stream().noneMatch(ScoreNoteTiming::grace))return null;
-        List<ScoreNoteEvent> metrical=notes.stream().filter(n->!grace(n)).toList();
+        if(target==null || notes==null)return null;
+        TimingSession session=SESSION.get();
+        if(session==null&&notes.stream().noneMatch(ScoreNoteTiming::grace))return null;
+        List<ScoreNoteEvent> metrical=session==null
+                ?notes.stream().filter(n->!grace(n)).toList()
+                :session.metrical(notes);
+        if(metrical==notes)return null;
         List<ScoreNoteEvent> prefix=new ArrayList<>();
         for(ScoreNoteEvent note:measureVoice(target,notes)) {
             if(grace(note)) { prefix.add(note);continue; }
@@ -187,9 +245,8 @@ public final class ScoreNoteTiming {
         double safeBeats = Math.max(.125, Math.min(128, beatsPerMeasure));
         if (hasIndependentSustain(target) && target.leadingRestBeats()==0
                 && (target.positionInMeasure()<=MAX_LEARNABLE_MEASURE_INSET
-                    || notes.stream().noneMatch(n -> n.measureIndex() == target.measureIndex()
-                    && n.staffIndex() == target.staffIndex() && n.staffCount() == target.staffCount()
-                    && n.positionInMeasure() < target.positionInMeasure() - SAME_ONSET_POSITION))
+                    || measureVoice(target,notes).stream().noneMatch(n ->
+                    n.positionInMeasure() < target.positionInMeasure() - SAME_ONSET_POSITION))
                 && Math.abs(writtenDurationBeats(target)-safeBeats)<.001) return 0;
         List<ScoreNoteEvent> crossStaff = crossStaffPhrase(target, notes, safeBeats);
         if (!crossStaff.isEmpty()) {
@@ -386,11 +443,9 @@ public final class ScoreNoteTiming {
         if (target.staffCount() <= 1 || !Float.isFinite(target.positionInMeasure()))
             return voiceOnset;
 
-        List<ScoreNoteEvent> measure = new ArrayList<>();
-        for (ScoreNoteEvent note : allNotes) if (note != null
-                && note.measureIndex() == target.measureIndex()
-                && note.staffCount() == target.staffCount()
-                && Float.isFinite(note.positionInMeasure())) measure.add(note);
+        List<ScoreNoteEvent> measure = measureNotes(target,allNotes).stream()
+                .filter(note->Float.isFinite(note.positionInMeasure()))
+                .toList();
         if (measure.isEmpty()) return voiceOnset;
 
         List<ScoreNoteEvent> aligned = new ArrayList<>();
@@ -581,7 +636,7 @@ public final class ScoreNoteTiming {
         if (target.staffCount()!=2 || !Double.isFinite(beats)) return List.of();
         List<ScoreNoteEvent> phrase = new ArrayList<>();
         int bridges=0;
-        for(ScoreNoteEvent note:notes) if(note.measureIndex()==target.measureIndex()&&note.staffCount()==2) {
+        for(ScoreNoteEvent note:measureNotes(target,notes)) if(note.staffCount()==2) {
             // A held melody/bass is a separate voice; it does not break a proved moving beam.
             if(hasIndependentSustain(note))continue;
             if(note.followingRestBeats()>0||note.leadingRestBeats()>0)return List.of();
@@ -702,6 +757,9 @@ public final class ScoreNoteTiming {
 
     private static List<ScoreNoteEvent> measureVoice(ScoreNoteEvent target,
                                                      List<ScoreNoteEvent> notes) {
+        TimingSession session=SESSION.get();
+        if(session!=null)return session.index(notes).voices.getOrDefault(
+                new MeasureStaffKey(target.measureIndex(),target.staffIndex(),target.staffCount()),List.of());
         List<ScoreNoteEvent> voice = new ArrayList<>();
         for (ScoreNoteEvent note : notes) if (note != null
                 && note.measureIndex() == target.measureIndex()
@@ -710,6 +768,17 @@ public final class ScoreNoteTiming {
         voice.sort(Comparator.comparingDouble(ScoreNoteEvent::positionInMeasure)
                 .thenComparingInt(ScoreNoteEvent::staffStep));
         return voice;
+    }
+
+    private static List<ScoreNoteEvent> measureNotes(ScoreNoteEvent target,
+                                                     List<ScoreNoteEvent> notes) {
+        TimingSession session=SESSION.get();
+        if(session!=null)return session.index(notes).measures.getOrDefault(
+                new MeasureKey(target.measureIndex(),target.staffCount()),List.of());
+        List<ScoreNoteEvent> measure=new ArrayList<>();
+        for(ScoreNoteEvent note:notes)if(note!=null&&note.measureIndex()==target.measureIndex()
+                &&note.staffCount()==target.staffCount())measure.add(note);
+        return measure;
     }
 
     private static List<RhythmGroup> rhythmGroups(List<ScoreNoteEvent> voice) {
@@ -824,8 +893,8 @@ public final class ScoreNoteTiming {
     private static double openingPickupStart(ScoreNoteEvent target, List<ScoreNoteEvent> notes,
                                               double beats) {
         if (!target.compactOpening()) return Double.NaN;
-        List<ScoreNoteEvent> opening = notes.stream().filter(n -> n.measureIndex()==target.measureIndex()
-                && !grace(n)).toList();
+        List<ScoreNoteEvent> opening = measureNotes(target,notes).stream()
+                .filter(n -> !grace(n)).toList();
         if (opening.isEmpty() || opening.stream().anyMatch(n -> !n.compactOpening()
                 || n.leadingRestBeats()>0 || n.followingRestBeats()>0 || n.tiedFromPrevious())) return Double.NaN;
         double span=0;
@@ -1182,6 +1251,17 @@ public final class ScoreNoteTiming {
      */
     private static float systemHeaderShift(ScoreNoteEvent target,
                                            List<ScoreNoteEvent> allNotes) {
+        TimingSession session=SESSION.get();
+        StaffKey staffKey=new StaffKey(target.staffIndex(),target.staffCount());
+        if(session!=null) {
+            var profiles=session.systemProfiles.computeIfAbsent(allNotes,ignored->new java.util.HashMap<>());
+            SystemProfile profile=profiles.get(staffKey);
+            if(profile==null) {
+                profile=systemProfile(session.index(allNotes).staves.getOrDefault(staffKey,List.of()));
+                profiles.put(staffKey,profile);
+            }
+            return profile.openingMeasures().contains(target.measureIndex())?profile.shift():0;
+        }
         List<ScoreNoteEvent> sameStaff = new ArrayList<>();
         for (ScoreNoteEvent note : allNotes) if (note != null
                 && note.staffIndex() == target.staffIndex()
@@ -1190,6 +1270,16 @@ public final class ScoreNoteTiming {
                 && Float.isFinite(note.pageY())) sameStaff.add(note);
         sameStaff.sort(Comparator.comparingInt(ScoreNoteEvent::measureIndex)
                 .thenComparingDouble(ScoreNoteEvent::positionInMeasure));
+        SystemProfile profile=systemProfile(sameStaff);
+        return profile.openingMeasures().contains(target.measureIndex())?profile.shift():0;
+    }
+
+    private static SystemProfile systemProfile(List<ScoreNoteEvent> sameStaff) {
+        if(sameStaff.stream().anyMatch(note->!Float.isFinite(note.pageY()))) {
+            List<ScoreNoteEvent> finite=new ArrayList<>();
+            for(ScoreNoteEvent note:sameStaff)if(Float.isFinite(note.pageY()))finite.add(note);
+            sameStaff=finite;
+        }
         List<MeasureLayout> measures = new ArrayList<>();
         for (int start = 0; start < sameStaff.size();) {
             int measureIndex = sameStaff.get(start).measureIndex();
@@ -1207,24 +1297,23 @@ public final class ScoreNoteTiming {
         }
         List<Float> systemFirstPositions = new ArrayList<>();
         List<Float> ordinaryFirstPositions = new ArrayList<>();
-        boolean targetStartsSystem = false;
+        java.util.Set<Integer> openingMeasures=new java.util.HashSet<>();
         for (int index = 0; index < measures.size(); index++) {
             MeasureLayout measure = measures.get(index);
             boolean startsSystem = index == 0 || Math.abs(measure.centerY()
                     - measures.get(index - 1).centerY()) >= SYSTEM_CHANGE_Y;
-            if (startsSystem) systemFirstPositions.add(measure.firstPosition());
+            if (startsSystem) { systemFirstPositions.add(measure.firstPosition()); openingMeasures.add(measure.measureIndex()); }
             else ordinaryFirstPositions.add(measure.firstPosition());
-            if (measure.measureIndex() == target.measureIndex()) targetStartsSystem = startsSystem;
         }
-        if (!targetStartsSystem || systemFirstPositions.size() < 2
-                || ordinaryFirstPositions.isEmpty()) return 0;
+        if (systemFirstPositions.size() < 2 || ordinaryFirstPositions.isEmpty())
+            return new SystemProfile(0,openingMeasures);
         float normalInset = lowerQuartile(ordinaryFirstPositions);
         float systemInset = lowerQuartile(systemFirstPositions);
         // systemInset = header + (1 - header) * normalInset. Solve for the
         // header rather than merely subtracting the two normalized positions.
         float shift = (systemInset - normalInset) / Math.max(.001f, 1 - normalInset);
-        if (!Float.isFinite(shift) || shift < MIN_SYSTEM_HEADER_SHIFT) return 0;
-        return Math.min(MAX_SYSTEM_HEADER_SHIFT, shift);
+        if (!Float.isFinite(shift) || shift < MIN_SYSTEM_HEADER_SHIFT)shift=0;
+        return new SystemProfile(Math.min(MAX_SYSTEM_HEADER_SHIFT,shift),openingMeasures);
     }
 
     private static float correctedSystemPosition(float position, float headerShift) {
@@ -1251,13 +1340,17 @@ public final class ScoreNoteTiming {
             if(cached!=null)return cached;
             session.leadingInsetCalculations++;
         }
-        List<ScoreNoteEvent> sameStaff = new ArrayList<>();
-        for (ScoreNoteEvent note : allNotes) if (note != null
-                && note.staffIndex() == target.staffIndex()
-                && note.staffCount() == target.staffCount()
-                && Float.isFinite(note.positionInMeasure())) sameStaff.add(note);
-        sameStaff.sort(Comparator.comparingInt(ScoreNoteEvent::measureIndex)
-                .thenComparingDouble(ScoreNoteEvent::positionInMeasure));
+        List<ScoreNoteEvent> sameStaff;
+        if(session!=null)sameStaff=session.index(allNotes).staves.getOrDefault(key,List.of());
+        else {
+            sameStaff = new ArrayList<>();
+            for (ScoreNoteEvent note : allNotes) if (note != null
+                    && note.staffIndex() == target.staffIndex()
+                    && note.staffCount() == target.staffCount()
+                    && Float.isFinite(note.positionInMeasure())) sameStaff.add(note);
+            sameStaff.sort(Comparator.comparingInt(ScoreNoteEvent::measureIndex)
+                    .thenComparingDouble(ScoreNoteEvent::positionInMeasure));
+        }
         List<Float> firstPositions = new ArrayList<>();
         int previousMeasure = Integer.MIN_VALUE;
         for (ScoreNoteEvent note : sameStaff) {
