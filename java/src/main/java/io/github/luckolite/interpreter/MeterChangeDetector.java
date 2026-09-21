@@ -91,6 +91,21 @@ public final class MeterChangeDetector {
         return Math.abs(left-right)<.04;
     }
 
+    /** Tiny stem/rest crops can OCR as 1/1 or 2/1. Reject those readings only
+     * when multiple complete written bars contradict them. Other denominators
+     * remain unchanged: missed beams can make even genuine compound bars disagree. */
+    public static List<ScoreMeterChange> filterWholeNoteOcrReadings(
+            List<ScoreMeterChange> readings,List<ScoreNoteEvent> notes,int measureCount) {
+        var sorted=readings.stream().sorted(java.util.Comparator.comparingInt(ScoreMeterChange::measureIndex)).toList();
+        var result=new ArrayList<ScoreMeterChange>();
+        for(int i=0;i<sorted.size();i++) {
+            var choice=sorted.get(i);
+            int next=i+1<sorted.size()?sorted.get(i+1).measureIndex():measureCount;
+            if(choice.denominator()!=1||!contradictedByWrittenBars(choice,notes,next))result.add(choice);
+        }
+        return List.copyOf(result);
+    }
+
     public static List<Crop> candidates(byte[] labels, byte[] gray, int width, int height) {
         List<Crop> result = new ArrayList<>();
         if (labels == null || gray == null || labels.length != width*height || gray.length != width*height)

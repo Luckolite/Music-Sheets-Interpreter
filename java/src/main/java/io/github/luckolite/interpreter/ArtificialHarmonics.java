@@ -69,6 +69,15 @@ final class ArtificialHarmonics {
                 if(dark(g,w,h,xx,yy)||dark(g,w,h,xx-1,yy)||dark(g,w,h,xx+1,yy))hit++;
             }
             if(hit<total*.94)continue;
+            // Side samples alone also fit a tilted oval at small staff sizes.
+            // A touch diamond has four actual vertices, including its high and low tips.
+            boolean vertices=true;
+            for(int sign:new int[]{-1,1}) {
+                int vx=Math.round(cx+sign*r),vy=Math.round(cy+sign*r);
+                vertices &= dark(g,w,h,vx,Math.round(cy))||dark(g,w,h,vx,Math.round(cy)-1)||dark(g,w,h,vx,Math.round(cy)+1);
+                vertices &= dark(g,w,h,Math.round(cx),vy)||dark(g,w,h,Math.round(cx)-1,vy)||dark(g,w,h,Math.round(cx)+1,vy);
+            }
+            if(!vertices)continue;
             int clear=0,inside=0;
             for(int yy=Math.round(cy-r*.3f);yy<=Math.round(cy+r*.3f);yy++) {
                 // Ignore a staff or ledger line crossing the hollow center.

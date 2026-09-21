@@ -677,10 +677,41 @@ final class OmrMeasurePostProcessor {
                 // wide branches occupy many staff-space rows; a thin bar may intersect
                 // an occasional beam or slur, but does not have that repeated width.
                 if (sampled > 0 && everySpace && covered >= sampled * .90f
-                        && branched <= widthSamples * .35f) return origin;
+                        && branched <= widthSamples * .35f
+                        && !oscillatingVerticalStroke(gray,width,height,origin,rows,gap,shift,
+                                ruleSlope,top,inkCutoff)) return origin;
             }
         }
         return Integer.MIN_VALUE;
+    }
+
+    /** A thick arpeggio can have a straight overlapping core; its ink edges still oscillate.
+     * Ignore staff-rule rows and require repeated reversals, not one beam/head intersection.
+     * The axis follows the tested bar slope, so a straight tilted rule is not a wave. */
+    private static boolean oscillatingVerticalStroke(byte[] gray,int width,int height,int origin,
+            int[] rows,float gap,float shift,float slope,int cutoffTop,int[] cutoffs) {
+        int radius=Math.max(3,Math.round(gap*.45f)),turns=0,direction=0;
+        double extreme=Double.NaN,minimum=Double.POSITIVE_INFINITY,maximum=Double.NEGATIVE_INFINITY;
+        double excursion=Math.max(1.1,gap*.08);
+        float centerY=(rows[0]+rows[4])*.5f+shift;
+        for(int y=Math.max(0,Math.round(rows[0]+shift));y<=Math.min(height-1,Math.round(rows[4]+shift));y++) {
+            boolean rule=false;for(int row:rows)if(Math.abs(y-row-shift)<=Math.max(1,gap*.18f))rule=true;
+            if(rule)continue;
+            int axis=Math.round(origin-slope*(y-centerY));
+            int left=axis,right=axis,cutoff=cutoffs[y-cutoffTop];
+            if(axis<0||axis>=width||(gray[y*width+axis]&255)>cutoff)continue;
+            while(left>Math.max(0,axis-radius)&&(gray[y*width+left-1]&255)<=cutoff)left--;
+            while(right<Math.min(width-1,axis+radius)&&(gray[y*width+right+1]&255)<=cutoff)right++;
+            if(left==axis-radius||right==axis+radius)continue;
+            double center=(left+right)*.5-axis;
+            minimum=Math.min(minimum,center);maximum=Math.max(maximum,center);
+            if(Double.isNaN(extreme)){extreme=center;continue;}
+            if(direction==0) {
+                if(Math.abs(center-extreme)>=excursion){direction=center>extreme?1:-1;extreme=center;}
+            } else if(direction*(center-extreme)>=0)extreme=center;
+            else if(Math.abs(center-extreme)>=excursion){turns++;direction=-direction;extreme=center;}
+        }
+        return turns>=4&&maximum-minimum>=gap*.15;
     }
 
     private static boolean hasVerticalInk(byte[] labels, int width, int height, int centerX,

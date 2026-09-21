@@ -7,6 +7,15 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class PrintedMeasureRhythmGuardTest {
+    @Test public void separateDuetBarlinesSurviveWhitespaceBetweenStaffs() {
+        byte[] g=paper();
+        for(int top:new int[]{180,400}) {
+            for(int line=0;line<5;line++)for(int x=100;x<=900;x++)g[(top+line*14)*1000+x]=0;
+            for(int y=top;y<=top+56;y++){g[y*1000+305]=0;g[y*1000+505]=0;}
+        }
+        assertEquals(raw,PrintedMeasureRhythmGuard.preservePrintedBoundaries(raw,
+                List.of(new MeasureRegion(.1f,.9f,.2f,.6f)),g,1000,800));
+    }
     @Test public void footerDigitsCannotCreateAnEmptyExtraSystem() {
         var extra=new MeasureRegion(.1f,.9f,.75f,.95f);
         var proposed=new ArrayList<>(raw);proposed.add(extra);

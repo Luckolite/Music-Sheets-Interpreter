@@ -218,6 +218,30 @@ final class PrintedMeasureRhythmGuard {
             for (int y = top; y <= bottom; y++) if ((gray[y * width + x] & 255) < 180) ink++;
             if (ink > (bottom - top + 1) * .55f) return true;
         }
+        // Duet/orchestral separators may stop at each staff instead of crossing
+        // the intervening whitespace. Require complete columns on two actual
+        // five-line staffs; one note stem or a few isolated strokes cannot qualify.
+        int left=Math.max(0,Math.round(region.left()*width));
+        int right=Math.min(width-1,Math.round(region.right()*width));
+        int cropWidth=right-left+1,cropHeight=bottom-top+1;
+        if(cropWidth<24||cropHeight<20)return false;
+        byte[] crop=new byte[cropWidth*cropHeight];
+        for(int y=top;y<=bottom;y++)System.arraycopy(gray,y*width+left,crop,(y-top)*cropWidth,cropWidth);
+        var staffs=RawStaffLineDetector.detect(crop,cropWidth,cropHeight);
+        if(staffs.size()<2)return false;
+        for(int x=Math.max(left,center-radius);x<=Math.min(right,center+radius);x++) {
+            int supported=0;
+            for(var staff:staffs) {
+                int ink=0;
+                for(int y=staff.top()+top;y<=staff.bottom()+top;y++) {
+                    boolean dark=false;
+                    for(int dx=-1;dx<=1;dx++)if(x+dx>=0&&x+dx<width&&(gray[y*width+x+dx]&255)<180)dark=true;
+                    if(dark)ink++;
+                }
+                if(ink>=(staff.bottom()-staff.top()+1)*.90f)supported++;
+            }
+            if(supported>=2)return true;
+        }
         return false;
     }
 }

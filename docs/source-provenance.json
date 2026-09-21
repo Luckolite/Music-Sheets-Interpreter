@@ -114,8 +114,9 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "88fb779d7259f8b12b80e432216bb3eac5dbb012e33ff8b1211299c9a982e280",
-      "reviewed_app_commit": "ddb25eaf56623d471fbd03683f50244fac78881a"
+      "source_sha256": "c1a70f803f2d38876716ea1ad3c513ce2411a5270c4811831f29d3e24b41f0c4",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Whole-note-denominator OCR filter rejects contradictory 1/1 or 2/1 only with two complete written bars. Existing helper alignment reviewed. Android OCR calls this shared filter; explicit standalone annotations remain authoritative. Original synthetic tests."
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
@@ -136,15 +137,15 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "6d158d88760d4c6c90b4d61709dd885ff998ad879b116126bf898253249a3ab2",
-      "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a",
-      "notes": "Reviewed working-tree optimization: defer pure note-ownership veto scans until semantic/raw barline validation succeeds. The 96-case generated golden digest was captured on the previous implementation before this port; thresholds, outputs and masks are unchanged."
+      "source_sha256": "f034b9db5b98fdf8ca392fa9f2edc48664420f8e569242ccda7fdeee4b65972c",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Raw barline validation rejects oscillating arpeggios and preserves straight thick and faint bars. Original synthetic geometry tests; no model or dependency changes."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
       "source_sha256": "f932e96a582b74de8fb49e2f7eb4b8b01e171dc52304709fd99b4bf1e3f63696",
-      "reviewed_app_commit": "8108cb615219d9e76789030fd67775b05f07d4dd",
-      "notes": "Reviewed stemBeforePaperTail change from this app commit: allow short traces separated from lettering by a fully white gap, retaining semantic-stem and long outer-beam guards. Original synthetic regressions. Pre-existing unrelated app decoder drift remains visible; source_sha256 is intentionally unchanged and is not a claim of whole-file parity."
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Scoped finiteBeamOverRule repair tolerates a bounded articulation followed by a fresh uninterrupted thin witness, not a long thick tail. Original synthetic tests. Prior stemBeforePaperTail repair retained. Unrelated pre-existing app decoder drift remains visible; source_sha256 intentionally unchanged, not whole-file parity."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -242,9 +243,9 @@
     },
     "PrintedMeasureRhythmGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedMeasureRhythmGuard.java",
-      "source_sha256": "9015cfa5d6c887840408185e6a027beeb6b2e9dec8683cb04d67e5b60f84279e",
-      "reviewed_app_commit": "4748d4ff716948da3b0b99ae4827b83cc21ed0ca",
-      "notes": "Keep visibly separated bars when OCR counts merge them. Reject inferred extra rows lacking semantic or printed staff evidence. Four original synthetic regressions cover real bars, short stems, footer text and a missing semantic staff. Android OCR also excludes textual octave instructions from numeric anchors; that text adapter and cache invalidation remain platform-specific. No private scores, model changes or device logs included."
+      "source_sha256": "2510299763ef426ebc8cad18bbfc38a0842cc31eebbca76e32d06dbce5891775",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Preserve independently barred duet staves despite intervening whitespace using aligned continuous ink within two detected five-line staves. Original synthetic regression."
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
@@ -301,9 +302,9 @@
     },
     "ArtificialHarmonics.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ArtificialHarmonics.java",
-      "source_sha256": "a30b96829a54d292eb7f44823fb59dc4df7b273136a08502fb4109fef5f35792",
-      "reviewed_app_commit": "8108cb615219d9e76789030fd67775b05f07d4dd",
-      "notes": "Reviewed shared repair: connected down-stem fourth harmonics for filled stopped heads; reject detached fingerings and ambiguous hollow stopped chords. Original synthetic regressions. Includes equivalent outer-loop braces added concurrently in the app working tree; reviewed and mirrored."
+      "source_sha256": "fc586f1bc4dc113a7b40aa26e5fb599db379f16ecaeaa9b394c15dd883eb6937",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Require all four diamond vertices to avoid raising ordinary hollow chords as harmonics. Original oval negative controls and existing harmonic tests; no private fixtures."
     },
     "ParallelBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ParallelBeamTip.java",

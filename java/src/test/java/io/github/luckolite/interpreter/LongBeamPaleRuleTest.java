@@ -18,6 +18,12 @@ public class LongBeamPaleRuleTest {
     @Test public void nearWhiteTextureDoesNotProveRule()throws Exception{setup(230,false);assertEquals(1,count());}
     @Test public void fullWidthThickRuleRemainsExcluded()throws Exception{setup(0,false);rect(0,W-1,79,85,35);assertEquals(1,count());}
     @Test public void oneVisibleEndIsInsufficient()throws Exception{setup(0,false);rect(0,100,79,85,35);assertEquals(1,count());}
+    @Test public void shortArticulationBeyondBeamDoesNotHideContinuingRule()throws Exception {
+        setup(0,false);rect(91,96,80,85,35);assertEquals(2,count());
+    }
+    @Test public void anotherLongBeamIsNotAThinRuleWitness()throws Exception {
+        setup(0,false);rect(60,96,79,85,35);assertEquals(1,count());
+    }
     private boolean edge(int first,int last)throws Exception{var st=Class.forName(OmrScoreInterpreter.class.getName()+"$Staff");var sc=st.getDeclaredConstructor(float.class,float.class,float.class);sc.setAccessible(true);var m=OmrScoreInterpreter.class.getDeclaredMethod("finiteBeamOverRule",byte[].class,int.class,int.class,int.class,int.class,int.class,st,int.class);m.setAccessible(true);return (boolean)m.invoke(null,gray,W,H,400,first,last,sc.newInstance(84f,148f,16f),165);}
     @Test public void upperImageEdgeRejectsOutOfRangeWitness()throws Exception{setup(212,true);assertFalse(edge(-1,5));}
     @Test public void lowerImageEdgeRejectsOutOfRangeWitness()throws Exception{setup(212,true);assertFalse(edge(H-5,H));}
