@@ -6,6 +6,18 @@
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "files": {
+    "OcrText.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OcrText.java",
+      "source_sha256": "f8493b749f629e21e151857fa79d636f0b8303a480aa680ec82c1e6a17bdafe2",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Reviewed working-tree addition: immutable platform-neutral OCR evidence preserving text, ordering, duplicate tokens, missing boxes and symbol geometry. Package/license header adapted. Android ML Kit copying adapter and bitmap consumers remain app-specific; synthetic immutable-evidence regressions included. No OCR engine/model replacement enabled."
+    },
+    "OcrCtcDecoder.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OcrCtcDecoder.java",
+      "source_sha256": "2a124de51f45483ea00093d4a49bf37bd9a3a454dd313f47389fb5f02e655326",
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "notes": "Reviewed working-tree addition: platform-independent greedy probability CTC decoding with explicit dictionary and blank index, duplicate suppression, time spans and finite-input validation. Original synthetic tests only; no external model weights or OCR runtime bundled. Not yet enabled in production interpretation."
+    },
     "NativeDecoderWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderWire.java",
       "source_sha256": "cde86135d9641cccd64efbbe6d4b6ad73e506280bd54d78a9f05d8375a500ca9",
