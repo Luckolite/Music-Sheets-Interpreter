@@ -31,7 +31,14 @@ public final class NativeOcrRoundTrip {
             var pool=Executors.newFixedThreadPool(3);
             try {
                 var jobs=new ArrayList<Future<OcrText>>();
-                for(int i=0;i<3;i++)jobs.add(pool.submit(()->NativeOcrWire.exchange("127.0.0.1",token,source,pixels,w,h)));
+                for(int i=0;i<3;i++)jobs.add(pool.submit(()->{
+                    OcrText result=null;
+                    for(int request=0;request<3;request++) {
+                        result=NativeOcrWire.exchange("127.0.0.1",token,source,pixels,w,h);
+                        if(!direct.equals(result))throw new AssertionError("Burst request changed evidence");
+                    }
+                    return result;
+                }));
                 for(var job:jobs)if(!direct.equals(job.get(45,TimeUnit.SECONDS)))throw new AssertionError("OCR service changed evidence");
             }finally{pool.shutdownNow();}
             parent.close();if(!child.waitFor(8,TimeUnit.SECONDS))throw new AssertionError("Worker survived parent EOF");

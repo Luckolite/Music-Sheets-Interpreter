@@ -44,8 +44,8 @@ public final class NativeOcrServer {
                         long started=System.nanoTime();
                         NativeOcrWire.writeText(out,engine.read(raster.pixels(),raster.width(),raster.height()));out.flush();
                         System.out.println("Native OCR completed elapsed_ms="+(System.nanoTime()-started)/1_000_000);
-                        // Keep the socket alive until Android has consumed the NAT-forwarded reply.
-                        socket.setSoTimeout(3000);try{while(in.read()!=-1){}}catch(SocketTimeoutException ignored){}
+                        // Flush and close orderly: waiting for a NAT-delayed client FIN would
+                        // occupy all three workers between otherwise fast crop requests.
                     }catch(Exception failure){System.err.println("Native OCR request failed: "+failure.getClass().getSimpleName());}
                 });}catch(RejectedExecutionException busy){socket.close();}
             }

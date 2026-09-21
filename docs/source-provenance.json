@@ -14,13 +14,13 @@
     },
     "NativeOcrServer.java": {
       "source_path": "tools/native-worker/NativeOcrServer.java",
-      "source_sha256": "00211cde6771f3620616b911318fae411276c2cab74c2f2998c84657d9d73132",
+      "source_sha256": "c3f26910cf8ca2e1da9bc92509267764ebbec1f0e021a2a66940e87efc077b99",
       "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
       "notes": "Optional loopback-only service with parent-stdin lifetime, source and credential checks, three bounded workers and checksum-verified models. Android and Hub lifecycle adapters are excluded."
     },
     "NativeOcrRoundTrip.java": {
       "source_path": "tools/native-worker/NativeOcrRoundTrip.java",
-      "source_sha256": "bfcc3722bc8ff6c80c9024e17b495381f2de7a1e63b3949be3cf6625793580b2",
+      "source_sha256": "6ed2b3aff387e5eea3b063d6e3035a774c49c3de00d2c4311a608307652d13d2",
       "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
       "notes": "Optional acceptance harness uses a supplied synthetic image and ephemeral credential. Checks exact local/remote evidence, three clients, rejected identity and parent shutdown. No input images bundled."
     },
