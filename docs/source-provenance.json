@@ -138,8 +138,8 @@
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
       "source_sha256": "f034b9db5b98fdf8ca392fa9f2edc48664420f8e569242ccda7fdeee4b65972c",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
-      "notes": "Raw barline validation rejects oscillating arpeggios and preserves straight thick and faint bars. Original synthetic geometry tests; no model or dependency changes."
+      "reviewed_app_commit": "2040f7d5ed8c223f1585f3597332752dee27a96f",
+      "notes": "Raw barline validation rejects oscillating arpeggios and preserves straight thick and faint bars. A narrow symbol-only pocket inside an opening key/meter header no longer creates a measure. Original synthetic geometry tests; unrelated app drift remains visible, so the older source hash is intentionally retained rather than claiming whole-file parity. No model or dependency changes."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
@@ -442,5 +442,9 @@
   "unison_raw_hollow_core_review": {
     "reviewed_app_state": "Scoped app commit 700ae06dbb414bd0b5a385bce83e279d2463a372; later unrelated worktree changes remain unstaged",
     "boundary": "The shared side-by-side unison split now requires a white core at the held head's actual center. A bright upper notch over a filled head no longer creates a sustained voice. An original synthetic regression covers the false split and the existing fractional-spacing regression preserves a real filled-plus-hollow unison. The exact score crop and decoded page replay remain private. No weights, dependencies, private scores or device data are published. Pre-existing unrelated mapped drift remains visible."
+  },
+  "opening_header_pocket_review": {
+    "reviewed_app_commit": "2040f7d5ed8c223f1585f3597332752dee27a96f",
+    "boundary": "A first region narrower than three staff gaps is discarded only when it contains substantial key/clef evidence and no printed head or stem/rest evidence. This prevents an empty key/meter header pocket from adding a whole measure before the first note. Original synthetic tests preserve a genuine narrow opening with a rest. Source score crops, page annotations and replay results remain private. No score fixtures, weights, dependencies or device data are published; unrelated app drift is not hidden."
   }
 }

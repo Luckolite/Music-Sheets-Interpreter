@@ -25,6 +25,30 @@ public final class OmrMeasurePostProcessorTest {
         assertEquals(1, OmrMeasurePostProcessor.process(page, 600, 500).size());
     }
 
+    @Test public void headerSymbolsDoNotCreateAnEmptyOpeningMeasure() {
+        int width = 600, height = 500;
+        byte[] labels = page(width, height);
+        staffWithBars(labels, width, 100, new int[]{60, 120, 300, 540});
+        for (int x = 75; x <= 90; x++) for (int y = 105; y <= 126; y++)
+            set(labels, width, x, y, OmrMeasurePostProcessor.CLEF_OR_KEY);
+        for (int x = 157; x <= 168; x++) for (int y = 115; y <= 123; y++)
+            set(labels, width, x, y, OmrMeasurePostProcessor.NOTEHEAD);
+        List<MeasureRegion> measures = OmrMeasurePostProcessor.process(labels, width, height);
+        assertEquals(2, measures.size());
+        assertTrue(measures.get(0).left() > .2f);
+    }
+
+    @Test public void narrowOpeningWithPrintedRestStillCountsAsMeasure() {
+        int width = 600, height = 500;
+        byte[] labels = page(width, height);
+        staffWithBars(labels, width, 100, new int[]{60, 120, 300, 540});
+        for (int x = 75; x <= 90; x++) for (int y = 105; y <= 126; y++)
+            set(labels, width, x, y, OmrMeasurePostProcessor.CLEF_OR_KEY);
+        for (int x = 99; x <= 103; x++) for (int y = 112; y <= 117; y++)
+            set(labels, width, x, y, OmrMeasurePostProcessor.STEM_OR_REST);
+        assertEquals(3, OmrMeasurePostProcessor.process(labels, width, height).size());
+    }
+
     @Test public void staffLabelNoiseBetweenLinesCannotMergeTheFiveSemanticPeaks() {
         int width = 600, height = 500, top = 100;
         byte[] page = page(width, height);

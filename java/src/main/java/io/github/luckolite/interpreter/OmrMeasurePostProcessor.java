@@ -1026,6 +1026,19 @@ final class OmrMeasurePostProcessor {
                 if(firstHead>=0)playableLeft=Math.min(playableLeft,firstHead-Math.max(2,Math.round(system.gap*.12f)));
             }
             int playableRight = rawRight - inset;
+            // A complete key/meter header can contain a vertical numeral that the model
+            // classifies as a barline. It may enclose a tiny symbol-only pocket before the
+            // first printed note. That pocket has no musical time and must not add a bar.
+            if (index == 0 && boundaries.size() > 2
+                    && playableRight - playableLeft <= system.gap * 3f
+                    && countLabel(labels,width,height,CLEF_OR_KEY,rawLeft,rawRight,
+                            Math.round(system.top-system.gap),Math.round(system.bottom+system.gap))
+                            >= system.gap * 2f
+                    && countLabel(labels,width,height,NOTEHEAD,playableLeft,playableRight,
+                            Math.round(headTop),Math.round(headBottom)) == 0
+                    && countLabel(labels,width,height,STEM_OR_REST,playableLeft,playableRight,
+                            Math.round(system.top),Math.round(system.bottom)) == 0)
+                continue;
             if (playableRight - playableLeft >= Math.max(6, Math.round(system.gap * 2.2f)))
                 output.add(new MeasureRegion(playableLeft / (float) width, playableRight / (float) width,
                         top, bottom));
