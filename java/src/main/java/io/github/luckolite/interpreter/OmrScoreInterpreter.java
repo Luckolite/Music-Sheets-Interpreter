@@ -2835,9 +2835,25 @@ final class OmrScoreInterpreter {
                 ||left.area<gap*gap*.35f||right.area<gap*gap*.3f
                 ||hasOpenCenter(labels,gray,width,height,left,gap)
                 ||!hasOpenCenter(labels,gray,width,height,right,gap)
+                ||!hasRawUnisonHollowCore(gray,width,height,right)
                 ||!hasAttachedStem(labels,width,height,left,gap)
                 ||!hasAttachedStem(labels,width,height,right,gap))return List.of();
         return List.of(left,right);
+    }
+
+    /** A white notch above a filled head is not the interior of a second, held oval. */
+    private static boolean hasRawUnisonHollowCore(byte[] gray,int width,int height,Component head) {
+        int rx=Math.max(1,Math.round((head.maxX-head.minX+1)*.18f));
+        int ry=Math.max(1,Math.round((head.maxY-head.minY+1)*.1f));
+        int cx=Math.round(head.centerX),cy=Math.round(head.centerY);
+        int bright=0,samples=0;
+        for(int y=Math.max(head.minY,cy-ry);y<=Math.min(head.maxY,cy+ry);y++)
+            for(int x=Math.max(head.minX,cx-rx);x<=Math.min(head.maxX,cx+rx);x++) {
+                if(x<0||x>=width||y<0||y>=height)continue;
+                samples++;
+                if((gray[y*width+x]&255)>=185)bright++;
+            }
+        return samples>=3&&bright>=Math.max(2,Math.round(samples*.34f));
     }
 
     private static List<Component> sideBySideSeconds(byte[] labels,int width,Component head,float gap) {

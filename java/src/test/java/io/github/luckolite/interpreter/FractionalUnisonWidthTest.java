@@ -25,5 +25,12 @@ public class FractionalUnisonWidthTest {
   var moving=notes.stream().filter(n->n.beamCount()>0).findFirst().orElseThrow();assertEquals(1,moving.beamCount());assertEquals(0,moving.augmentationDots());
  }
  @Test public void filledNeighborDoesNotInventHeldDuration(){assertTrue(new Page(false,true).notes().stream().noneMatch(n->n.unbeamedDurationBeats()==2));}
+ @Test public void brightNotchAboveFilledNeighborDoesNotInventHeldVoice(){
+  var page=new Page(false,true);
+  // A slur or adjacent glyph can leave a white notch over a filled second oval.
+  // Its actual notehead core remains dark at the printed pitch.
+  for(int y=114;y<=117;y++)for(int x=199;x<=205;x++)page.gray[y*W+x]=(byte)255;
+  var notes=page.notes();assertTrue(notes.toString(),notes.stream().noneMatch(n->n.unbeamedDurationBeats()==2));
+ }
  @Test public void preservingVoicesDoesNotModifyCallerPixels(){var p=new Page(true,true);byte[] a=p.labels.clone(),b=p.gray.clone();p.notes();assertArrayEquals(a,p.labels);assertArrayEquals(b,p.gray);}
 }

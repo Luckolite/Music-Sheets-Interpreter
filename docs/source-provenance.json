@@ -144,8 +144,8 @@
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
       "source_sha256": "f932e96a582b74de8fb49e2f7eb4b8b01e171dc52304709fd99b4bf1e3f63696",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
-      "notes": "Scoped finiteBeamOverRule repair tolerates a bounded articulation followed by a fresh uninterrupted thin witness, not a long thick tail. Original synthetic tests. Prior stemBeforePaperTail repair retained. Unrelated pre-existing app decoder drift remains visible; source_sha256 intentionally unchanged, not whole-file parity."
+      "reviewed_app_commit": "700ae06dbb414bd0b5a385bce83e279d2463a372",
+      "notes": "Scoped finiteBeamOverRule repair tolerates a bounded articulation followed by a fresh uninterrupted thin witness, not a long thick tail. Raw hollow-core guard for a side-by-side unison rejects a bright notch over a filled head. Original synthetic tests. Prior stemBeforePaperTail repair retained. Unrelated pre-existing app decoder drift remains visible; source_sha256 intentionally unchanged, not whole-file parity."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -438,5 +438,9 @@
   "regional_staff_continuity_review": {
     "reviewed_app_state": "Music Sheets 1.18.248 worktree based on 38007cbb6226aedaea567cf64fc76cace4d3297c",
     "boundary": "Regional pitch recovery checks seven independent strips, fits the staff slope, and then requires four rules to remain continuous across the page. One line may be covered by notation; two interrupted lines cannot rephase a semantic staff. Original generated regressions only. No score image, device data, Android adapter, dependency or model weight is included. Existing unrelated mapped drift remains visible."
+  },
+  "unison_raw_hollow_core_review": {
+    "reviewed_app_state": "Scoped app commit 700ae06dbb414bd0b5a385bce83e279d2463a372; later unrelated worktree changes remain unstaged",
+    "boundary": "The shared side-by-side unison split now requires a white core at the held head's actual center. A bright upper notch over a filled head no longer creates a sustained voice. An original synthetic regression covers the false split and the existing fractional-spacing regression preserves a real filled-plus-hollow unison. The exact score crop and decoded page replay remain private. No weights, dependencies, private scores or device data are published. Pre-existing unrelated mapped drift remains visible."
   }
 }
