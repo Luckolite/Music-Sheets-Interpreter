@@ -49,6 +49,7 @@ final class OmrScoreInterpreter {
                 OmrMeasurePostProcessor.SYMBOL);
         rawHeadComponents.removeIf(head->isRoundedHeaderMeter(labels,gray,width,height,
                 head,staffs,clefOrKeyComponents));
+        rawHeadComponents.removeIf(head->isStackedOpeningMeterFragment(gray,width,height,head,staffs,measures));
         rawHeadComponents.removeIf(head -> commonTimeGlyphBounds(labels, gray, width, height,
                 head, staffs, clefOrKeyComponents) != null);
         rawHeadComponents.removeIf(head -> isTempoUnitHead(gray, width, height, head, staffs));
@@ -508,6 +509,8 @@ final class OmrScoreInterpreter {
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null && isRoundedHeaderMeter(labels, gray, width, height, head, staffs, glyphs))
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
+            if (bounds == null && isStackedOpeningMeterFragment(gray,width,height,head,staffs,measures))
+                bounds = new int[]{head.minX,head.maxX,head.minY,head.maxY};
             if (bounds == null && isHeavyRestBarFragment(gray, width, height, head, staffs))
                 bounds = new int[]{head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null && isHeaderFlatHead(labels,gray,width,height,head,staffs,glyphs))
@@ -1550,6 +1553,60 @@ final class OmrScoreInterpreter {
                 if(inkA>gap*gap*.45f&&inkB>gap*gap*.45f&&maxX-minX>gap*.75f
                         &&maxY-minY>gap*1.2f&&intersection>union*.72f)return true;
             }
+        return false;
+    }
+
+    /** A tiny semantic head can cover one corner of a stacked opening meter.
+     * Compare both complete printed numerals away from staff rules, and only
+     * demote fragments in the first measure of a system. */
+    private static boolean isStackedOpeningMeterFragment(byte[] gray,int width,int height,
+            Component head,List<Staff> staffs,List<MeasureRegion> measures) {
+        if(gray==null)return false;
+        Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)return false;
+        float gap=staff.gap;
+        if(head.area>gap*gap*.3f||head.maxX-head.minX+1>gap*.65f
+                ||head.maxY-head.minY+1>gap*.85f
+                ||head.centerY<staff.top+gap*.9f||head.centerY>staff.top+gap*2.2f)return false;
+        int[] stem=attachedRawStem(gray,width,height,head,gap);
+        // A numeral's vertical stroke stays inside the staff; an independent
+        // note stem extending above or below it still protects the note.
+        if(stem!=null&&(stem[1]<staff.top-gap*.25f||stem[1]>staff.bottom+gap*.25f))return false;
+        boolean opening=false;
+        for(MeasureRegion measure:measures)if(head.centerY>=measure.top()*height-gap
+                &&head.centerY<=measure.bottom()*height+gap
+                &&head.centerX>=measure.left()*width-gap*.5f
+                &&head.centerX<=measure.left()*width+gap*2.6f) {
+            boolean earlier=false;
+            for(MeasureRegion other:measures)if(other.left()<measure.left()
+                    &&Math.abs(other.top()-measure.top())*height<gap*2)earlier=true;
+            if(!earlier){opening=true;break;}
+        }
+        if(!opening)return false;
+        int left=Math.max(0,Math.round(head.minX-gap*1.2f));
+        int right=Math.min(width-1,Math.round(head.maxX+gap*.45f));
+        int top=Math.max(0,Math.round(head.centerY-gap*1.45f));
+        int bottom=Math.min(height-1,Math.round(head.centerY+gap*.4f));
+        if(right-left<gap*1.1f||bottom-top<gap*1.5f)return false;
+        for(int shift=Math.round(gap*2.05f);shift<=Math.round(gap*2.4f);shift++) {
+            if(bottom+shift>=height||bottom+shift>staff.bottom+gap*.4f)continue;
+            int overlap=0,union=0,upper=0,lower=0,minX=width,maxX=-1,minY=height,maxY=-1;
+            for(int y=top;y<=bottom;y++) {
+                if(!offHeaderStaffLine(y,staff.top,gap)
+                        ||!offHeaderStaffLine(y+shift,staff.top,gap))continue;
+                for(int x=left;x<=right;x++) {
+                    boolean a=(gray[y*width+x]&255)<155;
+                    boolean b=(gray[(y+shift)*width+x]&255)<155;
+                    if(a){upper++;minX=Math.min(minX,x);maxX=Math.max(maxX,x);
+                        minY=Math.min(minY,y);maxY=Math.max(maxY,y);}
+                    if(b)lower++;
+                    if(a||b)union++;
+                    if(a&&b)overlap++;
+                }
+            }
+            if(upper>gap*gap*.55f&&lower>gap*gap*.55f
+                    &&maxX-minX>gap*1.1f&&maxY-minY>gap*1.2f
+                    &&overlap>union*.77f)return true;
+        }
         return false;
     }
 

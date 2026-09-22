@@ -144,8 +144,8 @@
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
       "source_sha256": "f932e96a582b74de8fb49e2f7eb4b8b01e171dc52304709fd99b4bf1e3f63696",
-      "reviewed_app_commit": "700ae06dbb414bd0b5a385bce83e279d2463a372",
-      "notes": "Scoped finiteBeamOverRule repair tolerates a bounded articulation followed by a fresh uninterrupted thin witness, not a long thick tail. Raw hollow-core guard for a side-by-side unison rejects a bright notch over a filled head. Original synthetic tests. Prior stemBeforePaperTail repair retained. Unrelated pre-existing app decoder drift remains visible; source_sha256 intentionally unchanged, not whole-file parity."
+      "reviewed_app_commit": "de89dcea6e7dbb24956dcd37adbf3676e2145903",
+      "notes": "Scoped finiteBeamOverRule repair tolerates a bounded articulation followed by a fresh uninterrupted thin witness, not a long thick tail. Raw hollow-core guard for a side-by-side unison rejects a bright notch over a filled head. Original synthetic tests. A small spurious head inside two matching printed meter numerals is removed only in a first-system measure, preserving an independently stemmed note; source-reviewed PDF55 and PDF104 changes and all 121-page replay stayed private. Prior stemBeforePaperTail repair retained. Unrelated pre-existing app decoder drift remains visible; source_sha256 intentionally unchanged, not whole-file parity."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
