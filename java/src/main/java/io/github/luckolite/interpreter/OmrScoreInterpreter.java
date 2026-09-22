@@ -4157,7 +4157,7 @@ final class OmrScoreInterpreter {
             if(head.maxX-head.minX+1>gap*2||head.maxY-head.minY+1>gap*1.1f
                     ||head.area>gap*gap)continue;
             for(Component main:heads) {
-                if(main==head||main.area<Math.max(head.area*1.7f,gap*gap*1.2f)
+                if(main==head||main.area<Math.max(head.area*1.3f,gap*gap*1.05f)
                         ||nearestHeadStaff(staffs,main.centerY)!=staff
                         ||Math.abs(main.centerX-head.centerX)>gap*1.5f
                         ||Math.abs(main.centerY-head.centerY)<gap*2
