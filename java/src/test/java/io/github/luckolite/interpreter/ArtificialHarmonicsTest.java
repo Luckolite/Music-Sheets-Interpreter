@@ -122,6 +122,22 @@ public class ArtificialHarmonicsTest {
         var result=apply(List.of(beamedStopped(),beamedUpper()));
         assertEquals(1,result.size());assertEquals(2,result.get(0).octaveShift());
     }
+    @Test public void crowdedCoreWithAStaffRuleStillFormsDiamond() {
+        shape(true);
+        for(int rule:new int[]{Y-48,Y-40})for(int dy=0;dy<4;dy++)
+            for(int x=20;x<220;x++)gray[(rule+dy)*W+x]=0;
+        for(int y=Y-31;y<=Y-29;y++)for(int x=X-2;x<=X+2;x++)gray[y*W+x]=0;
+        var result=apply(List.of(beamedStopped(),beamedUpper()));
+        assertEquals(1,result.size());assertEquals(2,result.get(0).octaveShift());
+    }
+    @Test public void pairedBeamCanWitnessAnInterruptedRawStem() {
+        shape(true);
+        for(int rule:new int[]{Y-48,Y-40})for(int dy=0;dy<4;dy++)
+            for(int x=20;x<220;x++)gray[(rule+dy)*W+x]=0;
+        for(int y=Y-10;y<=Y-3;y++)for(int x=X+6;x<=X+19;x++)gray[y*W+x]=(byte)255;
+        var result=apply(List.of(beamedStopped(),heldUpper()));
+        assertEquals(1,result.size());assertEquals(2,result.get(0).octaveShift());
+    }
     @Test public void missingRawImageDoesNotChangeNotes() {
         var notes=List.of(note(0,Y));assertEquals(notes,ArtificialHarmonics.apply(null,W,H,List.of(),notes,List.of()));
     }

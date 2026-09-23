@@ -29,8 +29,12 @@ final class ArtificialHarmonics {
                         &&pairedTouch.unbeamedDurationBeats()>=ScoreNoteEvent.DURATION_HALF)
                         ||pairedTouch.beamCount()>=2)
                     &&diamond(gray,w,h,x,y-1.5f*gap,gap,true)))continue;
-            // Do not treat an arbitrary diamond without a stopped, stemmed lower note as this technique.
-            if(!stem(gray,w,h,x,y,gap,n.unbeamedDurationBeats()<ScoreNoteEvent.DURATION_HALF))continue;
+            // Require the stopped stem, or a paired beamed lower note when a crowded touch
+            // diamond interrupts that stem and the decoded upper fourth is a spurious half note.
+            if(!stem(gray,w,h,x,y,gap,n.unbeamedDurationBeats()<ScoreNoteEvent.DURATION_HALF)
+                    &&!(pairedTouch!=null&&n.beamCount()>=2&&!strictDiamond
+                        &&pairedTouch.beamCount()==0
+                        &&pairedTouch.unbeamedDurationBeats()>=ScoreNoteEvent.DURATION_HALF))continue;
             replacements.put(n,n.withOctaveShift(2));
             for(var upper:notes)if(upper!=n&&upper.measureIndex()==n.measureIndex()&&upper.staffIndex()==n.staffIndex()
                     &&upper.staffStep()-n.staffStep()==3&&Math.abs(upper.pageY()*h-(y-1.5f*gap))<gap*.35f
@@ -82,7 +86,7 @@ final class ArtificialHarmonics {
                 int xx=Math.round(cx+px),yy=Math.round(cy+py);total++;
                 if(dark(g,w,h,xx,yy)||dark(g,w,h,xx-1,yy)||dark(g,w,h,xx+1,yy))hit++;
             }
-            if(hit<total*.94)continue;
+            if(hit<total*(crowded?.9f:.94f))continue;
             // Side samples alone also fit a tilted oval at small staff sizes.
             // A touch diamond has four actual vertices, including its high and low tips.
             boolean vertices=true;
@@ -98,10 +102,13 @@ final class ArtificialHarmonics {
                 if(dark(g,w,h,Math.round(cx-r-3),yy)&&dark(g,w,h,Math.round(cx+r+3),yy))continue;
                 for(int xx=Math.round(cx-r*.25f);xx<=Math.round(cx+r*.25f);xx++){inside++;if(!dark(g,w,h,xx,yy))clear++;}
             }
-            if(inside<4||clear<inside*(crowded?.8:.65))continue;
+            if(inside<4||(!crowded&&clear<inside*.65))continue;
             int outside=0;
             for(int a:new int[]{-1,1})for(int b:new int[]{-1,1})if(!dark(g,w,h,Math.round(cx+a*r*.75f),Math.round(cy+b*r*.75f)))outside++;
-            if(crowded||outside==4)return true;
+            if(crowded) {
+                if((hit==total&&clear>=inside*.8)
+                        ||(hit>=total*.9f&&clear>=inside*.6&&outside>=3))return true;
+            } else if(outside==4)return true;
         }
         return false;
     }
