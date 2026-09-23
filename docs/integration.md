@@ -90,6 +90,11 @@ provides at least one digit, and callers should require agreement with that OCR
 digit. This is a bounded fallback for music glyphs that text OCR misses; it does
 not make the general Python page reader infer every printed meter automatically.
 
+The automatic offline OCR path now sends a bounded `= BPM` line reading to the
+Java tempo detector. It still requires the printed equals sign and nearby
+tempo note geometry, so an isolated number is not a tempo change. Supplied
+`tempoNumbers` annotations remain authoritative.
+
 For PDFs with embedded tab text, the CLI supplies normalized tab search boxes and
 also runs local OCR for other printed words. For scanned pages and images, it supplies
 words from local OCR. An explicit

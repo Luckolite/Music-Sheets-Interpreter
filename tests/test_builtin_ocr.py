@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from sheet_interpreter.ocr import LocalOcr
+from sheet_interpreter.ocr import LocalOcr, tempo_numbers
 from sheet_interpreter.reader import grayscale, java_executable, write_page
 
 
@@ -19,6 +19,18 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class BuiltinOcrTests(unittest.TestCase):
+    def test_printed_tempo_line_bounds_the_digits_and_keeps_direction_anchor(self):
+        # Original synthetic OCR geometry, with title and measure numbers nearby.
+        words = [dict(text="J = 125", left=.15, top=.125, right=.21, bottom=.145),
+                 dict(text="13", left=.06, top=.55, right=.08, bottom=.57),
+                 dict(text="Op. 2023", left=.4, top=.04, right=.5, bottom=.06)]
+        tokens = tempo_numbers(words)
+        self.assertEqual(1, len(tokens))
+        self.assertEqual(125, tokens[0]["value"])
+        self.assertAlmostEqual(.15, tokens[0]["annotationLeft"])
+        self.assertGreater(tokens[0]["left"], .18)
+        self.assertAlmostEqual(.21, tokens[0]["right"])
+
     def test_scanned_pdf_staff_strokes_do_not_hide_a_twelve_fret(self):
         import pypdfium2 as pdfium
 

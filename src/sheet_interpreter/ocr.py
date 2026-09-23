@@ -3,6 +3,28 @@
 """Bundled, offline OCR for raster score text and scanned tablature frets."""
 
 import numpy as np
+import re
+
+
+def tempo_numbers(words):
+    """Bound BPM digits within an OCR line; the Java decoder verifies the equals glyph."""
+    result = []
+    for word in words:
+        value = str(word.get("text", ""))
+        match = re.search(r"=\s*(\d{2,3})\s*$", value)
+        if not match:
+            continue
+        bpm = int(match.group(1))
+        if bpm < 30 or bpm > 400:
+            continue
+        width = word["right"] - word["left"]
+        if width <= 0 or not value:
+            continue
+        left = word["left"] + width * match.start(1) / len(value)
+        result.append(dict(value=bpm, left=left, top=word["top"],
+                           right=word["right"], bottom=word["bottom"],
+                           annotationLeft=word["left"]))
+    return result
 
 
 class LocalOcr:
