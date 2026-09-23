@@ -5454,7 +5454,27 @@ final class OmrScoreInterpreter {
         // A crop through an annotation can give a flat a false lower-right spine.
         // Recovered natural endpoints must finish inside the inspected column.
         if(rawStrokeLeavesCrop(gray,width,height,ink,w,h,left,top,gap))return false;
-        return isNaturalGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap);
+        if(isNaturalGlyph(ink,w,h,new AccidentalCandidate(glyph,OmrMeasurePostProcessor.SYMBOL),gap))return true;
+        // An interrupted staff rule can survive the raw crop at both spines,
+        // giving them identical false endpoints. Recheck the same glyph with
+        // long horizontal rows removed; the ink is never changed in place.
+        byte[] trimmed=ink.clone();
+        int radius=Math.max(3,Math.round(gap*.6f));
+        for(int y=0;y<h;y++) {
+            int outside=0,dark=0;
+            for(int x=Math.max(0,left-radius);x<=Math.min(width-1,right+radius);x++)
+                if(x<left||x>right){outside++;if((gray[(top+y)*width+x]&255)<=inkThreshold)dark++;}
+            if(outside>0&&dark>=outside*.65f)for(int x=0;x<w;x++)trimmed[y*w+x]=0;
+        }
+        int ca=0,cminX=w,cmaxX=-1,cminY=h,cmaxY=-1;long csx=0,csy=0;
+        for(int at=0;at<trimmed.length;at++)if(trimmed[at]!=0){
+            int x=at%w,y=at/w;ca++;csx+=x;csy+=y;
+            cminX=Math.min(cminX,x);cmaxX=Math.max(cmaxX,x);
+            cminY=Math.min(cminY,y);cmaxY=Math.max(cmaxY,y);
+        }
+        if(ca==0)return false;
+        Component clean=new Component(ca,cminX,cmaxX,cminY,cmaxY,csx/(float)ca,csy/(float)ca);
+        return isNaturalGlyph(trimmed,w,h,new AccidentalCandidate(clean,OmrMeasurePostProcessor.SYMBOL),gap);
     }
 
     /** A nearby disconnected slur must not become an endpoint of the seeded accidental. */
