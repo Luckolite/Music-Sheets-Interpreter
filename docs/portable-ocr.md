@@ -3,8 +3,8 @@
 `PortableOcr` is a Java-only detector/recognizer pipeline accepting ARGB pixels
 and an `Inference` implementation. Windows and Android execute the same resize,
 normalization, connected-component extraction, stacked-row splitting, CTC decoding,
-and word construction. The default standalone reader is unchanged; this class
-does not automatically download or activate an OCR engine.
+and word construction. This Java pipeline is separate from the Python reader's
+automatic RapidOCR path. This class does not download or activate a Java OCR engine.
 
 The caller supplies detector probabilities, recognizer probabilities and a pinned
 dictionary (including blank index zero). It must manage runtime/session ownership,
@@ -104,4 +104,5 @@ Validation includes exact packaged Android ARM/emulator versus Windows page
 evidence and a downstream comparison of notes, measures, meter and tempo on one
 private page. This is not a claim of whole-library equivalence or ground-truth
 accuracy. Pale tiny markings and rotated crops remain evaluation limitations.
-The standalone default CLI does not automatically run this optional OCR provider.
+The standalone CLI uses its installed Python OCR dependency automatically; it does
+not start this optional Java OCR provider.

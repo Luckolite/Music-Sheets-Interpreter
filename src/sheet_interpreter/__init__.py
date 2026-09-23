@@ -4,5 +4,5 @@
 from .reader import Interpreter
 from .musicxml import write_musicxml
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __all__ = ["Interpreter", "write_musicxml"]

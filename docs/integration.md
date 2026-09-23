@@ -49,10 +49,13 @@ beats or one quarter of the principal's duration, whichever is smaller. The
 principal chord moves together; accompaniment and later beats keep their timing.
 This is a preview convention, not a claim that every ornament style is recognized.
 
-## Optional OCR annotations
+## OCR and optional annotations
 
-The CLI does not bundle an OCR engine. `--annotations file.json` accepts a list with
-one object per selected page. Java callers pass equivalent `SheetInterpreter.Annotations`.
+The normal `.[inference,pdf]` install includes offline OCR models. The Python reader
+uses them automatically when an image or a PDF page has no embedded tab text. The
+Java decoder accepts caller-provided OCR words; it does not start Python OCR by itself.
+`--annotations file.json` overrides automatic OCR with one object per selected page.
+Java callers pass equivalent `SheetInterpreter.Annotations`.
 All OCR boxes are normalized 0..1 coordinates on the source page, not crop-relative
 coordinates. A page object can contain these optional lists:
 
@@ -74,13 +77,14 @@ Put verified measure-number tokens and multi-rest counts in their respective lis
 
 Words have `text`, `left`, `top`, `right`, `bottom`. They can carry recognized dynamics
 and techniques such as `p`, `mf`, `pizz.` or `arco`; the decoder places supported tokens
-using the staff and note geometry. This interface does not reproduce the Android app's
-whole-page and repeated crop OCR strategy.
+using the staff and note geometry. The automatic Python path reads the whole analysis
+page; it does not reproduce the Android app's repeated crop OCR strategy.
 
 For PDFs with embedded tab text, the CLI supplies normalized search boxes automatically.
-An explicit `--annotations` file remains authoritative. Scanned pages still require an
-external OCR provider. Compound fret tokens are retained, overlapping search results are
-deduplicated, and separated digits are joined only when their tab-string geometry agrees.
+For scanned pages and images, it supplies words from local OCR. An explicit
+`--annotations` file remains authoritative. Compound fret tokens are retained,
+overlapping embedded-text search results are deduplicated, and separated digits are
+joined only when their tab-string geometry agrees.
 
 Standalone tabs may contain six or seven strings. A `Tuning:` header lists the open strings
 from lowest to highest; the header is carried from the first PDF page even when processing

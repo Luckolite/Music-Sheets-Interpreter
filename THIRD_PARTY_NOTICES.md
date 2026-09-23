@@ -10,6 +10,8 @@ complete upstream notices if you redistribute them as part of a larger applicati
 | NumPy 1.26.x | Pixel arrays | [BSD-3-Clause and bundled-component notices](https://github.com/numpy/numpy/blob/v1.26.4/LICENSE.txt); binary wheels include additional library licenses |
 | Pillow | Image I/O | [MIT-CMU](https://github.com/python-pillow/Pillow/blob/main/LICENSE) for the verified 12.2.0 build, plus codec/dependency notices in binary distributions |
 | pypdfium2 4.x / PDFium | Optional PDF rasterization | [Apache-2.0 OR BSD-3-Clause, plus PDFium third-party notices](https://github.com/pypdfium2-team/pypdfium2/tree/main/LICENSES) |
+| RapidOCR 3.9.2 and its packaged OCR models | Offline text and fret recognition | [Apache-2.0 and model provenance](https://github.com/RapidAI/RapidOCR/tree/v3.9.2); installed separately from this wheel |
+| ONNX Runtime 1.23.2 | Runs the OCR models | [MIT and bundled third-party notices](https://github.com/microsoft/onnxruntime/tree/v1.23.2); installed separately from this wheel |
 | Java runtime | Runs the decoder | Supplied by the user; licensing depends on the JDK/JRE distribution |
 | PyTorch 2.1.2 | Optional training | [BSD-style license and third-party notices](https://github.com/pytorch/pytorch/blob/v2.1.2/LICENSE) |
 | OpenCV Python 4.10.0.84 | Optional training data and augmentation | [MIT wrapper](https://github.com/opencv/opencv-python/blob/4.x/LICENSE.txt), [Apache-2.0 OpenCV binary and bundled-component notices](https://github.com/opencv/opencv-python/blob/4.x/LICENSE-3RD-PARTY.txt) |

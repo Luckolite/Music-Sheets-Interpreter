@@ -42,7 +42,7 @@ Everything runs locally after installation; no account or server is required.
 - Standard notation: pitches, accidentals, chords, rests, ties and written timing.
 - Multi-staff piano, violin and ensemble pages, including independently barred staves.
 - Printed meter and numeric tempo changes when the symbols can be read confidently.
-- Six- and seven-string guitar tabs, using embedded PDF text or caller-supplied OCR.
+- Six- and seven-string guitar tabs, using embedded PDF text or built-in offline OCR.
 - Printed tuning headers, including alternate tunings carried across PDF pages.
 - Detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations.
 - Explicit hammer-on, pull-off, tapping, slide, bend, vibrato and harmonic symbols.
@@ -51,9 +51,8 @@ Everything runs locally after installation; no account or server is required.
 MusicXML reconstructs a concert-pitch score, not the original layout or tab placement.
 Guitar effects are text annotations in MusicXML. Recognition can miss symbols, and
 missing tab rhythm remains estimated. Graphical bends, quarter-tone bends, whammy-bar
-directions and strum direction are not reconstructed. The Music Sheets app includes
-local OCR for scanned tabs. This standalone CLI uses embedded PDF text or OCR supplied
-by the caller; its optional OCR provider is not enabled automatically.
+directions and strum direction are not reconstructed. Scanned tabs are read with the
+installed local OCR engine; small or faint fret numbers can still be missed.
 
 The decoder uses conservative visual checks to keep arpeggio marks from becoming
 barlines, ordinary hollow chord heads from becoming artificial harmonics, and tiny
@@ -71,9 +70,9 @@ Use `Interpreter` and `write_musicxml` from Python, or `SheetInterpreter.analyze
 from Java. See [API examples and output format](docs/integration.md).
 An optional [native Java decoding service](docs/native-decoder.md) supports
 bounded, source-matched geometry and analysis requests from local workers.
-An experimental [shared page OCR pipeline](docs/portable-ocr.md) and optional
-ONNX binding are available for cross-platform evaluation; they do not replace
-the default reader or automatically populate annotations.
+The Python reader runs bundled-model OCR automatically on images and scanned PDFs.
+The separate [shared Java OCR pipeline](docs/portable-ocr.md) and optional ONNX
+binding remain available for cross-platform evaluation.
 
 The bundled v4 model comes from our own synthetic training lineage, without pretrained
 HOMR/oemer weights or commercial score scans. Tab and export improvements do not change

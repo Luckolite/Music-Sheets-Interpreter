@@ -124,6 +124,7 @@ class Interpreter:
             raise ValueError("Expected int64 class IDs [1,320,320]")
         yy, xx = np.mgrid[:320, :320]
         self.edge = np.minimum.reduce([xx, yy, 319 - xx, 319 - yy]) + 1
+        self.ocr = None
 
     def predict(self, gray):
         if not isinstance(gray, np.ndarray) or gray.ndim != 2 or gray.dtype != np.uint8:
@@ -159,6 +160,11 @@ class Interpreter:
             raise ValueError("key_fifths must be -7..7")
         gray = grayscale(image, width)
         labels = self.predict(gray)
+        if annotations is None:
+            if self.ocr is None:
+                from .ocr import LocalOcr
+                self.ocr = LocalOcr()
+            annotations = {"words": self.ocr.words(gray)}
         with tempfile.TemporaryDirectory(prefix="sheet-interpreter-") as folder:
             page = Path(folder) / "page.page.gz"
             output = Path(folder) / "score.json"
@@ -172,7 +178,7 @@ class Interpreter:
         result["initialMeter"] = list(meter)
         result["initialKeyFifths"] = key_fifths
         result["warnings"] = ["Experimental recognition: review pitches, accidentals, ties and timing.",
-                              "OCR is caller-supplied; the initial meter is an argument, not an automatic reading."]
+                              "OCR can miss small or faint text; the initial meter is an argument, not an automatic reading."]
         result["warnings"].extend(result.get("tablatureWarnings", []))
         if not result["events"]:
             result["warnings"].append("No playable notes detected on this page.")
