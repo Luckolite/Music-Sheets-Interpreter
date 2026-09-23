@@ -5322,7 +5322,7 @@ final class OmrScoreInterpreter {
         if(gray==null)return false;
         for(AccidentalCandidate seed:candidates) {
             Component glyph=seed.component;
-            if(head.minX-glyph.maxX < gap*.10f || head.minX-glyph.maxX > gap*1.35f
+            if(head.minX-glyph.maxX < 0 || head.minX-glyph.maxX > gap*1.35f
                     || Math.abs(glyph.centerY-head.centerY)>gap*.9f
                     || glyph.maxY-glyph.minY<gap*.65f
                     || glyph.maxX-glyph.minX<gap*.35f
@@ -5418,7 +5418,11 @@ final class OmrScoreInterpreter {
     private static boolean rawNaturalAtSeed(byte[] gray,int width,int height,
             Component seed,Component head,float gap,int margin,int inkThreshold) {
         int left=Math.max(0,seed.minX-margin);
-        int right=Math.min(Math.min(width-1,seed.maxX+margin),Math.round(head.minX-gap*.15f));
+        // When a natural touches the following head, its semantic box can
+        // include that note's down-going stem. Leave a slightly wider paper
+        // gap at this edge so the foreign stem cannot extend the natural crop.
+        float headGap=head.minX-seed.maxX<gap*.10f?.20f:.15f;
+        int right=Math.min(Math.min(width-1,seed.maxX+margin),Math.round(head.minX-gap*headGap));
         int top=Math.max(0,Math.round(head.centerY-gap*1.8f));
         int bottom=Math.min(height-1,Math.round(head.centerY+gap*1.8f));
         int w=right-left+1,h=bottom-top+1;
