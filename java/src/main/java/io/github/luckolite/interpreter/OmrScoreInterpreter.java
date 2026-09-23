@@ -324,6 +324,9 @@ final class OmrScoreInterpreter {
                 .thenComparingDouble(note -> note.event.positionInMeasure())
                 .thenComparingInt(note -> note.event.staffIndex())
                 .thenComparingInt(note -> note.event.staffStep()));
+        List<Component> printedAccidentalHeads=new ArrayList<>();
+        for(DetectedNote note:detected)if(note.event.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY)
+            printedAccidentalHeads.add(note.head);
         List<DetectedNote> joined = applyAccidentalState(markTieContinuations(tieLabelsWithoutSlurHeads(labels,width,rejectedSlurHeads,heads), gray,
                 width, height, removeSplitDuplicates(detected)));
         logHeadCoverage(staffs, rawHeadComponents, headComponents, heads, demotedDotHeads, joined);
@@ -493,7 +496,57 @@ final class OmrScoreInterpreter {
                 withRests.set(i,withRests.get(i).withCrossStaffBeam());
             }
         }
-        return new Analysis(OpeningMeasureLayout.mark(withRests,rests,measures), keyChanges, rests);
+        boolean[] printedAccidental=new boolean[joined.size()];
+        for(int i=0;i<joined.size();i++)printedAccidental[i]=printedAccidentalHeads.contains(joined.get(i).head);
+        return new Analysis(withoutPitchChangedTies(OpeningMeasureLayout.mark(withRests,rests,measures),
+                keyChanges,printedAccidental), keyChanges, rests);
+    }
+
+    /** A printed slur may connect two heads at the same staff step while an
+     * explicit accidental changes the sounding pitch. Such an arc is not a tie. */
+    private static List<ScoreNoteEvent> withoutPitchChangedTies(List<ScoreNoteEvent> notes,
+                                                                  List<ScoreKeyChange> keys,
+                                                                  boolean[] printedAccidental) {
+        if(keys.isEmpty())return notes;
+        if(printedAccidental.length!=notes.size())throw new IllegalArgumentException("Note evidence mismatch");
+        List<ScoreNoteEvent> result=new ArrayList<>(notes);
+        for(int i=0;i<notes.size();i++) {
+            ScoreNoteEvent current=notes.get(i);
+            if(!printedAccidental[i]||!current.tiedFromPrevious()
+                    ||current.writtenAccidental()==ScoreNoteEvent.ACCIDENTAL_FROM_KEY)continue;
+            int currentAcc=resolvedTieAccidental(current,keys);
+            if(currentAcc==Integer.MIN_VALUE)continue;
+            boolean prior=false,matching=false;
+            for(int j=i-1;j>=0;j--) {
+                ScoreNoteEvent candidate=notes.get(j);
+                if(current.measureIndex()-candidate.measureIndex()>1)break;
+                if(candidate.staffIndex()!=current.staffIndex()
+                        ||candidate.staffCount()!=current.staffCount()
+                        ||candidate.diatonicPitchIdentity()!=current.diatonicPitchIdentity())continue;
+                prior=true;
+                if(resolvedTieAccidental(candidate,keys)==currentAcc){matching=true;break;}
+            }
+            if(!prior||matching)continue;
+            result.set(i,new ScoreNoteEvent(current.measureIndex(),current.positionInMeasure(),
+                    current.staffStep(),current.staffIndex(),current.staffCount(),current.pageY(),
+                    false,current.augmentationDots(),current.beamCount(),current.writtenAccidental(),
+                    current.unbeamedDurationBeats(),current.tupletDivisor(),current.followingRestBeats(),
+                    current.articulations(),current.clefBottomDiatonic(),current.crossStaffBeam(),
+                    current.leadingRestBeats(),current.compactOpening(),current.octaveShift()));
+        }
+        return result;
+    }
+
+    private static int resolvedTieAccidental(ScoreNoteEvent note,List<ScoreKeyChange> keys) {
+        if(note.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY)
+            return ScoreNoteEvent.accidentalSemitones(note.writtenAccidental());
+        Integer fifths=null;
+        for(ScoreKeyChange key:keys)if(key.measureIndex()<=note.measureIndex())fifths=key.fifths();
+        if(fifths==null)return Integer.MIN_VALUE;
+        int letter=Math.floorMod(note.diatonicPitchIdentity(),7);
+        int[] order=fifths>=0?new int[]{3,0,4,1,5,2,6}:new int[]{6,2,5,1,4,0,3};
+        for(int k=0;k<Math.min(7,Math.abs(fifths));k++)if(order[k]==letter)return fifths>0?1:-1;
+        return 0;
     }
 
     /** Excludes proven non-note header ink before OCR rest reconciliation, without modifying input masks. */
