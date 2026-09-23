@@ -94,6 +94,9 @@ The automatic offline OCR path now sends a bounded `= BPM` line reading to the
 Java tempo detector. It still requires the printed equals sign and nearby
 tempo note geometry, so an isolated number is not a tempo change. Supplied
 `tempoNumbers` annotations remain authoritative.
+Isolated OCR numerals from 2 to 32 are also offered as rest counts; the decoder
+accepts one only above an otherwise note-free measure with a printed heavy
+multi-measure-rest bar. Supplied `restCounts` annotations remain authoritative.
 
 For PDFs with embedded tab text, the CLI supplies normalized tab search boxes and
 also runs local OCR for other printed words. For scanned pages and images, it supplies

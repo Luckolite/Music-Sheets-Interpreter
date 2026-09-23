@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from sheet_interpreter.ocr import LocalOcr, tempo_numbers
+from sheet_interpreter.ocr import LocalOcr, tempo_numbers, rest_count_numbers
 from sheet_interpreter.reader import grayscale, java_executable, write_page
 
 
@@ -19,6 +19,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class BuiltinOcrTests(unittest.TestCase):
+    def test_isolated_rest_count_is_offered_without_reading_a_verse_heading(self):
+        # Original synthetic boxes; Java still requires a note-free heavy rest bar.
+        words = [dict(text="2", left=.30, top=.20, right=.32, bottom=.22),
+                 dict(text="Verse 2", left=.36, top=.19, right=.43, bottom=.21),
+                 dict(text="34", left=.25, top=.20, right=.27, bottom=.22)]
+        tokens = rest_count_numbers(words)
+        self.assertEqual([2], [token["value"] for token in tokens])
+        self.assertAlmostEqual(.30, tokens[0]["left"])
+
     def test_printed_tempo_line_bounds_the_digits_and_keeps_direction_anchor(self):
         # Original synthetic OCR geometry, with title and measure numbers nearby.
         words = [dict(text="J = 125", left=.15, top=.125, right=.21, bottom=.145),

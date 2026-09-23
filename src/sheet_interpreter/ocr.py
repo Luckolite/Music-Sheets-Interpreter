@@ -27,6 +27,20 @@ def tempo_numbers(words):
     return result
 
 
+def rest_count_numbers(words):
+    """Offer isolated numerals to the decoder's multi-measure-rest geometry check."""
+    result = []
+    for word in words:
+        value = str(word.get("text", "")).strip()
+        if not value.isascii() or not value.isdigit():
+            continue
+        count = int(value)
+        if 2 <= count <= 32:
+            result.append(dict(value=count, left=word["left"], top=word["top"],
+                               right=word["right"], bottom=word["bottom"]))
+    return result
+
+
 class LocalOcr:
     def __init__(self):
         try:
