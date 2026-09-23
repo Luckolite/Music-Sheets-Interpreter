@@ -248,9 +248,9 @@
     },
     "PrintedMeasureRhythmGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedMeasureRhythmGuard.java",
-      "source_sha256": "2510299763ef426ebc8cad18bbfc38a0842cc31eebbca76e32d06dbce5891775",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
-      "notes": "Preserve independently barred duet staves despite intervening whitespace using aligned continuous ink within two detected five-line staves. Original synthetic regression."
+      "source_sha256": "21a825153aee35b2988d66d065248ead97ffdd629d143c6c73234a033f3e495c",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "notes": "Retains independently barred duet staves and rejects a ledger-line extension that overlaps an upper staff and crosses its separators. Original synthetic regressions; private score comparison excluded."
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",

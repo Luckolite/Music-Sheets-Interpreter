@@ -58,8 +58,10 @@ The decoder uses conservative visual checks to keep arpeggio marks from becoming
 barlines, ordinary hollow chord heads from becoming artificial harmonics, and tiny
 notation fragments from becoming implausible whole-note-denominator meters. It also
 preserves barlines drawn separately through multiple staves and beams briefly crossed
-by articulation marks. These safeguards reduce known false readings, but they are not
-a guarantee that every note or rhythm in a score is correct.
+by articulation marks. It rejects a false staff row when ledger lines overlap an
+existing staff and cross several of its measure separators. These safeguards reduce
+known false readings, but they are not a guarantee that every note or rhythm in a score
+is correct.
 
 Note-equals-number tempo marks are supported. Note-equals-note metric modulations are
 not yet interpreted, so passages using them can play at the wrong relative tempo.

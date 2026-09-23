@@ -7,6 +7,25 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class PrintedMeasureRhythmGuardTest {
+    @Test public void ledgerExtensionCannotBecomeAnOverlappingStaffRow() {
+        var upper=List.of(new MeasureRegion(.16f,.38f,.068f,.121f),
+                new MeasureRegion(.39f,.61f,.068f,.121f),
+                new MeasureRegion(.62f,.71f,.068f,.121f),
+                new MeasureRegion(.72f,.91f,.068f,.121f));
+        var phantom=new MeasureRegion(.319f,.791f,.10f,.152f);
+        var next=new MeasureRegion(.16f,.9f,.214f,.266f);
+        var regions=new ArrayList<>(upper);regions.add(phantom);regions.add(next);
+        var expected=new ArrayList<>(upper);expected.add(next);
+        assertEquals(expected,PrintedMeasureRhythmGuard.rejectOverlappingRows(regions));
+    }
+    @Test public void neighboringPrintedStaffRowsRemainSeparate() {
+        var upper=List.of(new MeasureRegion(.16f,.38f,.07f,.12f),
+                new MeasureRegion(.39f,.61f,.07f,.12f),
+                new MeasureRegion(.62f,.9f,.07f,.12f));
+        var lower=new MeasureRegion(.16f,.9f,.16f,.21f);
+        var regions=new ArrayList<>(upper);regions.add(lower);
+        assertEquals(regions,PrintedMeasureRhythmGuard.rejectOverlappingRows(regions));
+    }
     @Test public void separateDuetBarlinesSurviveWhitespaceBetweenStaffs() {
         byte[] g=paper();
         for(int top:new int[]{180,400}) {

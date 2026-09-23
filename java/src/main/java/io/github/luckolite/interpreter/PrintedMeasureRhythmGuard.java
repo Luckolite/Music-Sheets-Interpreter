@@ -12,6 +12,8 @@ final class PrintedMeasureRhythmGuard {
 
     static List<MeasureRegion> reconcile(List<MeasureRegion> raw, List<MeasureRegion> fitted,
                                          byte[] labels, byte[] gray, int width, int height) {
+        raw = rejectOverlappingRows(raw);
+        fitted = rejectOverlappingRows(fitted);
         fitted = preservePrintedBoundaries(raw, fitted, gray, width, height);
         fitted = rejectUnprintedRows(raw, fitted, labels, gray, width, height);
         final var guarded = fitted;
@@ -22,6 +24,23 @@ final class PrintedMeasureRhythmGuard {
         if (!split) return preserved;
         var aligned = alignPrintedSeparators(raw, preserved, notes, gray, width, height);
         return preserveCompleteRuns(raw, aligned, notes, gray, width, height);
+    }
+
+    /** Ledger lines below a staff can resemble a short, overlapping second system. */
+    static List<MeasureRegion> rejectOverlappingRows(List<MeasureRegion> regions) {
+        return regions.stream().filter(candidate -> {
+            float height = candidate.bottom() - candidate.top();
+            if (height <= 0) return true;
+            var upper = regions.stream().filter(other -> other.top() < candidate.top() - .01f
+                    && Math.min(other.bottom(), candidate.bottom()) - candidate.top()
+                    > .2f * Math.min(height, other.bottom() - other.top()))
+                    .toList();
+            long crossedSeparators = upper.stream().filter(other ->
+                    other.right() > candidate.left() + .01f
+                    && other.right() < candidate.right() - .01f)
+                    .map(MeasureRegion::right).distinct().count();
+            return crossedSeparators < 2;
+        }).toList();
     }
 
     /** Number OCR may propose a missing row, but text in a footer is not a staff. */
