@@ -207,7 +207,12 @@ final class SixteenthRestDetector {
             // accidentals, paired dots and isolated note flags do not have this geometry.
             int footRight = -1;
             for (int y = maxY - Math.round(gap * .45f); y <= maxY; y++) if (!line[y - top]) {
-                if (ink[y - top] > gap * .50f) return;
+                if (ink[y - top] > gap * .50f) {
+                    // A thin antialiased edge of the next verified staff rule can join
+                    // the tail for one row without widening the printed rest itself.
+                    if (y + 1 <= bottom && line[y + 1 - top]) continue;
+                    return;
+                }
                 for (int x = left; x <= right; x++) if ((gray[y * width + x] & 255) < 170)
                     footRight = Math.max(footRight, x);
             }

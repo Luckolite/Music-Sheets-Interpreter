@@ -19,6 +19,14 @@ public class RasterEighthRestTest {
     private List<ScoreRestEvent> rests(){return SixteenthRestDetector.detect(gray,W,H,List.of(new MeasureRegion(0,1,.2f,.8f)),List.of(new SixteenthRestDetector.Staff(80,137,14.25f,0,1)),List.of());}
     @Test public void aThreeRowBulbAtFractionalScaleIsAnEighthRest(){setup(false,true,true);var r=rests();assertEquals(r.toString(),1,r.size());assertEquals(.5,r.get(0).durationBeats(),0);}
     @Test public void aFiniteRuleRemnantDoesNotJoinTheRestToTheStaff(){setup(true,false,true);var r=rests();assertEquals(r.toString(),1,r.size());assertEquals(.5,r.get(0).durationBeats(),0);}
+    @Test public void aThinStaffEdgeCannotMakeTheEighthRestTailTooBroad(){
+        setup(false,true,true);
+        // Original synthetic antialias band one row before the verified fourth rule.
+        for(int x=173;x<=182;x++)gray[122*W+x]=0;
+        var r=rests();
+        assertEquals(r.toString(),1,r.size());
+        assertEquals(.5,r.get(0).durationBeats(),0);
+    }
     @Test public void aBulbWithoutItsDescendingTailIsNotARest(){setup(false,true,false);assertTrue(rests().isEmpty());}
     @Test public void aRuleWithoutAGlyphDoesNotCreateSilence(){setup(true,false,false);for(int y=94;y<=106;y++)for(int x=170;x<=184;x++)gray[y*W+x]=(byte)255;assertTrue(rests().isEmpty());}
     @Test public void sourcePixelsRemainUnchanged(){setup(true,false,true);var before=gray.clone();rests();assertArrayEquals(before,gray);}

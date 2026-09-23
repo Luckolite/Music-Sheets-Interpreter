@@ -204,7 +204,9 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "95e86b3cf91ed7a6ac8941832ad0dec6f03e79ab0ede74f9fa8fd9bba35f2c71"
+      "source_sha256": "717d2d2c725f2cbc929a6b438798df928225e85d9c5b95d1c493b89d19b0ca24",
+      "reviewed_app_commit": "8f2dfd3a67db83ac46aaae376aaa38bde6f3521a",
+      "notes": "Reviewed faint-staff-edge repair and original synthetic eighth-rest regression. The row before a verified staff line may be ignored when measuring the otherwise narrow rest tail. No private score images or logs included."
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
