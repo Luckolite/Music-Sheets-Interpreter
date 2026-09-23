@@ -51,4 +51,15 @@ public record ScorePageInterpretation(List<MeasureRegion> measures, List<ScoreNo
         techniqueChanges = techniqueChanges == null ? List.of() : List.copyOf(techniqueChanges);
         dynamicChanges = dynamicChanges == null ? List.of() : List.copyOf(dynamicChanges);
     }
+
+    /** Keep a cross-page hairpin once, with its full endpoint relative to its starting page. */
+    public static List<ScoreDynamicChange> dynamicsStartingOnPage(
+            List<ScoreDynamicChange> changes, int firstMeasure, int measureAfterLast) {
+        if (firstMeasure < 0 || measureAfterLast < firstMeasure)
+            throw new IllegalArgumentException("Invalid page measure range");
+        if (changes == null || changes.isEmpty()) return List.of();
+        return changes.stream().filter(change -> change.measureIndex() >= firstMeasure
+                && change.measureIndex() < measureAfterLast)
+                .map(change -> change.offset(-firstMeasure)).toList();
+    }
 }

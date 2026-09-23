@@ -183,7 +183,9 @@
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
-      "source_sha256": "c8c8a74ccbea3a978511b9b96a0a445bc211a05d960a5d9a9f0b77d5355df5f8"
+      "source_sha256": "267e28624f456b3345421276c38d378f5b69deb8b873048514e5607aee82149f",
+      "reviewed_app_commit": "35c9117b662d597ea6d3a441b071b154718ef6d5",
+      "notes": "Reviewed working-tree addition: page-local dynamic projection retains a cross-page hairpin once, on its starting page, with its full endpoint. Shared Java helper and original synthetic regression mirrored; PDF overlay composition and lifecycle remain app-specific. No recognition thresholds, model weights or private score material changed."
     },
     "ScoreRestEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreRestEvent.java",
