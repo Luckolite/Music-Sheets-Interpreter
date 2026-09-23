@@ -31,6 +31,32 @@ public final class SymbolDiamondBarlineTest {
         assertEquals(List.of(50,150,300,450),page.boundaries());
     }
 
+    @Test public void onePixelLowStaffEstimateKeepsAPrintedBar() throws Exception {
+        int width=500,height=200,gap=21,bar=150;
+        int[] rows={61,82,103,124,145};
+        byte[] labels=new byte[width*height],gray=new byte[width*height];
+        Arrays.fill(gray,(byte)255);
+        for(int line=0;line<6;line++) {
+            int printedY=57+line*gap;
+            for(int x=50;x<=450;x++)gray[printedY*width+x]=0;
+            for(int x=50;x<=450;x++)if(line<5)
+                labels[rows[line]*width+x]=OmrMeasurePostProcessor.STAFF;
+        }
+        // An imperfect first printed rule makes the neighboring staff line
+        // a competing alignment when the semantic rows are one pixel low.
+        gray[57*width+173]=(byte)255;
+        gray[57*width+174]=(byte)255;
+        for(int y=57;y<=141;y++)for(int x=bar-1;x<=bar+1;x++)gray[y*width+x]=0;
+        for(int y=rows[0];y<=rows[4];y++)labels[y*width+bar]=OmrMeasurePostProcessor.STEM_OR_REST;
+        Method method=OmrMeasurePostProcessor.class.getDeclaredMethod("findBoundaries",
+                byte[].class,byte[].class,int.class,int.class,int[].class,float.class,
+                int.class,int.class,float.class);
+        method.setAccessible(true);
+        @SuppressWarnings("unchecked") List<Integer> boundaries=(List<Integer>)method.invoke(null,
+                labels,gray,width,height,rows,(float)gap,50,450,0f);
+        assertEquals(List.of(50,bar,450),boundaries);
+    }
+
     private static final class Page {
         final int width=500,height=180;
         final byte[] labels=new byte[width*height],gray=new byte[width*height];

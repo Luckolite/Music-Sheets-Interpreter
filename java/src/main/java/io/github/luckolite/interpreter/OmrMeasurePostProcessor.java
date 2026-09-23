@@ -380,6 +380,15 @@ final class OmrMeasurePostProcessor {
                     && (touchesTop || touchesBottom);
             int rawColumn = gray != null && semanticCandidate ? rawBarlineColumn(gray, width, height,
                     x, rows, gap, shift, slope) : Integer.MIN_VALUE;
+            // A one-pixel staff-row bias can exclude the lower edge of a short
+            // printed rule. Retry only when the original raw page still shows
+            // an isolated full-height line at this semantic candidate.
+            if (gray != null && semanticCandidate && rawColumn == Integer.MIN_VALUE
+                    && isolatedFullHeightRule(gray,width,height,x,rows,gap,shift)) {
+                int[] adjustedRows = rows.clone();
+                for (int index = 0; index < adjustedRows.length; index++) adjustedRows[index]--;
+                rawColumn = rawBarlineColumn(gray,width,height,x,adjustedRows,gap,shift,slope);
+            }
             // A nearly complete semantic rule can survive a scan whose raw core
             // is slightly paler. Keep all raw continuity, space and branch gates,
             // plus note ownership, instead of accepting the semantic trace alone.

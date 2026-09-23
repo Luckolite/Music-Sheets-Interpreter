@@ -137,9 +137,9 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "349264cb84fdcf38e1f3cfd5e22c307e412571747e5879327ce92e8cc7390b43",
-      "reviewed_app_commit": "35e10f3c3abd709b2e840a8556df899517601735",
-      "notes": "App and standalone source and synthetic regression were reviewed for full text parity apart from the package name. Raw barline validation rejects oscillating arpeggios and preserves straight thick and faint bars. A narrow symbol-only opening key/meter pocket does not create a measure. A symbolic harmonic head with nearby stem evidence vetoes a false full-height barline, while an isolated printed bar and a symbol-only header stroke remain boundaries. Private 121-page replay and source crops remain outside this repository. No model or dependency changes."
+      "source_sha256": "1df359631bffb41fa8760013d15fd3d7219f8924fbd77cea55990868124b0edd",
+      "reviewed_app_commit": "12974df373ffed5899290140656c67c6002f94bb",
+      "notes": "App and standalone source and synthetic regression were reviewed for full text parity apart from the package name. Raw barline validation rejects oscillating arpeggios and preserves straight thick and faint bars. A narrow symbol-only opening key/meter pocket does not create a measure. A symbolic harmonic head with nearby stem evidence vetoes a false full-height barline, while an isolated printed bar and a symbol-only header stroke remain boundaries. Private 121-page replay and source crops remain outside this repository. No model or dependency changes. A one-pixel semantic staff-row bias can make the local printed-rule offset alias to the neighboring line; only an isolated full-height raw rule gets a one-row retry. Synthetic offset regression and private matched-input 121-page replay confirm one recovered printed bar and no extra bars; private source fixtures remain excluded."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
