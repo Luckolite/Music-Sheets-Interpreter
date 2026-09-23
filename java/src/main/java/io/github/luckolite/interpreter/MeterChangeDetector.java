@@ -116,12 +116,16 @@ public final class MeterChangeDetector {
             float gap=staff.gap();
             int top=Math.max(0,staff.top()), bottom=Math.min(height-1,staff.bottom());
             int radius=Math.max(1,Math.round(gap*.12f));
-            int firstHead=width;
+            int firstHead=width,firstSemanticHead=width;
             for(int xx=0;xx<width;xx++) {
-                int heads=0;
+                int heads=0,key=0;
                 for(int yy=Math.max(0,top-Math.round(gap));yy<=Math.min(height-1,bottom+Math.round(gap));yy++)
                     if(labels[yy*width+xx]==OmrMeasurePostProcessor.NOTEHEAD)heads++;
-                if(heads>=Math.max(7,Math.round(gap*.48f))) {firstHead=xx;break;}
+                    else if(labels[yy*width+xx]==OmrMeasurePostProcessor.CLEF_OR_KEY)key++;
+                if(heads>=Math.max(7,Math.round(gap*.48f))) {
+                    if(firstHead==width)firstHead=xx;
+                    if(key<heads) {firstSemanticHead=xx;break;}
+                }
             }
             int[] ink=new int[width];
             for(int y=top;y<=bottom;y++) {
@@ -166,6 +170,11 @@ public final class MeterChangeDetector {
                         result.addAll(stackedSymbolMeterCrops(labels,width,height,left,
                                 Math.min(last,firstHead-Math.max(1,Math.round(gap*.35f))),
                                 top,bottom,gap,slope));
+                    if(firstSemanticHead!=firstHead&&left<firstSemanticHead-gap*.35f)
+                        for(var crop:stackedSymbolMeterCrops(labels,width,height,left,
+                                Math.min(last,firstSemanticHead-Math.max(1,Math.round(gap*.35f))),
+                                top,bottom,gap,slope))
+                            if(!result.contains(crop)&&pairedStackedSymbols(labels,width,height,crop))result.add(crop);
                     if(result.size()>=48)return List.copyOf(result.subList(0,48));
                 }
                 if(span<gap*.5f || span>gap*3.2f) continue;
@@ -224,6 +233,25 @@ public final class MeterChangeDetector {
 
     /** Recover stacked meter digits when a clef or nearby stem joins their ink projection.
      * The note-position and OCR checks still decide whether a crop is a signature. */
+    private static boolean pairedStackedSymbols(byte[] labels,int width,int height,Crop crop) {
+        int gap=Math.round(crop.gap()),shift=gap*2,upper=0,lower=0,shared=0,combined=0;
+        int margin=Math.max(1,Math.round(crop.gap()*.12f));
+        for(int y=crop.firstLine()+3;y<crop.firstLine()+shift-3;y++) {
+            if(y<0||y+shift>=height)continue;
+            if(Math.abs(y-crop.firstLine()-gap)<=margin)continue;
+            for(int x=crop.left();x<crop.right();x++) {
+                boolean a=labels[y*width+x]==OmrMeasurePostProcessor.SYMBOL;
+                boolean b=labels[(y+shift)*width+x]==OmrMeasurePostProcessor.SYMBOL;
+                if(a)upper++;
+                if(b)lower++;
+                if(a&&b)shared++;
+                if(a||b)combined++;
+            }
+        }
+        return Math.min(upper,lower)>=crop.gap()*crop.gap()*.8f
+                &&combined>0&&shared>=combined*.38f;
+    }
+
     private static List<Crop> stackedSymbolMeterCrops(byte[] labels,int width,int height,
             int left,int right,int top,int bottom,float gap,float slope) {
         var result=new ArrayList<Crop>();

@@ -33,6 +33,14 @@ public class JoinedMeterCropTest {
     private boolean found(){return MeterChangeDetector.candidates(labels,gray,W,H).stream().anyMatch(c->c.left()<=X-9&&c.right()>X+2&&c.right()-c.left()<45&&c.top()<75&&c.bottom()>107);}
     @Test public void joinedInkStillYieldsBoundedMeterCrop(){counter(75,true);counter(103,true);assertTrue(found());}
     @Test public void joinedNonFourMeterSymbolsStillYieldCrop(){stackedSymbols();assertTrue(found());}
+    @Test public void falseClefHeadCannotHideTwoAlignedMeterGlyphs(){
+        stackedSymbols();
+        for(int x=X-11;x<=X+6;x++)for(int y=67;y<=113;y++)
+            if(y<=85||y>=95){gray[y*W+x]=0;labels[y*W+x]=OmrMeasurePostProcessor.SYMBOL;}
+        for(int x=X-60;x<=X-58;x++)for(int y=84;y<=94;y++)
+            labels[y*W+x]=OmrMeasurePostProcessor.NOTEHEAD;
+        assertTrue(found());
+    }
     @Test public void noteheadInsideJoinedSymbolsIsNotAMeter(){
         stackedSymbols();
         for(int y=87;y<=93;y++)for(int x=X-6;x<=X-1;x++)

@@ -114,8 +114,8 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "36ab5635d8e26f2dd351950f1270e415eadb9bf5f50309f489718dbcbc53c1cb",
-      "reviewed_app_commit": "55e4b7c3945705444d8ad7637517ef283e85b495",
+      "source_sha256": "f51ea4e3708e0c66f4c77387e168cacae900838022115550d3dc9d3546f4dc0f",
+      "reviewed_app_commit": "4089a818dbd265bf3057010f4d56e1236d1521ed",
       "notes": "Whole-note-denominator OCR filter retains its two-written-bar guard. Joined system-header ink can hide non-four stacked signatures from the initial projection scan; a bounded symbol-pair recovery now presents them to OCR only after nearby clef/key evidence and before the first notehead. Synthetic positive/head-veto controls; private 121-page candidate audit added 126 crops, retained all 1963 older crops, and recovered printed 6/4 headers on PDFs 6, 106, 116. Corrected private meter annotations clear eight out-of-bar timing events without changing note counts. Standalone explicit annotations remain authoritative, and Android OCR recognition of the recovered crops is not device-verified. Uses Collectors.toList for Android API 26 compatibility."
     },
     "MultiMeasureRestDetector.java": {
@@ -462,5 +462,9 @@
   "pixel_rounded_ledger_review": {
     "reviewed_app_commit": "37c43b54c9b68b8f070083dbaa1111cfc7b1a621",
     "boundary": "A normal printed ledger run is compared at whole-pixel precision after measuring fractional staff spacing. Original synthetic 25-pixel, 24-pixel and one-sided controls cover the boundary. Private 121-page matched-input replay added 56 source-reviewed printed noteheads across 26 pages with zero removals; downstream pitch and timing changes remain limited to those passages. No model, dependency, private score image or audit output is published. Existing unrelated app decoder drift remains visible; the older whole-file source hash is intentionally retained."
+  },
+  "clef_head_meter_review": {
+    "reviewed_app_commit": "4089a818dbd265bf3057010f4d56e1236d1521ed",
+    "boundary": "When a clef contains a model-labelled notehead, preserve the original first-head crop boundary and offer only extra stacked glyph pairs with substantial aligned upper and lower symbol evidence. The shareable synthetic regression covers the false clef head. Private 121-page crop comparison retained all 2089 older crops and added 15 source-reviewed printed signatures, including PDF90's final 4/4. Exact Android OCR reading and measure assignment of those recovered crops remain unverified. No private score images, weights or dependencies are published."
   }
 }
