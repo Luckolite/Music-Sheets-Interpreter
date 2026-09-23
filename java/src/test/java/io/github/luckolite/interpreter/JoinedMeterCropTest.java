@@ -62,6 +62,18 @@ public class JoinedMeterCropTest {
             labels[y*W+x]=OmrMeasurePostProcessor.NOTEHEAD;
         assertFalse(found());
     }
+    @Test public void completeBarlineKeepsAStackedMeterWithMislabelledBottomEight(){
+        for(int y=65;y<=121;y+=14)rect(60,X,y,y,255);
+        stackedSymbols();
+        for(int y=65;y<=78;y++)for(int x=X-9;x<=X+4;x++)gray[y*W+x]=0;
+        for(int y=96;y<=111;y++)for(int x=X-9;x<=X+4;x++)gray[y*W+x]=0;
+        rect(X-24,X-24,60,116,0);
+        for(int y=96;y<=108;y++)for(int x=X-9;x<=X+4;x++)
+            labels[y*W+x]=OmrMeasurePostProcessor.NOTEHEAD;
+        assertTrue(found());
+        rect(X-24,X-24,60,116,255);
+        assertFalse(found());
+    }
     @Test public void plainVerticalStrokeDoesNotYieldMeterCrop(){assertFalse(found());}
     @Test public void singleCounterDoesNotYieldMeterCrop(){counter(75,true);assertFalse(found());}
     @Test public void parallelBarSpacesDoNotYieldMeterCrop(){counter(75,false);counter(103,false);assertFalse(found());}

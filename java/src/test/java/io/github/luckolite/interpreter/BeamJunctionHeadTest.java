@@ -61,6 +61,12 @@ public class BeamJunctionHeadTest {
     @Test public void noLargerOwnerMeansNoRejection() {
         page(true,false,false,false);assertEquals(1,notes(true).size());
     }
+    @Test public void narrowBeamIslandWithANearbyIndependentHeadIsRejected() {
+        page(true,false,false,false);
+        ellipse(125,96,11,8,true);
+        for(int y=60;y<=150;y++)ink(91,y,1);
+        assertEquals(1,notes(true).size());
+    }
     @Test public void semanticOnlyInputIsPreserved() {
         page(true,false,true,false);assertEquals(2,notes(false).size());
     }

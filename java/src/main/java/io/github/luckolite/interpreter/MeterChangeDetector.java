@@ -181,7 +181,7 @@ public final class MeterChangeDetector {
                     if(result.size()>=48)return List.copyOf(result.subList(0,48));
                 }
                 if(span<gap*.5f || span>gap*3.2f) continue;
-                int key=0,head=0,upper=0,lower=0,symbols=0,upperSymbols=0,lowerSymbols=0;
+                int key=0,head=0,upperHead=0,upper=0,lower=0,symbols=0,upperSymbols=0,lowerSymbols=0;
                 int[] stemRows=new int[span];
                 long upperX=0,lowerX=0;
                 int minY=height,maxY=0;
@@ -190,7 +190,10 @@ public final class MeterChangeDetector {
                     if(yy<0||yy>=height)continue;
                     byte label=labels[yy*width+xx];
                     if(label==OmrMeasurePostProcessor.CLEF_OR_KEY) key++;
-                    if(label==OmrMeasurePostProcessor.NOTEHEAD) head++;
+                    if(label==OmrMeasurePostProcessor.NOTEHEAD) {
+                        head++;
+                        if(y<top+gap*1.8f)upperHead++;
+                    }
                     if(label==OmrMeasurePostProcessor.STEM_OR_REST)stemRows[xx-left]++;
                     if(label==OmrMeasurePostProcessor.SYMBOL) {
                         symbols++;
@@ -208,7 +211,13 @@ public final class MeterChangeDetector {
                 // HOMR commonly leaves signature digits as background/rest and occasionally
                 // labels a tiny part of an "8" as a head. Use raw stacked-glyph evidence; the
                 // full-sized semantic head veto still excludes actual notes/chords.
-                if(head>gap*gap*.20f || upper<gap*2 || lower<gap*2
+                // A bottom 8 may be labelled as one or two noteheads while the
+                // numerator remains ordinary meter ink. A complete preceding
+                // barline allows OCR to judge this bounded signature crop.
+                boolean lowerEightAfterBarline=head>gap*gap*.20f
+                        &&upperHead<head*.1f
+                        &&completeBarlineBefore(gray,width,height,left,top,bottom,gap);
+                if((head>gap*gap*.20f&&!lowerEightAfterBarline) || upper<gap*2 || lower<gap*2
                         || maxY-minY<gap*3.1f) continue;
                 // Staggered key-signature flats form two apparent digits after staff removal.
                 // Require both key evidence and staggered glyph centres; real stacked digits
@@ -232,6 +241,19 @@ public final class MeterChangeDetector {
             }
         }
         return List.copyOf(result);
+    }
+
+    private static boolean completeBarlineBefore(byte[] gray,int width,int height,
+            int left,int top,int bottom,float gap) {
+        for(int x=Math.max(0,Math.round(left-gap*3f));x<left-gap*.5f;x++) {
+            int ink=0,total=0;
+            for(int y=Math.max(0,top);y<=Math.min(height-1,bottom);y++) {
+                total++;
+                if((gray[y*width+x]&255)<155)ink++;
+            }
+            if(total>=gap*3.8f&&ink>=total*.94f)return true;
+        }
+        return false;
     }
 
     /** Recover stacked meter digits when a clef or nearby stem joins their ink projection.
