@@ -400,11 +400,21 @@ final class OmrMeasurePostProcessor {
                     attachedHead = headTouchesColumn(labels,gray,width,height,x,
                             Math.round(top-gap*1.5f),Math.round(bottom+gap*1.5f),rows,gap,shift);
                 if (!attachedHead) attachedHead = distantHeadOnSameStem(labels,width,height,x,top,bottom,gap);
+                if (!attachedHead && gray != null
+                        && countLabel(labels,width,height,STEM_OR_REST,
+                                Math.round(x-gap*1.2f),x+2,top,bottom)>=gap*.6f
+                        && !isolatedFullHeightRule(gray,width,height,x,rows,gap,shift))
+                    attachedHead = symbolHeadTouchesColumn(labels,width,height,x,top,bottom,gap);
             }
             // Validate stem ownership at the same printed column that proved the rule.
             // A semantic halo can lie a pixel beyond the long stem's labelled edge.
             if (semanticBar && !attachedHead && rawSpansStaff && rawColumn != x)
                 attachedHead = distantHeadOnSameStem(labels, width, height, rawColumn, top, bottom, gap);
+            if (semanticBar && !attachedHead && rawSpansStaff && rawColumn != x
+                    && countLabel(labels,width,height,STEM_OR_REST,
+                            Math.round(rawColumn-gap*1.2f),rawColumn+2,top,bottom)>=gap*.6f
+                    && !isolatedFullHeightRule(gray,width,height,rawColumn,rows,gap,shift))
+                attachedHead = symbolHeadTouchesColumn(labels,width,height,rawColumn,top,bottom,gap);
             // Raw pixels validate a semantic candidate, but never create one by themselves:
             // aligned note stems can span all five lines on dense music such as Humoresque.
             boolean bar = semanticBar && !attachedHead;
@@ -524,6 +534,44 @@ final class OmrMeasurePostProcessor {
                         Math.round(x - gap * .88f), Math.round(x + gap * .88f),
                         y - 2, y + 2) >= Math.max(3, Math.round(gap * .65f))) return true;
             }
+        }
+        return false;
+    }
+
+    /** A harmonic diamond may be classed as SYMBOL while its long stem looks like a barline. */
+    private static boolean symbolHeadTouchesColumn(byte[] labels,int width,int height,int x,
+                                                   int top,int bottom,float gap) {
+        int left=Math.max(0,x-Math.round(gap*1.7f));
+        int right=Math.min(width-1,x+Math.round(gap*.5f));
+        int first=Math.max(0,top-Math.round(gap*.6f));
+        int last=Math.min(height-1,bottom+Math.round(gap*1.7f));
+        int localWidth=right-left+1,localHeight=last-first+1;
+        boolean[] seen=new boolean[localWidth*localHeight];
+        int[] queue=new int[seen.length];
+        for(int origin=0;origin<seen.length;origin++) {
+            if(seen[origin]||labels[(first+origin/localWidth)*width+left+origin%localWidth]!=SYMBOL)
+                continue;
+            int read=0,write=0;queue[write++]=origin;seen[origin]=true;
+            int minX=right,maxX=left,minY=last,maxY=first,area=0;
+            while(read<write) {
+                int at=queue[read++],xx=at%localWidth,yy=at/localWidth;
+                int px=left+xx,py=first+yy;area++;
+                minX=Math.min(minX,px);maxX=Math.max(maxX,px);
+                minY=Math.min(minY,py);maxY=Math.max(maxY,py);
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int nx=xx+dx,ny=yy+dy;
+                    if(nx<0||nx>=localWidth||ny<0||ny>=localHeight)continue;
+                    int next=ny*localWidth+nx;
+                    if(!seen[next]&&labels[(first+ny)*width+left+nx]==SYMBOL) {
+                        seen[next]=true;queue[write++]=next;
+                    }
+                }
+            }
+            int w=maxX-minX+1,h=maxY-minY+1;
+            if(minX<=x+2&&maxX>=x-2&&w>=gap*.65f&&w<=gap*1.9f
+                    &&h>=gap*.55f&&h<=gap*1.5f&&area>=gap*gap*.32f
+                    &&(minY+maxY)*.5f>=top-gap*.5f
+                    &&(minY+maxY)*.5f<=bottom+gap*1.5f)return true;
         }
         return false;
     }

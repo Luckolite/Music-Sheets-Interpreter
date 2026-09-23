@@ -137,9 +137,9 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "f034b9db5b98fdf8ca392fa9f2edc48664420f8e569242ccda7fdeee4b65972c",
-      "reviewed_app_commit": "2040f7d5ed8c223f1585f3597332752dee27a96f",
-      "notes": "Raw barline validation rejects oscillating arpeggios and preserves straight thick and faint bars. A narrow symbol-only pocket inside an opening key/meter header no longer creates a measure. Original synthetic geometry tests; unrelated app drift remains visible, so the older source hash is intentionally retained rather than claiming whole-file parity. No model or dependency changes."
+      "source_sha256": "349264cb84fdcf38e1f3cfd5e22c307e412571747e5879327ce92e8cc7390b43",
+      "reviewed_app_commit": "35e10f3c3abd709b2e840a8556df899517601735",
+      "notes": "App and standalone source and synthetic regression were reviewed for full text parity apart from the package name. Raw barline validation rejects oscillating arpeggios and preserves straight thick and faint bars. A narrow symbol-only opening key/meter pocket does not create a measure. A symbolic harmonic head with nearby stem evidence vetoes a false full-height barline, while an isolated printed bar and a symbol-only header stroke remain boundaries. Private 121-page replay and source crops remain outside this repository. No model or dependency changes."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
