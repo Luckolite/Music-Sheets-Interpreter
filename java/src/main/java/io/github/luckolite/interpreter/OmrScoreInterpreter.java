@@ -77,6 +77,7 @@ final class OmrScoreInterpreter {
         rejectedBeamHeads.addAll(mergedBeamInteriorHeads(gray,width,height,heads,staffs));
         rejectedBeamHeads.addAll(singleBeamInteriorHeads(gray,width,height,heads,staffs));
         rejectedBeamHeads.addAll(shortPairedMergedBeamHeads(gray,width,height,heads,staffs));
+        rejectedBeamHeads.addAll(offsetParallelBeamIslandHeads(gray,width,height,heads,staffs));
         heads.removeAll(rejectedBeamHeads);
         heads.removeAll(detachedFingeringHeads(gray,width,height,heads,staffs));
         byte[] beamLabels=withoutBeamHeadIslands(labels,width,rejectedBeamHeads);
@@ -4206,6 +4207,24 @@ final class OmrScoreInterpreter {
                 if(shortMergedBeamBetween(gray,width,height,a,b,head,staff))found=true;
             }
             if(found)rejected.add(head);
+        }
+        return rejected;
+    }
+
+    /** A tiny mask island may sit on one core of a paired beam, close to its end.
+     * The seam between the two cores is offset from the island itself. */
+    private static List<Component> offsetParallelBeamIslandHeads(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> rejected=new ArrayList<>();if(gray==null)return rejected;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.area>gap*gap*.25f||head.maxX-head.minX+1>gap*.75f
+                    ||head.maxY-head.minY+1>gap*.45f
+                    ||attachedRawStem(gray,width,height,head,gap)!=null)continue;
+            if(ParallelBeamTip.matches(gray,width,height,head.centerX,head.centerY+gap*.5f,gap)
+                    ||ParallelBeamTip.matches(gray,width,height,head.centerX,head.centerY-gap*.5f,gap))
+                rejected.add(head);
         }
         return rejected;
     }
