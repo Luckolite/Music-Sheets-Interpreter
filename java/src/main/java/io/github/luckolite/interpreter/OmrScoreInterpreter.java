@@ -3067,7 +3067,7 @@ final class OmrScoreInterpreter {
         }
         return upperCount>=4&&lowerCount>=4&&ruleCount>=3
                 &&upperWhite>=Math.max(2,Math.round(upperCount*.3f))
-                &&lowerWhite>=Math.max(2,Math.round(lowerCount*.15f))
+                &&lowerWhite>=Math.max(2,Math.round(lowerCount*.1f))
                 &&darkRule>=Math.round(ruleCount*.7f);
     }
 
