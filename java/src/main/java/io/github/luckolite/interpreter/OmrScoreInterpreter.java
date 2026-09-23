@@ -255,7 +255,7 @@ final class OmrScoreInterpreter {
             // evidence instead of collapsing the sustained passage into eighths/sixteenths.
             if (unbeamedDuration >= ScoreNoteEvent.DURATION_HALF) beamCount = 0;
             int augmentationDots = countAugmentationDots(dotCandidates, head, staff.gap,
-                    gray, width, height,unbeamedDuration>=ScoreNoteEvent.DURATION_HALF,accidentalInk);
+                    gray, width, height,unbeamedDuration>=ScoreNoteEvent.DURATION_HALF,accidentalInk,heads);
             if(augmentationDots>0&&beamCount>0&&hasHollowUnisonToRight(labels,gray,width,height,head,heads,staff.gap))
                 augmentationDots=0;
             float accidentalGap=accidentalGraces.contains(head)?localPitch[1]*.65f:localPitch[1];
@@ -6308,6 +6308,12 @@ final class OmrScoreInterpreter {
 
     private static int countAugmentationDots(List<Component> candidates, Component head, float gap,
                                              byte[] gray, int width, int height,boolean hollowHead, List<Component> excluded) {
+        return countAugmentationDots(candidates,head,gap,gray,width,height,hollowHead,excluded,List.of());
+    }
+
+    private static int countAugmentationDots(List<Component> candidates, Component head, float gap,
+                                             byte[] gray, int width, int height,boolean hollowHead,
+                                             List<Component> excluded,List<Component> neighboringHeads) {
         // Semantic boundaries can cut a tiny round island out of a slur, stem
         // or ledger line. When the page is available, require an isolated raw
         // ink component; the model's artificial boundary is not a printed dot.
@@ -6342,6 +6348,7 @@ final class OmrScoreInterpreter {
             // Augmentation dots sit beside the head (with at most the usual line-to-space
             // engraving offset). A detached bowing/staccato mark near the next note is not a dot.
             if (Math.abs(dot.centerY - head.centerY) > gap * .65f) continue;
+            if (staccatoBelowNextHead(dot,head,neighboringHeads,gap)) continue;
             if (dotWidth < Math.max(1f, gap * .10f) || dotHeight < Math.max(1f, gap * .10f)
                     || dotWidth > gap * .68f || dotHeight > gap * .68f
                     || dot.area < Math.max(1, Math.round(gap * gap * .018f))
@@ -6367,6 +6374,18 @@ final class OmrScoreInterpreter {
         float spacing = second.centerX - first.centerX;
         return spacing >= gap * .18f && spacing <= gap * 1.45f
                 && Math.abs(second.centerY - first.centerY) <= gap * .40f ? 2 : 1;
+    }
+
+    private static boolean staccatoBelowNextHead(Component dot,Component head,
+                                                  List<Component> neighboringHeads,float gap) {
+        for(Component next:neighboringHeads)if(next!=head
+                &&next.centerX-head.centerX>gap*.8f
+                &&next.centerX-head.centerX<gap*2.4f
+                &&Math.abs(next.centerY-head.centerY)<gap*.6f
+                &&Math.abs(dot.centerX-next.centerX)<gap*.35f
+                &&dot.centerY-next.centerY>gap*.5f
+                &&dot.centerY-next.centerY<gap*1.3f)return true;
+        return false;
     }
 
     /** Faint dots may have no substantial pixels at the normal ink cutoff.
