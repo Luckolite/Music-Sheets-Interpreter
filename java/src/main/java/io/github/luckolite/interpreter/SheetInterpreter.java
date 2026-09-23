@@ -81,6 +81,7 @@ public final class SheetInterpreter {
         var words=annotations.words.stream().map(Word::internal).toList();
         notes=OctaveMarkDetector.apply(words,staffs,measures,notes,gray,width,height);
         notes=ArtificialHarmonics.apply(gray,width,height,measures,notes,staffs);
+        notes=ScoreTiePitchGuard.apply(notes,score.keyChanges());
         var decoded=TablatureDecoder.apply(new ScorePageInterpretation(measures,notes,
                 MeasureNumberReconciler.firstMeasureNumber(measures,numbers),score.keyChanges(),
                 TempoChangeDetector.detect(annotations.tempoNumbers.stream().map(NumberToken::internal).toList(),

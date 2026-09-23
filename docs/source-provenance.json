@@ -365,6 +365,12 @@
       "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
       "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
     },
+    "ScoreTiePitchGuard.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTiePitchGuard.java",
+      "source_sha256": "1184e4427c0bab57640c524b7bb834898c6a36fbd5480bbedb930d283b112016",
+      "reviewed_app_commit": "12aae4214c122a9256f706edaa1cbae2a38912d4",
+      "notes": "Standalone package adaptation of the shared decoded-pitch tie guard. Conservatively retains measure-zero and unknown-key cases. Original synthetic controls and private 121-page matched-input replay; no source score distributed."
+    },
     "ScoreTempoSelection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/playback/ScoreTempoSelection.java",
       "source_sha256": "e507a82d4313befb20ac377503e49c9ff86ec90c229a7a1684e36315eda54587",
@@ -444,6 +450,10 @@
   "unison_raw_hollow_core_review": {
     "reviewed_app_state": "Scoped app commit 700ae06dbb414bd0b5a385bce83e279d2463a372; later unrelated worktree changes remain unstaged",
     "boundary": "The shared side-by-side unison split now requires a white core at the held head's actual center. A bright upper notch over a filled head no longer creates a sustained voice. An original synthetic regression covers the false split and the existing fractional-spacing regression preserves a real filled-plus-hollow unison. The exact score crop and decoded page replay remain private. No weights, dependencies, private scores or device data are published. Pre-existing unrelated mapped drift remains visible."
+  },
+  "decoded_tie_pitch_review": {
+    "reviewed_app_commit": "12aae4214c122a9256f706edaa1cbae2a38912d4",
+    "boundary": "App OmrMeasureAnalyzer and standalone SheetInterpreter call the same helper after octave and artificial-harmonic interpretation. A tie without an earlier decoded note of the same sounding pitch in the current or preceding measure is cleared only when the page has detected key evidence. A first-measure possible cross-page tie and unknown-key case remain unchanged. Original synthetic regressions; private 121-page matched-input replay cleared 50 flags across 19 pages with no event, pitch, onset, duration or geometry changes. All 50 source crops were reviewed privately. No model or dependency change; full source-note accuracy remains unverified."
   },
   "opening_header_pocket_review": {
     "reviewed_app_commit": "2040f7d5ed8c223f1585f3597332752dee27a96f",
