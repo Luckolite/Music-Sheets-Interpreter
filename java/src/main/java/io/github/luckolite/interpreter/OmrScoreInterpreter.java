@@ -3973,7 +3973,7 @@ final class OmrScoreInterpreter {
     }
 
     private static float ledgerRunMinimum(Component head,float gap,boolean reduced) {
-        return reduced?Math.max(gap,head.maxX-head.minX+1+2*Math.max(1,Math.round(gap*.1f))):gap*1.5f;
+        return reduced?Math.max(gap,head.maxX-head.minX+1+2*Math.max(1,Math.round(gap*.1f))):Math.round(gap*1.5f);
     }
 
     private static boolean hasInnerLedgerInk(byte[] gray,int width,int height,Component head,Staff staff,boolean roundedGrace) {

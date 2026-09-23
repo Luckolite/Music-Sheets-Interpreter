@@ -458,5 +458,9 @@
   "opening_header_pocket_review": {
     "reviewed_app_commit": "2040f7d5ed8c223f1585f3597332752dee27a96f",
     "boundary": "A first region narrower than three staff gaps is discarded only when it contains substantial key/clef evidence and no printed head or stem/rest evidence. This prevents an empty key/meter header pocket from adding a whole measure before the first note. Original synthetic tests preserve a genuine narrow opening with a rest. Source score crops, page annotations and replay results remain private. No score fixtures, weights, dependencies or device data are published; unrelated app drift is not hidden."
+  },
+  "pixel_rounded_ledger_review": {
+    "reviewed_app_commit": "37c43b54c9b68b8f070083dbaa1111cfc7b1a621",
+    "boundary": "A normal printed ledger run is compared at whole-pixel precision after measuring fractional staff spacing. Original synthetic 25-pixel, 24-pixel and one-sided controls cover the boundary. Private 121-page matched-input replay added 56 source-reviewed printed noteheads across 26 pages with zero removals; downstream pitch and timing changes remain limited to those passages. No model, dependency, private score image or audit output is published. Existing unrelated app decoder drift remains visible; the older whole-file source hash is intentionally retained."
   }
 }
