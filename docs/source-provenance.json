@@ -184,9 +184,9 @@
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
-      "source_sha256": "267e28624f456b3345421276c38d378f5b69deb8b873048514e5607aee82149f",
-      "reviewed_app_commit": "35c9117b662d597ea6d3a441b071b154718ef6d5",
-      "notes": "Reviewed working-tree addition: page-local dynamic projection retains a cross-page hairpin once, on its starting page, with its full endpoint. Shared Java helper and original synthetic regression mirrored; PDF overlay composition and lifecycle remain app-specific. No recognition thresholds, model weights or private score material changed."
+      "source_sha256": "44f4fec6c310a38c88397227e37f197f93e528233af8e213b9882dba9b6eb9fa",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "notes": "Reviewed the app working tree at this commit: page-local dynamic projection matches the public synthetic cross-page hairpin regression. The app uses Collectors.toList() for Android stream compatibility; public Java 17 uses toList() with the same read-only use of the result. PDF overlay lifecycle remains app-specific."
     },
     "ScoreRestEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreRestEvent.java",
@@ -248,9 +248,9 @@
     },
     "PrintedMeasureRhythmGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedMeasureRhythmGuard.java",
-      "source_sha256": "21a825153aee35b2988d66d065248ead97ffdd629d143c6c73234a033f3e495c",
+      "source_sha256": "43466c69c267ba1759c10541f8d74e799f76e8b4a90e82c31cb64a79e6261367",
       "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "notes": "Retains independently barred duet staves and rejects a ledger-line extension that overlaps an upper staff and crosses its separators. Original synthetic regressions; private score comparison excluded. The app now uses Collectors.toList() in two places for Android 26 stream compatibility; public Java 17 retains toList() with the same filtering semantics. The source hash is intentionally unchanged."
+      "notes": "Retains independently barred duet staves and rejects a ledger-line extension that overlaps an upper staff and crosses its separators. Original synthetic regressions; private score comparison excluded. The reviewed app source uses Collectors.toList() in the two overlap filters for Android stream compatibility; public Java 17 uses toList() with the same read-only filtering behavior."
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
