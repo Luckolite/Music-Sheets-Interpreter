@@ -76,6 +76,7 @@ final class OmrScoreInterpreter {
         List<Component> rejectedBeamHeads=beamJunctionHeads(gray,width,height,heads,staffs);
         rejectedBeamHeads.addAll(mergedBeamInteriorHeads(gray,width,height,heads,staffs));
         rejectedBeamHeads.addAll(singleBeamInteriorHeads(gray,width,height,heads,staffs));
+        rejectedBeamHeads.addAll(shortPairedMergedBeamHeads(gray,width,height,heads,staffs));
         heads.removeAll(rejectedBeamHeads);
         byte[] beamLabels=withoutBeamHeadIslands(labels,width,rejectedBeamHeads);
         heads.removeAll(entranceStrokeFragments(gray,width,height,heads,staffs));
@@ -4144,6 +4145,77 @@ final class OmrScoreInterpreter {
         for(Component head:rejected)for(int y=head.minY;y<=head.maxY;y++)for(int x=head.minX;x<=head.maxX;x++)
             if(result[y*width+x]==OmrMeasurePostProcessor.NOTEHEAD)result[y*width+x]=0;
         return result;
+    }
+
+    /** Two complete notes can bound a short pair of merged beams. A head-sized
+     * semantic island inside that strip belongs to the beams even when one
+     * neighboring stem passes through the island's raw-image column. */
+    private static List<Component> shortPairedMergedBeamHeads(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> rejected=new ArrayList<>();if(gray==null)return rejected;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.area>gap*gap*.45f||head.maxX-head.minX+1>gap*.9f
+                    ||head.maxY-head.minY+1>gap*.8f)continue;
+            List<int[]> left=new ArrayList<>(),right=new ArrayList<>();
+            for(Component main:heads) {
+                if(main==head||main.area<Math.max(head.area*2.5f,gap*gap*1.05f)
+                        ||nearestHeadStaff(staffs,main.centerY)!=staff
+                        ||Math.abs(main.centerX-head.centerX)>gap*3.5f
+                        ||Math.abs(main.centerY-head.centerY)<gap*2
+                        ||Math.abs(main.centerY-head.centerY)>gap*6)continue;
+                int[] stem=attachedRawStem(gray,width,height,main,gap);
+                if(stem==null||Math.abs(stem[1]-head.centerY)>gap*1.5f)continue;
+                if(stem[0]<head.minX-gap*.25f)left.add(stem);
+                if(stem[0]>head.maxX+gap*.25f)right.add(stem);
+            }
+            boolean found=false;
+            for(int[] a:left)for(int[] b:right) {
+                if(a[2]!=b[2]||b[0]-a[0]<gap*2||b[0]-a[0]>gap*6)continue;
+                if(shortMergedBeamBetween(gray,width,height,a,b,head,staff))found=true;
+            }
+            if(found)rejected.add(head);
+        }
+        return rejected;
+    }
+
+    private static boolean shortMergedBeamBetween(byte[] gray,int width,int height,
+            int[] left,int[] right,Component head,Staff staff) {
+        float gap=staff.gap;
+        int first=left[0]+Math.round(gap*.4f),last=right[0]-Math.round(gap*.65f);
+        if(last-first<gap*1.7f)return false;
+        float slope=(right[1]-left[1])/(float)(right[0]-left[0]);
+        if(Math.abs(slope)>.4f)return false;
+        int valid=0,total=0,leftValid=0,rightValid=0,paired=0,radius=Math.round(gap*1.35f);
+        for(int x=first;x<=last;x++) {
+            int predicted=Math.round(head.centerY+slope*(x-head.centerX));
+            if(x<0||x>=width||predicted-radius<0||predicted+radius>=height)return false;
+            total++;
+            int top=height,bottom=-1,runStart=-1,previousEnd=-1,previousSize=0;
+            boolean twoCores=false;
+            for(int y=predicted-radius;y<=predicted+radius+1;y++) {
+                boolean ink=y<=predicted+radius
+                        &&(Math.abs(y-predicted)<=gap*.65f||offHeaderStaffLine(y,staff.top,gap))
+                        &&(gray[y*width+x]&255)<165;
+                if(ink){top=Math.min(top,y);bottom=Math.max(bottom,y);
+                    if(runStart<0)runStart=y;
+                } else if(runStart>=0) {
+                    int size=y-runStart;
+                    if(previousSize>=gap*.3f&&size>=gap*.3f
+                            &&runStart-previousEnd-1<=gap*.3f)twoCores=true;
+                    previousEnd=y-1;previousSize=size;runStart=-1;
+                }
+            }
+            if(bottom<top)continue;
+            int span=bottom-top+1;
+            if(span<gap*.85f||span>gap*1.8f
+                    ||Math.abs((top+bottom)*.5f-predicted)>gap*.35f)continue;
+            valid++;if(x<head.centerX)leftValid++;else rightValid++;
+            if(twoCores)paired++;
+        }
+        return total>=gap*1.7f&&valid>=total*.75f&&paired>=gap*.45f
+                &&leftValid>=gap*.35f&&rightValid>=gap*.55f;
     }
 
     /** Blurred parallel beams can merge into one broad strip with small mask islands inside. */
