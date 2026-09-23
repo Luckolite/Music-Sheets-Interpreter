@@ -472,16 +472,26 @@ final class OmrMeasurePostProcessor {
     private static boolean headTouchesColumn(byte[] labels,byte[] gray,int width,int height,int x,
             int top,int bottom,int[] rows,float gap,float shift) {
         float[] printedRows = connectionStaffRows(gray, width, height, x, rows, gap, shift);
+        boolean verifiedPrintedRows = printedRows != null;
+        if (printedRows == null) {
+            printedRows = new float[5];
+            for (int line = 0; line < 5; line++) printedRows[line] = rows[line] + shift;
+        }
         for(int y=Math.max(0,top);y<=Math.min(height-1,bottom);y++) {
-            boolean staffLine=false;
-            for(float row:printedRows)if(Math.abs(y-row)<=Math.max(1,gap*.14f))staffLine=true;
-            if(staffLine)continue;
+            float nearestRule = Float.POSITIVE_INFINITY;
+            for(float row:printedRows) nearestRule=Math.min(nearestRule,Math.abs(y-row));
+            if(nearestRule<=Math.max(1,gap*.14f))continue;
+            // A verified printed rule has an antialiased fringe. It can join a
+            // nearby head to a real bar, but a head on the bar itself still owns
+            // its stem even within that fringe.
+            boolean fringe=verifiedPrintedRows&&nearestRule<=Math.max(1,gap*.25f);
             // Semantic candidates include the two-pixel halo around a thin column.
             // Start from each real column, or its white halo falsely looks disconnected.
             for(int origin=x-2;origin<=x+2;origin++)for(int direction:new int[]{-1,1})
                 for(int distance=0;distance<=gap*.88f;distance++) {
                     int xx=origin+direction*distance;if(xx<0||xx>=width||(gray[y*width+xx]&255)>RAW_BARLINE_DARK)break;
-                    if(labels[y*width+xx]==NOTEHEAD)return true;
+                    if(labels[y*width+xx]==NOTEHEAD
+                            &&(!fringe||Math.abs(xx-x)<=Math.max(2,gap*.2f)))return true;
                 }
         }
         return false;
@@ -495,7 +505,7 @@ final class OmrMeasurePostProcessor {
         for (int line = 0; line < 5; line++) original[line] = rows[line] + shift;
         int inner = Math.max(3, Math.round(gap * .45f));
         int outer = Math.max(inner + 3, Math.round(gap * 2f));
-        if (x - outer < 0 || x + outer >= width) return original;
+        if (x - outer < 0 || x + outer >= width) return null;
         for (int line = 0; line < 5; line++) {
             int top = Math.max(0, (int)Math.floor(original[line] - gap * .32f));
             int bottom = Math.min(height - 1, (int)Math.ceil(original[line] + gap * .32f));
@@ -507,14 +517,14 @@ final class OmrMeasurePostProcessor {
                     if ((gray[y * width + x + d] & 255) < 150) right++;
                 }
                 if (Math.min(left, right) < (outer - inner + 1) * .8f) continue;
-                if (last >= 0 && y != last + 1) return original;
+                if (last >= 0 && y != last + 1) return null;
                 if (first < 0) first = y;
                 last = y;
             }
-            if (first < 0 || last - first + 1 > Math.max(2, gap * .3f)) return original;
+            if (first < 0 || last - first + 1 > Math.max(2, gap * .3f)) return null;
             refined[line] = (first + last) / 2f;
             if (line > 0 && Math.abs(refined[line] - refined[line - 1] - gap) > gap * .2f)
-                return original;
+                return null;
         }
         return refined;
     }

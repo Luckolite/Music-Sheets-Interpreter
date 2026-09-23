@@ -57,6 +57,22 @@ public final class SymbolDiamondBarlineTest {
         assertEquals(List.of(50,bar,450),boundaries);
     }
 
+    @Test public void nearbyHeadConnectedOnlyByStaffFringeDoesNotOwnBar() throws Exception {
+        Page page=new Page();
+        for(int x=138;x<=152;x++)page.gray[57*page.width+x]=0;
+        for(int y=55;y<=57;y++)for(int x=138;x<=142;x++)
+            page.labels[y*page.width+x]=OmrMeasurePostProcessor.NOTEHEAD;
+        assertEquals(List.of(50,150,300,450),page.boundaries());
+    }
+
+    @Test public void headConnectedThroughStaffSpaceStillOwnsStroke() throws Exception {
+        Page page=new Page();
+        for(int x=138;x<=152;x++)page.gray[80*page.width+x]=0;
+        for(int y=79;y<=82;y++)for(int x=138;x<=142;x++)
+            page.labels[y*page.width+x]=OmrMeasurePostProcessor.NOTEHEAD;
+        assertEquals(List.of(50,300,450),page.boundaries());
+    }
+
     private static final class Page {
         final int width=500,height=180;
         final byte[] labels=new byte[width*height],gray=new byte[width*height];
