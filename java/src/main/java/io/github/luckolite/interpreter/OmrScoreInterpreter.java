@@ -78,6 +78,7 @@ final class OmrScoreInterpreter {
         rejectedBeamHeads.addAll(singleBeamInteriorHeads(gray,width,height,heads,staffs));
         rejectedBeamHeads.addAll(shortPairedMergedBeamHeads(gray,width,height,heads,staffs));
         heads.removeAll(rejectedBeamHeads);
+        heads.removeAll(detachedFingeringHeads(gray,width,height,heads,staffs));
         byte[] beamLabels=withoutBeamHeadIslands(labels,width,rejectedBeamHeads);
         heads.removeAll(entranceStrokeFragments(gray,width,height,heads,staffs));
         List<Component> shortTies=shortTieBowlHeads(labels,gray,width,height,heads,staffs);
@@ -4145,6 +4146,32 @@ final class OmrScoreInterpreter {
         for(Component head:rejected)for(int y=head.minY;y<=head.maxY;y++)for(int x=head.minX;x<=head.maxX;x++)
             if(result[y*width+x]==OmrMeasurePostProcessor.NOTEHEAD)result[y*width+x]=0;
         return result;
+    }
+
+    /** A small finger numeral can sit directly beneath its beamed note. It has
+     * no stem of its own, while the aligned full-sized note has an upward stem.
+     * Requiring that ownership protects independently stemmed low notes. */
+    private static List<Component> detachedFingeringHeads(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> rejected=new ArrayList<>();if(gray==null)return rejected;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.centerY<staff.bottom+gap*.3f||head.centerY>staff.bottom+gap*1.1f
+                    ||head.area>gap*gap*.6f||head.maxX-head.minX+1>gap*1.05f
+                    ||head.maxY-head.minY+1>gap*.85f
+                    ||attachedRawStem(gray,width,height,head,gap)!=null)continue;
+            for(Component main:heads) {
+                if(main==head||nearestHeadStaff(staffs,main.centerY)!=staff
+                        ||Math.abs(main.centerX-head.centerX)>gap*.3f
+                        ||head.centerY-main.centerY<gap*2.2f
+                        ||head.centerY-main.centerY>gap*3.4f
+                        ||main.area<Math.max(head.area*2f,gap*gap))continue;
+                int[] stem=attachedRawStem(gray,width,height,main,gap);
+                if(stem!=null&&stem[2]<0){rejected.add(head);break;}
+            }
+        }
+        return rejected;
     }
 
     /** Two complete notes can bound a short pair of merged beams. A head-sized
