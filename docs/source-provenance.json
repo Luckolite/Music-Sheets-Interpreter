@@ -279,8 +279,9 @@
     },
     "ScorePageTimeline.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageTimeline.java",
-      "source_sha256": "23952e19ef75a98d89a6dfced5132773c681dc8652925ad3bc30c9b7a7a57326",
-      "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb"
+      "source_sha256": "0e9dd8aeaff09295dadc81427dfb47ba458e292acfeccd7c4aa38d5783d2d2e7",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "notes": "Reviewed the app working tree at this commit: it now uses the public unnumbered-restart rule with a synthetic regression, while still skipping disabled opening pages for its private viewer selection. The public API remains standalone and has no Android dependency."
     },
     "AccidentalEnclosure.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/AccidentalEnclosure.java",
