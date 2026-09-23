@@ -471,5 +471,9 @@
   "glyph_head_meter_review": {
     "reviewed_app_commit": "e505dbc0bad92c09c89511cb0784b0c2297179af",
     "boundary": "The extra paired-glyph path tolerates a small model-labelled head fragment inside one numeral only when no central semantic notehead lies between the two glyphs. The original crop path retains its prior head veto. Synthetic fragment and central-note controls; private 121-page crop comparison retained all 2104 older crops and added two source-reviewed printed signatures, PDF58 final 4/4 and PDF101 opening 6/4. Separate corrected PDF58 meter annotation changes timing only and clears two overflow observations. Exact Android OCR and measure assignment remain unverified. No private score image or fixture is published."
+  },
+  "scale_book_overlapping_staff_review": {
+    "reviewed_app_commit": "4dad109507b3cc6ab5191b642bd6b5fa9330319a",
+    "boundary": "A half-scale semantic staff that overlaps a full-size page-scale staff by at least two small gaps is removed before note ownership. A separate compact staff remains. The app and public helper and synthetic regression are identical apart from package names. Private matched-input 121-page replay changed only PDF79: one net recovered note event, three retained pitches and two durations changed, and its single measured out-of-bar event cleared; printed stopped heads and sixteen sixteenth attacks were reviewed in private source crops. No private source image, fixture, model or dependency is published. The older whole-file OmrScoreInterpreter hash remains intentionally unchanged because unrelated app drift is still present."
   }
 }

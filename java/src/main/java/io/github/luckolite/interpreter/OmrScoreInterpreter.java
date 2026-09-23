@@ -3180,6 +3180,7 @@ final class OmrScoreInterpreter {
         }
         recoverFadedStaffAliases(gray,width,height,staffs,measures,semanticSlope);
         calibrateContrastedFadedStaffs(gray,width,height,staffs,semanticSlope);
+        removeCompressedOverlappingStaffAliases(staffs);
         staffs.sort(Comparator.comparingDouble(staff -> staff.top));
         for(Staff staff:staffs) {
             if(!staff.printedPhase&&!staff.printedSlope) {
@@ -3197,6 +3198,24 @@ final class OmrScoreInterpreter {
         }
         assignSystemPositions(staffs, measures, height);
         return staffs;
+    }
+
+    /** A compressed semantic alias can overlap a complete page-scale staff and steal its notes. */
+    private static void removeCompressedOverlappingStaffAliases(List<Staff> staffs) {
+        float[] gaps = new float[staffs.size()];
+        for (int i = 0; i < staffs.size(); i++) gaps[i] = staffs.get(i).gap;
+        float pageGap = gaps.length == 0 ? 0 : median(gaps);
+        staffs.removeIf(alias -> {
+            if (alias.gap >= pageGap * .6f) return false;
+            for (Staff printed : staffs) if (printed != alias
+                    && printed.gap >= pageGap * .85f
+                    && printed.gap >= alias.gap * 1.6f
+                    && Math.min(printed.bottom, alias.bottom) - Math.max(printed.top, alias.top)
+                    >= alias.gap * 2f
+                    && Math.abs((printed.top + printed.bottom - alias.top - alias.bottom) * .5f)
+                    <= printed.gap * 2.5f) return true;
+            return false;
+        });
     }
 
     /** Short breaks in otherwise broad rules must not leave an admitted staff

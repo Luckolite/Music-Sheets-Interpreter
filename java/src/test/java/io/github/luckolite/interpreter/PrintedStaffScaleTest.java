@@ -48,4 +48,19 @@ public class PrintedStaffScaleTest {
  @Test public void negativeTiltSevereAlias(){check(-.0084f,5);}
  @Test public void incompletePrintedGroupDoesNotAuthorizeRecovery(){assertEquals(27,page(.0084f,5,true).notes().size());}
  @Test public void twoAliasesDoNotInventASecondInstrument(){var notes=page(.0084f,5,false,true).notes();assertEquals(36,notes.size());for(var note:notes)assertEquals(1,note.staffCount());}
+ @Test public void compressedOverlappingAliasCannotStealLedgerHead()throws Exception {
+  var type=Class.forName(OmrScoreInterpreter.class.getName()+"$Staff");
+  var constructor=type.getDeclaredConstructor(float.class,float.class,float.class);
+  constructor.setAccessible(true);
+  var staffs=new ArrayList<Object>();
+  for(int top:new int[]{100,290,480,670})staffs.add(constructor.newInstance((float)top,(float)(top+64),16f));
+  Object alias=constructor.newInstance(528f,556f,7f);
+  Object separateCompactStaff=constructor.newInstance(820f,848f,7f);
+  staffs.add(alias);staffs.add(separateCompactStaff);
+  var prune=OmrScoreInterpreter.class.getDeclaredMethod("removeCompressedOverlappingStaffAliases",List.class);
+  prune.setAccessible(true);prune.invoke(null,staffs);
+  assertEquals(5,staffs.size());
+  assertFalse("The overlapping half-scale staff would own and reject a real ledger note",staffs.contains(alias));
+  assertTrue("An independent compact staff must remain",staffs.contains(separateCompactStaff));
+ }
 }
