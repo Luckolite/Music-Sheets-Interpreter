@@ -25,6 +25,18 @@ public class ArtificialHarmonicsTest {
         return new ScoreNoteEvent(0,X/(float)W,step,0,1,y/H,false,0,1,
                 ScoreNoteEvent.ACCIDENTAL_FROM_KEY,0,0,0,0,ScoreNoteEvent.CLEF_TREBLE);
     }
+    private ScoreNoteEvent heldUpper() {
+        return new ScoreNoteEvent(0,X/(float)W,3,0,1,(Y-30)/(float)H,false,0,0,
+                ScoreNoteEvent.ACCIDENTAL_FROM_KEY,ScoreNoteEvent.DURATION_HALF,0,0,0,ScoreNoteEvent.CLEF_TREBLE);
+    }
+    private ScoreNoteEvent beamedStopped() {
+        return new ScoreNoteEvent(0,X/(float)W,0,0,1,Y/(float)H,false,0,2,
+                ScoreNoteEvent.ACCIDENTAL_FROM_KEY,0,0,0,0,ScoreNoteEvent.CLEF_TREBLE);
+    }
+    private ScoreNoteEvent beamedUpper() {
+        return new ScoreNoteEvent(0,X/(float)W,3,0,1,(Y-30)/(float)H,false,0,2,
+                ScoreNoteEvent.ACCIDENTAL_FROM_KEY,0,0,0,0,ScoreNoteEvent.CLEF_TREBLE);
+    }
     private List<ScoreNoteEvent> apply(List<ScoreNoteEvent> notes) {
         return ArtificialHarmonics.apply(gray,W,H,List.of(new MeasureRegion(0,1,0,1)),notes,
                 List.of(new PlayingTechniqueDetector.Staff(80,160,G,0,1)));
@@ -79,6 +91,36 @@ public class ArtificialHarmonicsTest {
     @Test public void staffLineCanCrossHollowDiamond() {
         shape(true);for(int x=20;x<220;x++)gray[(Y-30)*W+x]=0;
         assertEquals(2,apply(List.of(note(0,Y))).get(0).octaveShift());
+    }
+    @Test public void crowdedDiamondWithHeldUpperIsRecovered() {
+        shape(true);
+        for(int rule:new int[]{Y-48,Y-40})for(int dy=0;dy<4;dy++)
+            for(int x=20;x<220;x++)gray[(rule+dy)*W+x]=0;
+        var stopped=beamedStopped();var upper=heldUpper();
+        assertFalse(ArtificialHarmonics.diamond(gray,W,H,X,Y-30,G));
+        var result=apply(List.of(stopped,upper));
+        assertEquals(1,result.size());assertEquals(2,result.get(0).octaveShift());
+    }
+    @Test public void crowdedOrdinaryHollowFourthRemainsTwoNotes() {
+        shape(false);
+        for(int rule:new int[]{Y-48,Y-40})for(int dy=0;dy<4;dy++)
+            for(int x=20;x<220;x++)gray[(rule+dy)*W+x]=0;
+        var notes=List.of(beamedStopped(),heldUpper());
+        assertEquals(notes,apply(notes));
+    }
+    @Test public void crowdedBeamedOrdinaryFourthRemainsTwoNotes() {
+        shape(false);
+        for(int rule:new int[]{Y-48,Y-40})for(int dy=0;dy<4;dy++)
+            for(int x=20;x<220;x++)gray[(rule+dy)*W+x]=0;
+        var notes=List.of(beamedStopped(),beamedUpper());
+        assertEquals(notes,apply(notes));
+    }
+    @Test public void crowdedBeamedTouchIsRemoved() {
+        shape(true);
+        for(int rule:new int[]{Y-48,Y-40})for(int dy=0;dy<4;dy++)
+            for(int x=20;x<220;x++)gray[(rule+dy)*W+x]=0;
+        var result=apply(List.of(beamedStopped(),beamedUpper()));
+        assertEquals(1,result.size());assertEquals(2,result.get(0).octaveShift());
     }
     @Test public void missingRawImageDoesNotChangeNotes() {
         var notes=List.of(note(0,Y));assertEquals(notes,ArtificialHarmonics.apply(null,W,H,List.of(),notes,List.of()));

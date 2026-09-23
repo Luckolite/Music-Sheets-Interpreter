@@ -304,9 +304,9 @@
     },
     "ArtificialHarmonics.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ArtificialHarmonics.java",
-      "source_sha256": "fc586f1bc4dc113a7b40aa26e5fb599db379f16ecaeaa9b394c15dd883eb6937",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
-      "notes": "Require all four diamond vertices to avoid raising ordinary hollow chords as harmonics. Original oval negative controls and existing harmonic tests; no private fixtures."
+      "source_sha256": "3d38de912d94d113f342bb612cc2639c54e1fec8a4a8f5acabeb089e816ace52",
+      "reviewed_app_commit": "43d9bd5c8a061475823e5b653dae3b53f9695e52",
+      "notes": "Require all four diamond vertices to avoid raising ordinary hollow chords as harmonics. Original oval negative controls and existing harmonic tests; no private fixtures. A paired beamed stopped head and erroneously decoded upper fourth permit a second diamond shape check when staff or neighboring ink crowds the outside corners. The crowded check still requires four vertices, complete sloping sides, and a clear hollow center; original crowded diamond and ordinary fourth controls cover held and beamed uppers. Private matched-input 121-page Flesch replay removed 165 printed touch-diamond events and raised 165 paired stopped notes by two octaves on 24 pages, with no added notes, tie or measure-geometry changes. Forty-two onset and nine duration changes stay within measures containing removed diamonds; exact printed timing remains under audit, including PDF89. Source contact sheets and raw pages remain private. No weights or dependencies changed. An unrelated uncommitted app ScorePageInterpretation hairpin helper is still visible as drift alongside the three pre-existing mapped files."
     },
     "ParallelBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ParallelBeamTip.java",
