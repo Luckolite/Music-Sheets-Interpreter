@@ -51,8 +51,9 @@ Everything runs locally after installation; no account or server is required.
 MusicXML reconstructs a concert-pitch score, not the original layout or tab placement.
 Guitar effects are text annotations in MusicXML. Recognition can miss symbols, and
 missing tab rhythm remains estimated. Graphical bends, quarter-tone bends, whammy-bar
-directions and strum direction are not reconstructed. Scanned tab input still needs
-fret OCR; an OCR engine is not included.
+directions and strum direction are not reconstructed. The Music Sheets app includes
+local OCR for scanned tabs. This standalone CLI uses embedded PDF text or OCR supplied
+by the caller; its optional OCR provider is not enabled automatically.
 
 The decoder uses conservative visual checks to keep arpeggio marks from becoming
 barlines, ordinary hollow chord heads from becoming artificial harmonics, and tiny
