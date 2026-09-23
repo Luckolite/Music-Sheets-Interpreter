@@ -118,13 +118,16 @@ public final class MeterChangeDetector {
             int radius=Math.max(1,Math.round(gap*.12f));
             int firstHead=width,firstSemanticHead=width;
             for(int xx=0;xx<width;xx++) {
-                int heads=0,key=0;
+                int heads=0;
                 for(int yy=Math.max(0,top-Math.round(gap));yy<=Math.min(height-1,bottom+Math.round(gap));yy++)
                     if(labels[yy*width+xx]==OmrMeasurePostProcessor.NOTEHEAD)heads++;
-                    else if(labels[yy*width+xx]==OmrMeasurePostProcessor.CLEF_OR_KEY)key++;
                 if(heads>=Math.max(7,Math.round(gap*.48f))) {
                     if(firstHead==width)firstHead=xx;
-                    if(key<heads) {firstSemanticHead=xx;break;}
+                    int key=0;
+                    for(int x=Math.max(0,xx-Math.round(gap));x<=Math.min(width-1,xx+Math.round(gap));x++)
+                        for(int yy=Math.max(0,top-Math.round(gap));yy<=Math.min(height-1,bottom+Math.round(gap));yy++)
+                            if(labels[yy*width+x]==OmrMeasurePostProcessor.CLEF_OR_KEY)key++;
+                    if(key<gap*gap*.35f) {firstSemanticHead=xx;break;}
                 }
             }
             int[] ink=new int[width];
@@ -169,11 +172,11 @@ public final class MeterChangeDetector {
                     if(left<firstHead-gap*.35f)
                         result.addAll(stackedSymbolMeterCrops(labels,width,height,left,
                                 Math.min(last,firstHead-Math.max(1,Math.round(gap*.35f))),
-                                top,bottom,gap,slope));
+                                top,bottom,gap,slope,false));
                     if(firstSemanticHead!=firstHead&&left<firstSemanticHead-gap*.35f)
                         for(var crop:stackedSymbolMeterCrops(labels,width,height,left,
                                 Math.min(last,firstSemanticHead-Math.max(1,Math.round(gap*.35f))),
-                                top,bottom,gap,slope))
+                                top,bottom,gap,slope,true))
                             if(!result.contains(crop)&&pairedStackedSymbols(labels,width,height,crop))result.add(crop);
                     if(result.size()>=48)return List.copyOf(result.subList(0,48));
                 }
@@ -253,7 +256,7 @@ public final class MeterChangeDetector {
     }
 
     private static List<Crop> stackedSymbolMeterCrops(byte[] labels,int width,int height,
-            int left,int right,int top,int bottom,float gap,float slope) {
+            int left,int right,int top,int bottom,float gap,float slope,boolean tolerateGlyphHead) {
         var result=new ArrayList<Crop>();
         int start=-1,last=-1,blanks=0;
         int minSymbol=Math.max(3,Math.round(gap*.25f));
@@ -271,10 +274,13 @@ public final class MeterChangeDetector {
             } else if(start>=0&&++blanks>2) {
                 int glyphWidth=last-start+1;
                 if(glyphWidth>=gap*.55f&&glyphWidth<=gap*2.6f) {
-                    int head=0,header=0;
+                    int head=0,middleHead=0,header=0;
                     for(int xx=start;xx<=last;xx++)for(int y=top;y<=bottom;y++) {
                         int yy=y+Math.round(slope*(xx-width*.5f));
-                        if(yy>=0&&yy<height&&labels[yy*width+xx]==OmrMeasurePostProcessor.NOTEHEAD)head++;
+                        if(yy>=0&&yy<height&&labels[yy*width+xx]==OmrMeasurePostProcessor.NOTEHEAD) {
+                            head++;
+                            if(Math.abs(y-top-gap*2)<gap*.4f)middleHead++;
+                        }
                     }
                     for(int xx=Math.max(0,start-Math.round(gap*6));xx<start-Math.round(gap*.5f);xx++)
                         for(int y=top;y<=bottom;y++) {
@@ -282,7 +288,9 @@ public final class MeterChangeDetector {
                             if(yy>=0&&yy<height
                                     &&labels[yy*width+xx]==OmrMeasurePostProcessor.CLEF_OR_KEY)header++;
                         }
-                    if(head<gap*gap*.12f&&header>=gap*gap*.35f) {
+                    boolean smallGlyphFragment=tolerateGlyphHead&&head<gap*gap*.2f
+                            &&middleHead<gap*gap*.05f;
+                    if((head<gap*gap*.12f||smallGlyphFragment)&&header>=gap*gap*.35f) {
                         int center=(start+last)/2,pad=Math.max(2,Math.round(gap*.2f));
                         int localTop=top+Math.round(slope*(center-width*.5f));
                         result.add(new Crop(Math.max(0,start-pad),Math.max(0,localTop-pad),

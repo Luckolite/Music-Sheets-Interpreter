@@ -30,16 +30,31 @@ public class JoinedMeterCropTest {
             gray[y*W+x]=0;labels[y*W+x]=OmrMeasurePostProcessor.SYMBOL;
         }
     }
-    private boolean found(){return MeterChangeDetector.candidates(labels,gray,W,H).stream().anyMatch(c->c.left()<=X-9&&c.right()>X+2&&c.right()-c.left()<45&&c.top()<75&&c.bottom()>107);}
-    @Test public void joinedInkStillYieldsBoundedMeterCrop(){counter(75,true);counter(103,true);assertTrue(found());}
-    @Test public void joinedNonFourMeterSymbolsStillYieldCrop(){stackedSymbols();assertTrue(found());}
-    @Test public void falseClefHeadCannotHideTwoAlignedMeterGlyphs(){
+    private void largeStackedSymbolsWithFalseClefHead() {
         stackedSymbols();
         for(int x=X-11;x<=X+6;x++)for(int y=67;y<=113;y++)
             if(y<=85||y>=95){gray[y*W+x]=0;labels[y*W+x]=OmrMeasurePostProcessor.SYMBOL;}
         for(int x=X-60;x<=X-58;x++)for(int y=84;y<=94;y++)
             labels[y*W+x]=OmrMeasurePostProcessor.NOTEHEAD;
+    }
+    private boolean found(){return MeterChangeDetector.candidates(labels,gray,W,H).stream().anyMatch(c->c.left()<=X-9&&c.right()>X+2&&c.right()-c.left()<45&&c.top()<75&&c.bottom()>107);}
+    @Test public void joinedInkStillYieldsBoundedMeterCrop(){counter(75,true);counter(103,true);assertTrue(found());}
+    @Test public void joinedNonFourMeterSymbolsStillYieldCrop(){stackedSymbols();assertTrue(found());}
+    @Test public void falseClefHeadCannotHideTwoAlignedMeterGlyphs(){
+        largeStackedSymbolsWithFalseClefHead();
         assertTrue(found());
+    }
+    @Test public void smallHeadLabelInsideUpperGlyphStillOffersMeter(){
+        largeStackedSymbolsWithFalseClefHead();
+        for(int x=X-4;x<=X;x++)for(int y=70;y<=74;y++)
+            labels[y*W+x]=OmrMeasurePostProcessor.NOTEHEAD;
+        assertTrue(found());
+    }
+    @Test public void centralNoteheadStillVetoesJoinedMeter(){
+        largeStackedSymbolsWithFalseClefHead();
+        for(int x=X-6;x<=X-1;x++)for(int y=85;y<=91;y++)
+            labels[y*W+x]=OmrMeasurePostProcessor.NOTEHEAD;
+        assertFalse(found());
     }
     @Test public void noteheadInsideJoinedSymbolsIsNotAMeter(){
         stackedSymbols();
