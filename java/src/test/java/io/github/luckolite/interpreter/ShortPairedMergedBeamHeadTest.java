@@ -24,12 +24,14 @@ public class ShortPairedMergedBeamHeadTest {
     }
     void note(int x,int y){for(int yy=y-9;yy<=y+9;yy++)for(int xx=x-11;xx<=x+11;xx++)
         if(Math.pow((xx-x)/11d,2)+Math.pow((yy-y)/9d,2)<=1)gray[yy*W+xx]=0;}
-    int rejected(boolean twoOwners)throws Exception {
+    int rejected(boolean twoOwners)throws Exception {return rejected(twoOwners,false);}
+    int rejected(boolean twoOwners,boolean broadIsland)throws Exception {
         var component=Class.forName(OmrScoreInterpreter.class.getName()+"$Component");
         var cc=component.getDeclaredConstructors()[0];cc.setAccessible(true);
         var left=cc.newInstance(310,106,128,150,168,117f,159f);
         var right=cc.newInstance(310,156,178,150,168,167f,159f);
-        var fragment=cc.newInstance(84,144,156,107,116,150f,111f);
+        var fragment=broadIsland?cc.newInstance(130,142,158,105,116,150f,111f)
+                :cc.newInstance(84,144,156,107,116,150f,111f);
         var staff=Class.forName(OmrScoreInterpreter.class.getName()+"$Staff");
         var sc=staff.getDeclaredConstructors()[0];sc.setAccessible(true);
         var line=sc.newInstance(110f,174f,16f);
@@ -38,6 +40,10 @@ public class ShortPairedMergedBeamHeadTest {
         return ((List<?>)method.invoke(null,gray,W,H,twoOwners?List.of(left,right,fragment):List.of(left,fragment),List.of(line))).size();
     }
     @Test public void twoRealStemsOwnSmallIslandOnShortMergedBeams()throws Exception {assertEquals(1,rejected(true));}
+    @Test public void twoRealStemsOwnHeadSizedIslandOnShortMergedBeams()throws Exception {
+        assertEquals(1,rejected(true,true));
+        assertEquals(0,rejected(false,true));
+    }
     @Test public void oneRealStemIsInsufficient()throws Exception {assertEquals(0,rejected(false));}
     @Test public void thinSingleBeamIsInsufficient()throws Exception {
         for(int x=126;x<175;x++)for(int y=98;y<=132;y++)if(y>Math.round(99+(x-125)*.14f)+7)

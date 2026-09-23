@@ -4240,11 +4240,11 @@ final class OmrScoreInterpreter {
         for(Component head:heads) {
             Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
             float gap=staff.gap;
-            if(head.area>gap*gap*.45f||head.maxX-head.minX+1>gap*.9f
-                    ||head.maxY-head.minY+1>gap*.8f)continue;
+            if(head.area>gap*gap*.55f||head.maxX-head.minX+1>gap*1.1f
+                    ||head.maxY-head.minY+1>gap*.9f)continue;
             List<int[]> left=new ArrayList<>(),right=new ArrayList<>();
             for(Component main:heads) {
-                if(main==head||main.area<Math.max(head.area*2.5f,gap*gap*1.05f)
+                if(main==head||main.area<Math.max(head.area*2.2f,gap*gap*1.05f)
                         ||nearestHeadStaff(staffs,main.centerY)!=staff
                         ||Math.abs(main.centerX-head.centerX)>gap*3.5f
                         ||Math.abs(main.centerY-head.centerY)<gap*2
