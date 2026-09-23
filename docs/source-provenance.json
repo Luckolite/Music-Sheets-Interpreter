@@ -367,9 +367,9 @@
     },
     "ScoreTiePitchGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTiePitchGuard.java",
-      "source_sha256": "1184e4427c0bab57640c524b7bb834898c6a36fbd5480bbedb930d283b112016",
-      "reviewed_app_commit": "12aae4214c122a9256f706edaa1cbae2a38912d4",
-      "notes": "Standalone package adaptation of the shared decoded-pitch tie guard. Conservatively retains measure-zero and unknown-key cases. Original synthetic controls and private 121-page matched-input replay; no source score distributed."
+      "source_sha256": "460b5d9f9735cefcbd5976c8af14ce8742da1d26c7c4225688b615459aebdb3c",
+      "reviewed_app_commit": "094730e1f1faba2d95fd70fcc6e86dba9fecfc79",
+      "notes": "Standalone package adaptation of the shared decoded-pitch tie guard. Where no key is known, distinct explicit accidentals on the same staff pitch clear a false tie; ambiguous key-derived cases and measure-zero cross-page ties remain untouched. Original synthetic controls and privately reviewed chromatic-scale source crops; no source score distributed."
     },
     "ScoreTempoSelection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/playback/ScoreTempoSelection.java",

@@ -10,15 +10,14 @@ final class ScoreTiePitchGuard {
     private ScoreTiePitchGuard() { }
 
     static List<ScoreNoteEvent> apply(List<ScoreNoteEvent> notes,List<ScoreKeyChange> keys) {
-        if(keys.isEmpty())return notes;
         List<ScoreNoteEvent> result=new ArrayList<>(notes);
         for(int i=0;i<notes.size();i++) {
             ScoreNoteEvent current=notes.get(i);
             if(!current.tiedFromPrevious()||current.measureIndex()==0)continue;
             int pitch=midi(current,keys);
-            if(pitch==Integer.MIN_VALUE)continue;
+            if(pitch==Integer.MIN_VALUE && !explicitPitchChange(notes,i))continue;
             boolean prior=false;
-            for(int j=i-1;j>=0;j--) {
+            for(int j=i-1;pitch!=Integer.MIN_VALUE && j>=0;j--) {
                 ScoreNoteEvent earlier=notes.get(j);
                 if(current.measureIndex()-earlier.measureIndex()>1)break;
                 if(earlier.staffIndex()!=current.staffIndex()
@@ -36,6 +35,25 @@ final class ScoreTiePitchGuard {
                     current.leadingRestBeats(),current.compactOpening(),current.octaveShift()));
         }
         return result;
+    }
+
+    /** Two different printed accidentals on one staff position cannot form a tie,
+     * even when the caller has not supplied the page's inherited key. */
+    private static boolean explicitPitchChange(List<ScoreNoteEvent> notes,int index) {
+        ScoreNoteEvent current=notes.get(index);
+        if(current.writtenAccidental()==ScoreNoteEvent.ACCIDENTAL_FROM_KEY)return false;
+        for(int j=index-1;j>=0;j--) {
+            ScoreNoteEvent earlier=notes.get(j);
+            if(current.measureIndex()-earlier.measureIndex()>1)break;
+            if(earlier.staffIndex()!=current.staffIndex()
+                    ||earlier.staffCount()!=current.staffCount()
+                    ||earlier.diatonicPitchIdentity()!=current.diatonicPitchIdentity())continue;
+            if(earlier.measureIndex()==current.measureIndex()
+                    && earlier.positionInMeasure()>=current.positionInMeasure()-.018f)continue;
+            return earlier.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                    && earlier.writtenAccidental()!=current.writtenAccidental();
+        }
+        return false;
     }
 
     private static int midi(ScoreNoteEvent note,List<ScoreKeyChange> keys) {
