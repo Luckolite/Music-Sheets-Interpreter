@@ -29,10 +29,12 @@ The bundled, unmodified `training/fonts/NotoSerif.ttf` is copyright 2022 The Not
 Project Authors and is distributed under SIL OFL 1.1. Its complete notice is
 [NOTO-SERIF-OFL.txt](training/fonts/NOTO-SERIF-OFL.txt).
 
-The Bravura and Leland music glyphs are supplied by the pinned Verovio installation.
-Their upstream notices accompany the training tooling as
-[BRAVURA-OFL.txt](training/fonts/BRAVURA-OFL.txt) and
-[LELAND-OFL.txt](training/fonts/LELAND-OFL.txt). They are not bundled in the runtime wheel.
+The unmodified `java/assets/Bravura.otf` is copyright Steinberg Media Technologies
+GmbH and distributed under SIL OFL 1.1 for optional desktop meter matching. Its
+complete notice is [Bravura-OFL.txt](java/assets/Bravura-OFL.txt). The runtime wheel
+does not bundle this font. Training also uses music glyphs from the pinned Verovio
+installation; their notices are [BRAVURA-OFL.txt](training/fonts/BRAVURA-OFL.txt)
+and [LELAND-OFL.txt](training/fonts/LELAND-OFL.txt).
 
 Generated score images in `examples/` are newly authored exercises. No commercial
 sheet-music pages, recordings, pretrained third-party OMR models or Google OCR assets
