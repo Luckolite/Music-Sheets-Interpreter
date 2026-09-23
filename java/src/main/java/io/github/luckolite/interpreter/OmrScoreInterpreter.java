@@ -3045,7 +3045,30 @@ final class OmrScoreInterpreter {
                 samples++;
                 if((gray[y*width+x]&255)>=185)bright++;
             }
-        return samples>=3&&bright>=Math.max(2,Math.round(samples*.34f));
+        if(samples>=3&&bright>=Math.max(2,Math.round(samples*.34f)))return true;
+        // A printed staff rule can fill the centre of an otherwise open oval.
+        // Require separate white pockets on both sides of that dark rule;
+        // a filled note with only an upper white notch still fails.
+        int innerLeft=Math.max(head.minX,cx-rx),innerRight=Math.min(head.maxX,cx+rx);
+        int upperStart=Math.max(head.minY+1,cy-Math.max(3,Math.round((head.maxY-head.minY+1)*.35f)));
+        int upperEnd=cy-2,lowerStart=cy+2;
+        int lowerEnd=Math.min(head.maxY-1,cy+Math.max(3,Math.round((head.maxY-head.minY+1)*.35f)));
+        if(upperEnd<upperStart||lowerEnd<lowerStart)return false;
+        int upperWhite=0,lowerWhite=0,upperCount=0,lowerCount=0,darkRule=0,ruleCount=0;
+        for(int x=innerLeft;x<=innerRight;x++) {
+            if(x<0||x>=width)continue;
+            for(int y=upperStart;y<=upperEnd;y++)if(y>=0&&y<height) {
+                upperCount++;if((gray[y*width+x]&255)>=185)upperWhite++;
+            }
+            for(int y=lowerStart;y<=lowerEnd;y++)if(y>=0&&y<height) {
+                lowerCount++;if((gray[y*width+x]&255)>=185)lowerWhite++;
+            }
+            if(cy>=0&&cy<height){ruleCount++;if((gray[cy*width+x]&255)<130)darkRule++;}
+        }
+        return upperCount>=4&&lowerCount>=4&&ruleCount>=3
+                &&upperWhite>=Math.max(2,Math.round(upperCount*.3f))
+                &&lowerWhite>=Math.max(2,Math.round(lowerCount*.15f))
+                &&darkRule>=Math.round(ruleCount*.7f);
     }
 
     private static List<Component> sideBySideSeconds(byte[] labels,int width,Component head,float gap) {
