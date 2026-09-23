@@ -30,8 +30,9 @@ class LocalOcr:
             value = value.strip()
             # A tab string crossing a fret can be read as a leading minus sign.
             # Negative frets do not exist, so retain the printed digit evidence.
-            if value[:1] in ("-", "–", "—") and value[1:].isdigit():
-                value = value[1:]
+            numeric = value.strip("-–—")
+            if numeric.isdigit():
+                value = numeric
             if score < .5 or not value or len(value.encode("utf-8")) > 10000:
                 continue
             left = max(0.0, min(1.0, float(np.min(box[:, 0])) / width))

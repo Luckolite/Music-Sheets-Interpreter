@@ -12,13 +12,28 @@ import numpy as np
 from PIL import Image
 
 from sheet_interpreter.ocr import LocalOcr
-from sheet_interpreter.reader import java_executable, write_page
+from sheet_interpreter.reader import grayscale, java_executable, write_page
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class BuiltinOcrTests(unittest.TestCase):
+    def test_scanned_pdf_staff_strokes_do_not_hide_a_twelve_fret(self):
+        import pypdfium2 as pdfium
+
+        document = pdfium.PdfDocument(ROOT / "tests/fixtures/synthetic-scanned-tab.pdf")
+        page = document[0]
+        bitmap = page.render(scale=2400 / page.get_width())
+        try:
+            gray = grayscale(bitmap.to_pil())
+        finally:
+            bitmap.close()
+            page.close()
+            document.close()
+        words = LocalOcr().words(gray)
+        self.assertEqual({"0", "12", "7", "3"}, {word["text"] for word in words})
+
     def test_scanned_frets_reach_the_decoder_without_supplied_annotations(self):
         # Newly drawn tab rules and frets, saved as pixels so rendering does not
         # vary across operating systems and font rasterizers.
