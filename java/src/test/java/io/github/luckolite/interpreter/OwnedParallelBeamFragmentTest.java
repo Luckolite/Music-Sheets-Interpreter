@@ -22,11 +22,13 @@ public class OwnedParallelBeamFragmentTest {
         for(int y=151;y<=169;y++)for(int x=122;x<=142;x++)
             if(Math.pow((x-132)/10d,2)+Math.pow((y-160)/9d,2)<=1)gray[y*W+x]=0;
     }
-    private int rejected(boolean owner)throws Exception {
+    private int rejected(boolean owner)throws Exception {return rejected(owner,false);}
+    private int rejected(boolean owner,boolean tallOffset)throws Exception {
         var component=Class.forName(OmrScoreInterpreter.class.getName()+"$Component");
         var cc=component.getDeclaredConstructors()[0];cc.setAccessible(true);
         var main=cc.newInstance(310,122,142,151,169,132f,160f);
-        var fragment=cc.newInstance(219,141,159,103,117,150f,110f);
+        var fragment=tallOffset?cc.newInstance(150,141,159,91,109,150f,100f):
+                cc.newInstance(219,141,159,103,117,150f,110f);
         var staff=Class.forName(OmrScoreInterpreter.class.getName()+"$Staff");
         var sc=staff.getDeclaredConstructors()[0];sc.setAccessible(true);
         var line=sc.newInstance(80f,144f,16f);
@@ -47,5 +49,9 @@ public class OwnedParallelBeamFragmentTest {
         for(int x=60;x<=190;x++)for(int y=111;y<=125;y++)
             if(x!=140&&gray[y*W+x]==0)gray[y*W+x]=(byte)255;
         assertEquals(0,rejected(true));
+    }
+    @Test public void tallerIslandOnOneBeamCoreUsesTheOwnedOffsetSeam()throws Exception {
+        assertEquals(1,rejected(true,true));
+        assertEquals(0,rejected(false,true));
     }
 }

@@ -4275,7 +4275,7 @@ final class OmrScoreInterpreter {
         for(Component head:heads) {
             Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
             float gap=staff.gap;
-            if(head.maxX-head.minX+1>gap*2||head.maxY-head.minY+1>gap*1.1f
+            if(head.maxX-head.minX+1>gap*2||head.maxY-head.minY+1>gap*1.2f
                     ||head.area>gap*gap)continue;
             for(Component main:heads) {
                 if(main==head||main.area<Math.max(head.area*1.3f,gap*gap*1.05f)
@@ -4287,7 +4287,9 @@ final class OmrScoreInterpreter {
                 if(stem==null||stem[0]<head.minX-gap*.4f||stem[0]>head.maxX+gap*.4f
                         ||Math.abs(stem[1]-head.centerY)>gap*1.85f)continue;
                 if(mergedBeamStrip(gray,width,height,head.centerX,head.centerY,gap)
-                        || ParallelBeamTip.matches(gray,width,height,head.centerX,head.centerY,gap)) {
+                        || ParallelBeamTip.matches(gray,width,height,head.centerX,head.centerY,gap)
+                        || ParallelBeamTip.matches(gray,width,height,head.centerX,head.centerY+gap*.5f,gap)
+                        || ParallelBeamTip.matches(gray,width,height,head.centerX,head.centerY-gap*.5f,gap)) {
                     rejected.add(head);break;
                 }
             }
