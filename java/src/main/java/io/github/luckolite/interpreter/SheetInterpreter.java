@@ -29,11 +29,16 @@ public final class SheetInterpreter {
      * Meter changes are explicit, validated readings at zero-based logical measure indices. */
     public record Annotations(List<NumberToken> measureNumbers, List<NumberToken> tempoNumbers,
                               List<NumberToken> restCounts, List<Word> words,
-                              List<ScoreMeterChange> meters) {
-        public static final Annotations EMPTY=new Annotations(List.of(),List.of(),List.of(),List.of(),List.of());
+                              List<ScoreMeterChange> meters, List<Word> tabWords) {
+        public static final Annotations EMPTY=new Annotations(List.of(),List.of(),List.of(),List.of(),List.of(),List.of());
+        public Annotations(List<NumberToken> measureNumbers,List<NumberToken> tempoNumbers,
+                List<NumberToken> restCounts,List<Word> words,List<ScoreMeterChange> meters) {
+            this(measureNumbers,tempoNumbers,restCounts,words,meters,List.of());
+        }
         public Annotations {
             measureNumbers=List.copyOf(measureNumbers);tempoNumbers=List.copyOf(tempoNumbers);
             restCounts=List.copyOf(restCounts);words=List.copyOf(words);meters=List.copyOf(meters);
+            tabWords=List.copyOf(tabWords);
         }
     }
     private static void checkBox(float left,float top,float right,float bottom) {
@@ -52,7 +57,8 @@ public final class SheetInterpreter {
             throw new IllegalArgumentException("Expected equally sized masks and grayscale, at most 20 million pixels");
         for(byte label:labels)if(label<0||label>5)throw new IllegalArgumentException("Labels must be in 0..5");
         Objects.requireNonNull(annotations);
-        var tabWords=annotations.words.stream().map(w->new TablatureDecoder.Word(w.text,w.left,w.top,w.right,w.bottom)).toList();
+        var tabWords=java.util.stream.Stream.concat(annotations.words.stream(),annotations.tabWords.stream())
+                .map(w->new TablatureDecoder.Word(w.text,w.left,w.top,w.right,w.bottom)).toList();
         var tabs=TablatureDecoder.withWords(TablatureDecoder.detect(gray,width,height),tabWords,width,height);
         tabs=TabNotation.rasterRhythm(tabs,gray,width,height,tabWords);
         labels=TablatureDecoder.withoutTabs(labels,width,height,tabs,false);

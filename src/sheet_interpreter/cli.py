@@ -55,7 +55,7 @@ def main():
                 raise ValueError("One annotation object is required for every selected page")
             print(f"Reading page {page_number}", file=sys.stderr)
             page = engine.interpret(image, meter=meter, key_fifths=key, width=args.width,
-                                    annotations=annotations[index] if annotations is not None else ({"words": native_words} if native_words else None))
+                                    annotations=annotations[index] if annotations is not None else ({"tabWords": native_words} if native_words else None))
             page["sourcePage"] = page_number
             results.append(page)
             if page["score"]["keyChanges"]:

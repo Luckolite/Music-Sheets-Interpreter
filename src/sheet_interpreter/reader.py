@@ -67,22 +67,24 @@ def write_page(path, labels, gray, annotations=None):
             for row in rows:
                 stream.write(struct.pack(">i5f", row["value"], row["left"], row["top"], row["right"],
                                          row["bottom"], row.get("annotationLeft", row["left"])))
-        words = annotations.get("words", [])
-        if len(words) > 10000:
-            raise ValueError("Too many OCR words")
-        stream.write(struct.pack(">i", len(words)))
-        for word in words:
-            text = word["text"].encode("utf-8")
-            if len(text) > 10000:
-                raise ValueError("OCR word too long")
-            stream.write(struct.pack(">i", len(text)) + text)
-            stream.write(struct.pack(">4f", word["left"], word["top"], word["right"], word["bottom"]))
+        def write_words(words):
+            if len(words) > 10000:
+                raise ValueError("Too many OCR words")
+            stream.write(struct.pack(">i", len(words)))
+            for word in words:
+                text = word["text"].encode("utf-8")
+                if len(text) > 10000:
+                    raise ValueError("OCR word too long")
+                stream.write(struct.pack(">i", len(text)) + text)
+                stream.write(struct.pack(">4f", word["left"], word["top"], word["right"], word["bottom"]))
+        write_words(annotations.get("words", []))
         meters = annotations.get("meters", [])
         if len(meters) > 10000:
             raise ValueError("Too many meter changes")
         stream.write(struct.pack(">i", len(meters)))
         for meter in meters:
             stream.write(struct.pack(">iii", meter["measureIndex"], meter["numerator"], meter["denominator"]))
+        write_words(annotations.get("tabWords", []))
 
 
 def java_executable():
@@ -165,6 +167,11 @@ class Interpreter:
                 from .ocr import LocalOcr
                 self.ocr = LocalOcr()
             annotations = {"words": self.ocr.words(gray)}
+        elif "tabWords" in annotations and "words" not in annotations:
+            if self.ocr is None:
+                from .ocr import LocalOcr
+                self.ocr = LocalOcr()
+            annotations = dict(annotations, words=self.ocr.words(gray))
         with tempfile.TemporaryDirectory(prefix="sheet-interpreter-") as folder:
             page = Path(folder) / "page.page.gz"
             output = Path(folder) / "score.json"

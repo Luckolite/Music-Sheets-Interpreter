@@ -38,11 +38,23 @@ public final class Main {
                 }
                 var meters=new ArrayList<ScoreMeterChange>();count=readCount(in);
                 for(int i=0;i<count;i++)meters.add(new ScoreMeterChange(in.readInt(),in.readInt(),in.readInt()));
+                var nativeTabWords=new ArrayList<SheetInterpreter.Word>();
+                int next=in.read();
+                if(next!=-1) {
+                    count=(next<<24)|(in.readUnsignedByte()<<16)|(in.readUnsignedByte()<<8)|in.readUnsignedByte();
+                    if(count<0||count>10000)throw new IOException("Annotation limit exceeded");
+                    for(int i=0;i<count;i++) {
+                        int length=readCount(in);byte[] text=in.readNBytes(length);if(text.length!=length)throw new EOFException();
+                        nativeTabWords.add(new SheetInterpreter.Word(new String(text,StandardCharsets.UTF_8),
+                                in.readFloat(),in.readFloat(),in.readFloat(),in.readFloat()));
+                    }
+                }
                 if(in.read()!=-1)throw new IOException("Unexpected trailing bytes");
-                annotations=new SheetInterpreter.Annotations(numbers,tempos,rests,words,meters);
+                annotations=new SheetInterpreter.Annotations(numbers,tempos,rests,words,meters,nativeTabWords);
             }
         }
-        var tabWords=annotations.words().stream().map(w->new TablatureDecoder.Word(w.text(),w.left(),w.top(),w.right(),w.bottom())).toList();
+        var tabWords=java.util.stream.Stream.concat(annotations.words().stream(),annotations.tabWords().stream())
+                .map(w->new TablatureDecoder.Word(w.text(),w.left(),w.top(),w.right(),w.bottom())).toList();
         var tabs=TablatureDecoder.withWords(TablatureDecoder.detect(gray,width,height),tabWords,width,height);
         var tabWarnings=new ArrayList<String>();
         if(tabs.stream().anyMatch(t->t.frets().isEmpty()))tabWarnings.add("Tablature detected but no reliable fret OCR supplied; paired notation is retained where available.");

@@ -52,7 +52,7 @@ This is a preview convention, not a claim that every ornament style is recognize
 ## OCR and optional annotations
 
 The normal `.[inference,pdf]` install includes offline OCR models. The Python reader
-uses them automatically when an image or a PDF page has no embedded tab text. The
+uses them automatically for images and PDF pages, including PDFs with embedded tab text. The
 Java decoder accepts caller-provided OCR words; it does not start Python OCR by itself.
 `--annotations file.json` overrides automatic OCR with one object per selected page.
 Java callers pass equivalent `SheetInterpreter.Annotations`.
@@ -65,6 +65,7 @@ coordinates. A page object can contain these optional lists:
   "tempoNumbers": [],
   "restCounts": [],
   "words": [],
+  "tabWords": [],
   "meters": [{"measureIndex": 0, "numerator": 4, "denominator": 4}]
 }
 ```
@@ -79,9 +80,12 @@ Words have `text`, `left`, `top`, `right`, `bottom`. They can carry recognized d
 and techniques such as `p`, `mf`, `pizz.` or `arco`; the decoder places supported tokens
 using the staff and note geometry. The automatic Python path reads the whole analysis
 page; it does not reproduce the Android app's repeated crop OCR strategy.
+Use `tabWords` for native PDF tablature text. These tokens inform frets and tab effects,
+but an isolated `P` from a lyric or tab marking cannot become a piano dynamic.
 
-For PDFs with embedded tab text, the CLI supplies normalized search boxes automatically.
-For scanned pages and images, it supplies words from local OCR. An explicit
+For PDFs with embedded tab text, the CLI supplies normalized tab search boxes and
+also runs local OCR for other printed words. For scanned pages and images, it supplies
+words from local OCR. An explicit
 `--annotations` file remains authoritative. Compound fret tokens are retained,
 overlapping embedded-text search results are deduplicated, and separated digits are
 joined only when their tab-string geometry agrees.
