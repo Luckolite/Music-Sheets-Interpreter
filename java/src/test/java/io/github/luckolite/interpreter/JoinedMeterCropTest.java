@@ -20,8 +20,25 @@ public class JoinedMeterCropTest {
         rect(X-9,X+2,y-2,y+6,0);
         for(int row=0;row<5;row++){int width=triangle?Math.min(6,row+2):6;rect(X-2-width+1,X-2,y+row,y+row,255);}
     }
+    private void stackedSymbols() {
+        for(int y=65;y<=110;y++)for(int x=X-60;x<=X-52;x++)
+            labels[y*W+x]=OmrMeasurePostProcessor.CLEF_OR_KEY;
+        for(int y=72;y<=83;y++)for(int x=X-9;x<=X+4;x++) {
+            gray[y*W+x]=0;labels[y*W+x]=OmrMeasurePostProcessor.SYMBOL;
+        }
+        for(int y=96;y<=108;y++)for(int x=X-9;x<=X+4;x++) {
+            gray[y*W+x]=0;labels[y*W+x]=OmrMeasurePostProcessor.SYMBOL;
+        }
+    }
     private boolean found(){return MeterChangeDetector.candidates(labels,gray,W,H).stream().anyMatch(c->c.left()<=X-9&&c.right()>X+2&&c.right()-c.left()<45&&c.top()<75&&c.bottom()>107);}
     @Test public void joinedInkStillYieldsBoundedMeterCrop(){counter(75,true);counter(103,true);assertTrue(found());}
+    @Test public void joinedNonFourMeterSymbolsStillYieldCrop(){stackedSymbols();assertTrue(found());}
+    @Test public void noteheadInsideJoinedSymbolsIsNotAMeter(){
+        stackedSymbols();
+        for(int y=87;y<=93;y++)for(int x=X-6;x<=X-1;x++)
+            labels[y*W+x]=OmrMeasurePostProcessor.NOTEHEAD;
+        assertFalse(found());
+    }
     @Test public void plainVerticalStrokeDoesNotYieldMeterCrop(){assertFalse(found());}
     @Test public void singleCounterDoesNotYieldMeterCrop(){counter(75,true);assertFalse(found());}
     @Test public void parallelBarSpacesDoNotYieldMeterCrop(){counter(75,false);counter(103,false);assertFalse(found());}

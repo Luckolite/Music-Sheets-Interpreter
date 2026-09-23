@@ -116,6 +116,13 @@ public final class MeterChangeDetector {
             float gap=staff.gap();
             int top=Math.max(0,staff.top()), bottom=Math.min(height-1,staff.bottom());
             int radius=Math.max(1,Math.round(gap*.12f));
+            int firstHead=width;
+            for(int xx=0;xx<width;xx++) {
+                int heads=0;
+                for(int yy=Math.max(0,top-Math.round(gap));yy<=Math.min(height-1,bottom+Math.round(gap));yy++)
+                    if(labels[yy*width+xx]==OmrMeasurePostProcessor.NOTEHEAD)heads++;
+                if(heads>=Math.max(7,Math.round(gap*.48f))) {firstHead=xx;break;}
+            }
             int[] ink=new int[width];
             for(int y=top;y<=bottom;y++) {
                 boolean line=false;
@@ -155,6 +162,11 @@ public final class MeterChangeDetector {
                         if(result.size()>=48)return List.copyOf(result);
                         xx=end+Math.round(gap);
                     }
+                    if(left<firstHead-gap*.35f)
+                        result.addAll(stackedSymbolMeterCrops(labels,width,height,left,
+                                Math.min(last,firstHead-Math.max(1,Math.round(gap*.35f))),
+                                top,bottom,gap,slope));
+                    if(result.size()>=48)return List.copyOf(result.subList(0,48));
                 }
                 if(span<gap*.5f || span>gap*3.2f) continue;
                 int key=0,head=0,upper=0,lower=0,symbols=0,upperSymbols=0,lowerSymbols=0;
@@ -208,6 +220,52 @@ public final class MeterChangeDetector {
             }
         }
         return List.copyOf(result);
+    }
+
+    /** Recover stacked meter digits when a clef or nearby stem joins their ink projection.
+     * The note-position and OCR checks still decide whether a crop is a signature. */
+    private static List<Crop> stackedSymbolMeterCrops(byte[] labels,int width,int height,
+            int left,int right,int top,int bottom,float gap,float slope) {
+        var result=new ArrayList<Crop>();
+        int start=-1,last=-1,blanks=0;
+        int minSymbol=Math.max(3,Math.round(gap*.25f));
+        for(int x=left;x<=right+3;x++) {
+            int upper=0,lower=0;
+            if(x<=right)for(int y=top;y<=bottom;y++) {
+                int yy=y+Math.round(slope*(x-width*.5f));
+                if(yy<0||yy>=height||labels[yy*width+x]!=OmrMeasurePostProcessor.SYMBOL)continue;
+                if(y<top+gap*1.8f)upper++;
+                if(y>top+gap*2.2f)lower++;
+            }
+            if(upper>=minSymbol&&lower>=minSymbol) {
+                if(start<0)start=x;
+                last=x;blanks=0;
+            } else if(start>=0&&++blanks>2) {
+                int glyphWidth=last-start+1;
+                if(glyphWidth>=gap*.55f&&glyphWidth<=gap*2.6f) {
+                    int head=0,header=0;
+                    for(int xx=start;xx<=last;xx++)for(int y=top;y<=bottom;y++) {
+                        int yy=y+Math.round(slope*(xx-width*.5f));
+                        if(yy>=0&&yy<height&&labels[yy*width+xx]==OmrMeasurePostProcessor.NOTEHEAD)head++;
+                    }
+                    for(int xx=Math.max(0,start-Math.round(gap*6));xx<start-Math.round(gap*.5f);xx++)
+                        for(int y=top;y<=bottom;y++) {
+                            int yy=y+Math.round(slope*(xx-width*.5f));
+                            if(yy>=0&&yy<height
+                                    &&labels[yy*width+xx]==OmrMeasurePostProcessor.CLEF_OR_KEY)header++;
+                        }
+                    if(head<gap*gap*.12f&&header>=gap*gap*.35f) {
+                        int center=(start+last)/2,pad=Math.max(2,Math.round(gap*.2f));
+                        int localTop=top+Math.round(slope*(center-width*.5f));
+                        result.add(new Crop(Math.max(0,start-pad),Math.max(0,localTop-pad),
+                                Math.min(width,last+pad+1),Math.min(height,localTop+bottom-top+pad+1),
+                                localTop,gap));
+                    }
+                }
+                start=-1;last=-1;blanks=0;
+            }
+        }
+        return result;
     }
 
     /** Faded rules can retain semantic staff evidence while falling below the raw ink cutoff. */

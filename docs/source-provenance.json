@@ -114,9 +114,9 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "c02ee6d56f3f5e73ea477c65f12044d457f7aa9d321310b61d700fd6e65e1e8e",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
-      "notes": "Whole-note-denominator OCR filter rejects contradictory 1/1 or 2/1 only with two complete written bars. Existing helper alignment reviewed. Android OCR calls this shared filter; explicit standalone annotations remain authoritative. Original synthetic tests. Uses Collectors.toList for Android API 26 compatibility."
+      "source_sha256": "36ab5635d8e26f2dd351950f1270e415eadb9bf5f50309f489718dbcbc53c1cb",
+      "reviewed_app_commit": "55e4b7c3945705444d8ad7637517ef283e85b495",
+      "notes": "Whole-note-denominator OCR filter retains its two-written-bar guard. Joined system-header ink can hide non-four stacked signatures from the initial projection scan; a bounded symbol-pair recovery now presents them to OCR only after nearby clef/key evidence and before the first notehead. Synthetic positive/head-veto controls; private 121-page candidate audit added 126 crops, retained all 1963 older crops, and recovered printed 6/4 headers on PDFs 6, 106, 116. Corrected private meter annotations clear eight out-of-bar timing events without changing note counts. Standalone explicit annotations remain authoritative, and Android OCR recognition of the recovered crops is not device-verified. Uses Collectors.toList for Android API 26 compatibility."
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
