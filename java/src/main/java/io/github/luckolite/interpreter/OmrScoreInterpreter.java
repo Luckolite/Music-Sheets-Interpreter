@@ -261,6 +261,9 @@ final class OmrScoreInterpreter {
             int writtenAccidental = detectWrittenAccidental(labels, width, height,
                     localAccidentals, head, accidentalGap);
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                    &&rawWideDoubleSharp(gray,width,height,localAccidentals,head,accidentalGap))
+                writtenAccidental=ScoreNoteEvent.ACCIDENTAL_DOUBLE_SHARP;
+            if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                     &&rawSharpFromSeed(gray,width,height,localAccidentals,head,accidentalGap))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_SHARP;
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
@@ -5685,6 +5688,54 @@ final class OmrScoreInterpreter {
         return best;
     }
 
+
+    /** A wide double-sharp box can also contain a neighboring stem and staff
+     * rules. Its two white notches still flank a dark waist. */
+    private static boolean rawWideDoubleSharp(byte[] gray,int width,int height,
+            List<AccidentalCandidate> candidates,Component head,float gap) {
+        if(gray==null)return false;
+        int minArm=Math.max(3,(int)Math.ceil(gap*.35f));
+        int flank=Math.max(2,Math.round(gap*.5f));
+        for(AccidentalCandidate candidate:candidates) {
+            Component glyph=candidate.component;
+            int gw=glyph.maxX-glyph.minX+1,gh=glyph.maxY-glyph.minY+1;
+            if(candidate.label!=OmrMeasurePostProcessor.SYMBOL
+                    ||gw<=gap*1.4f||gw>gap*1.9f
+                    ||gh<gap*.9f||gh>gap*2f
+                    ||head.minX-glyph.maxX<0||head.minX-glyph.maxX>gap*1.3f
+                    ||Math.abs(glyph.centerY-head.centerY)>gap*.7f)continue;
+            List<int[]> notches=new ArrayList<>();
+            int top=Math.max(1,Math.max(glyph.minY,Math.round(head.centerY-gap*.75f)));
+            int bottom=Math.min(height-2,Math.min(glyph.maxY,Math.round(head.centerY+gap*.75f)));
+            for(int y=top;y<=bottom;y++)for(int x=glyph.minX+minArm;x<=glyph.maxX-minArm;x++) {
+                if(x<=0||x>=width-1||(gray[y*width+x]&255)<180)continue;
+                int l=x,r=x;
+                while(l>glyph.minX&&(gray[y*width+l-1]&255)>=180)l--;
+                while(r<glyph.maxX&&(gray[y*width+r+1]&255)>=180)r++;
+                if(r-l+1>3||x!=l)continue;
+                int left=0,right=0;
+                while(l-left-1>=glyph.minX&&left<gap*.8f
+                        &&(gray[y*width+l-left-1]&255)<180)left++;
+                while(r+right+1<=glyph.maxX&&right<gap*.8f
+                        &&(gray[y*width+r+right+1]&255)<180)right++;
+                if(left>=minArm&&right>=minArm)notches.add(new int[]{y,(l+r)/2});
+            }
+            for(int i=0;i<notches.size();i++)for(int j=i+1;j<notches.size();j++) {
+                int[] upper=notches.get(i),lower=notches.get(j);
+                int dy=lower[0]-upper[0];
+                if(dy<gap*.4f||dy>gap*.9f
+                        ||Math.abs(upper[1]-lower[1])>gap*.12f)continue;
+                int center=(upper[1]+lower[1])/2,waist=0;
+                if(center-flank<0||center+flank>=width)continue;
+                for(int y=upper[0]+1;y<lower[0];y++)
+                    if((gray[y*width+center]&255)<180
+                            &&(gray[y*width+center-flank]&255)>=180
+                            &&(gray[y*width+center+flank]&255)>=180)waist++;
+                if(waist>=2)return true;
+            }
+        }
+        return false;
+    }
 
     private static int detectWrittenAccidental(byte[] labels, int width, int height,
                                                List<AccidentalCandidate> candidates,
