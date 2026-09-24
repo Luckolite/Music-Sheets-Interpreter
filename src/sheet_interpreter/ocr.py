@@ -6,6 +6,20 @@ import numpy as np
 import re
 
 
+def measure_numbers(words):
+    """Offer isolated numbers; the decoder validates system placement and sequence."""
+    result = []
+    for word in words:
+        value = str(word.get("text", "")).strip()
+        if not value.isascii() or not value.isdigit() or not 1 <= len(value) <= 4:
+            continue
+        number = int(value)
+        if 1 <= number <= 9999:
+            result.append(dict(value=number, left=word["left"], top=word["top"],
+                               right=word["right"], bottom=word["bottom"]))
+    return result
+
+
 def tempo_numbers(words):
     """Bound BPM digits within an OCR line; the Java decoder verifies the equals glyph."""
     result = []

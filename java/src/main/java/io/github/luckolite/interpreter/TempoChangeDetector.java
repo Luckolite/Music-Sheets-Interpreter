@@ -98,6 +98,23 @@ final class TempoChangeDetector {
     /** Two separated, short horizontal ink bands immediately left of the BPM digits. */
     private static int equalsSignLeft(MeasureNumberReconciler.NumberToken token,
                                          byte[] gray, int width, int height) {
+        int strong=equalsSignLeft(token,gray,width,height,125);
+        if(strong>=0)return strong;
+        // Faded scans may retain two separated rules only at a lighter level.
+        // Require pale paper first; do not turn shadow texture into an equals sign.
+        int unit=Math.max(3,Math.round((token.bottom()-token.top())*height));
+        int left=Math.max(0,Math.round(token.left()*width)-unit*2);
+        int right=Math.min(width-1,Math.round(token.right()*width));
+        int top=Math.max(0,Math.round(token.top()*height)),bottom=Math.min(height-1,Math.round(token.bottom()*height));
+        int total=0,paper=0;
+        for(int y=top;y<=bottom;y++)for(int x=left;x<=right;x++) {
+            total++;if((gray[y*width+x]&255)>=230)paper++;
+        }
+        return total>0&&paper>=total*.6f?equalsSignLeft(token,gray,width,height,175):-1;
+    }
+
+    private static int equalsSignLeft(MeasureNumberReconciler.NumberToken token,
+                                         byte[] gray, int width, int height,int inkLimit) {
         int tokenLeft = Math.max(0, Math.round(token.left() * width));
         int tokenRight = Math.min(width - 1, Math.round(token.right() * width));
         int tokenTop = Math.max(0, Math.round(token.top() * height));
@@ -109,7 +126,7 @@ final class TempoChangeDetector {
         // not that padding, while preserving the original search/anchor bounds.
         int inkTop=height,inkBottom=-1;
         for(int y=tokenTop;y<=tokenBottom;y++)for(int x=tokenLeft;x<=tokenRight;x++)
-            if((gray[y*width+x]&255)<=125){inkTop=Math.min(inkTop,y);inkBottom=Math.max(inkBottom,y);}
+            if((gray[y*width+x]&255)<=inkLimit){inkTop=Math.min(inkTop,y);inkBottom=Math.max(inkBottom,y);}
         if(inkBottom>=inkTop)tokenHeight=Math.max(3,inkBottom-inkTop+1);
         int left = Math.max(0, tokenLeft - Math.max(tokenWidth, tokenHeight * 2));
         int right = Math.min(width - 1, tokenLeft - 1);
@@ -124,7 +141,7 @@ final class TempoChangeDetector {
         List<int[]> bands = new ArrayList<>();
         for (int sy=0; sy<rh; sy++) for (int sx=0; sx<rw; sx++) {
             int seed=sy*rw+sx;
-            if (visited[seed] || (gray[(top+sy)*width+left+sx]&0xff)>125) continue;
+            if (visited[seed] || (gray[(top+sy)*width+left+sx]&0xff)>inkLimit) continue;
             int read=0, size=1, minX=sx, maxX=sx, minY=sy, maxY=sy;
             queue[0]=seed; visited[seed]=true;
             while(read<size) {
@@ -135,7 +152,7 @@ final class TempoChangeDetector {
                     int nx=x+dx, ny=y+dy;
                     if(nx<0||ny<0||nx>=rw||ny>=rh) continue;
                     int next=ny*rw+nx;
-                    if(!visited[next] && (gray[(top+ny)*width+left+nx]&0xff)<=125) {
+                    if(!visited[next] && (gray[(top+ny)*width+left+nx]&0xff)<=inkLimit) {
                         visited[next]=true; queue[size++]=next;
                     }
                 }

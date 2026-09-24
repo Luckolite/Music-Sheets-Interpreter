@@ -33,7 +33,20 @@ final class StaffPitchTrack {
             byte[] local=new byte[stripWidth*(last-first)];
             for(int y=first;y<last;y++)System.arraycopy(gray,y*width+left,local,(y-first)*stripWidth,stripWidth);
             RawStaffLineDetector.StaffLines best=null;float distance=Float.MAX_VALUE;
-            for(var lines:RawStaffLineDetector.detect(local,stripWidth,last-first)) {
+            // A shaded photograph can put the paper itself below the fixed ink
+            // threshold. Project only locally contrasted strokes in that case;
+            // still validate every proposed rule against the original pixels.
+            byte[] projection=local;
+            if(needsContrast(local,stripWidth,last-first,stripWidth*.5f,bottom-first,gap)) {
+                projection=new byte[local.length];Arrays.fill(projection,(byte)255);
+                int flank=Math.max(2,Math.round(gap*.32f));
+                for(int y=flank;y<last-first-flank;y++)for(int x=0;x<stripWidth;x++) {
+                    int at=y*stripWidth+x,ink=local[at]&255;
+                    if(ink<=170&&(local[at-flank*stripWidth]&255)>=ink+12
+                            &&(local[at+flank*stripWidth]&255)>=ink+12)projection[at]=local[at];
+                }
+            }
+            for(var lines:RawStaffLineDetector.detect(projection,stripWidth,last-first)) {
                 if(lines.gap()<gap*.8f||lines.gap()>gap*1.25f)continue;
                 float d=Math.abs(lines.bottom()+first-bottom);
                 // Broad straight-rule evidence anchors the physical staff phase.
@@ -262,6 +275,41 @@ final class StaffPitchTrack {
             if(found!=null)return found;
         }
         return null;
+    }
+
+    /** Beyond a photographed page's last reliable strip, prove five complete
+     * contrasted rules on both sides, without relying on a truncated model mask. */
+    static float[] localCurledEdgeRules(byte[] gray,int width,int height,float x,int headLeft,int headRight,
+                                      float referenceBottom,float gap) {
+        if(gray==null||gap<3)return null;
+        int left=Math.max(0,Math.round(x-gap*4)),right=Math.min(width-1,Math.round(x+gap*4));
+        int top=Math.max(0,Math.round(referenceBottom-gap*8)),bottom=Math.min(height-1,Math.round(referenceBottom+gap*4));
+        int w=right-left+1,h=bottom-top+1,flank=Math.max(2,Math.round(gap*.32f));
+        if(w<8||h<8)return null;
+        byte[] local=new byte[w*h],thin=new byte[w*h];
+        for(int y=0;y<h;y++)System.arraycopy(gray,(top+y)*width+left,local,y*w,w);
+        for(int y=flank;y<h-flank;y++)for(int xx=0;xx<w;xx++) {
+            int at=y*w+xx,ink=local[at]&255;
+            if(ink<=170&&(local[at-flank*w]&255)>=ink+20
+                    &&(local[at+flank*w]&255)>=ink+20)thin[at]=4;
+        }
+        float[] best=null;
+        for(int shift:new int[]{0,-1,1,-2,2})for(int s=-8;s<=8;s++) {
+            float[] found=localRulesWithSlope(thin,local,w,h,x-left,headLeft-left,headRight-left,
+                    referenceBottom-top+shift*gap,gap,s*.04f,true);
+            if(found==null)continue;
+            int exclusion=Math.max(1,Math.round(gap*.45f)),band=Math.max(2,Math.round(gap*.25f));
+            int ruleLeft=Math.max(0,Math.round(x-left-gap*3.5f)),ruleRight=Math.min(w-1,Math.round(x-left+gap*3.5f));
+            if(printedRuleOnBothSides(local,w,h,x-left,headLeft-left,headRight-left,
+                    found[0]+found[1],s*.04f,ruleLeft,ruleRight,exclusion,band,flank,170)
+                    ||printedRuleOnBothSides(local,w,h,x-left,headLeft-left,headRight-left,
+                    found[0]-5*found[1],s*.04f,ruleLeft,ruleRight,exclusion,band,flank,170))return null;
+            found[0]+=top;
+            // Competing phases (for example a beam plus five rules) are not proof.
+            if(best!=null&&Math.abs(best[0]-found[0])>gap*.3f)return null;
+            if(best==null)best=found;
+        }
+        return best;
     }
 
     /** A pale local group still needs all five contrasted rules on both sides

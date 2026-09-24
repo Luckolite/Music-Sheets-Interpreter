@@ -43,6 +43,8 @@ final class OmrScoreInterpreter {
         if (staffs.isEmpty()) return new Analysis(List.of(), List.of());
         List<Component> rawHeadComponents = findComponents(labels, width, height,
                 OmrMeasurePostProcessor.NOTEHEAD);
+        rawHeadComponents.removeIf(head -> PrintedNoteContrast.paperTexture(gray,width,height,
+                head.minX,head.minY,head.maxX,head.maxY));
         List<Component> clefOrKeyComponents = findComponents(labels, width, height,
                 OmrMeasurePostProcessor.CLEF_OR_KEY);
         List<Component> symbolComponents = findComponents(labels, width, height,
@@ -6596,6 +6598,9 @@ final class OmrScoreInterpreter {
                 head.minX,head.maxX,referenceBottom,gap);
         if(complete==null)complete=StaffPitchTrack.localFadedRules(labels,gray,width,height,head.centerX,
                 head.minX,head.maxX,referenceBottom,gap);
+        if(complete==null&&shaded&&staff.pitchTrack!=null&&(head.centerX<width*.2f||head.centerX>width*.8f))
+            complete=StaffPitchTrack.localCurledEdgeRules(gray,width,height,head.centerX,
+                    head.minX,head.maxX,referenceBottom,gap);
         if(complete!=null&&Math.abs(complete[1]-gap)>gap*.04f&&staff.pitchTrack==null) {
             float[] broad=StaffPitchTrack.broadStraightPitch(gray,width,height,referenceBottom,gap,false);
             if(broad!=null&&Math.abs(complete[1]-broad[1])>gap*.035f)return broad;
@@ -8036,7 +8041,12 @@ final class OmrScoreInterpreter {
             else if (!sameOnset(previous.event, previousOnset)
                     &&!(ScoreNoteTiming.hasIndependentSustain(previous.event)
                     &&(previous.event.measureIndex()==current.event.measureIndex()
-                    ||ScoreNoteTiming.hasIndependentSustain(current.event)))) continue;
+                    ||ScoreNoteTiming.hasIndependentSustain(current.event)))) {
+                // A closer attack of this pitch supersedes the older held note.
+                // Do not stretch that old endpoint across a later melodic slur.
+                if(previous.event.diatonicPitchIdentity()==current.event.diatonicPitchIdentity())return -1;
+                continue;
+            }
             int measureDistance = current.event.measureIndex() - previous.event.measureIndex();
             if (measureDistance > 1) break;
             // An arc is only a tie when its endpoints are the same written pitch. Slurs can have
@@ -8145,6 +8155,17 @@ final class OmrScoreInterpreter {
                     ||faintShoulders&&hasContinuousTieArc(labels,gray,width,height,a,b,centerY,gap,null,205))return true;
         }
         // Long ties may leave a full staff-space of clearance beside a dot and fade near the heads.
+        // Compact dotted notes also leave that clearance. Keep the whole returning
+        // curve inside the head edges and require a substantial remaining span.
+        if(faintShoulders && right-left<gap*5) {
+            int clearanceStep=Math.max(1,Math.round(gap*.1f));
+            int clearanceCount=Math.round(gap*1.4f/clearanceStep);
+            for(int first=0;first<=clearanceCount;first++)for(int last=0;last<=clearanceCount;last++) {
+                int a=left+first*clearanceStep,b=right-last*clearanceStep;
+                if(b-a<Math.max(gap*1.3f,(right-left)*.45f))continue;
+                if(hasContinuousTieArc(labels,gray,width,height,a,b,centerY,gap,null,205,0,true))return true;
+            }
+        }
         // Keep short-arc limits and require a dark core within the complete curve.
         int longStep=Math.max(1,Math.round(gap*.2f));
         if(right-left>=gap*5)for(int first=0;first<=5;first++)for(int last=0;last<=5;last++) {
@@ -8172,7 +8193,23 @@ final class OmrScoreInterpreter {
 
     private static boolean hasContinuousTieArc(byte[] labels, byte[] gray, int width, int height,
             int left, int right, float centerY, float gap,Component target,int inkLimit,int requiredSide) {
+        return hasContinuousTieArc(labels,gray,width,height,left,right,centerY,gap,target,inkLimit,requiredSide,false);
+    }
+
+    private static boolean hasContinuousTieArc(byte[] labels, byte[] gray, int width, int height,
+            int left, int right, float centerY, float gap,Component target,int inkLimit,int requiredSide,boolean strictContrast) {
+        {
+            int[] paper=new int[63];int count=0;
+            for(int row=-3;row<=3;row++)for(int col=0;col<9;col++) {
+                int x=Math.max(0,Math.min(width-1,left+(right-left)*col/8));
+                int y=Math.max(0,Math.min(height-1,Math.round(centerY+(row+.37f)*gap)));
+                paper[count++]=gray[y*width+x]&255;
+            }
+            java.util.Arrays.sort(paper);
+            if(strictContrast||paper[47]<210)inkLimit=Math.min(inkLimit,Math.max(80,paper[47]-20));
+        }
         int radius=Math.max(1,Math.round(gap*.09f));
+        int[] contrastOffsets={Math.max(1,Math.round(gap*.18f)),Math.max(2,Math.round(gap*.35f)),Math.max(3,Math.round(gap*.65f))};
         boolean[] straightRows=new boolean[height];
         for(int y=Math.max(0,Math.round(centerY-gap*3.2f));y<=Math.min(height-1,Math.round(centerY+gap*3.2f));y++) {
             int dark=0;
@@ -8197,6 +8234,15 @@ final class OmrScoreInterpreter {
                         int yy=y+dy;if(yy<0||yy>=height)continue;
                         int at=yy*width+x;
                         if((gray[at]&255)>inkLimit||labels[at]==OmrMeasurePostProcessor.NOTEHEAD)continue;
+                        int shade=gray[at]&255;
+                        if(strictContrast&&shade>125) {
+                            int paper=0;
+                            for(int distance:contrastOffsets) {
+                                if(yy>=distance)paper=Math.max(paper,gray[(yy-distance)*width+x]&255);
+                                if(yy+distance<height)paper=Math.max(paper,gray[(yy+distance)*width+x]&255);
+                            }
+                            if(paper<shade+20)continue;
+                        }
                         if(straightRows[yy]||labels[at]==OmrMeasurePostProcessor.STAFF) {
                             if(obscuredY<0)obscuredY=yy;
                         } else {ink=true;centers[sample]=yy;supportedCenters[sample]=yy;
@@ -8222,6 +8268,15 @@ final class OmrScoreInterpreter {
                         &&bins[0]>=3&&bins[4]>=3&&bins[1]>=9&&bins[2]>=9&&bins[3]>=9
                         &&coveredBins[0]>=9&&coveredBins[4]>=9
                         &&arcCurvature(centers,0,0,49)>=Math.max(1.2f,gap*.15f))return true;
+                // A compact tie can touch a staff rule at its crest instead of
+                // at the endpoints. Both returning shoulders must remain visible;
+                // the rule only supplies the small occluded central section.
+                if(right-left<=gap*5&&hits>=34&&obscured>0&&obscured<=16&&hits+obscured>=48
+                        &&bins[0]>=8&&bins[1]>=7&&bins[3]>=7&&bins[4]>=8
+                        &&coveredBins[0]>=9&&coveredBins[1]>=9&&coveredBins[2]>=9
+                        &&coveredBins[3]>=9&&coveredBins[4]>=9
+                        &&arcCurvature(supportedCenters,0,0,49)>=Math.max(1.5f,gap*.20f)
+                        &&(strictContrast||hasContinuousTieArc(labels,gray,width,height,left,right,centerY,gap,target,inkLimit,requiredSide,true)))return true;
             }
         return false;
     }

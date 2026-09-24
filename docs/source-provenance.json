@@ -6,6 +6,12 @@
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "files": {
+    "PrintedNoteContrast.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedNoteContrast.java",
+      "source_sha256": "df4dfa1737b32897474edb1c2485e8a0d840b4bc4db55df7e26db1345fa63731",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "notes": "Reviewed working-tree helper rejects low-contrast semantic head candidates on shaded paper using local histogram evidence. Dark printed heads, hollow heads, faded white-paper notation and missing-pixel inputs remain protected. Original synthetic tests; no dependencies or model changes."
+    },
     "NativeOcrWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeOcrWire.java",
       "source_sha256": "1f7dfc54463165967b78db342ad33b8700b2fdf1de1d16f83d6e8264397c8e98",
@@ -213,7 +219,8 @@
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
-      "source_sha256": "99762a65b7d627e8758bbc8fc9aa8a091610bc359c9009457eb35d3e9dae156e",
+      "source_sha256": "6a3091dc386a4c362c68b04b53a91e7b9297fbc22eb85e5124f6be3041b4793e",
+      "faded_equals_review": "Scoped repair keeps the strong-ink equals pass first, then permits two separated pale strokes only on predominantly white paper. Five original synthetic positive, shadow, connected-letter and single-stroke controls. Private faded tempo verification remains outside this repository. Prior upstream-only dot-fringe behavior is retained; no whole-file semantic parity claim.",
       "pulse_dot_review": "Scoped working-tree port: a second dark-core component pass recovers an augmentation dot connected to the pulse by a pale scan bridge, only when its result is exactly the dotted version of the original unit. Three original generated controls retain undotted and faint isolated-dot readings. Prior upstream-only equals-fringe behavior remains documented below.",
       "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "latest_review": "Scoped working-tree parity: size equals-sign strokes from BPM digit ink instead of a padded whole-line OCR box. Retains separated-component, placement and pulse checks; original padded-digit and connected-letter controls. The app desktop adapter and standalone OCR parser also accept a closing parenthesis/bracket after tempo digits and exclude that punctuation from the digit bounds. Four original parser controls and private actual-page verification recover the printed quarter-note tempo. The earlier upstream equals-fringe dot repair remains an upstream-only addition pending app integration; no whole-file semantic parity claim. No models, dependencies or private fixtures added.",
@@ -244,8 +251,9 @@
     },
     "StaffPitchTrack.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
-      "source_sha256": "069fdad0d9eca1d718115c0ccb6d4cda57ae92bd6b79625c48db2fe53374a7a5",
-      "reviewed_app_commit": "abec26d68b40ea6043b63265067ee0cf5b533483"
+      "source_sha256": "147b083cbfa3ebc6b4587c8623d57e0b9939f46d0a4f22018065f1f5ba228f8b",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "notes": "Reviewed working-tree repair: on shaded local strips, candidate projection uses contrasted thin strokes, then verifies all five proposed rules against the original scan. No change to source pixels, coordinates or model input. Original curved-shadow, blank-shadow and sparse-fragment regressions accompany existing staff tests."
     },
     "OpeningMeasureLayout.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpeningMeasureLayout.java",
@@ -486,6 +494,10 @@
     "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
     "status": "Upstream repair; app integration pending completion of a concurrent repository migration.",
     "boundary": "Original synthetic geometry covers displaced hollow whole-note seconds, independent chord dots, solid-blob rejection, staff-crossed marcato carets, genuine parallel strokes and an equals-sign fringe beside a tempo unit. Private source comparison recovered four missing chord tones and seven dotted-whole values, corrected six false sixteenth readings, and restored a quarter-equals-125 tempo previously multiplied by 1.5. Existing app drift remains visible; no hashes were advanced before app integration. No private score, annotations, logs, dependencies or model weights are included. The targeted fixes do not establish complete score accuracy or deployment."
+  },
+  "compact_tie_and_shaded_paper_review": {
+    "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+    "boundary": "Scoped working-tree repairs recover complete compact returning ties with dot clearance and staff-covered crests, and stop an older held endpoint from bridging a later same-pitch attack. Crest occlusion is limited to short spans and pale arc pixels in the new recovery paths require local contrast. Existing arc scans use a paper-relative ink ceiling on shadowed backgrounds. Shaded paper texture is checked against local printed contrast before accepting semantic heads; nearby outlines protect pale interiors. Shaded staff projection uses contrasted thin strokes; a curled page edge requires five complete rules on both sides and rejects competing sixth rules. Thirty-one original synthetic Java regressions (including five pale-equals controls) and three Python annotation tests; exact source-page replays remain private. Native and standalone OCR now forward isolated measure-number candidates to existing geometry and sequence verification, preserving explicitly supplied annotations. The standalone pre-split head list differs from the app's bookkeeping list but applies the same filter before splitting. Existing unrelated OmrScoreInterpreter drift stays visible; its whole-file hash is not advanced. No commercial score, private library, phone log, model weight or new dependency is published. These bounded repairs do not establish complete score accuracy."
   },
   "scale_book_overlapping_staff_review": {
     "reviewed_app_commit": "4dad109507b3cc6ab5191b642bd6b5fa9330319a",
