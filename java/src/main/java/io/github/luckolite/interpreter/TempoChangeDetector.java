@@ -214,7 +214,9 @@ final class TempoChangeDetector {
             for(int[] dot:parts) {
                 int dw=dot[1]-dot[0]+1,dh=dot[3]-dot[2]+1;
                 float gap=dot[0]-note[1],dy=Math.abs((dot[2]+dot[3])*.5f-cy);
-                if(gap>0&&gap<unit*.6f&&dw>=2&&dh>=2&&dw<=unit*.35f&&dh<=unit*.35f
+                // The light fringe of '=' can extend left of its dark-core bound.
+                // It is clipped by this search window, unlike a complete printed dot.
+                if(dot[1]<right&&gap>0&&gap<unit*.6f&&dw>=2&&dh>=2&&dw<=unit*.35f&&dh<=unit*.35f
                         &&dy<=unit*.22f&&dot[4]>=dw*dh*.45f)return beat*1.5;
             }
             return beat;
