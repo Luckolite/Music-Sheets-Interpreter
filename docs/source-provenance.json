@@ -114,8 +114,9 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "3dbd8fc59799731895a8c2a95f1b1b85833ff93eefa962925d02eec905f63540",
-      "reviewed_app_commit": "4dad109507b3cc6ab5191b642bd6b5fa9330319a",
+      "source_sha256": "9cc4974f1b438069215f17c79027cc9b8a84ec3e1a85eaee94baa53e04ea2359",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "latest_review": "Reviewed working-tree change: the existing two-complete-bar contradiction guard also rejects spurious 1/2 OCR readings. Genuine two-quarter-beat bars and a following real meter boundary remain authoritative. Four original synthetic regressions; no private score data, new dependencies or weights. Existing unrelated OmrScoreInterpreter drift remains visible.",
       "notes": "Whole-note-denominator OCR filter retains its two-written-bar guard. Joined system-header ink can hide non-four stacked signatures from the initial projection scan; a bounded symbol-pair recovery now presents them to OCR only after nearby clef/key evidence and before the first notehead. Synthetic positive/head-veto controls; private 121-page candidate audit added 126 crops, retained all 1963 older crops, and recovered printed 6/4 headers on PDFs 6, 106, 116. Corrected private meter annotations clear eight out-of-bar timing events without changing note counts. Standalone explicit annotations remain authoritative, and Android OCR recognition of the recovered crops is not device-verified. Uses Collectors.toList for Android API 26 compatibility. Reviewed inline 12/8 recovery: permits a lower numeral mislabeled as a notehead only after a complete preceding barline and an upper numeral. Original synthetic joined-meter control; private four-page trial recovered both printed changes, with Android OCR reading both crops."
     },
     "MultiMeasureRestDetector.java": {
@@ -371,8 +372,9 @@
     },
     "ScoreTiePitchGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTiePitchGuard.java",
-      "source_sha256": "460b5d9f9735cefcbd5976c8af14ce8742da1d26c7c4225688b615459aebdb3c",
-      "reviewed_app_commit": "094730e1f1faba2d95fd70fcc6e86dba9fecfc79",
+      "source_sha256": "cadb6581cdb1894d8b8c2ff95f52ce39f15003665758ddb8360ff2c275221255",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "latest_review": "Working-tree repair retains a verified top-staff tie across adjacent systems when a lower staff is hidden or restored. Requires matching known clefs and system-break geometry; different pitches and explicit accidental changes still reject ties. Shared helper is also used by the scoped OmrScoreInterpreter tie search, whose unrelated drift remains visible. Synthetic raster and pitch controls; private matched-input page comparison restores one printed tie with no note-count or pitch changes. Standalone MIDI and app audio also preserve the held attack across this verified transition, with silence-gap and unmarked-note controls. No new dependency or model change.",
       "notes": "Standalone package adaptation of the shared decoded-pitch tie guard. Where no key is known, distinct explicit accidentals on the same staff pitch clear a false tie; ambiguous key-derived cases and measure-zero cross-page ties remain untouched. Original synthetic controls and privately reviewed chromatic-scale source crops; no source score distributed."
     },
     "ScoreTempoSelection.java": {

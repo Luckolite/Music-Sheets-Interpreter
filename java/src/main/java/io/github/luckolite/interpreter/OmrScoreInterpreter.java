@@ -8025,8 +8025,9 @@ final class OmrScoreInterpreter {
         ScoreNoteEvent previousOnset = null;
         for (int index = currentIndex - 1; index >= 0; index--) {
             DetectedNote previous = notes.get(index);
-            if (previous.event.staffIndex() != current.event.staffIndex()
-                    || previous.event.staffCount() != current.event.staffCount()) continue;
+            if (!ScoreTiePitchGuard.sameContinuingStaff(previous.event,current.event)) continue;
+            if(previous.event.staffCount()!=current.event.staffCount()
+                    &&!systemBreakTieCandidate(previous,current,width))continue;
             if(current.event.measureIndex()-previous.event.measureIndex()>1)break;
             if (sameOnset(previous.event, current.event)) continue;
             if (previousOnset == null) previousOnset = previous.event;
@@ -8113,7 +8114,7 @@ final class OmrScoreInterpreter {
             DetectedNote note,boolean outgoing,int side) {
         float gap=note.staffGap;int step=Math.max(2,Math.round(gap*.2f));
         for(int clearance=step;clearance<=gap*1.8f;clearance+=step)
-            for(int span=Math.round(gap*1.6f);span<=gap*7;span+=step) {
+            for(int span=Math.round(gap*1.6f);span<=gap*(outgoing?14:7);span+=step) {
                 int left=outgoing?note.head.maxX+clearance:note.head.minX-clearance-span;
                 int right=outgoing?left+span:note.head.minX-clearance;
                 if(left<0||right>=width)continue;

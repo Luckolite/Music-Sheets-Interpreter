@@ -17,6 +17,13 @@ public class WholeNoteMeterOcrTest {
     }
     @Test public void repeatedTwoBeatBarsRejectSpuriousTwoOverOne() {assertTrue(filtered(2,1,2).isEmpty());}
     @Test public void repeatedSixBeatBarsRejectSpuriousOneOverOne() {assertTrue(filtered(1,1,6).isEmpty());}
+    @Test public void repeatedThreeBeatBarsRejectSpuriousOneOverTwo() {assertTrue(filtered(1,2,3).isEmpty());}
+    @Test public void repeatedFourBeatBarsRejectSpuriousOneOverTwo() {assertTrue(filtered(1,2,4).isEmpty());}
+    @Test public void genuineOneOverTwoIsPreserved() {assertEquals(1,filtered(1,2,2).size());}
+    @Test public void laterMeterChangeBoundsTheContradictionWindow() {
+        var input=List.of(new ScoreMeterChange(0,1,2),new ScoreMeterChange(1,3,4));
+        assertEquals(input,MeterChangeDetector.filterWholeNoteOcrReadings(input,bars(3),2));
+    }
     @Test public void realWholeNoteDenominatorIsPreserved() {assertEquals(1,filtered(2,1,8).size());assertEquals(1,filtered(1,1,4).size());}
     @Test public void uncertainCompoundRhythmCannotEraseItsMeter() {assertEquals(1,filtered(12,8,8).size());}
     @Test public void emptyNotationCannotDisproveAMeter() {

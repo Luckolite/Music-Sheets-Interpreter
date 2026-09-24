@@ -20,8 +20,7 @@ final class ScoreTiePitchGuard {
             for(int j=i-1;pitch!=Integer.MIN_VALUE && j>=0;j--) {
                 ScoreNoteEvent earlier=notes.get(j);
                 if(current.measureIndex()-earlier.measureIndex()>1)break;
-                if(earlier.staffIndex()!=current.staffIndex()
-                        ||earlier.staffCount()!=current.staffCount())continue;
+                if(!sameContinuingStaff(earlier,current))continue;
                 if(earlier.measureIndex()==current.measureIndex()
                         &&earlier.positionInMeasure()>=current.positionInMeasure()-.018f)continue;
                 if(midi(earlier,keys)==pitch){prior=true;break;}
@@ -45,8 +44,7 @@ final class ScoreTiePitchGuard {
         for(int j=index-1;j>=0;j--) {
             ScoreNoteEvent earlier=notes.get(j);
             if(current.measureIndex()-earlier.measureIndex()>1)break;
-            if(earlier.staffIndex()!=current.staffIndex()
-                    ||earlier.staffCount()!=current.staffCount()
+            if(!sameContinuingStaff(earlier,current)
                     ||earlier.diatonicPitchIdentity()!=current.diatonicPitchIdentity())continue;
             if(earlier.measureIndex()==current.measureIndex()
                     && earlier.positionInMeasure()>=current.positionInMeasure()-.018f)continue;
@@ -54,6 +52,22 @@ final class ScoreTiePitchGuard {
                     && earlier.writtenAccidental()!=current.writtenAccidental();
         }
         return false;
+    }
+
+    /** A hidden lower staff does not change the identity of the continuing top staff.
+     * Only adjacent systems with the same explicit clef qualify; recognition still
+     * requires matching pitches and returning arcs at both printed endpoints. */
+    static boolean sameContinuingStaff(ScoreNoteEvent earlier,ScoreNoteEvent current) {
+        if(earlier.staffIndex()!=current.staffIndex())return false;
+        if(earlier.staffCount()==current.staffCount())return true;
+        return earlier.staffIndex()==0
+                &&Math.min(earlier.staffCount(),current.staffCount())==1
+                &&Math.max(earlier.staffCount(),current.staffCount())==2
+                &&current.measureIndex()==earlier.measureIndex()+1
+                &&current.pageY()-earlier.pageY()>.04f
+                &&current.positionInMeasure()<.58f
+                &&earlier.clefBottomDiatonic()!=ScoreNoteEvent.CLEF_UNKNOWN
+                &&earlier.clefBottomDiatonic()==current.clefBottomDiatonic();
     }
 
     private static int midi(ScoreNoteEvent note,List<ScoreKeyChange> keys) {

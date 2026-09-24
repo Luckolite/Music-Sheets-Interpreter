@@ -47,11 +47,19 @@ def write_midi(document, path, bpm=120):
                 raise ValueError("Unsupported tremolo subdivision")
             step = round(subdivision * ppq)
             previous_tone = previous.get(lane)
+            # Recognition has already verified both endpoints of this tie.
+            # A hidden/restored lower staff must not force a second top-staff attack.
+            if note["tiedFromPrevious"] and lane[1] == 0 and lane[0] in (1, 2):
+                alternate = previous.get((3 - lane[0], 0, pitch))
+                if (alternate is not None and abs(alternate[1] - start) <= round(ppq * .04)
+                        and (previous_tone is None or previous_tone[1] < alternate[1])):
+                    previous_tone = alternate
             if (note["tiedFromPrevious"] and previous_tone is not None
                     and note.get("guitarEffect", {}) == previous_tone[4]
                     and (step == 0 or previous_tone[3] == step)
                     and abs(previous_tone[1] - start) <= ppq // 8):
                 previous_tone[1] = max(previous_tone[1], end)
+                previous[lane] = previous_tone
             else:
                 tone = [start, end, pitch, step, note.get("guitarEffect", {})]
                 tones.append(tone)
