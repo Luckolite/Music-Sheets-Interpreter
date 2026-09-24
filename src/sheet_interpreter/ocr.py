@@ -11,7 +11,7 @@ def tempo_numbers(words):
     result = []
     for word in words:
         value = str(word.get("text", ""))
-        match = re.search(r"=\s*(\d{2,3})\s*$", value)
+        match = re.search(r"=\s*(\d{2,3})\s*[)\]]?\s*$", value)
         if not match:
             continue
         bpm = int(match.group(1))
@@ -22,7 +22,7 @@ def tempo_numbers(words):
             continue
         left = word["left"] + width * match.start(1) / len(value)
         result.append(dict(value=bpm, left=left, top=word["top"],
-                           right=word["right"], bottom=word["bottom"],
+                           right=word["left"] + width * match.end(1) / len(value), bottom=word["bottom"],
                            annotationLeft=word["left"]))
     return result
 

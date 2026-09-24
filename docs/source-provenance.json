@@ -211,8 +211,9 @@
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
-      "source_sha256": "7ad23b484fefaec37c67e58c3673aa81b27a3c85178fd177519cf1e07dc2974c",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "source_sha256": "44704cbc2b7c026e934b3f705ec3657ddc0386478e1e9d25731cbe95ca76e2fb",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "latest_review": "Scoped working-tree parity: size equals-sign strokes from BPM digit ink instead of a padded whole-line OCR box. Retains separated-component, placement and pulse checks; original padded-digit and connected-letter controls. The app desktop adapter and standalone OCR parser also accept a closing parenthesis/bracket after tempo digits and exclude that punctuation from the digit bounds. Four original parser controls and private actual-page verification recover the printed quarter-note tempo. The earlier upstream equals-fringe dot repair remains an upstream-only addition pending app integration; no whole-file semantic parity claim. No models, dependencies or private fixtures added.",
       "notes": "Reviewed opening-tempo OCR anchor fallback: an out-of-bounds annotation start may resolve only to the opening measure when its original verified digits independently belong there. Existing equals-ink, vertical staff exclusion and printed pulse-unit checks remain unchanged. Positive and later-row negative synthetic regressions included. Prior pulse-unit/fractional quarter-BPM behavior retained. No private evidence included."
     },
     "TripletRhythmDetector.java": {

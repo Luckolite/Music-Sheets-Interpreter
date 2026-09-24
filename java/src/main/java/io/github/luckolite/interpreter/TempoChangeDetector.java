@@ -104,6 +104,13 @@ final class TempoChangeDetector {
         int tokenBottom = Math.min(height - 1, Math.round(token.bottom() * height));
         int tokenWidth = Math.max(2, tokenRight - tokenLeft + 1);
         int tokenHeight = Math.max(3, tokenBottom - tokenTop + 1);
+        // Whole-line OCR can pad small tempo digits with the taller direction
+        // text or parentheses. Size the equals strokes from the digits' ink,
+        // not that padding, while preserving the original search/anchor bounds.
+        int inkTop=height,inkBottom=-1;
+        for(int y=tokenTop;y<=tokenBottom;y++)for(int x=tokenLeft;x<=tokenRight;x++)
+            if((gray[y*width+x]&255)<=125){inkTop=Math.min(inkTop,y);inkBottom=Math.max(inkBottom,y);}
+        if(inkBottom>=inkTop)tokenHeight=Math.max(3,inkBottom-inkTop+1);
         int left = Math.max(0, tokenLeft - Math.max(tokenWidth, tokenHeight * 2));
         int right = Math.min(width - 1, tokenLeft - 1);
         int top = Math.max(0, tokenTop - tokenHeight / 4);
