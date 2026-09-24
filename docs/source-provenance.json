@@ -6,6 +6,12 @@
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "files": {
+    "FadedNoteheadRecovery.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/FadedNoteheadRecovery.java",
+      "source_sha256": "9d136681e31f5b29c0f21a7fe68f5f24fdd7cc6dab3fe57d64fa46373833c7c9",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "notes": "Reviewed working-tree helper recovers unlabelled pale filled heads using enclosed raw outlines, strong curvature, local contrast and independently printed and semantic stems. Twelve original synthetic regressions include a complete note extraction with pitch and duration. No score fixtures, dependencies or model changes."
+    },
     "PrintedNoteContrast.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedNoteContrast.java",
       "source_sha256": "df4dfa1737b32897474edb1c2485e8a0d840b4bc4db55df7e26db1345fa63731",
@@ -498,6 +504,10 @@
   "compact_tie_and_shaded_paper_review": {
     "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
     "boundary": "Scoped working-tree repairs recover complete compact returning ties with dot clearance and staff-covered crests, and stop an older held endpoint from bridging a later same-pitch attack. Crest occlusion is limited to short spans and pale arc pixels in the new recovery paths require local contrast. Existing arc scans use a paper-relative ink ceiling on shadowed backgrounds. Shaded paper texture is checked against local printed contrast before accepting semantic heads; nearby outlines protect pale interiors. Shaded staff projection uses contrasted thin strokes; a curled page edge requires five complete rules on both sides and rejects competing sixth rules. Thirty-one original synthetic Java regressions (including five pale-equals controls) and three Python annotation tests; exact source-page replays remain private. Native and standalone OCR now forward isolated measure-number candidates to existing geometry and sequence verification, preserving explicitly supplied annotations. The standalone pre-split head list differs from the app's bookkeeping list but applies the same filter before splitting. Existing unrelated OmrScoreInterpreter drift stays visible; its whole-file hash is not advanced. No commercial score, private library, phone log, model weight or new dependency is published. These bounded repairs do not establish complete score accuracy."
+  },
+  "pale_filled_note_recovery_review": {
+    "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+    "boundary": "Only the scoped recovery call and original helper/tests are ported. A bounded matched-input 24-page private replay recovered 17 source-reviewed notes with no existing note removal or pitch change. Four leading-rest fields changed when the newly recovered first attack took ownership of the preceding rest. A broader near-rectangular-pocket trial was rejected because it affected an existing head fragment and articulation ownership. Remaining clipped pockets, incomplete semantic heads and full library pitch/note accounting are not claimed solved. Existing unrelated OmrScoreInterpreter drift remains visible; its whole-file hash is deliberately not advanced. No private source image, library, annotations, logs, model weight or dependency is included. Native worker source manifest includes the helper; deployment is separate."
   },
   "scale_book_overlapping_staff_review": {
     "reviewed_app_commit": "4dad109507b3cc6ab5191b642bd6b5fa9330319a",

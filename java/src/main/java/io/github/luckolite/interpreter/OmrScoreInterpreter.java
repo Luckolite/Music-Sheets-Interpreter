@@ -43,6 +43,14 @@ final class OmrScoreInterpreter {
         if (staffs.isEmpty()) return new Analysis(List.of(), List.of());
         List<Component> rawHeadComponents = findComponents(labels, width, height,
                 OmrMeasurePostProcessor.NOTEHEAD);
+        for(Staff staff:staffs)for(FadedNoteheadRecovery.Head recovered:FadedNoteheadRecovery.find(
+                labels,gray,width,height,staff.gap,Math.round(staff.top-staff.gap),Math.round(staff.bottom+staff.gap))) {
+            float x=(recovered.left()+recovered.right())*.5f,y=(recovered.top()+recovered.bottom())*.5f;
+            if(rawHeadComponents.stream().anyMatch(head->Math.abs(head.centerX-x)<staff.gap*.8f
+                    &&Math.abs(head.centerY-y)<staff.gap*.65f))continue;
+            rawHeadComponents.add(new Component((recovered.right()-recovered.left()+1)*(recovered.bottom()-recovered.top()+1),
+                    recovered.left(),recovered.right(),recovered.top(),recovered.bottom(),x,y));
+        }
         rawHeadComponents.removeIf(head -> PrintedNoteContrast.paperTexture(gray,width,height,
                 head.minX,head.minY,head.maxX,head.maxY));
         List<Component> clefOrKeyComponents = findComponents(labels, width, height,
