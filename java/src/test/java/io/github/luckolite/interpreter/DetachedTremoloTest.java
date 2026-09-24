@@ -59,4 +59,22 @@ public class DetachedTremoloTest {
         assertEquals(4,ScoreNoteTiming.writtenDurationBeats(notes.get(0)),0);
         assertEquals(.125,NoteOrnament.tremoloBeats(notes.get(0).articulations()),0);
     }
+    @Test public void paleSlashesAreNotExtraNotes() {
+        build(1,3,false);
+        for(int y=114;y<=142;y++)for(int x=112;x<=128;x++)
+            if((gray[y*W+x]&255)==0)labels[y*W+x]=2;
+        for(int i=0;i<gray.length;i++)if((gray[i]&255)==0)gray[i]=(byte)145;
+        var notes=notes();assertEquals(1,notes.size());
+        assertEquals(5,notes.get(0).staffStep());
+        assertEquals(4,ScoreNoteTiming.writtenDurationBeats(notes.get(0)),0);
+        assertEquals(.125,NoteOrnament.tremoloBeats(notes.get(0).articulations()),0);
+    }
+    @Test public void paleRoundChordHeadsRemainNotes() {
+        build(1,0,false);
+        for(int cy:new int[]{118,127,136})for(int y=cy-4;y<=cy+4;y++)for(int x=112;x<=128;x++)
+            if(Math.pow((x-120)/8.,2)+Math.pow((y-cy)/4.,2)<=1)ink(x,y,2);
+        for(int i=0;i<gray.length;i++)if((gray[i]&255)==0)gray[i]=(byte)145;
+        var notes=notes();assertEquals(4,notes.size());
+        for(var n:notes)assertEquals(0,NoteOrnament.tremoloBeams(n.articulations()));
+    }
 }

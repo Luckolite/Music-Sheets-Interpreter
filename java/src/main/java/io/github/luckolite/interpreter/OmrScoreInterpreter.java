@@ -96,6 +96,7 @@ final class OmrScoreInterpreter {
         byte[] beamLabels=withoutBeamHeadIslands(labels,width,rejectedBeamHeads);
         heads.removeAll(entranceStrokeFragments(gray,width,height,heads,staffs));
         List<Component> shortTies=shortTieBowlHeads(labels,gray,width,height,heads,staffs);
+        shortTies.addAll(graceSlurHeads(gray,width,height,heads,staffs));
         heads.removeAll(shortTies);
         rejectedSlurHeads.addAll(shortTies);
         // A bright paper halo can enlarge a printed augmentation dot enough for the model to label it
@@ -4253,6 +4254,34 @@ final class OmrScoreInterpreter {
         return result;
     }
 
+    /** The small curved connector below a grace and its principal note has no
+     * independent stem. Its unequal endpoints are not the geometry of a tie. */
+    private static List<Component> graceSlurHeads(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> result=new ArrayList<>();if(gray==null)return result;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
+            float g=staff.gap;
+            if(head.area>g*g*.5f||head.maxX-head.minX+1>g*1.05f||head.maxY-head.minY+1>g*.8f)continue;
+            int threshold=slurInkThreshold(gray,width,height,head,g);
+            if(attachedRawStem(gray,width,height,head,g*.65f,Math.max(1,Math.round(g*.1f)),threshold)!=null)continue;
+            boolean grace=false,principal=false;
+            for(Component other:heads) {
+                float dx=other.centerX-head.centerX,dy=head.centerY-other.centerY;
+                if(other==head||nearestHeadStaff(staffs,other.centerY)!=staff||dy<g*.25f||dy>g*1.8f)continue;
+                if(dx< -g*.35f&&dx> -g*1.6f&&other.area>=head.area*1.05f
+                        &&other.maxX-other.minX+1<=g*1.1f
+                        &&attachedRawStem(gray,width,height,other,g*.65f)!=null)grace=true;
+                if(dx>g*.5f&&dx<g*2.8f&&other.area>=head.area*2.2f
+                        &&other.maxX-other.minX+1>=g
+                        &&attachedRawStem(gray,width,height,other,g*.65f)!=null)principal=true;
+            }
+            if(grace&&principal&&(rawSlurBowl(gray,width,height,head,g,threshold,true)
+                    ||rawSlurBowl(gray,width,height,head,g,Math.min(100,Math.round(threshold*.7f)),true)))result.add(head);
+        }
+        return result;
+    }
+
     /** Small semantic islands at a beam endpoint can borrow the actual note's stem.
      * Reject only a thin beam tip on a stem already attached to a larger head. */
     private static List<Component> beamJunctionHeads(byte[] gray,int width,int height,
@@ -4871,6 +4900,11 @@ final class OmrScoreInterpreter {
      * Inspect its complete raw component after removing thin, continuous staff rules. */
     private static boolean rawSlurBowl(byte[] gray,int width,int height,Component head,float gap) {
         int inkThreshold=slurInkThreshold(gray,width,height,head,gap);
+        return rawSlurBowl(gray,width,height,head,gap,inkThreshold,false);
+    }
+
+    private static boolean rawSlurBowl(byte[] gray,int width,int height,Component head,float gap,
+            int inkThreshold,boolean graceConnector) {
         int left=Math.max(0,Math.round(head.centerX-gap*2)),right=Math.min(width-1,Math.round(head.centerX+gap*2));
         int top=Math.max(0,Math.round(head.centerY-gap*1.2f)),bottom=Math.min(height-1,Math.round(head.centerY+gap*1.2f));
         int w=right-left+1,h=bottom-top+1;
@@ -4906,14 +4940,17 @@ final class OmrScoreInterpreter {
                 }
             }
             int span=maxX-minX+1,rise=maxY-minY+1;
-            if(minX==0||maxX==w-1||minY==0||maxY==h-1||overlap<head.area*.55f
-                    ||span<gap*1.25f||span<(head.maxX-head.minX+1)*1.5f||rise>gap*1.2f||span<rise*1.6f)continue;
+            if(minX==0||maxX==w-1||minY==0||maxY==h-1||overlap<head.area*(graceConnector?.35f:.55f)
+                    ||span<gap*(graceConnector?.9f:1.25f)||span<(head.maxX-head.minX+1)*1.5f
+                    ||rise>gap*1.2f||span<rise*(graceConnector?.95f:1.6f))continue;
             float[] centers=new float[3];int[] bins=new int[3];
             for(int x=minX;x<=maxX;x++)if(counts[x]>0) {
                 int bin=Math.min(2,(x-minX)*3/span);centers[bin]+=sums[x]/(float)counts[x];bins[bin]++;
             }
             if(bins[0]==0||bins[1]==0||bins[2]==0)continue;
             for(int i=0;i<3;i++)centers[i]/=bins[i];
+            if(graceConnector&&centers[1]-(centers[0]+centers[2])*.5f>=Math.max(1.1f,gap*.10f)
+                    &&Math.abs(centers[0]-centers[2])<=gap*.9f)return true;
             // Straight ledger extensions and small intact ovals lack this returning bend.
             // Compact grace slurs can be deeper than a shallow tie. Require a stronger
             // returning bend and closer endpoint heights when admitting that geometry.
@@ -6964,6 +7001,8 @@ final class OmrScoreInterpreter {
     private static int[] detachedTremolo(byte[] gray,int width,int height,Component head,float gap) {
         if(gray==null)return null;
         int radius=Math.max(3,Math.round(gap*.4f));
+        for(int bandThreshold:new int[]{55,170}) {
+        int edgeThreshold=bandThreshold==55?135:180;
         for(int direction:new int[]{1,-1})for(float shift:new float[]{0,-.15f,.15f})
                 for(float slope:new float[]{-.5f,-.35f,-.65f,-.8f}) {
             int cx=Math.round(head.centerX+shift*gap),edge=direction>0?head.maxY:head.minY;
@@ -6975,7 +7014,10 @@ final class OmrScoreInterpreter {
                 int shade=0;
                 if(y<=last)for(int dx=-radius;dx<=radius;dx++)
                     shade+=gray[(y+Math.round(slope*dx))*width+cx+dx]&255;
-                boolean ink=y<=last&&shade<(radius*2+1)*55;
+                // A light photocopy can preserve all three slanted strokes without
+                // any nearly-black pixels. Shape, spacing and bounded wings still
+                // have to prove the complete group; intensity alone is not a mark.
+                boolean ink=y<=last&&shade<(radius*2+1)*bandThreshold;
                 if(ink)run++;
                 else {if(run>=2&&run<=gap*.75f)bands.add(new int[]{y-run,y-1});run=0;}
             }
@@ -6987,8 +7029,8 @@ final class OmrScoreInterpreter {
                         ||Math.abs((direction>0?c1:c3)-edge)>gap*1.5f)continue;
                 int diagonal=0;
                 for(float center:new float[]{c1,c2,c3}) {
-                    float left=verticalInkCenter(gray,width,height,cx-radius,Math.round(center-slope*radius),gap);
-                    float right=verticalInkCenter(gray,width,height,cx+radius,Math.round(center+slope*radius),gap);
+                    float left=verticalInkCenter(gray,width,height,cx-radius,Math.round(center-slope*radius),gap,edgeThreshold);
+                    float right=verticalInkCenter(gray,width,height,cx+radius,Math.round(center+slope*radius),gap,edgeThreshold);
                     // Pixel-run centres are quantized to half pixels on small staves.
                     if(Float.isFinite(left)&&Float.isFinite(right)
                             &&left-right>=Math.max(1,Math.floor(gap*.15f))&&left-right<=gap*1.2f)diagonal++;
@@ -7001,7 +7043,7 @@ final class OmrScoreInterpreter {
                     int y=Math.round(center+slope*(x-cx));
                     if(y<2||y>=height-2){bounded=false;continue;}
                     for(int yy=Math.max(0,y-radius);yy<=Math.min(height-1,y+radius);yy++) {
-                        dark=(gray[yy*width+x]&255)<135?dark+1:0;
+                        dark=(gray[yy*width+x]&255)<edgeThreshold?dark+1:0;
                         if(dark>=Math.max(4,Math.round(gap*.3f)))bounded=false;
                     }
                 }
@@ -7009,14 +7051,15 @@ final class OmrScoreInterpreter {
                         one[0]-Math.round(gap*.45f),three[1]+Math.round(gap*.45f)};
             }
         }
+        }
         return null;
     }
 
-    private static float verticalInkCenter(byte[] gray,int width,int height,int x,int y,float gap) {
-        if(y<0||y>=height||(gray[y*width+x]&255)>=135)return Float.NaN;
+    private static float verticalInkCenter(byte[] gray,int width,int height,int x,int y,float gap,int threshold) {
+        if(y<0||y>=height||(gray[y*width+x]&255)>=threshold)return Float.NaN;
         int top=y,bottom=y,limit=Math.round(gap*1.2f);
-        while(top>0&&y-top<limit&&(gray[(top-1)*width+x]&255)<135)top--;
-        while(bottom<height-1&&bottom-y<limit&&(gray[(bottom+1)*width+x]&255)<135)bottom++;
+        while(top>0&&y-top<limit&&(gray[(top-1)*width+x]&255)<threshold)top--;
+        while(bottom<height-1&&bottom-y<limit&&(gray[(bottom+1)*width+x]&255)<threshold)bottom++;
         if(y-top==limit||bottom-y==limit)return Float.NaN;
         return (top+bottom)*.5f;
     }
