@@ -47,7 +47,11 @@ final class StaffPitchTrack {
                 }
             }
             for(var lines:RawStaffLineDetector.detect(projection,stripWidth,last-first)) {
-                if(lines.gap()<gap*.8f||lines.gap()>gap*1.25f)continue;
+                // A four-rule semantic group can be divided into four intervals,
+                // compressing its seed to about three quarters of the true gap.
+                // Complete raw rules, nearby phase and broad track agreement below
+                // must still independently establish any larger spacing.
+                if(lines.gap()<gap*.8f||lines.gap()>gap*1.45f)continue;
                 float d=Math.abs(lines.bottom()+first-bottom);
                 // Broad straight-rule evidence anchors the physical staff phase.
                 // A locally shifted group must be unambiguous before replacing
