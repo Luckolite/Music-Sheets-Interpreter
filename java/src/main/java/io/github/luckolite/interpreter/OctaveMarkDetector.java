@@ -31,7 +31,8 @@ final class OctaveMarkDetector {
         combined.addAll(printedWords(gray,width,height,staffs));
         if(combined.isEmpty())return notes;
         List<Span> spans=new ArrayList<>();
-        for(var word:combined) {
+        for(var sourceWord:combined) {
+            var word=directionAfterMeasureNumber(sourceWord);
             int shift=shift(word.text());if(shift==0)continue;
             var owner=owner(word,staffs,shift,height);if(owner==null)continue;
             float gap=owner.gap(),left=word.left()*width-gap*.65f;
@@ -75,6 +76,15 @@ final class OctaveMarkDetector {
         return List.copyOf(result);
     }
     private record InkBox(int left,int top,int right,int bottom,int area) { }
+    /** OCR may join a system number to its parenthesized continuation mark.
+     * Keep the direction's own horizontal anchor, not the preceding bar number. */
+    private static PlayingTechniqueDetector.Word directionAfterMeasureNumber(PlayingTechniqueDetector.Word word) {
+        if(word.text()==null)return word;
+        var match=java.util.regex.Pattern.compile("^\\s*\\d{1,4}\\s+(\\((?:8v[ab]|15m[ab])\\)[.\\s_\\-–—]*)$",java.util.regex.Pattern.CASE_INSENSITIVE).matcher(word.text());
+        if(!match.matches())return word;
+        float left=word.left()+(word.right()-word.left())*match.start(1)/word.text().length();
+        return new PlayingTechniqueDetector.Word(match.group(1),left,word.top(),word.right(),word.bottom());
+    }
     static List<PlayingTechniqueDetector.Word> printedWords(byte[] gray,int width,int height,
             List<PlayingTechniqueDetector.Staff> staffs) {
         List<PlayingTechniqueDetector.Word> words=new ArrayList<>();
@@ -224,28 +234,59 @@ final class OctaveMarkDetector {
         int y1=Math.max(0,Math.round(top-gap*.15f)),y2=Math.min(height-1,Math.round(bottom+gap*.4f));
         int best=-1;
         for(int y=y1;y<=y2;y++) {
-            int first=-1,last=-1,count=0,shortDots=0,interruptions=0,x=left;
+            int first=-1,last=-1,count=0,shortDots=0,interruptions=0,x=left,scanY=y;
             while(x<width) {
                 int blank=0;
-                while(x<width&&(gray[y*width+x]&255)>=165){blank++;x++;}
+                while(x<width&&(gray[scanY*width+x]&255)>=165) {
+                    // Once a real dashed chain is established, follow a one-pixel
+                    // scan skew between dashes instead of dropping the octave mid-line.
+                    boolean found=false;
+                    if(count>=3)for(int offset:new int[]{-1,1}) {
+                        int yy=scanY+offset;
+                        if(yy>=0&&yy<height&&Math.abs(yy-y)<=gap
+                                &&x+1<width&&(gray[yy*width+x]&255)<165
+                                &&(gray[yy*width+x+1]&255)<165) {
+                            scanY=yy;found=true;break;
+                        }
+                    }
+                    if(found)break;
+                    blank++;x++;
+                }
                 if(blank>gap*(count==0?2:1.6f))break;
-                int a=x;while(x<width&&(gray[y*width+x]&255)<165)x++;
+                int a=x;while(x<width&&(gray[scanY*width+x]&255)<165)x++;
                 int length=x-a;
                 if(length<2)continue;
                 if(length>gap*1.65f)break;
                 boolean tall=false;
                 for(int cx=a;cx<x;cx++) {
-                    int ya=y,yb=y;
+                    int ya=scanY,yb=scanY;
                     while(ya>0&&(gray[(ya-1)*width+cx]&255)<165)ya--;
                     while(yb+1<height&&(gray[(yb+1)*width+cx]&255)<165)yb++;
                     if(yb-ya+1>Math.max(3,gap*.35f)){tall=true;break;}
                 }
-                if(tall){if(count==0&&a<start)continue;if(count>0&&++interruptions<=1)continue;break;}
+                if(tall){
+                    if(count>=3&&terminalHook(gray,width,height,a,x-1,scanY,gap)){last=x-1;count++;break;}
+                    if(count==0&&a<start)continue;if(count>0&&++interruptions<=1)continue;break;
+                }
                 if(length<gap*.18f)shortDots++;
                 if(first<0)first=a;last=x-1;count++;
             }
             if(count>=Math.max(minimum,shortDots>count/2?5:3)&&last-first>=gap*3)best=Math.max(best,last);
         }
         return best<0?-1:best+gap*.55f;
+    }
+    private static boolean terminalHook(byte[] gray,int width,int height,int left,int right,int y,float gap) {
+        if(right-left+1<gap*.3f)return false;
+        boolean hook=false;
+        for(int x=left;x<=right;x++) {
+            int a=y,b=y;
+            while(a>0&&(gray[(a-1)*width+x]&255)<165)a--;
+            while(b+1<height&&(gray[(b+1)*width+x]&255)<165)b++;
+            if(b-a+1>Math.max(3,gap*.35f)) {
+                if(x<right-Math.max(2,gap*.2f)||b-a+1>gap*1.3f)return false;
+                hook=true;
+            }
+        }
+        return hook;
     }
 }

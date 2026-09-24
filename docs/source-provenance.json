@@ -121,7 +121,9 @@
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
-      "source_sha256": "6e986cc9d7bfe93171d90d4df885b4818e27813f13ac9f7a03a88766ce8d63be"
+      "source_sha256": "b334214cec1149239f24a674d0198d2f8ba7ef34188633c6ccc34b7e98fa8c0f",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "latest_review": "Scoped working-tree port: verified OCR counts above a heavy multi-rest can explain mislabeled digit ink, including multi-digit counts. Real note ink elsewhere still vetoes expansion. Four original generated regressions; no private fixtures, dependencies or model changes."
     },
     "NoteArticulation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulation.java",
@@ -211,7 +213,8 @@
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
-      "source_sha256": "44704cbc2b7c026e934b3f705ec3657ddc0386478e1e9d25731cbe95ca76e2fb",
+      "source_sha256": "99762a65b7d627e8758bbc8fc9aa8a091610bc359c9009457eb35d3e9dae156e",
+      "pulse_dot_review": "Scoped working-tree port: a second dark-core component pass recovers an augmentation dot connected to the pulse by a pale scan bridge, only when its result is exactly the dotted version of the original unit. Three original generated controls retain undotted and faint isolated-dot readings. Prior upstream-only equals-fringe behavior remains documented below.",
       "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "latest_review": "Scoped working-tree parity: size equals-sign strokes from BPM digit ink instead of a padded whole-line OCR box. Retains separated-component, placement and pulse checks; original padded-digit and connected-letter controls. The app desktop adapter and standalone OCR parser also accept a closing parenthesis/bracket after tempo digits and exclude that punctuation from the digit bounds. Four original parser controls and private actual-page verification recover the printed quarter-note tempo. The earlier upstream equals-fringe dot repair remains an upstream-only addition pending app integration; no whole-file semantic parity claim. No models, dependencies or private fixtures added.",
       "notes": "Reviewed opening-tempo OCR anchor fallback: an out-of-bounds annotation start may resolve only to the opening measure when its original verified digits independently belong there. Existing equals-ink, vertical staff exclusion and printed pulse-unit checks remain unchanged. Positive and later-row negative synthetic regressions included. Prior pulse-unit/fractional quarter-BPM behavior retained. No private evidence included."
@@ -256,8 +259,9 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "3d40db613b43bfa589f0a996328bfb820d842b3627b3339788b7947e99d4a187",
-      "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b"
+      "source_sha256": "790d04670331e5be6ab9ec68b1ea2dc90f6dc7cbcfe1ed97305c32e791d6bf7a",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "latest_review": "Scoped working-tree port: split an OCR-joined system number from a complete parenthesized octave continuation, preserve its horizontal anchor, follow bounded one-pixel scan skew after an established dashed chain, and include a verified terminal hook. Eight original generated controls cover continuation prefixes, phrase rejection, skew, gaps and terminal boundaries. No private score imagery or annotations included."
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",

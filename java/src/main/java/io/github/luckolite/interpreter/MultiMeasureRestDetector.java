@@ -20,7 +20,7 @@ final class MultiMeasureRestDetector {
                 || labels.length != width * height || gray.length != labels.length
                 || measures == null || measures.isEmpty() || tokens == null)
             return List.of();
-        List<RestBarCandidate> restBars = candidateRestBars(labels, gray, width, height, measures);
+        List<RestBarCandidate> restBars = candidateRestBars(labels, gray, width, height, measures,tokens);
         if (restBars.isEmpty()) return List.of();
 
         List<MeasureNumberReconciler.NumberToken> readings = new ArrayList<>(tokens);
@@ -47,6 +47,10 @@ final class MultiMeasureRestDetector {
     /** Returns note-free windows containing the heavy bar used for a multi-rest. */
     static List<RestBarCandidate> candidateRestBars(byte[] labels, byte[] gray, int width,
                                                      int height, List<MeasureRegion> measures) {
+        return candidateRestBars(labels,gray,width,height,measures,List.of());
+    }
+    private static List<RestBarCandidate> candidateRestBars(byte[] labels, byte[] gray, int width,
+            int height,List<MeasureRegion> measures,List<MeasureNumberReconciler.NumberToken> tokens) {
         if (labels == null || gray == null || width <= 0 || height <= 0
                 || labels.length != width * height || gray.length != labels.length
                 || measures == null || measures.isEmpty()) return List.of();
@@ -86,6 +90,14 @@ final class MultiMeasureRestDetector {
                         new RestBarCandidate(index, parent));
                 if (count != null && aboveStaff(count, labels, gray, width, height, parent))
                     countGlyph = count;
+                // The shape-only fallback reads single digits. A complete OCR
+                // count can also explain mislabeled ink above a multi-rest,
+                // but never an actual note elsewhere in the bar.
+                for(var token:tokens)if(token.value()>=2&&token.value()<=32
+                        &&token.left()>=parent.left()&&token.right()<=parent.right()
+                        &&aboveStaff(token,labels,gray,width,height,parent)
+                        &&(countGlyph==null||countGlyphHeads(token,labels,width,height,noteRegions.get(index))
+                        >countGlyphHeads(countGlyph,labels,width,height,noteRegions.get(index))))countGlyph=token;
             }
             // A real multi-measure rest owns an otherwise note-free visual measure. Looking only
             // at the sliding window is not enough: an ordinary written measure can contain a

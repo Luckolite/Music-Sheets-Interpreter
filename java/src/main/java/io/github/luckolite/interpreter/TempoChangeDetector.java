@@ -162,6 +162,15 @@ final class TempoChangeDetector {
     /** Quarter-beat length of a filled tempo note, retaining its flag and augmentation dot. */
     private static double printedBeatUnit(MeasureNumberReconciler.NumberToken token,
             byte[] gray, int width, int height, int equalsLeft) {
+        double normal=printedBeatUnit(token,gray,width,height,equalsLeft,200);
+        double core=printedBeatUnit(token,gray,width,height,equalsLeft,165);
+        // A light scan bridge can attach the dot to its notehead. Only use the
+        // darker segmentation to recover a complete dot, not to erase faint ink.
+        return core==normal*1.5?core:normal;
+    }
+
+    private static double printedBeatUnit(MeasureNumberReconciler.NumberToken token,
+            byte[] gray, int width, int height, int equalsLeft,int inkLimit) {
         int unit=Math.max(3,Math.round((token.bottom()-token.top())*height));
         // OCR boxes may include generous vertical padding (ML Kit's 38px box surrounds
         // 23px digits here). Measure the printed ink before comparing note/dot geometry.
@@ -179,7 +188,7 @@ final class TempoChangeDetector {
         List<int[]> parts=new ArrayList<>();
         for(int sy=0;sy<rh;sy++)for(int sx=0;sx<rw;sx++) {
             int seed=sy*rw+sx;
-            if(seen[seed]||(gray[(top+sy)*width+left+sx]&255)>200)continue;
+            if(seen[seed]||(gray[(top+sy)*width+left+sx]&255)>inkLimit)continue;
             int count=1,read=0,minX=sx,maxX=sx,minY=sy,maxY=sy;
             seen[seed]=true;queue[0]=seed;
             while(read<count) {
@@ -189,7 +198,7 @@ final class TempoChangeDetector {
                     int nx=x+dx,ny=y+dy;
                     if(nx<0||ny<0||nx>=rw||ny>=rh)continue;
                     int next=ny*rw+nx;
-                    if(!seen[next]&&(gray[(top+ny)*width+left+nx]&255)<=200){seen[next]=true;queue[count++]=next;}
+                    if(!seen[next]&&(gray[(top+ny)*width+left+nx]&255)<=inkLimit){seen[next]=true;queue[count++]=next;}
                 }
             }
             parts.add(new int[]{left+minX,left+maxX,top+minY,top+maxY,count});
