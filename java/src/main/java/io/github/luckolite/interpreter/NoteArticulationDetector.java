@@ -190,9 +190,10 @@ final class NoteArticulationDetector {
             for(int n=0;n<notes.size();n++) {
                 Anchor note=notes.get(n);
                 float dx=Math.abs(glyph.x()-note.x)/note.gap,dy=Math.abs(glyph.y()-note.y)/note.gap;
-                if(dx>.7f||dy<.7f||dy>5.5f)continue;
+                if(dx>.7f||dy<.7f||dy>6f)continue;
                 int candidate=classify(glyph,width,note.gap,glyph.y()<note.y);
-                if(candidate==0)continue;
+                if(candidate==0)candidate=roundedAngular(glyph,width,note.gap,glyph.y()<note.y);
+                if(candidate==0||dy>5.5f&&candidate!=NoteArticulation.MARCATO)continue;
                 if(semanticNotation&&(!raw||candidate!=NoteArticulation.STACCATO||nearHead(glyph,notes)))continue;
                 if(candidate==NoteArticulation.TENUTO&&nearHead(glyph,notes))continue;
                 if(raw&&candidate==NoteArticulation.TENUTO
@@ -305,6 +306,18 @@ final class NoteArticulationDetector {
         return fit(g,width,above?1:2);
     }
     /** Both precision and coverage matter: a slur, text letter or isolated slash is not a >. */
+    /** Rounded-arm recovery is only for detached marks, never the head-demotion path. */
+    private static int roundedAngular(Glyph g,int width,float gap,boolean above) {
+        float w=g.right-g.left+1,h=g.bottom-g.top+1;
+        if(w>=gap*.75f&&w<=gap*2.1f+1&&h>=gap*.35f&&h<=gap*1.25f&&w/h>=1.25f
+                &&RoundedAngularArticulation.matches(g.pixels,width,g.left,g.top,g.right,g.bottom,0))
+            return NoteArticulation.ACCENT;
+        if(w>=gap*.5f&&w<=gap*1.3f&&h>=gap*.6f&&h<=gap*1.7f&&h/w>=.8f
+                &&RoundedAngularArticulation.matches(g.pixels,width,g.left,g.top,g.right,g.bottom,above?1:2))
+            return NoteArticulation.MARCATO;
+        return 0;
+    }
+
     private static boolean fit(Glyph g,int width,int kind) {
         int hits=0;boolean[] bins=new boolean[12];
         for(int p:g.pixels) {

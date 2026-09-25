@@ -5,7 +5,23 @@
     "Luckolite"
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
+  "detached_marks_and_grace_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Scoped working-tree repairs recover detached rounded-arm articulations, tolerate an antialiased thin staff-rule witness beside a finite beam, and distinguish solitary grace flags from crossing slashes. Paired grace heads veto the solitary fallback even when one stem is too faint to trace. Thirty-four original procedural regressions accompany the three repairs. Full private page comparisons and source review establish the bounded deltas, not exhaustive score accuracy. One pre-existing false beam-hook note is tracked separately for removal; no private scan or annotations are published. No model weights, dependencies or app deployment change."
+  },
   "files": {
+    "RoundedAngularArticulation.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/RoundedAngularArticulation.java",
+      "source_sha256": "aef1488d606bc4db36c5431c4a62e870ebf45b3c60dfd53f37b514516e36df10",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed original JDK-only detached-mark fallback for rounded angular accent and marcato arms. Existing strict classification and notehead-demotion rules remain unchanged. Seventeen original procedural regressions; private full-page comparisons reviewed for ownership and unchanged notes. No score pixels or model changes."
+    },
+    "SlashedGraceFlagInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/SlashedGraceFlagInk.java",
+      "source_sha256": "44795e52640adff864bbb3708d44eda32d8fdd1aafa105e7cde11ed258a1dbc3",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed original JDK-only crossing-slash and flag evidence for small solitary upward-stemmed grace notes. A nearby small companion vetoes this recovery even when its faint stem cannot be traced, preserving shared double beams. Ten procedural regressions and private source comparisons; no private fixtures, new dependencies or model changes."
+    },
     "CurvedStaffTail.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CurvedStaffTail.java",
       "source_sha256": "75843c7d13861b515212f10eb6ac02d9de4aec4882f00799bf70dd505be9a707",
@@ -151,9 +167,9 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "1d5e31a1a4a2701f36ccea0f3fd2724b7fc5c3e3847a5cb7f60f215af6aa5405",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "notes": "Allow one pixel of rounding at the accent-width upper bound while retaining full two-arm fit, coverage, ownership and height constraints. Four original synthetic regressions cover fractional spacing, separate staff chords, isolated arms and wide hairpins. Private replay/source review verifies the new accent flags; no source images or model changes."
+      "source_sha256": "497bdfd1f07264fa1fba62e67dbb77a4c002d038f08e25adfd6e28978150beac",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Retains prior fractional-width safeguard and adds the reviewed RoundedAngularArticulation detached-mark fallback. Only marcato may use the extended vertical reach; strict classification and notehead demotion are unchanged. Original synthetic controls and private source-checked full-page deltas; no score pixels or model changes."
     },
     "NoteOrnament.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",
@@ -167,7 +183,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "4b74cfbe5f712efa66a88b5e66435bd1b25df70a9ffaceb9d45e1697b49fc322",
+      "source_sha256": "ffed89cb3c091ee8d0a94aa357ccc2b1073aea13fd84c4fafc1f854d18a3f300",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",

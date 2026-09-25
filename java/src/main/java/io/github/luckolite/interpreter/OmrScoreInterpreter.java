@@ -7692,17 +7692,25 @@ final class OmrScoreInterpreter {
             int threshold=BeamInkThreshold.at(gray,width,height,Math.round(head.centerX),
                     Math.round(head.centerY-staff.gap*5),Math.round(head.centerY+staff.gap*5),staff.gap)+5;
             int[] own=attachedRawStem(gray,width,height,head,staff.gap*.75f,Math.max(1,Math.round(staff.gap*.16f)),threshold);
+            boolean pairedGrace=false;
             if(own!=null&&Math.abs(own[1]-head.centerY)<staff.gap*4.8f)for(Component other:heads) {
                 if(other==head||Math.abs(other.centerX-head.centerX)<staff.gap*.95f
                         ||Math.abs(other.centerX-head.centerX)>staff.gap*3
                         ||Math.abs(other.centerY-head.centerY)>staff.gap*1.3f
                         ||other.maxX-other.minX+1>staff.gap*1.05f
                         ||other.maxY-other.minY+1>staff.gap*1.2f)continue;
+                // A faint companion stem may fail tracing. Its small oval still
+                // rules out treating a shared beam corner as a solitary slash.
+                pairedGrace=true;
                 int[] pair=attachedRawStem(gray,width,height,other,staff.gap*.75f,Math.max(1,Math.round(staff.gap*.16f)),threshold);
                 if(pair==null||Math.abs(pair[1]-other.centerY)>staff.gap*4.8f)continue;
                 int paired=PairedGraceBeamInk.count(gray,width,height,own,pair,staff.gap);
                 if(paired>0)return paired;
             }
+            if(!pairedGrace&&own!=null&&own[2]<0
+                    &&head.centerY-own[1]<staff.gap*3.3f
+                    &&SlashedGraceFlagInk.count(gray,width,height,head.centerX,head.centerY,own[0],staff.gap)==1)
+                return 1;
         }
         if(count<2||gray==null)return count;
         int[] stem=attachedRawStem(gray,width,height,head,staff.gap);
@@ -8331,7 +8339,7 @@ final class OmrScoreInterpreter {
         float[] origin=staff.pitchTrack==null?null:staff.pitchTrack.at(x);
         if(origin!=null)gap=origin[1];
         int thickMinimum=Math.max(3,(int)Math.ceil(gap*.3f));
-        int thinMaximum=Math.max(1,(int)Math.floor(gap*.18f));
+        int thinMaximum=Math.max(1,(int)Math.floor(gap*.24f));
         int witnessLength=Math.max(4,Math.round(gap*.75f));
         for(int direction:new int[]{-1,1}) {
             int thickColumns=0,thinColumns=0,taperColumns=0,beamShift=0,tailInterruption=0;
