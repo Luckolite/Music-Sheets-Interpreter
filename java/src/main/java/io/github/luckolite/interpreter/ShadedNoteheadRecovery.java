@@ -53,7 +53,8 @@ final class ShadedNoteheadRecovery {
                 int x=Math.round(cx+side*gap*(1.3f+dx*.2f)),y=Math.round(cy+dy*gap*.2f);
                 if(x>=0&&x<width&&y>=0&&y<height)paper[count++]=gray[y*width+x]&255;
             }
-            Arrays.sort(paper,0,count);if(count<12||paper[count*3/4]<220||paper[count*3/4]-fill<30)continue;
+            Arrays.sort(paper,0,count);if(count<12||paper[count*3/4]<205
+                    ||paper[count*3/4]-fill<(paper[count*3/4]<220?50:30))continue;
             int down=stem(labels,gray,width,height,left-3,cy,gap,1);
             int up=stem(labels,gray,width,height,right+3,cy,gap,-1);
             if(down<0&&up<0)continue;

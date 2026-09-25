@@ -132,8 +132,8 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
                 unbeamedDurationBeats, 1);
     }
 
-    /** Supported printed tuplets: three in two, or five/seven in four. */
-    public double durationScale() { return tupletDivisor == 3 ? 2.0 / 3.0 : tupletDivisor == 5 ? 4.0 / 5.0 : tupletDivisor == 7 ? 4.0 / 7.0 : 1.0; }
+    /** Supported printed tuplets: three in two, or five/six/seven in four. */
+    public double durationScale() { return (tupletDivisor == 3 || tupletDivisor == 6) ? 2.0 / 3.0 : tupletDivisor == 5 ? 4.0 / 5.0 : tupletDivisor == 7 ? 4.0 / 7.0 : 1.0; }
 
     public ScoreNoteEvent(int measureIndex, float positionInMeasure, int staffStep,
                           int staffIndex, int staffCount, float pageY,
@@ -180,7 +180,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
         articulations &= NoteArticulation.ALL;
         if (!Float.isFinite(followingRestBeats) || followingRestBeats < 0 || followingRestBeats > 16)
             followingRestBeats = 0;
-        if (tupletDivisor != 3 && tupletDivisor != 5 && tupletDivisor != 7) tupletDivisor = 1;
+        if (tupletDivisor != 3 && tupletDivisor != 5 && tupletDivisor != 6 && tupletDivisor != 7) tupletDivisor = 1;
         augmentationDots = Math.max(0, Math.min(2, augmentationDots));
         beamCount = Math.max(0, Math.min(4, beamCount));
         if (writtenAccidental < ACCIDENTAL_FLAT || writtenAccidental > ACCIDENTAL_DOUBLE_SHARP)

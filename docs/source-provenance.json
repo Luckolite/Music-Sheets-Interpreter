@@ -9,6 +9,10 @@
     "Luckolite"
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
+  "compact_triplet_sextuplet_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Retains distinct compact triplets in wide measures with the existing onset boundary and all raster/numeral/group guards. Adds explicit printed six-in-four groups with bounded upper-hook/lower-bowl proof, original-pixel contrast, six equal consecutive attacks and rejection of independently separate beam groups. Divisor6 retains4/6 duration and the triplet1/12 grid. All detector note copies retain octaveShift. Twenty original synthetic tests cover geometry, invalid groups, exact relative timing, total duration, grid and state retention;151 focused tests and a private24-page comparison confirm24 source-correct divisor changes with no other fields changed. Android integer cache whitelist accepts6; native adapters and converter retain it generically. Performance MusicXML exports exact duration using equivalent3:2 notation, not source6 engraving. Android cache round-trip regression is added but device execution is not claimed. No model, dependency, score image or private annotation is published; remaining audit issues stay open."
+  },
   "rest_rule_edge_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Additive narrow-rule-mask fallback extends only one adjacent row backed by three staff gaps of continuous original ink and existing rule phase. Original masks/detections remain first. Fallback-only moving-note stem ownership rejects downward flags; full staff identity deduplicates new rest-dot records. No source pixels are changed. Seventeen original procedural tests accompany the repair;191 focused tests pass. A matched-input private24-page replay adds17 source-confirmed rests and18 related timing fields, with zero other changed fields or removed events. No commercial score evidence, model, external dependency or deployment change is included; remaining score-audit work is not claimed complete."
@@ -26,11 +30,17 @@
     "boundary": "Scoped working-tree repairs recover detached rounded-arm articulations, tolerate an antialiased thin staff-rule witness beside a finite beam, and distinguish solitary grace flags from crossing slashes. Paired grace heads veto the solitary fallback even when one stem is too faint to trace. Thirty-four original procedural regressions accompany the three repairs. Full private page comparisons and source review establish the bounded deltas, not exhaustive score accuracy. One pre-existing false beam-hook note is tracked separately for removal; no private scan or annotations are published. No model weights, dependencies or app deployment change."
   },
   "files": {
+    "TupletSixGlyph.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TupletSixGlyph.java",
+      "source_sha256": "213b971939bdc3751fcdd30a4dc8ef196650c27922b4900aad3abbdda429c27b",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed bounded original geometric six classifier; JDK-only, standalone package adaptation and original procedural tests. See compact_triplet_sextuplet_review."
+    },
     "ShadedChordHeadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedChordHeadRecovery.java",
-      "source_sha256": "5e2dd500ee4362c311795b05a45ff130df6f3158e8bee7f185e8dd805868d519",
+      "source_sha256": "66048351897795f0566d58c189a45634ed6e4d3728c0ed9c44e6b47857182afb",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "notes": "Reviewed original JDK-only recovery of two to four shaded curved lobes with shared stem evidence, bounded scale and independent ledger rails. Fourteen synthetic regressions plus guarded accidental and tie integration tests accompany it. Private source evidence remains private; no dependencies or weight changes."
+      "notes": "Reviewed original JDK-only recovery of two to four shaded curved lobes with shared stem evidence, bounded scale and independent ledger rails. Moderately dim paper additionally requires at least fifty levels of median fill contrast. Fourteen original regressions plus eight shared contrast controls and guarded accidental/tie tests accompany it. Private source evidence remains private; no dependencies or weight changes."
     },
     "RestStaffRuleEdge.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestStaffRuleEdge.java",
@@ -217,13 +227,13 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "2dc85691502de8e0e9f4a1ee03e045560e199a5e7ccb06d54dcb9f6debfa0018",
+      "source_sha256": "d1f87ec3442972aeef7c1e02f345aa3dece6e05a82fc660c29797e6c2d90d3bc",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "1dea61e69c633aff190746ec3dfa45008c483235297b349cd8c296d8f31a6838",
+      "source_sha256": "36fc5e07adac9d0d4953e8d597be95f48aaf660fb051c609f62c46345b0b4aeb",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
@@ -259,12 +269,14 @@
     },
     "ScoreNoteEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteEvent.java",
-      "source_sha256": "7f185bec428be852472e8beee0c36682e5a3f94c0930f31e3ef70cb74ea1f6f3",
-      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
+      "source_sha256": "28e385fa75d69ebeeb0e65d7bb969f75110c3146e0572ff61a006ca89ddb8719",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "sextuplet_review": "Preserves integer6 and exact4/6 duration scale; unsupported divisors still normalize to1. Existing constructors and copy fields remain compatible. See compact_triplet_sextuplet_review."
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "99d2a57e4b069088819dede6a208cb0ea2dd8a128931717207bee4a2100a139d",
+      "source_sha256": "b1d9422998e34f1abdf9c82fab667ca923c05624328ebcab7211a7c70617f017",
+      "sextuplet_review": "Divisor6 receives the same1/12-quarter rhythmic grid as divisor3. Original onset and duration regressions; no other timing change. See compact_triplet_sextuplet_review.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
@@ -305,7 +317,8 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "0a7d8fafe8302a032e4dcdff460402d2e9602925ee655cdc6b25e8efa3eb8f4c",
+      "source_sha256": "9514642a07f43542a6ea7090d86b8200c9da91dc8543ef5fdb7bc40613ddd5d6",
+      "sextuplet_review": "Retains genuinely distinct compact triplets and adds explicit six-in-four numeral/group proof with separate-beam rejection. Original note state including octaveShift survives all copies. See compact_triplet_sextuplet_review.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
@@ -631,6 +644,12 @@
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
+    "PaleSingleBeamInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PaleSingleBeamInk.java",
+      "source_sha256": "187d4755c93fae7cb4b51eb2696e4fdcd7ea8797cf0008c2a73fcb58c608fdce",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Independent thick near-straight raw beam evidence is required when retrying a previously zero-beam full-sized head with a very pale centered shaft. Original synthetic controls reject thin rules, slurs, short tenutos and detached bows. No private score pixels or data, model weights, or dependencies are included. Core integration is reviewed separately; this entry covers the identical helper."
+    },
     "PaleChordHeadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PaleChordHeadRecovery.java",
       "source_sha256": "dcc94daeca5347fafc270e0bbe31c78ce951dcfca1b378db472e641fff24be6a",
@@ -687,9 +706,15 @@
     },
     "ShadedNoteheadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedNoteheadRecovery.java",
-      "source_sha256": "f315d7bc79efc251e59aefddb559d25e7078ee1c548c378573ff8c1c6ee74369",
+      "source_sha256": "fb67d24dfe119ca62ffa5df2d4f70f52a6c9c2d7b0ea5c064f0aeeb68900f95f",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "HollowLedgerCenter.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/HollowLedgerCenter.java",
+      "source_sha256": "d01137b8e6b0a917583f1d18a73c2215fae78a02b0eebc8c58f694645af1bb69",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed JDK-only working-tree helper establishing enclosed hollow-note counters on both sides of an independently detected ledger. Ported with ten original synthetic regressions, including decoder entry-point correction and adjacent-space abstention. No score pixels, private fixtures, Android dependencies or model changes. Core integration and combined validation are coordinated with the accompanying interpreter update."
     },
     "OutlinedHookHead.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OutlinedHookHead.java",
@@ -741,6 +766,12 @@
     },
     "GlyphResources.java": {
       "notes": "New standalone JDK-only, lazy classpath resource adapter. BundledGlyphResourcesTest and test_glyph_resources.py cover loading, matching, complete manifest accounting, hashes and tampering. No app source or private assets imported."
+    },
+    "TupletNumeralNeighbors.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TupletNumeralNeighbors.java",
+      "source_sha256": "a833692181c9d4f6585b04051b8e59809928161834e4466e01da0942d3451823",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed JDK-only local typography guard distinguishing an isolated tuplet numeral from tightly spaced baseline-aligned text. Thirteen original synthetic tests; existing horizontal-fingering regressions unchanged and preserved after tightening spacing. No private scan, annotation, dependency or model."
     }
   },
   "ocr_adapter_review": {
@@ -865,5 +896,9 @@
     "adapters": "SheetInterpreter invokes common/cut-time reading, fingering filtering, portable ornament ownership, glyph-backed dynamics and navigation after final geometry. Optional MusicalOcr uses caller-owned PortableOcr.Inference and MeterFontMatcher for bounded staff-local OCR; ONNX is not a default Java dependency. Native decoder transport carries core analysis, not the app guide-cache wire. App NativePageGuide also retains the shared staffless-page guard.",
     "assets": "Only 27 reviewed single-glyph Bravura/Leland PNG templates and two complete SIL OFL notices are bundled. The separate resource manifest records source attribution, exact sizes and SHA-256. Build fingerprinting covers all resource bytes. No score scans, font binaries, new OCR models or segmentation weights were added.",
     "tests": "New and updated Java tests use original procedural shapes or generic logical records. Existing standalone-only controls are preserved; an Android-only OCR-adapter test is replaced by public API coverage. App converter tests are adapted to shared record/page/offset behavior rather than importing the converter."
+  },
+  "faded_ownership_and_rest_boundary_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected global working-tree changes recover a single independently thick pale beam, faint-shaft paired and slashed grace ownership, and hollow ledger pitch from enclosed white counters. A tiny inner-beam fragment may use a faint true-owner shaft only with existing independent paired-beam and no-rounded-head proof. Filled-head augmentation rejects unresolved three-pixel specks while preserving prior hollow-head faint-dot evidence. Raw and tracked staff frames must corroborate a missing inner bar; original boundaries remain and every new boundary retains the existing geometric guards. Original procedural regressions accompany each repair. Private matched-input page replay supports only the reviewed deltas, not whole-score completion. No private score, annotation, image, model weight, external dependency or deployment is included."
   }
 }

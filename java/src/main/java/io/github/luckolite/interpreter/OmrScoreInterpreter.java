@@ -5120,6 +5120,9 @@ final class OmrScoreInterpreter {
                         ||Math.abs(main.centerY-head.centerY)<gap*2
                         ||Math.abs(main.centerY-head.centerY)>gap*6)continue;
                 int[] stem=attachedRawStem(gray,width,height,main,gap);
+                if(stem==null&&head.maxX-head.minX+1<=Math.ceil(gap*.55f)
+                        &&head.maxY-head.minY+1<=Math.ceil(gap*.5f)&&head.area<=gap*gap*.22f)
+                    stem=attachedRawStem(gray,width,height,main,gap,Math.max(1,Math.round(gap*.16f)),205);
                 if(stem==null||stem[0]<head.minX-gap*.4f||stem[0]>head.maxX+gap*.4f
                         ||Math.abs(stem[1]-head.centerY)>gap*1.85f)continue;
                 if(mergedBeamStrip(gray,width,height,head.centerX,head.centerY,gap)
@@ -5555,6 +5558,7 @@ final class OmrScoreInterpreter {
             }
         }
         markPairedGraces(gray,width,height,detected,events);
+        markSlashedGracePrefixes(gray,width,height,detected,events);
     }
 
     private static void markPairedGraces(byte[] gray,int width,int height,
@@ -5569,6 +5573,8 @@ final class OmrScoreInterpreter {
                     Math.round(a.head.centerY-gap*5),Math.round(a.head.centerY+gap*5),gap)+5;
             int[] first=attachedRawStem(gray,width,height,a.head,gap*.65f,Math.max(1,Math.round(gap*.16f)),threshold);
             int[] last=attachedRawStem(gray,width,height,b.head,gap*.65f,Math.max(1,Math.round(gap*.16f)),threshold);
+            if(first==null)first=attachedRawStem(gray,width,height,a.head,gap*.65f,Math.max(1,Math.round(gap*.16f)),185);
+            if(last==null)last=attachedRawStem(gray,width,height,b.head,gap*.65f,Math.max(1,Math.round(gap*.16f)),185);
             if(first==null||last==null||Math.abs(first[1]-a.head.centerY)>gap*4.8f
                     ||Math.abs(last[1]-b.head.centerY)>gap*4.8f
                     ||PairedGraceBeamInk.count(gray,width,height,first,last,gap)<2)continue;
@@ -5582,10 +5588,40 @@ final class OmrScoreInterpreter {
             }
             if(principal==null||principal.head.maxX-principal.head.minX+1<=gap*1.05f
                     ||principal.head.area<=a.head.area*1.65f||principal.head.area<=b.head.area*1.65f)continue;
-            events.set(i,events.get(i).withArticulations(events.get(i).articulations()|NoteOrnament.GRACE));
-            events.set(i+1,events.get(i+1).withArticulations(events.get(i+1).articulations()|NoteOrnament.GRACE));
+            events.set(i,asEngravedGrace(events.get(i),2));
+            events.set(i+1,asEngravedGrace(events.get(i+1),2));
             i++;
         }
+    }
+
+    /** An independently slashed short shaft can survive a modestly faded scan. */
+    private static void markSlashedGracePrefixes(byte[] gray,int width,int height,
+            List<DetectedNote> detected,List<ScoreNoteEvent> events) {
+        if(gray==null)return;
+        for(int i=0;i+1<detected.size();i++) {
+            DetectedNote a=detected.get(i),principal=detected.get(i+1);float gap=a.staffGap;
+            if((events.get(i).articulations()&NoteOrnament.GRACE)!=0||!smallGraceHead(a)
+                    ||a.event.beamCount()>1||!sameGraceVoice(a,principal)||smallGraceHead(principal)
+                    ||principal.head.area<=a.head.area*1.65f
+                    ||principal.head.maxX-principal.head.minX+1<=gap*1.05f)continue;
+            float dx=principal.head.centerX-a.head.centerX;
+            if(dx<gap*.65f||dx>gap*3.2f||Math.abs(principal.head.centerY-a.head.centerY)>gap*2.5f)continue;
+            if(i>0) {DetectedNote previous=detected.get(i-1);
+                if(sameGraceVoice(a,previous)&&smallGraceHead(previous)
+                        &&a.head.centerX-previous.head.centerX<gap*3)continue;
+            }
+            int[] stem=attachedRawStem(gray,width,height,a.head,gap*.65f);
+            if(stem==null)stem=attachedRawStem(gray,width,height,a.head,gap*.65f,Math.max(1,Math.round(gap*.16f)),185);
+            if(stem==null||stem[2]!=-1||a.head.centerY-stem[1]>gap*3.3f
+                    ||SlashedGraceFlagInk.count(gray,width,height,a.head.centerX,a.head.centerY,stem[0],gap)!=1)continue;
+            events.set(i,asEngravedGrace(events.get(i),1));
+        }
+    }
+    private static ScoreNoteEvent asEngravedGrace(ScoreNoteEvent e,int beams) {
+        return new ScoreNoteEvent(e.measureIndex(),e.positionInMeasure(),e.staffStep(),e.staffIndex(),e.staffCount(),
+                e.pageY(),e.tiedFromPrevious(),e.augmentationDots(),Math.max(beams,e.beamCount()),e.writtenAccidental(),
+                0,e.tupletDivisor(),e.followingRestBeats(),e.articulations()|NoteOrnament.GRACE,e.clefBottomDiatonic(),
+                e.crossStaffBeam(),e.leadingRestBeats(),e.compactOpening(),e.octaveShift());
     }
 
     private static boolean sameGraceVoice(DetectedNote a,DetectedNote b) {
@@ -5595,7 +5631,7 @@ final class OmrScoreInterpreter {
 
     private static boolean reducedPairedGrace(DetectedNote n) {
         return n.head.maxX-n.head.minX+1<=n.staffGap*1.05f&&n.head.maxY-n.head.minY+1<=n.staffGap*1.2f
-                &&n.head.area<=n.staffGap*n.staffGap*.8f&&n.event.beamCount()>=2&&n.event.augmentationDots()==0;
+                &&n.head.area<=n.staffGap*n.staffGap*.8f&&n.event.unbeamedDurationBeats()<2&&n.event.augmentationDots()==0;
     }
 
     /** Slightly enlarged masks still need a short, shared beam and a larger principal. */
@@ -7197,6 +7233,15 @@ final class OmrScoreInterpreter {
     private static int printedPitchStep(byte[] gray,int width,int height,Component head,float bottom,float gap) {
         float position=(bottom-head.centerY)/(gap*.5f);
         int original=Math.round(position);
+        if(gray!=null&&gap>=8&&original%2!=0&&(original<=-3||original>=11)
+                &&head.maxX-head.minX+1>=gap*.7f&&head.maxX-head.minX+1<=gap*1.8f
+                &&head.maxY-head.minY+1<=gap*1.25f) {
+            int lineStep=original+(original<0?1:-1);
+            if(Math.abs(position-lineStep)<=.72f) {
+                float line=printedLedgerLine(gray,width,height,head,bottom-lineStep*gap*.5f,gap,true);
+                if(Float.isFinite(line)&&HollowLedgerCenter.straddles(gray,width,height,head.centerX,line,gap))return lineStep;
+            }
+        }
         if(gray!=null&&gap>=8&&original%2==0&&(original<=-2||original>=10)) {
             int inward=original<0?1:-1;
             float outer=printedLedgerLine(gray,width,height,head,bottom-original*gap*.5f,gap,false);
@@ -7439,7 +7484,9 @@ final class OmrScoreInterpreter {
             if (staccatoBelowNextHead(dot,head,neighboringHeads,gap)) continue;
             if (dotWidth < Math.max(1f, gap * .10f) || dotHeight < Math.max(1f, gap * .10f)
                     || dotWidth > gap * .68f || dotHeight > gap * .68f
-                    || dot.area < Math.max(1, Math.round(gap * gap * .018f))
+                    // Preserve faint hollow-head cores; a resolved filled-note
+                    // dot needs slightly more ink than a tiny scan-texture island.
+                    || dot.area < Math.max(1, Math.round(gap * gap * (hollowHead?.018f:.02f)))
                     // Run's dotted half has a round 8x8, 52-pixel dot at a 13.75-pixel staff gap.
                     // Allow that slightly heavier ink only beside a verified hollow head.
                     || dot.area > gap * gap * (hollowHead?.34f:.26f)) continue;
@@ -7804,6 +7851,8 @@ final class OmrScoreInterpreter {
     private static int detectBeamCount(byte[] labels,byte[] gray,int width,int height,
             Component head,Staff staff,List<Component> heads) {
         int count=detectBeamCount(labels,gray,width,height,head,staff);
+        if(count==0&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f)
+            count=detectBeamCount(labels,gray,width,height,head,staff,false,true);
         if(gray!=null&&count<3&&head.maxX-head.minX+1>staff.gap*1.05f) {
             int threshold=BeamInkThreshold.at(gray,width,height,Math.round(head.centerX),
                     Math.round(head.centerY-staff.gap*5),Math.round(head.centerY+staff.gap*5),staff.gap)+5;
@@ -7877,6 +7926,11 @@ final class OmrScoreInterpreter {
 
     private static int detectBeamCount(byte[] labels, byte[] gray, int width, int height,
                                        Component head, Staff staff,boolean corroborate) {
+        return detectBeamCount(labels,gray,width,height,head,staff,corroborate,false);
+    }
+
+    private static int detectBeamCount(byte[] labels, byte[] gray, int width, int height,
+                                       Component head, Staff staff,boolean corroborate,boolean allowSinglePale) {
         float gap=staff.gap;
         // A stem attaches to this oval's edge. A wider window can borrow the preceding
         // triplet's stem and assign its beams to the following ordinary quarter note.
@@ -7901,7 +7955,7 @@ final class OmrScoreInterpreter {
         int[] faintStem=null;
         if (Math.max(bestAbove, bestBelow) < Math.max(3, Math.round(gap * .75f))) {
             if(!smallHead)faintStem=fadedStemToDarkBeam(labels,gray,width,height,head,staff);
-            if(!smallHead&&faintStem==null)faintStem=paleStemToDoubleBeam(labels,gray,width,height,head,staff);
+            if(!smallHead&&faintStem==null)faintStem=paleStemToSupportedBeam(labels,gray,width,height,head,staff,allowSinglePale);
             if(faintStem==null)return 0;
         }
         int stemEnd = findStemEnd(labels, width, bestX, upward,
@@ -7913,7 +7967,7 @@ final class OmrScoreInterpreter {
         int[] attached = faintStem!=null?faintStem:attachedRawStem(gray, width, height, head, gap,
                 Math.max(1,Math.round(gap*.16f)),stemThreshold);
         if(attached==null&&!smallHead)attached=fadedStemToDarkBeam(labels,gray,width,height,head,staff);
-        if(attached==null&&!smallHead)attached=paleStemToDoubleBeam(labels,gray,width,height,head,staff);
+        if(attached==null&&!smallHead)attached=paleStemToSupportedBeam(labels,gray,width,height,head,staff,allowSinglePale);
         if(!smallHead)attached=CappedStemBeam.extend(gray,width,height,attached,head.centerY,gap,stemThreshold);
         attached = stemBelowDetachedBow(gray,width,height,head,gap,attached);
         attached = stemBeforePaperTail(labels,gray,width,height,head,gap,attached);
@@ -8017,7 +8071,7 @@ final class OmrScoreInterpreter {
                     stemEnd+(upward?1:-1)*gap*.55f,gap))thick=2;
             if(thick==0&&!smallHead) {
                 int[] pale=fadedStemToDarkBeam(labels,gray,width,height,head,staff);
-                if(pale==null)pale=paleStemToDoubleBeam(labels,gray,width,height,head,staff);
+                if(pale==null)pale=paleStemToSupportedBeam(labels,gray,width,height,head,staff,allowSinglePale);
                 if(pale!=null&&pale[2]==attached[2]&&(pale[1]-attached[1])*pale[2]>=-gap*.2f) {
                     boolean paleUp=pale[2]<0;
                     int a=Math.max(0,pale[1]-Math.round(gap*(paleUp?.2f:1.85f)));
@@ -8251,6 +8305,11 @@ final class OmrScoreInterpreter {
      * Staff crossings cannot supply its contrast; inspect the clear spaces instead. */
     private static int[] paleStemToDoubleBeam(byte[] labels,byte[] gray,int width,int height,
             Component head,Staff staff) {
+        return paleStemToSupportedBeam(labels,gray,width,height,head,staff,false);
+    }
+
+    private static int[] paleStemToSupportedBeam(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff,boolean allowSinglePale) {
         if(gray==null)return null;
         float gap=staff.gap;
         int[] trace=attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),245);
@@ -8283,8 +8342,10 @@ final class OmrScoreInterpreter {
             int bottom=Math.min(height-1,trace[1]+Math.round(gap*(direction<0?1.85f:.2f)));
             for(int side:new int[]{-1,1}) {
                 int inner=x+side*Math.round(gap*.4f),outer=x+side*Math.round(gap*.65f);
-                if(thickNonHeadBands(gray,labels,width,height,inner,top,bottom,staff)==2
-                        &&thickNonHeadBands(gray,labels,width,height,outer,top,bottom,staff,inner)==2)
+                int innerBeams=thickNonHeadBands(gray,labels,width,height,inner,top,bottom,staff);
+                int outerBeams=thickNonHeadBands(gray,labels,width,height,outer,top,bottom,staff,inner);
+                if(innerBeams==outerBeams&&(innerBeams==2||allowSinglePale&&innerBeams==1
+                        &&PaleSingleBeamInk.supports(gray,width,height,new int[]{x,trace[1],direction},gap)))
                     return new int[]{x,trace[1],direction};
             }
         }

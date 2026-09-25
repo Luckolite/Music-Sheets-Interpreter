@@ -192,6 +192,28 @@ final class OmrMeasurePostProcessor {
                     raw.gap(), left, right, slope);
             if (representedIndex >= 0) {
                 StaffRun existing = result.get(representedIndex);
+                // A nearby complete raw staff can independently recover a bar
+                // rejected by the shifted semantic frame. Both raw and tracked
+                // five-rule frames must prove the same new bar; retain every
+                // original boundary and all original vertical/stem guards.
+                if(existing.boundaries.size()>2&&existing.track==null
+                        &&Math.abs(raw.top()-existing.top)>existing.gap*.5f
+                        &&Math.abs(raw.top()-existing.top)<=existing.gap*1.5f
+                        &&Math.abs(raw.gap()-existing.gap)<=existing.gap*.18f) {
+                    StaffPitchTrack local=StaffPitchTrack.detect(gray,width,height,existing.top,existing.bottom,existing.gap);
+                    if(local!=null) {
+                        int[] originalRows=new int[5];
+                        for(int j=0;j<5;j++)originalRows[j]=Math.round(existing.bottom-(4-j)*existing.gap);
+                        List<Integer> tracked=findBoundaries(labels,gray,width,height,originalRows,existing.gap,
+                                existing.left,existing.right,existing.slope,local);
+                        List<Integer> merged=corroboratedInnerBars(existing.boundaries,boundaries,tracked,existing.gap);
+                        if(merged.size()>existing.boundaries.size()) {
+                            result.set(representedIndex,new StaffRun(existing.top,existing.bottom,existing.gap,
+                                    existing.left,existing.right,merged,existing.slope,existing.track));
+                            continue;
+                        }
+                    }
+                }
                 // A global semantic deskew can find the staff but still miss its raw vertical
                 // bars. Replace only a completely unsplit semantic row with a conservative raw
                 // result; busier semantic layouts keep their existing evidence. The printed-number
@@ -485,6 +507,24 @@ final class OmrMeasurePostProcessor {
         // With no internal barline, the semantic staff extent is still one trustworthy measure;
         // unlike the retired detector, this never invents evenly spaced subdivisions.
         return boundaries.size() > 32 ? List.of() : List.copyOf(boundaries);
+    }
+
+    /** Merge only inner bars independently agreed by two printed five-rule frames. */
+    private static List<Integer> corroboratedInnerBars(List<Integer> original,List<Integer> raw,
+            List<Integer> tracked,float gap) {
+        if(original.size()<3||raw.size()<3||tracked.size()<3||gap<3||!Float.isFinite(gap))return original;
+        List<Integer> merged=new ArrayList<>(original);
+        int left=original.get(0),right=original.get(original.size()-1);
+        for(int i=1;i<tracked.size()-1;i++) {
+            int x=tracked.get(i);
+            if(x-left<gap*2.5f||right-x<gap*2.5f)continue;
+            boolean second=false,near=false;
+            for(int j=1;j<raw.size()-1;j++)if(Math.abs(raw.get(j)-x)<gap*.5f)second=true;
+            for(int old:merged)if(Math.abs(old-x)<gap*2.5f)near=true;
+            if(second&&!near)merged.add(x);
+        }
+        merged.sort(Integer::compareTo);
+        return merged.size()<=32?List.copyOf(merged):original;
     }
 
     private static boolean isVerticalInk(byte label) {

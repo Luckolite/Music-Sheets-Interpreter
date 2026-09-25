@@ -55,7 +55,11 @@ final class ShadedChordHeadRecovery {
                 int x=Math.round(cx+side*gap*(1.3f+dx*.2f)),y=Math.round(cy+dy*gap*.2f);
                 if(x>=0&&x<width&&y>=0&&y<height)paper[samples++]=gray[y*width+x]&255;
             }
-            Arrays.sort(paper,0,samples);if(samples<12||paper[samples*3/4]<220)continue;
+            Arrays.sort(paper,0,samples);if(samples<12||paper[samples*3/4]<205)continue;
+            if(paper[samples*3/4]<220) {
+                int[] fills=new int[end];for(int i=0;i<end;i++)fills[i]=gray[(top+queue[i]/width)*width+queue[i]%width]&255;
+                Arrays.sort(fills);if(paper[samples*3/4]-fills[end/2]<50)continue;
+            }
             int down=stem(labels,gray,width,height,left-3,lower-first,gap,1);
             int up=stem(labels,gray,width,height,right+3,upper+first,gap,-1);
             if(down<0&&up<0)continue;

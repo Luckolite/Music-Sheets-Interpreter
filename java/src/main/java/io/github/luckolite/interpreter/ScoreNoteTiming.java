@@ -753,7 +753,7 @@ public final class ScoreNoteTiming {
         double minimum = .0625;
         if (voice == null) return grid;
         for (ScoreNoteEvent note : voice) {
-            if (note.tupletDivisor() == 3) grid = Math.min(grid, 1.0 / 12.0);
+            if (note.tupletDivisor() == 3 || note.tupletDivisor() == 6) grid = Math.min(grid, 1.0 / 12.0);
             if (note.tupletDivisor() == 5) { grid = Math.min(grid, 1.0 / 20.0); minimum = Math.min(minimum, 1.0 / 20.0); }
             if (note.tupletDivisor() == 7) { grid = Math.min(grid, 1.0 / 28.0); minimum = 1.0 / 28.0; }
             double written = writtenDurationBeats(note);

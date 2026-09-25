@@ -70,7 +70,7 @@ final class TripletRhythmDetector {
                     note.staffIndex(),note.staffCount(),note.pageY(),note.tiedFromPrevious(),note.augmentationDots(),
                     note.beamCount(),note.writtenAccidental(),note.unbeamedDurationBeats(),note.tupletDivisor(),
                     (float)Math.max(0,note.followingRestBeats()-after),note.articulations(),note.clefBottomDiatonic(),
-                    note.crossStaffBeam(),(float)Math.max(0,note.leadingRestBeats()-before),note.compactOpening()));
+                    note.crossStaffBeam(),(float)Math.max(0,note.leadingRestBeats()-before),note.compactOpening(),note.octaveShift()));
         }
         return new Rhythm(List.copyOf(result),List.copyOf(scaled));
     }
@@ -125,7 +125,7 @@ final class TripletRhythmDetector {
     private static List<List<Onset>> triples(Onset a,Onset b,Onset c,List<ScoreNoteEvent> notes,boolean beamed) {
         List<List<Onset>> result=new ArrayList<>();
         float ab=b.position()-a.position(),bc=c.position()-b.position();
-        if(ab<.022f||bc<.022f||Math.max(ab,bc)>Math.min(ab,bc)*1.5f)return result;
+        if(ab<=.012f||bc<=.012f||Math.max(ab,bc)>Math.min(ab,bc)*1.5f)return result;
         for(int index:a.indices()) {
             ScoreNoteEvent first=notes.get(index);
             if(beamed&&first.beamCount()<1)continue;
@@ -200,14 +200,15 @@ final class TripletRhythmDetector {
                     result.set(index,new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
                             n.staffIndex(),n.staffCount(),n.pageY(),n.tiedFromPrevious(),n.augmentationDots(),
                             n.beamCount(),n.writtenAccidental(),n.unbeamedDurationBeats(),3,n.followingRestBeats(),
-                            n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening()));
+                            n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening(),n.octaveShift()));
                 }
                 marked=true;
             }
             if(marked)i+=2;
         }
         result=mixedBracketPairs(result,measures,gray,width,height);
-        return beamedTuplets(beamedTuplets(result,measures,gray,width,height,7),measures,gray,width,height,5);
+        return beamedTuplets(beamedTuplets(beamedTuplets(result,measures,gray,width,height,7),
+                measures,gray,width,height,5),measures,gray,width,height,6);
     }
 
     private static List<ScoreNoteEvent> mixedBracketPairs(List<ScoreNoteEvent> notes,
@@ -279,7 +280,19 @@ final class TripletRhythmDetector {
                 if(lastX-x1<gap*3||lastX-x1>gap*26)continue;
                 float y1=Float.MAX_VALUE,y2=-Float.MAX_VALUE;
                 for(Onset onset:run){y1=Math.min(y1,onset.top()*height);y2=Math.max(y2,onset.bottom()*height);}
-                Glyph numeral=findPrintedNumeral(gray,width,height,x1,lastX,y1,y2,gap,true,
+                if(divisor==6) {
+                    boolean separated=false;
+                    for(int j=1;j<run.size();j++) {
+                        Onset previous=run.get(j-1),next=run.get(j);
+                        float previousX=(bar.left()+previous.position()*(bar.right()-bar.left()))*width;
+                        float nextX=(bar.left()+next.position()*(bar.right()-bar.left()))*width;
+                        if(SeparateBeamGroups.between(gray,width,height,previousX,previous.top()*height,
+                                nextX,next.top()*height,gap)){separated=true;break;}
+                    }
+                    if(separated)continue;
+                }
+                Glyph numeral=divisor==6?findContrastedNumeral(gray,width,height,x1,lastX,y1,y2,gap,true,
+                        Float.NaN,Float.NaN,6):findPrintedNumeral(gray,width,height,x1,lastX,y1,y2,gap,true,
                         Float.NaN,Float.NaN,divisor);
                 if(numeral==null||insideOtherSystem(numeral,bar,measures,width,height))continue;
                 for(Onset onset:run)for(int at:onset.indices()) {
@@ -287,7 +300,7 @@ final class TripletRhythmDetector {
                     result.set(at,new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
                             n.staffIndex(),n.staffCount(),n.pageY(),n.tiedFromPrevious(),n.augmentationDots(),
                             n.beamCount(),n.writtenAccidental(),n.unbeamedDurationBeats(),divisor,n.followingRestBeats(),
-                            n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening()));
+                            n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening(),n.octaveShift()));
                 }
             }
         }
@@ -353,14 +366,19 @@ final class TripletRhythmDetector {
 
     private static Glyph findPrintedThree(byte[] gray,int width,int height,float firstX,
             float lastX,float firstY,float lastY,float gap,boolean shortNotes,float headX,float headY) {
-        Glyph normal=findPrintedNumeral(gray,width,height,firstX,lastX,firstY,lastY,gap,shortNotes,headX,headY,3);
+        return findContrastedNumeral(gray,width,height,firstX,lastX,firstY,lastY,gap,shortNotes,headX,headY,3);
+    }
+
+    private static Glyph findContrastedNumeral(byte[] gray,int width,int height,float firstX,
+            float lastX,float firstY,float lastY,float gap,boolean shortNotes,float headX,float headY,int number) {
+        Glyph normal=findPrintedNumeral(gray,width,height,firstX,lastX,firstY,lastY,gap,shortNotes,headX,headY,number);
         if(normal!=null&&TupletNumeralInk.hasGlyphContrast(gray,width,height,normal.left(),normal.top(),normal.right(),normal.bottom(),gap))return normal;
         for(int level:new int[]{165,140,120,190,210}) {
             var local=TupletNumeralInk.window(gray,width,height,firstX,lastX,firstY,lastY,gap,level);
             if(local==null)continue;
             Glyph retry=findPrintedNumeral(local.pixels(),local.width(),local.height(),
                     firstX-local.left(),lastX-local.left(),firstY-local.top(),lastY-local.top(),gap,shortNotes,
-                    headX-local.left(),headY-local.top(),3);
+                    headX-local.left(),headY-local.top(),number);
             if(retry!=null&&TupletNumeralInk.hasGlyphContrast(gray,width,height,
                     retry.left()+local.left(),retry.top()+local.top(),retry.right()+local.left(),
                     retry.bottom()+local.top(),gap))return new Glyph(retry.left()+local.left(),retry.top()+local.top(),
@@ -410,7 +428,9 @@ final class TripletRhythmDetector {
                     ||headY<minY-gap*.1f||headY>maxY+gap*.1f))continue;
             if (!(number==7 ? looksLikeSeven(gray,width,minX,minY,gw,gh)
                     : number==5 ? looksLikeFive(gray,width,minX,minY,gw,gh)
+                    : number==6 ? TupletSixGlyph.matches(gray,width,minX,minY,gw,gh)
                     : looksLikeThree(gray, width, minX, minY, gw, gh))) continue;
+            if(TupletNumeralNeighbors.joinedText(gray,width,height,minX,minY,maxX,maxY))continue;
             // Quarter-note tuplets need the two bracket arms. For beamed/flagged short notes,
             // publishers routinely print only the numeral, so its shape/group alignment suffices.
             if (shortNotes || bracketArm(gray, width, height, Math.round(firstX - gap * .3f),
