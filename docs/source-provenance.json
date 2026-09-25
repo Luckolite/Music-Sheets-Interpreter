@@ -1,6 +1,14 @@
 {
   "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
+  "rule_clipped_chord_caps_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Reviewed working-tree chord-cap recovery keeps repeated lobes, neck separation, dimensions, density, contrast and dual raw/semantic stem proof. An unrounded outer cap is accepted only when a thin contrasted rule is independently supported beyond both flanks; one-sided or broad bands fail. Eight original procedural tests cover positive extraction and negative ownership/shape cases. Matched-input24-page source review restores eight genuine missing heads and correctly recenters one existing beamed head, with all other22 pages and non-note metadata unchanged. One recovered incoming tie and other source defects remain open; private pitch-label corrections were source-verified before accepting the repair. No commercial score material, model or external dependency is included."
+  },
+  "stable_and_creased_beam_attachment_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Reviewed three bounded working-tree rhythm repairs. A missing full-size single-beam retry permits a longer pale shaft only with the existing independent contrast and broad beam proof. A semantic double count is reduced only when moderate and pale endpoints agree and four independent side columns prove a single beam, preserving the previously identified overtrace counterexample. A narrow crease-clipped ordinary-height oval can reconnect to its own surviving up-stem only with aligned paired caps on both sides and at least three independently erased staff rules. Seven, eight and eleven original procedural regressions cover these paths. Separate matched-input24-page source reviews each alter exactly one intended rhythm event and no other fields or metadata. Combined verification remains required; source-score audit completion, model changes and device execution are not claimed. No private score evidence, pixel fixtures, new dependency or licensing change is included."
+  },
   "contrasted_stems_flags_and_dense_gray_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Reviewed working-tree tremolo shaft tracing now uses the existing local paper contrast threshold, preserving the bright-paper value and all stroke ownership. Seven original regressions and all43 existing tremolo controls pass; the old core fails the intended low-contrast tail case. Matched-input24-page source review removes13 false ornaments and corrects one affected quarter duration without altering other fields. A separate independently contrasted pale-shaft flag path uses a bounded brighter-paper retry only with complete rooted curved topology; four original controls protect detached hooks, corners and shaded backgrounds. It recovers three source-confirmed flags while preserving ten independently checked ordinary quarters. Dense-gray head recovery unions an additional strict-contrast pass, retaining previous accepted ovals and dual stem evidence, with ten original controls. Its source replay restores five genuine notes and recenters four existing notes without changing their musical fields. No private pixels, annotations, model, external dependency or full-audit completion claim is included."
@@ -86,7 +94,7 @@
     },
     "ShadedChordHeadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedChordHeadRecovery.java",
-      "source_sha256": "081feac290fe653c5a62639396bc7f14c42caf575f3a9088c4047b9c914baa16",
+      "source_sha256": "6b816944766a035904459cecb66a50371418684f8693cac7e30b7ad643aebf01",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed original JDK-only recovery of two to four shaded curved lobes with shared stem evidence, bounded scale and independent ledger rails. Moderately dim paper additionally requires at least fifty levels of median fill contrast. Fourteen original regressions plus eight shared contrast controls and guarded accidental/tie tests accompany it. Private source evidence remains private; no dependencies or weight changes."
     },
@@ -101,6 +109,12 @@
       "source_sha256": "b361c5a499088fd1ee0e075a0a00f37ac0c68db8798e79a81c49ef6164307dca",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed original JDK-only tie endpoint alignment against complete local five-rule groups. Matching pitch, staff ownership and a returning printed arc remain required; a competing sixth rule rejects alignment. Nine original procedural controls include candidate-search integration and preserved flat fallback. Private source review confirmed three restored ties and unchanged other note fields; no private fixtures or weights."
+    },
+    "CreaseBeamAttachment.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/CreaseBeamAttachment.java",
+      "source_sha256": "c9e717b45648cc7f115dd222fa28edccb924aac717d64662509f8419cc35cf7a",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Original JDK-only clipped-oval rhythm recovery requires a separately contrasted upward stem, two matching thick beam caps on both sides, and at least three independently erased staff rules across a narrow white scan crease. It does not add or resize noteheads. Eleven procedural controls include missing evidence, intact rules, reduced grace height, bounds and immutability. Private matched-input24-page comparison changed only one source-confirmed double-beam event beyond already reviewed fixes. No private score material, model or dependency is included; core integration is reviewed separately."
     },
     "CreaseGracePairRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CreaseGracePairRecovery.java",
@@ -281,7 +295,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "2342cd9cba3652183f9f0a14ee45c840e33230ce3d5815a2a6c78f47f503fbef",
+      "source_sha256": "d61daa1e6fd7a6c0d68343894330fbfb851d1b00b6c998f000bbcfed27c135fb",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",

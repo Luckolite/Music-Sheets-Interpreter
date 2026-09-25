@@ -57,7 +57,8 @@ final class ShadedChordHeadRecovery {
                 for(int y=peakRows[i-1]+1;y<peakRows[i];y++)neck=Math.min(neck,rowRight[y]-rowLeft[y]+1);
                 if(neck>Math.min(peaks[i-1],peaks[i])-Math.max(1.5f,gap*.1f))curved=false;
             }
-            if(rowRight[0]-rowLeft[0]+1>peaks[0]*.9f||rowRight[h-1]-rowLeft[h-1]+1>peaks[count-1]*.9f)curved=false;
+            if(rowRight[0]-rowLeft[0]+1>peaks[0]*.9f&&!clippedByRule(gray,width,height,left,right,upper,gap))curved=false;
+            if(rowRight[h-1]-rowLeft[h-1]+1>peaks[count-1]*.9f&&!clippedByRule(gray,width,height,left,right,lower,gap))curved=false;
             if(!curved)continue;
             float cx=(left+right)*.5f,cy=(upper+lower)*.5f;
             int[] paper=new int[18];int samples=0;
@@ -85,6 +86,23 @@ final class ShadedChordHeadRecovery {
         return result;
     }
     private static boolean middle(byte pixel,int minimum){int value=pixel&255;return value>=minimum&&value<=205;}
+    private static boolean clippedByRule(byte[] gray,int width,int height,int left,int right,int edge,float gap) {
+        int begin=Math.max(3,Math.round(gap*.45f)),reach=Math.max(begin+2,Math.round(gap*.75f)),offset=Math.max(2,Math.round(gap*.2f));
+        if(left-reach<0||right+reach>=width)return false;
+        for(int y=Math.max(offset,Math.round(edge-gap*.4f));y<=Math.min(height-1-offset,Math.round(edge+gap*.4f));y++) {
+            boolean both=true;
+            for(int side:new int[]{-1,1}) {
+                int ink=0;
+                for(int d=begin;d<=reach;d++) {
+                    int x=side<0?left-d:right+d,v=gray[y*width+x]&255;
+                    if(v<150&&(gray[(y-offset)*width+x]&255)>v+50&&(gray[(y+offset)*width+x]&255)>v+50)ink++;
+                }
+                if(ink<(reach-begin+1)*.65f)both=false;
+            }
+            if(both)return true;
+        }
+        return false;
+    }
     /** Grey fill can occlude the middle of a ledger, but both short printed rails must remain. */
     static boolean hasLedgerRails(byte[] gray,int width,int height,int left,int right,float cy,float top,float bottom,float gap){
         if(gray==null||width<1||height<1||gray.length!=(long)width*height||gap<8||!Float.isFinite(gap)

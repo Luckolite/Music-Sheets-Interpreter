@@ -7930,12 +7930,16 @@ final class OmrScoreInterpreter {
     private static int detectBeamCount(byte[] labels,byte[] gray,int width,int height,
             Component head,Staff staff,List<Component> heads) {
         int count=detectBeamCount(labels,gray,width,height,head,staff);
+        if(count==0)count=CreaseBeamAttachment.count(gray,width,height,staff.gap,staff.top,staff.bottom,
+                head.minX,head.maxX,head.minY,head.maxY,head.centerY);
         if(count==0&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f)
             count=detectBeamCount(labels,gray,width,height,head,staff,false,true);
         if(count==0&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f) {
             int[] pale=paleStemToDoubleBeam(labels,gray,width,height,head,staff);
             if(pale!=null&&rootedPaleFlag(labels,gray,width,height,head,staff.gap,pale[0],pale[1],pale[2]<0))count=1;
         }
+        if(count==2&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f
+                &&singleBeamAtPaleEndpoint(labels,gray,width,height,head,staff))count=1;
         if(count>0&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f
                 &&barePaleStemEndpoint(labels,gray,width,height,head,staff))count=0;
         if(gray!=null&&count<3&&head.maxX-head.minX+1>staff.gap*1.05f) {
@@ -8394,6 +8398,27 @@ final class OmrScoreInterpreter {
         return null;
     }
 
+    /** Correct a semantic two-band endpoint only with stable, complete single-beam evidence. */
+    private static boolean singleBeamAtPaleEndpoint(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff) {
+        float gap=staff.gap;
+        int adaptive=BeamInkThreshold.at(gray,width,height,Math.round(head.centerX),
+                Math.round(head.centerY-gap*5),Math.round(head.centerY+gap*5),gap);
+        if(adaptive!=165||attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),adaptive+5)!=null)return false;
+        int[] pale=paleStemToSupportedBeam(labels,gray,width,height,head,staff,true);
+        int[] mid=attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),205);
+        if(pale==null||mid==null||pale[2]!=mid[2]||Math.abs(pale[0]-mid[0])>gap*.3f
+                ||Math.abs(pale[1]-mid[1])>gap*.25f||!PaleSingleBeamInk.supports(gray,width,height,pale,gap))return false;
+        boolean up=pale[2]<0;
+        int top=Math.max(0,pale[1]-Math.round(gap*(up?.2f:1.85f)));
+        int bottom=Math.min(height-1,pale[1]+Math.round(gap*(up?1.85f:.2f)));
+        for(float distance:new float[]{-.65f,-.4f,.4f,.65f}) {
+            int x=pale[0]+Math.round(gap*distance),inner=pale[0]+Math.round(Math.copySign(.4f,distance)*gap);
+            if(thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,inner,true)!=1)return false;
+        }
+        return true;
+    }
+
     /** Reject a false semantic endpoint only when the longer raw shaft is bare. */
     private static boolean barePaleStemEndpoint(byte[] labels,byte[] gray,int width,int height,
             Component head,Staff staff) {
@@ -8465,7 +8490,7 @@ final class OmrScoreInterpreter {
         if(gray==null)return null;
         float gap=staff.gap;
         int[] trace=attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),245);
-        if(trace==null||Math.abs(trace[1]-head.centerY)>gap*7.5f)return null;
+        if(trace==null||Math.abs(trace[1]-head.centerY)>gap*(allowSinglePale?10f:7.5f))return null;
         int flank=Math.max(3,Math.round(gap*.45f)),direction=trace[2];
         int centerRadius=Math.max(2,Math.round(gap*.3f));
         for(int offset=-centerRadius;offset<=centerRadius;offset++) {
