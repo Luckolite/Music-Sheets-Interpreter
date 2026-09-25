@@ -128,6 +128,22 @@ final class OmrScoreInterpreter {
                     Math.round(recovered.stemHeadY()-staff.gap*.45f),Math.round(recovered.stemHeadY()+staff.gap*.45f),
                     recovered.centerX(),recovered.stemHeadY()));
         }
+        List<Component> recoveredShadedChordHeads=new ArrayList<>();
+        for(Staff staff:staffs)for(ShadedChordHeadRecovery.Chord chord:ShadedChordHeadRecovery.find(
+                labels,gray,width,height,staff.gap,Math.round(staff.top-staff.gap*3),Math.round(staff.bottom+staff.gap*4))) {
+            List<Component> replaced=new ArrayList<>();
+            for(Component existing:rawHeadComponents)if(existing.centerX>=chord.left()-staff.gap*.15f
+                    &&existing.centerX<=chord.right()+staff.gap*.15f&&existing.centerY>=chord.top()-staff.gap*.15f
+                    &&existing.centerY<=chord.bottom()+staff.gap*.15f)replaced.add(existing);
+            rawHeadComponents.removeAll(replaced);recoveredFadedHeads.removeAll(replaced);
+            recoveredFilledFragmentHeads.removeAll(replaced);recoveredPaleChordHeads.removeAll(replaced);
+            for(Component existing:replaced)paleChordRhythmHeads.remove(existing);
+            for(var recovered:chord.heads()) {
+                Component head=new Component((recovered.right()-recovered.left()+1)*(recovered.bottom()-recovered.top()+1),
+                        recovered.left(),recovered.right(),recovered.top(),recovered.bottom(),recovered.centerX(),recovered.centerY());
+                rawHeadComponents.add(head);recoveredFadedHeads.add(head);recoveredFilledFragmentHeads.add(head);recoveredShadedChordHeads.add(head);
+            }
+        }
         List<Component> symbolComponents = findComponents(labels, width, height,
                 OmrMeasurePostProcessor.SYMBOL);
         List<Component> clefOrKeyComponents = findComponents(labels, width, height,
@@ -181,6 +197,7 @@ final class OmrScoreInterpreter {
         rejectedBeamHeads.addAll(shortPairedMergedBeamHeads(gray,width,height,heads,staffs));
         rejectedBeamHeads.addAll(offsetParallelBeamIslandHeads(gray,width,height,heads,staffs));
         heads.removeAll(rejectedBeamHeads);
+        heads.removeAll(outlinedHookHeads(gray,width,height,heads,staffs));
         heads.removeAll(isolatedBeamTipHeads(gray,width,height,heads,staffs));
         heads.removeAll(trailingGraceFlagHeads(heads,staffs));
         heads.removeAll(inclinedFlagTipHeads(gray,width,height,heads,staffs));
@@ -408,7 +425,7 @@ final class OmrScoreInterpreter {
             Staff staff = staffForHead(labels, gray, width, height, staffs, head);
             if (staff == null) continue;
             if (isHeavyRestCount(gray,width,height,head,staff)) continue;
-            if (isUnpitchedCrossHead(gray,width,height,head,staff)) continue;
+            if (!recoveredShadedChordHeads.contains(head)&&isUnpitchedCrossHead(gray,width,height,head,staff)) continue;
             // Heads far outside a staff require printed ledger lines. A nearby
             // text stroke can look like a stem, so a semantic stem alone cannot
             // promote a tempo digit or other text into an extreme pitch.
@@ -419,7 +436,9 @@ final class OmrScoreInterpreter {
             if (gray != null && physicalStaff != null
                     && (head.centerY < physicalStaff.top-physicalStaff.gap*1.8f
                     || head.centerY > physicalStaff.bottom+physicalStaff.gap*1.8f)
-                    && !hasHeadLedgerSupport(labels,gray,width,height,head,physicalStaff,roundedLedgerGraces.contains(head))) continue;
+                    && !hasHeadLedgerSupport(labels,gray,width,height,head,physicalStaff,roundedLedgerGraces.contains(head))
+                    && !(recoveredShadedChordHeads.contains(head)&&ShadedChordHeadRecovery.hasLedgerRails(gray,width,height,
+                            head.minX,head.maxX,head.centerY,physicalStaff.top,physicalStaff.bottom,physicalStaff.gap))) continue;
             float normalizedX = head.centerX() / width;
             float normalizedY = head.centerY() / height;
             int measureIndex = containingMeasureForStaff(measures, normalizedX, normalizedY,
@@ -459,7 +478,7 @@ final class OmrScoreInterpreter {
                 augmentationDots=0;
             float accidentalGap=accidentalGraces.contains(head)?localPitch[1]*.65f:localPitch[1];
             int writtenAccidental = detectWrittenAccidental(labels, width, height,
-                    localAccidentals, head, accidentalGap);
+                    localAccidentals, head, accidentalGap,heads);
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                     &&rawWideDoubleSharp(gray,width,height,localAccidentals,head,accidentalGap))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_DOUBLE_SHARP;
@@ -494,7 +513,8 @@ final class OmrScoreInterpreter {
             if(attachedTremolos.containsKey(head))event=event.withArticulations(
                     NoteOrnament.withTremolo(event.articulations(),attachedTremolos.get(head).beams()));
             event=event.withArticulations(event.articulations()|recoveredArticulations.getOrDefault(head,0));
-            List<Component> unison=sideBySideUnison(labels,gray,width,height,head,staff.gap);
+            List<Component> unison=unbeamedDuration==ScoreNoteEvent.DURATION_WHOLE?List.of():
+                    sideBySideUnison(labels,gray,width,height,head,staff.gap);
             if(!unison.isEmpty()) {
                 // Opposite stems share a printed pitch/attack but have separate durations.
                 for(int partIndex=0;partIndex<unison.size();partIndex++) {
@@ -534,8 +554,14 @@ final class OmrScoreInterpreter {
         List<Component> printedAccidentalHeads=new ArrayList<>();
         for(DetectedNote note:detected)if(note.event.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY)
             printedAccidentalHeads.add(note.head);
-        List<DetectedNote> joined = applyAccidentalState(markTieContinuations(tieLabelsWithoutSlurHeads(labels,width,rejectedSlurHeads,heads), gray,
-                width, height, removeSplitDuplicates(detected)));
+        byte[] tieLabels=tieLabelsWithoutSlurHeads(labels,width,rejectedSlurHeads,heads);
+        if(!recoveredShadedChordHeads.isEmpty()) {
+            tieLabels=tieLabels.clone();
+            for(Component head:recoveredShadedChordHeads)for(int y=head.minY;y<=head.maxY;y++)for(int x=head.minX;x<=head.maxX;x++)
+                tieLabels[y*width+x]=OmrMeasurePostProcessor.NOTEHEAD;
+        }
+        List<DetectedNote> joined = applyAccidentalState(markTieContinuations(tieLabels, gray,
+                width, height, removeSplitDuplicates(detected), staffs));
         logHeadCoverage(staffs, rawHeadComponents, headComponents, heads, demotedDotHeads, joined);
         List<ScoreNoteEvent> result = new ArrayList<>(joined.size());
         for (DetectedNote note : joined) result.add(note.event);
@@ -2124,6 +2150,7 @@ final class OmrScoreInterpreter {
                 Component glyph=joinTrebleCurl(joinSmallTrebleFragments(original,glyphs,staff),glyphs,staff);
                 float gh=glyph.maxY-glyph.minY+1,gw=glyph.maxX-glyph.minX+1;
                 int clef=ScoreNoteEvent.CLEF_UNKNOWN;
+                Staff clefReference=staff;
                 // A treble clef crosses the whole stave and projects beyond both outer lines.
                 // This excludes tall accidentals and the thin bracket joining two staves.
                 if(gh>=gap*4.8f&&gh<=gap*8.8f&&gw>=gap*1.25f&&gw<=gap*3.4f
@@ -2157,8 +2184,23 @@ final class OmrScoreInterpreter {
                         if(rawBassClef(cueBass,labels,gray,width,height,cueStaff)){glyph=cueBass;clef=ScoreNoteEvent.CLEF_BASS;break;}
                     }
                 }
+                // A globally curved staff can move its header beyond the flat
+                // frame. Recover only a complete treble glyph; keep existing bass
+                // and cue-clef decisions unchanged.
+                if(clef==ScoreNoteEvent.CLEF_UNKNOWN&&staff.pitchTrack!=null) {
+                    float[] local=staff.pitchTrack.at(original.centerX);
+                    Staff printed=new Staff(local[0]-4*local[1],local[0],local[1]);
+                    Component candidate=joinTrebleCurl(joinSmallTrebleFragments(original,glyphs,printed),glyphs,printed);
+                    float cg=printed.gap,ch=candidate.maxY-candidate.minY+1,cw=candidate.maxX-candidate.minX+1;
+                    if(ch>=cg*4.8f&&ch<=cg*8.8f&&cw>=cg*1.25f&&cw<=cg*3.4f
+                            &&candidate.area>=cg*cg*1.65f&&candidate.minY<printed.top-cg*.35f
+                            &&candidate.maxY>printed.bottom+cg*.20f
+                            &&Math.abs(candidate.centerY-(printed.top+printed.bottom)*.5f)<cg*1.1f) {
+                        glyph=candidate;clef=ScoreNoteEvent.CLEF_TREBLE;clefReference=printed;
+                    }
+                }
                 if(clef==ScoreNoteEvent.CLEF_TREBLE && OctaveClefDigit.above(gray,width,height,
-                        glyph.minX,glyph.minY,glyph.maxX,staff.top,gap))clef=ScoreNoteEvent.CLEF_TREBLE_OTTAVA;
+                        glyph.minX,glyph.minY,glyph.maxX,clefReference.top,clefReference.gap))clef=ScoreNoteEvent.CLEF_TREBLE_OTTAVA;
                 if(clef!=ScoreNoteEvent.CLEF_UNKNOWN)clefs.add(new ClefGlyph(glyph.maxX,clef));
             }
             clefs.sort(Comparator.comparingDouble(ClefGlyph::x));
@@ -4730,6 +4772,26 @@ final class OmrScoreInterpreter {
     }
 
 
+    private static List<Component> outlinedHookHeads(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs) {
+        List<Component> rejected=new ArrayList<>();if(gray==null)return rejected;
+        for(Component head:heads) {
+            Staff staff=nearestHeadStaff(staffs,head.centerY);if(staff==null)continue;
+            float gap=staff.gap;
+            if(head.maxX-head.minX+1>gap*.65f||head.maxY-head.minY+1>gap*.6f||head.area>gap*gap*.25f
+                    ||attachedRawStem(gray,width,height,head,gap)!=null)continue;
+            for(Component main:heads) {
+                if(main==head||nearestHeadStaff(staffs,main.centerY)!=staff||main.area<head.area*3
+                        ||Math.abs(main.centerX-head.centerX)>gap*1.5f)continue;
+                int[] stem=attachedRawStem(gray,width,height,main,gap);
+                if(OutlinedHookHead.matches(gray,width,height,head.centerX,head.centerY,
+                        head.maxX-head.minX+1,head.maxY-head.minY+1,head.area,
+                        main.centerX,main.centerY,main.area,stem,gap)) {rejected.add(head);break;}
+            }
+        }
+        return rejected;
+    }
+
     /** Reject a tiny beam-tip island only when its own attached shaft leads to a
      * sustained narrow beam with no oval bulge. An independent head thickens it. */
     private static List<Component> isolatedBeamTipHeads(byte[] gray,int width,int height,
@@ -5952,6 +6014,11 @@ final class OmrScoreInterpreter {
         if(open&&beamCount>0&&PaleFilledHeadCore.isFilled(gray,width,height,
                 head.minX,head.minY,head.maxX,head.maxY,head.centerX,head.centerY,gap))open=false;
         boolean stem = hasAttachedStem(labels, width, height, head, gap);
+        // A horizontal whole oval can sit immediately below a separate melody
+        // head. Nearby semantic stem pixels do not establish physical attachment.
+        if(open&&stem&&gray!=null&&head.maxX-head.minX+1>=gap*1.7f
+                &&head.maxY-head.minY+1<=gap*1.1f
+                &&attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),205)==null)stem=false;
         if (open && stem && gray != null && !hasStemAtHead(labels,width,height,head,gap)
                 && attachedRawStem(gray,width,height,head,gap)==null) stem=false;
         if (open) return stem ? ScoreNoteEvent.DURATION_HALF : ScoreNoteEvent.DURATION_WHOLE;
@@ -6695,13 +6762,19 @@ final class OmrScoreInterpreter {
     private static int detectWrittenAccidental(byte[] labels, int width, int height,
                                                List<AccidentalCandidate> candidates,
                                                Component head, float gap) {
+        return detectWrittenAccidental(labels,width,height,candidates,head,gap,null);
+    }
+
+    private static int detectWrittenAccidental(byte[] labels, int width, int height,
+                                               List<AccidentalCandidate> candidates,
+                                               Component head, float gap,List<Component> heads) {
         AccidentalCandidate best = null;
         int bestAccidental = ScoreNoteEvent.ACCIDENTAL_FROM_KEY;
         float bestDistance = Float.MAX_VALUE;
         for (AccidentalCandidate candidate : candidates) {
             Component glyph = candidate.component;
             float horizontal = head.minX - glyph.maxX;
-            if (horizontal < -gap * .35f || horizontal > gap * 1.35f
+            if (horizontal < -gap * .35f || horizontal > gap * (heads==null?1.35f:4.2f)
                     ||head.centerX-glyph.centerX<gap*.65f) continue;
             if (Math.abs(glyph.centerY - head.centerY) > gap * 1.8f) continue;
             float sharpCenter=sharpPitchCenter(labels,width,height,candidate,gap);
@@ -6728,6 +6801,35 @@ final class OmrScoreInterpreter {
             float tolerance=accidental==ScoreNoteEvent.ACCIDENTAL_NATURAL?.90f:
                     accidental==ScoreNoteEvent.ACCIDENTAL_SHARP?.45f:.65f;
             if(Math.abs(pitchCenter-head.centerY)>gap*tolerance)continue;
+            if(heads!=null) {
+                boolean otherOwner=false;
+                for(Component other:heads) {
+                    if(other==head)continue;
+                    if(Math.abs(other.centerX-head.centerX)<gap*.7f
+                            &&Math.abs(other.centerY-pitchCenter)+gap*.12f<Math.abs(head.centerY-pitchCenter))otherOwner=true;
+                    if(horizontal>gap*1.35f&&other.centerX>glyph.maxX+gap*.2f
+                            &&other.centerX<head.minX-gap*.3f&&Math.abs(other.centerY-head.centerY)<gap*2)otherOwner=true;
+                }
+                if(otherOwner)continue;
+                if(horizontal>gap*1.35f&&(Math.abs(pitchCenter-head.centerY)>gap*.45f
+                        ||accidental!=ScoreNoteEvent.ACCIDENTAL_NATURAL&&accidental!=ScoreNoteEvent.ACCIDENTAL_SHARP))continue;
+                if(horizontal>gap*1.35f) {
+                    int chordHeads=0;boolean displacedPartner=false,headInsideGlyph=false;
+                    for(Component other:heads) {
+                        if(Math.abs(other.centerX-head.centerX)<gap*.7f&&Math.abs(other.centerY-head.centerY)<gap*4)chordHeads++;
+                        if(other.centerX>=glyph.minX-gap*.2f&&other.centerX<=glyph.maxX+gap*.2f
+                                &&other.centerY>=glyph.minY&&other.centerY<=glyph.maxY)headInsideGlyph=true;
+                    }
+                    for(AccidentalCandidate partner:candidates) {
+                        Component p=partner.component;
+                        if(p.centerX<=glyph.centerX+gap*.4f||p.centerX>head.minX-gap*.2f
+                                ||p.centerX-glyph.centerX>gap*2.5f||Math.abs(p.centerY-pitchCenter)>gap*2)continue;
+                        if(isNaturalGlyph(labels,width,height,partner,gap)||isSharpGlyph(labels,width,height,partner,gap)
+                                ||isFlatGlyph(labels,width,height,partner,gap))displacedPartner=true;
+                    }
+                    if(chordHeads<2||headInsideGlyph||!displacedPartner)continue;
+                }
+            }
             if (horizontal < bestDistance) {
                 best = candidate;
                 bestAccidental = accidental;
@@ -7723,6 +7825,15 @@ final class OmrScoreInterpreter {
             int threshold=BeamInkThreshold.at(gray,width,height,Math.round(head.centerX),
                     Math.round(head.centerY-staff.gap*5),Math.round(head.centerY+staff.gap*5),staff.gap)+5;
             int[] own=attachedRawStem(gray,width,height,head,staff.gap*.75f,Math.max(1,Math.round(staff.gap*.16f)),threshold);
+            if(count!=1&&(own==null||head.centerY-own[1]>=staff.gap*3.3f)) {
+                int localThreshold=BeamInkThreshold.at(gray,width,height,Math.round(head.centerX),
+                        Math.round(head.centerY-staff.gap*2.8f),Math.round(head.centerY-staff.gap*.45f),staff.gap)+5;
+                if(localThreshold<threshold) {
+                    int[] local=attachedRawStem(gray,width,height,head,staff.gap*.75f,
+                            Math.max(1,Math.round(staff.gap*.16f)),localThreshold);
+                    if(local!=null&&local[2]<0&&head.centerY-local[1]<staff.gap*3.3f)own=local;
+                }
+            }
             boolean pairedGrace=false;
             if(own!=null&&Math.abs(own[1]-head.centerY)<staff.gap*4.8f)for(Component other:heads) {
                 if(other==head||Math.abs(other.centerX-head.centerX)<staff.gap*.95f
@@ -8721,20 +8832,55 @@ final class OmrScoreInterpreter {
     private static List<DetectedNote> markTieContinuations(byte[] labels, byte[] gray,
                                                             int width, int height,
                                                             List<DetectedNote> source) {
+        return markTieContinuations(labels,gray,width,height,source,List.of());
+    }
+
+    private static List<DetectedNote> markTieContinuations(byte[] labels,byte[] gray,
+            int width,int height,List<DetectedNote> source,List<Staff> staffs) {
         List<DetectedNote> result = new ArrayList<>(source);
+        List<DetectedNote> printedGeometry=null;
         for (int currentIndex = 1; currentIndex < result.size(); currentIndex++) {
             DetectedNote current = result.get(currentIndex);
             int previousIndex = previousSamePitch(result, currentIndex, width, labels, gray, height);
-            if (previousIndex < 0) continue;
-            DetectedNote previous = result.get(previousIndex);
-            if (!hasTieArc(labels, gray, width, height, previous, current)) continue;
+            boolean tied=previousIndex>=0&&hasTieArc(labels,gray,width,height,result.get(previousIndex),current);
+            // Semantic staff fragments can compress one system's scale. A
+            // separately proved local five-rule track may restore only a
+            // two-ended system-break tie; ordinary candidates keep their frame.
+            if(!tied&&!staffs.isEmpty()&&current.head.centerX<width*.35f) {
+                if(printedGeometry==null)printedGeometry=printedTieGeometry(labels,gray,width,height,source,staffs);
+                int candidate=previousSamePitch(printedGeometry,currentIndex,width,labels,gray,height);
+                if(candidate>=0) {
+                    DetectedNote before=printedGeometry.get(candidate),after=printedGeometry.get(currentIndex);
+                    tied=systemBreakTieCandidate(before,after,width)&&hasTieArc(labels,gray,width,height,before,after);
+                }
+            }
+            if(!tied)continue;
             ScoreNoteEvent event = current.event;
             result.set(currentIndex, new DetectedNote(new ScoreNoteEvent(event.measureIndex(),
                     event.positionInMeasure(), event.staffStep(), event.staffIndex(),
                     event.staffCount(), event.pageY(), true, event.augmentationDots(),
                     event.beamCount(), event.writtenAccidental(), event.unbeamedDurationBeats(),
-                    event.tupletDivisor(), event.followingRestBeats(),event.articulations(),event.clefBottomDiatonic()),
+                    event.tupletDivisor(), event.followingRestBeats(),event.articulations(),event.clefBottomDiatonic(),
+                    event.crossStaffBeam(),event.leadingRestBeats(),event.compactOpening(),event.octaveShift()),
                     current.head, current.staffGap));
+        }
+        return result;
+    }
+
+    /** Tie-only scale reference; never changes emitted pitch, rhythm or geometry. */
+    private static List<DetectedNote> printedTieGeometry(byte[] labels,byte[] gray,int width,int height,
+            List<DetectedNote> source,List<Staff> staffs) {
+        List<DetectedNote> result=new ArrayList<>(source.size());
+        for(DetectedNote note:source) {
+            float gap=note.staffGap;
+            Staff staff=staffForHead(labels,gray,width,height,staffs,note.head);
+            if(staff!=null&&staff.pitchTrack!=null) {
+                float[] local=staff.pitchTrack.at(note.head.centerX);
+                if(Float.isFinite(local[0])&&Float.isFinite(local[1])&&local[1]>=5
+                        &&local[1]>=gap*.65f&&local[1]<=gap*1.55f
+                        &&Math.round((local[0]-note.head.centerY)*2/local[1])==note.event.staffStep())gap=local[1];
+            }
+            result.add(new DetectedNote(note.event,note.head,gap));
         }
         return result;
     }
@@ -8861,8 +9007,9 @@ final class OmrScoreInterpreter {
     private static boolean hasSystemEndTieArc(byte[] labels,byte[] gray,int width,int height,
             DetectedNote note,boolean outgoing,int side) {
         float gap=note.staffGap;int step=Math.max(2,Math.round(gap*.2f));
+        int maximumSpan=outgoing&&ScoreNoteTiming.hasIndependentSustain(note.event)?24:outgoing?14:7;
         for(int clearance=step;clearance<=gap*1.8f;clearance+=step)
-            for(int span=Math.round(gap*1.6f);span<=gap*(outgoing?14:7);span+=step) {
+            for(int span=Math.round(gap*1.6f);span<=gap*maximumSpan;span+=step) {
                 int left=outgoing?note.head.maxX+clearance:note.head.minX-clearance-span;
                 int right=outgoing?left+span:note.head.minX-clearance;
                 if(left<0||right>=width)continue;
@@ -8959,9 +9106,10 @@ final class OmrScoreInterpreter {
                 if(Math.abs(bend)<.24f || offset+bend<.12f)continue;
                 if(target!=null&&Math.abs(centerY+side*gap*(offset+bend)-target.centerY)>gap*.25f)continue;
                 int hits=0,obscured=0,strong=0;int[] bins=new int[5],coveredBins=new int[5];
-                float[] centers=new float[50],supportedCenters=new float[50];
+                float[] centers=new float[50],supportedCenters=new float[50],strokeCenters=new float[50];
                 java.util.Arrays.fill(centers,Float.NaN);
                 java.util.Arrays.fill(supportedCenters,Float.NaN);
+                java.util.Arrays.fill(strokeCenters,Float.NaN);
                 for(int sample=0;sample<50;sample++) {
                     float t=(sample+.5f)/50f;
                     int x=Math.round(left+t*(right-left));
@@ -8983,13 +9131,25 @@ final class OmrScoreInterpreter {
                         }
                         if(straightRows[yy]||labels[at]==OmrMeasurePostProcessor.STAFF) {
                             if(obscuredY<0)obscuredY=yy;
-                        } else {ink=true;centers[sample]=yy;supportedCenters[sample]=yy;
+                        } else {
+                            // Measure the printed stroke center, not whichever edge
+                            // best fits the requested curve. Alternating between the
+                            // top and bottom edges can bend a thick straight rule.
+                            int inkTop=yy,inkBottom=yy,reach=Math.max(2,Math.round(gap*.4f));
+                            while(inkTop>Math.max(0,yy-reach)&&(gray[(inkTop-1)*width+x]&255)<=inkLimit)inkTop--;
+                            while(inkBottom<Math.min(height-1,yy+reach)&&(gray[(inkBottom+1)*width+x]&255)<=inkLimit)inkBottom++;
+                            if(inkBottom-inkTop<=gap*.6f)strokeCenters[sample]=(inkTop+inkBottom)*.5f;
+                            ink=true;centers[sample]=yy;supportedCenters[sample]=yy;
                             if((gray[at]&255)<=165)strong++;break;}
                     }
                     if(ink){hits++;bins[sample/10]++;coveredBins[sample/10]++;}
                     else if(obscuredY>=0){obscured++;coveredBins[sample/10]++;supportedCenters[sample]=obscuredY;}
                 }
                 if(inkLimit>165&&strong<30)continue;
+                // A changing stroke width can supply two curved boundaries while
+                // its printed center remains straight. Do not let the search
+                // switch boundaries to manufacture a returning arc.
+                if(hits>=34&&hasFlatTieStrokeCenter(strokeCenters,gap))continue;
                 if(hits>=43&&bins[0]>=7&&bins[1]>=7&&bins[2]>=7&&bins[3]>=7&&bins[4]>=7
                         &&arcCurvature(centers,0,0,49)>=Math.max(.8f,gap*.12f))return true;
                 // A short returning arc can cross a staff rule at one end. Treat a
@@ -9005,7 +9165,7 @@ final class OmrScoreInterpreter {
                 if(hits>=36&&obscured>0&&obscured<=14&&hits+obscured>=48
                         &&bins[0]>=3&&bins[4]>=3&&bins[1]>=9&&bins[2]>=9&&bins[3]>=9
                         &&coveredBins[0]>=9&&coveredBins[4]>=9
-                        &&arcCurvature(centers,0,0,49)>=Math.max(1.2f,gap*.15f))return true;
+                        &&arcCurvature(strokeCenters,0,0,49)>=Math.max(1.2f,gap*.15f))return true;
                 // A long, deeply bowed tie can cross several distinct staff rules.
                 // Require every sampled bin to be fully covered, both returning
                 // shoulders and a dark core; unrelated straight fragments cannot qualify.
@@ -9025,6 +9185,14 @@ final class OmrScoreInterpreter {
                         &&(strictContrast||hasContinuousTieArc(labels,gray,width,height,left,right,centerY,gap,target,inkLimit,requiredSide,true)))return true;
             }
         return false;
+    }
+
+    private static boolean hasFlatTieStrokeCenter(float[] centers,float gap) {
+        float[] finite=new float[centers.length];int count=0;
+        for(float value:centers)if(!Float.isNaN(value))finite[count++]=value;
+        if(count<34)return false;
+        java.util.Arrays.sort(finite,0,count);
+        return finite[count-1-count/10]-finite[count/10]<=Math.max(1.5f,gap*.13f);
     }
 
     private static ArcStats arcStats(byte[] labels, byte[] gray, int width, int height,

@@ -78,8 +78,12 @@ final class SixteenthRestDetector {
             }
             // A broad line halo can clean a warped rule but also erase a real
             // rest bulb. Read both masks, sharing the expensive raw-row counts.
-            for(boolean[] mask:java.util.Arrays.equals(narrowLine,line)
-                    ?new boolean[][]{line}:new boolean[][]{narrowLine,line}) {
+            boolean[] edgeLine=RestStaffRuleEdge.extend(gray,width,height,top,staff.top(),gap,narrowLine);
+            boolean sameMask=java.util.Arrays.equals(narrowLine,line);
+            boolean[][] masks=edgeLine==narrowLine
+                    ?(sameMask?new boolean[][]{line}:new boolean[][]{narrowLine,line})
+                    :(sameMask?new boolean[][]{line,edgeLine}:new boolean[][]{narrowLine,line,edgeLine});
+            for(boolean[] mask:masks) {
             int start = -1;
             for (int x = 0; x <= width; x++) {
                 int ink = 0;
@@ -94,7 +98,7 @@ final class SixteenthRestDetector {
                     boolean deepLowered=staffs.stream().anyMatch(s->s.index()==staff.index()
                             &&s.count()==staff.count()&&staff.top()-s.top()>gap*1.9f&&staff.top()-s.top()<gap*4.1f);
                     inspect(gray, width, height, measures, notes, staff, top, bottom,
-                            mask, start, x - 1, result,restDots,ordinary,lowered,deepLowered);
+                            mask, start, x - 1, result,restDots,ordinary,lowered,deepLowered,mask!=line&&mask!=narrowLine);
                     start = -1;
                 }
             }
@@ -187,7 +191,7 @@ final class SixteenthRestDetector {
 
     private static void inspect(byte[] gray, int width, int height, List<MeasureRegion> measures,
             List<ScoreNoteEvent> notes, Staff staff, int top, int bottom, boolean[] line,
-            int left, int right, List<ScoreRestEvent> result,List<RestDot> restDots,boolean ordinary,boolean lowered,boolean deepLowered) {
+            int left, int right, List<ScoreRestEvent> result,List<RestDot> restDots,boolean ordinary,boolean lowered,boolean deepLowered,boolean edgeFallback) {
         float gap = staff.gap();
         if (right - left + 1 < gap * .7f || right - left + 1 > gap * 1.6f) return;
         int minY = bottom + 1, maxY = top - 1;
@@ -273,6 +277,8 @@ final class SixteenthRestDetector {
             for (ScoreNoteEvent note : notes) if (note.measureIndex() == m
                     && note.staffIndex() == staff.index() && note.staffCount() == staff.count()) {
                 float noteX = (region.left() + note.positionInMeasure() * (region.right() - region.left())) * width;
+                if(edgeFallback&&lowered&&!ScoreNoteTiming.hasIndependentSustain(note)
+                        &&RestStaffRuleEdge.noteStem(gray,width,height,left,right,minY,gap,noteX,note.pageY()*height))return;
                 if (noteX >= left - gap * .65f && noteX <= right + gap * .65f) {
                     // A rest may share an attack column with a separate held voice. Keep
                     // rejecting note fragments unless the whole rest is clear of its head.
@@ -287,6 +293,9 @@ final class SixteenthRestDetector {
             double duration=(whole?4:half?2:quarter?1:eighth?.5:.25)*(dots.size()==2?1.75:dots.size()==1?1.5:1);
             ScoreRestEvent rest=new ScoreRestEvent(m, (centerX - region.left()) / (region.right() - region.left()),
                     centerY, (maxY - minY + 1f) / height, staff.index(), staff.count(),duration);
+            if(edgeFallback&&result.stream().anyMatch(r->r.measureIndex()==rest.measureIndex()
+                    &&r.staffIndex()==rest.staffIndex()&&r.staffCount()==rest.staffCount()
+                    &&Math.abs(r.positionInMeasure()-rest.positionInMeasure())<.018f))return;
             result.add(rest);
             for(InkDot dot:dots)restDots.add(new RestDot(dot.x(),dot.y(),rest));
             return;

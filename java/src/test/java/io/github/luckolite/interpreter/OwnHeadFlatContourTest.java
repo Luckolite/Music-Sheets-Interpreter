@@ -15,7 +15,7 @@ public class OwnHeadFlatContourTest {
         Object glyph=make("Component",area,left,left+11,105,129,sx/(float)area,sy/(float)area);
         Object candidate=make("AccidentalCandidate",glyph,(byte)5);
         Object head=make("Component",100,272,288,118,130,280f,124f);
-        for(var m:OmrScoreInterpreter.class.getDeclaredMethods())if(m.getName().equals("detectWrittenAccidental")){
+        for(var m:OmrScoreInterpreter.class.getDeclaredMethods())if(m.getName().equals("detectWrittenAccidental")&&m.getParameterCount()==6){
             m.setAccessible(true);return (int)m.invoke(null,labels,420,260,List.of(candidate),head,16f);
         }
         throw new AssertionError("Missing accidental reader");

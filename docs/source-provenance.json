@@ -1,10 +1,22 @@
 {
   "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
+  "curved_frames_and_shaded_chords_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected working-tree changes restore independently stemmed fused gray chord lobes, preserve their ledger ownership, and assign staggered chord accidentals only with partner and intervening-note evidence. Tie-only head masks and raw stroke centerlines reject straight-rule false ties without weakening genuine-curve controls. Curved staff tracks recover only otherwise unknown full treble glyphs, leaving bass and cue decisions intact. A tie-only local scale fallback preserves emitted geometry, requires pitch agreement and two system-end arcs, and extends the outgoing search only for independently sustained notes. Tie copies retain all event fields. Separate bounded guards reject tiny outlined inner-beam hooks and stop disconnected neighboring stems from shortening or duplicating a wide whole oval. All additions use original synthetic geometry and no private image or annotation; no model, dependency or deployment change. Matched-input private page comparisons establish only the reviewed deltas, not complete score accuracy."
+  },
   "source_authors": [
     "Luckolite"
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
+  "rest_rule_edge_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Additive narrow-rule-mask fallback extends only one adjacent row backed by three staff gaps of continuous original ink and existing rule phase. Original masks/detections remain first. Fallback-only moving-note stem ownership rejects downward flags; full staff identity deduplicates new rest-dot records. No source pixels are changed. Seventeen original procedural tests accompany the repair;191 focused tests pass. A matched-input private24-page replay adds17 source-confirmed rests and18 related timing fields, with zero other changed fields or removed events. No commercial score evidence, model, external dependency or deployment change is included; remaining score-audit work is not claimed complete."
+  },
+  "rest_raster_row_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected one-line working-tree repair rounds a fractional staff-gap minimum to the nearest raster row before testing rest ink support. The required support fraction, contrast, shape and ownership gates are unchanged. Eight original synthetic regressions cover fractional and integer boundaries, insufficient rows, erased staff rows, low contrast and input immutability; 174 focused tests pass. A private 24-page replay recovers one source-confirmed eighth rest and its adjacent timing field, with all other fields and pages unchanged. No private score evidence, model, dependency or deployment change is included; this is not full score-audit closure."
+  },
   "symbol_staff_rest_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Selected working-tree repair follows subtly sloping, locally contrasted five-rule groups only for additive raster-rest recovery. Existing note-pitch detection and curved-staff paths retain their prior branches. Symbol tracks require dense broad samples, restricted phase and scale, original-pixel contrast, smoothness and rejection of a competing sixth rule. Existing glyph and note/voice ownership gates remain. Ten original procedural tests cover both slants and rejection controls; 166 focused app-package tests and 10 standalone-package tests pass. A private matched-input 24-page replay adds eight source-reviewed rests and nine associated rest-timing fields with no other changed fields. Full audit completeness, device validation and deployment are not claimed. No private image, annotation, fixture, model or dependency is published."
@@ -14,6 +26,18 @@
     "boundary": "Scoped working-tree repairs recover detached rounded-arm articulations, tolerate an antialiased thin staff-rule witness beside a finite beam, and distinguish solitary grace flags from crossing slashes. Paired grace heads veto the solitary fallback even when one stem is too faint to trace. Thirty-four original procedural regressions accompany the three repairs. Full private page comparisons and source review establish the bounded deltas, not exhaustive score accuracy. One pre-existing false beam-hook note is tracked separately for removal; no private scan or annotations are published. No model weights, dependencies or app deployment change."
   },
   "files": {
+    "ShadedChordHeadRecovery.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedChordHeadRecovery.java",
+      "source_sha256": "5e2dd500ee4362c311795b05a45ff130df6f3158e8bee7f185e8dd805868d519",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed original JDK-only recovery of two to four shaded curved lobes with shared stem evidence, bounded scale and independent ledger rails. Fourteen synthetic regressions plus guarded accidental and tie integration tests accompany it. Private source evidence remains private; no dependencies or weight changes."
+    },
+    "RestStaffRuleEdge.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestStaffRuleEdge.java",
+      "source_sha256": "3652aecfb31573ffaef24a6c96f5ab53c7a86f247e600522b23680ee4013b066",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed JDK-only bounded raster-rule edge and note-stem ownership helper. Original synthetic tests, standalone package adaptation only; see rest_rule_edge_review."
+    },
     "LocalTieStaffAlignment.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/LocalTieStaffAlignment.java",
       "source_sha256": "b361c5a499088fd1ee0e075a0a00f37ac0c68db8798e79a81c49ef6164307dca",
@@ -34,9 +58,9 @@
     },
     "SlashedGraceFlagInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SlashedGraceFlagInk.java",
-      "source_sha256": "44795e52640adff864bbb3708d44eda32d8fdd1aafa105e7cde11ed258a1dbc3",
+      "source_sha256": "2f455aea365e9635565d253671aed6dd68ad22d4ab0225de1e3ce4944cb66d92",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "notes": "Reviewed original JDK-only crossing-slash and flag evidence for small solitary upward-stemmed grace notes. A nearby small companion vetoes this recovery even when its faint stem cannot be traced, preserving shared double beams. Ten procedural regressions and private source comparisons; no private fixtures, new dependencies or model changes."
+      "notes": "Reviewed original JDK-only crossing-slash and flag evidence for small solitary upward-stemmed grace notes. A nearby small companion vetoes this recovery even when its faint stem cannot be traced, preserving shared double beams. A multi-root result can exclude raw horizontal rule rows only when ink is independently witnessed on both distant sides and one flag plus the slash remain proved. Nineteen original procedural controls include local-shadow stem retracing, two genuine flags, companion abstention and untouched pixels. A private matched-input 24-page replay changes four source-verified solitary grace beam counts only. No private fixtures, new dependencies or model changes."
     },
     "CurvedStaffTail.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CurvedStaffTail.java",
@@ -199,7 +223,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "1e525cf147cf407be71bbab1ba10566bbd4941149dde6c55e235c8b95732d563",
+      "source_sha256": "1dea61e69c633aff190746ec3dfa45008c483235297b349cd8c296d8f31a6838",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
@@ -266,9 +290,9 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "8a8b0d0b2729509459771605d308b46f83d2104a3a52439ed08c143e99bd6058",
+      "source_sha256": "467880ade00e49da6d8a9f07ff788aaacee3f959ef313fe41fda84c8b4b6cbba",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "notes": "Reviewed additive symbol-staff refinement preserves legacy detections and all existing rest-shape/ownership gates, avoids recursive refinement of rectified rasters, and ignores invalid unrelated note indices during mapping. Existing curved processing and input pixels are preserved. Ten original synthetic controls plus existing focused rest regressions; see symbol_staff_rest_review."
+      "notes": "Reviewed additive symbol-staff refinement and adjacent-rule-edge fallback preserve legacy detections and all shape/ownership gates. No recursive raster refinement or pixel mutation; invalid unrelated note indices are skipped. Fallback-only moving-note stem veto and full staff identity prevent flag and rest-dot aliases. See symbol_staff_rest_review and rest_rule_edge_review; original regressions only."
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -495,9 +519,9 @@
     },
     "CompactQuarterRestContour.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CompactQuarterRestContour.java",
-      "source_sha256": "e163b2fca603574305ea02936aa54625327e329816976467569d27cc0e772937",
+      "source_sha256": "a9d46610002527e8ae592af275f49a3e5ec8b8260253f73ec43701a1d152b297",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+      "notes": "Reviewed nearest-raster-row minimum repair preserves all original contrast, shape and ownership requirements. Eight original synthetic controls accompany the one-line change; see rest_raster_row_review. Prior reviewed helper remains JDK-only with no private fixtures or model changes."
     },
     "ConnectedItalicDynamic.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ConnectedItalicDynamic.java",
@@ -666,6 +690,12 @@
       "source_sha256": "f315d7bc79efc251e59aefddb559d25e7078ee1c548c378573ff8c1c6ee74369",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "OutlinedHookHead.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OutlinedHookHead.java",
+      "source_sha256": "a608c4369179bda73ce43ec0fc7b4d33760df71f63aa48761a49557b0f0adf30",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed bounded working-tree helper and its JDK-only OutlinedBeamInk dependency. Identifies a tiny secondary outlined-beam hook through independently attached larger-head ownership. Ported with twelve original synthetic geometry and malformed-input regressions; no score pixels, private fixtures, Android services or model changes. Core integration validation and publication are coordinated with the accompanying interpreter update."
     },
     "StemOwnedBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StemOwnedBeamTip.java",

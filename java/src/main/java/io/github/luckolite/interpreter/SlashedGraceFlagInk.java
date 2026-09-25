@@ -13,13 +13,34 @@ final class SlashedGraceFlagInk {
         int top=Math.max(1,Math.round(headY-gap*2.8f)),bottom=Math.min(height-2,Math.round(headY-gap*.45f));
         if(left<1||right>=width-1||top>=bottom)return 0;
         int threshold=BeamInkThreshold.at(gray,width,height,stemX,top,bottom,gap);
+        int original=scan(gray,width,height,left,right,top,bottom,threshold,gap,null);
+        if(original<=1)return original;
+        // A lower staff rule can complete a second apparent diagonal between the
+        // stem and the returning tail of one flag. Only ignore rows independently
+        // witnessed well outside BOTH sides of this miniature glyph.
+        boolean[] rules=new boolean[height];boolean hasRule=false;
+        int reach=Math.round(gap),span=Math.max(4,Math.round(gap*.5f));
+        if(stemX-reach-span<0||stemX+reach+span>=width)return original;
+        for(int y=Math.max(0,top-1);y<=Math.min(height-1,bottom+1);y++) {
+            int a=0,b=0;
+            for(int dx=0;dx<span;dx++) {
+                if((gray[y*width+stemX-reach-dx]&255)<Math.round(threshold*.8f))a++;
+                if((gray[y*width+stemX+reach+dx]&255)<Math.round(threshold*.8f))b++;
+            }
+            rules[y]=a>=span*.85f&&b>=span*.85f;hasRule|=rules[y];
+        }
+        if(!hasRule)return original;
+        int clean=scan(gray,width,height,left,right,top,bottom,threshold,gap,rules);
+        return clean==1?1:original;
+    }
+    private static int scan(byte[] gray,int width,int height,int left,int right,int top,int bottom,int threshold,float gap,boolean[] rules) {
         for(float contrast:new float[]{.8f,1f}) {
             int th=Math.round(threshold*contrast);var roots=new ArrayList<Integer>();boolean slash=false;
             for(int y=top;y<=bottom;y++) {
                 boolean down=false;
                 for(float slope:new float[]{.75f,1f,1.25f,1.5f,1.75f,2f}) {
-                    if(y+(right-left)*slope<=bottom)down|=line(gray,width,height,left,right,y,slope,th);
-                    slash|=line(gray,width,height,left,right,y,-slope,th);
+                    if(y+(right-left)*slope<=bottom)down|=line(gray,width,height,left,right,y,slope,th,rules);
+                    slash|=line(gray,width,height,left,right,y,-slope,th,rules);
                 }
                 if(down)roots.add(y);
             }
@@ -29,9 +50,9 @@ final class SlashedGraceFlagInk {
         }
         return 0;
     }
-    private static boolean line(byte[] gray,int width,int height,int left,int right,int y,float slope,int threshold) {
+    private static boolean line(byte[] gray,int width,int height,int left,int right,int y,float slope,int threshold,boolean[] rules) {
         int hits=0,total=0;
-        for(int x=left;x<=right;x++){int yy=Math.round(y+(x-left)*slope);if(yy<1||yy>=height-1)return false;total++;if((gray[yy*width+x]&255)<threshold||(gray[(yy-1)*width+x]&255)<threshold||(gray[(yy+1)*width+x]&255)<threshold)hits++;}
+        for(int x=left;x<=right;x++){int yy=Math.round(y+(x-left)*slope);if(yy<1||yy>=height-1)return false;total++;boolean hit=false;for(int dy=-1;dy<=1;dy++)if((rules==null||!rules[yy+dy])&&(gray[(yy+dy)*width+x]&255)<threshold)hit=true;if(hit)hits++;}
         return hits>=total*.90f;
     }
 }

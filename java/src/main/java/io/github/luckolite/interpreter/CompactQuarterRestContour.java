@@ -56,7 +56,7 @@ final class CompactQuarterRestContour {
             for(int x=Math.max(0,left);x<=Math.min(width-1,right);x++)if((gray[y*width+x]&255)<=threshold){dark=true;break;}
             if(dark)supported++;
         }
-        return rows>=gap&&supported>=rows*.75f;
+        return rows>=Math.max(1,Math.round(gap))&&supported>=rows*.75f;
     }
     static boolean matches(double[] rows,float gap) {
         if(rows==null||rows.length<12||!Float.isFinite(gap)||gap<4)return false;
