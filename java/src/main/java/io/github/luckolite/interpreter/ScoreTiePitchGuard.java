@@ -13,11 +13,13 @@ final class ScoreTiePitchGuard {
         List<ScoreNoteEvent> result=new ArrayList<>(notes);
         for(int i=0;i<notes.size();i++) {
             ScoreNoteEvent current=notes.get(i);
-            if(!current.tiedFromPrevious()||current.measureIndex()==0)continue;
+            if(!current.tiedFromPrevious())continue;
+            boolean changed=explicitPitchChange(notes,i);
+            if(current.measureIndex()==0&&!changed)continue;
             int pitch=midi(current,keys);
-            if(pitch==Integer.MIN_VALUE && !explicitPitchChange(notes,i))continue;
+            if(pitch==Integer.MIN_VALUE && !changed)continue;
             boolean prior=false;
-            for(int j=i-1;pitch!=Integer.MIN_VALUE && j>=0;j--) {
+            for(int j=i-1;!changed && pitch!=Integer.MIN_VALUE && j>=0;j--) {
                 ScoreNoteEvent earlier=notes.get(j);
                 if(current.measureIndex()-earlier.measureIndex()>1)break;
                 if(!sameContinuingStaff(earlier,current))continue;

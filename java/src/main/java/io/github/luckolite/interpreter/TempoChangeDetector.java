@@ -21,6 +21,7 @@ final class TempoChangeDetector {
             if (token.value() < 30 || token.value() > 400) continue;
             int equalsLeft = equalsSignLeft(token, gray, width, height);
             if (equalsLeft < 0) continue;
+            token = printedDigitBounds(token,gray,width,height);
             // A direction such as "Lento, poco rubato (quarter = c. 88)" starts at the
             // change; the digits can extend to the next bar. Keep their ink box for symbol
             // recognition, but attach the change to the start of its OCR direction line.
@@ -56,6 +57,18 @@ final class TempoChangeDetector {
             deduplicated.add(change);
         }
         return List.copyOf(deduplicated);
+    }
+
+    /** OCR direction padding may cross the staff even though the actual digits do not. */
+    private static MeasureNumberReconciler.NumberToken printedDigitBounds(
+            MeasureNumberReconciler.NumberToken token,byte[] gray,int width,int height) {
+        int top=height,bottom=-1,count=0;
+        for(int y=Math.max(0,Math.round(token.top()*height));y<=Math.min(height-1,Math.round(token.bottom()*height));y++)
+            for(int x=Math.max(0,Math.round(token.left()*width));x<=Math.min(width-1,Math.round(token.right()*width));x++)
+                if((gray[y*width+x]&255)<=125){top=Math.min(top,y);bottom=Math.max(bottom,y);count++;}
+        if(count<6||bottom-top<3)return token;
+        return new MeasureNumberReconciler.NumberToken(token.value(),token.left(),top/(float)height,
+                token.right(),(bottom+1)/(float)height,token.annotationLeft());
     }
 
     private static int nearestFollowingMeasure(MeasureNumberReconciler.NumberToken token,
@@ -176,14 +189,14 @@ final class TempoChangeDetector {
         return -1;
     }
 
-    /** Quarter-beat length of a filled tempo note, retaining its flag and augmentation dot. */
+    /** Quarter-beat length of a tempo note, retaining hollow heads, flags and augmentation dots. */
     private static double printedBeatUnit(MeasureNumberReconciler.NumberToken token,
             byte[] gray, int width, int height, int equalsLeft) {
         double normal=printedBeatUnit(token,gray,width,height,equalsLeft,200);
         double core=printedBeatUnit(token,gray,width,height,equalsLeft,165);
         // A light scan bridge can attach the dot to its notehead. Only use the
         // darker segmentation to recover a complete dot, not to erase faint ink.
-        return core==normal*1.5?core:normal;
+        return core==normal*1.5||normal==1&&(core==2||core==3)?core:normal;
     }
 
     private static double printedBeatUnit(MeasureNumberReconciler.NumberToken token,
@@ -228,11 +241,14 @@ final class TempoChangeDetector {
             int headLeft=note[1],headRight=note[0];
             for(int x=note[0];x<=note[1];x++)if((gray[cy*width+x]&255)<=200){headLeft=Math.min(headLeft,x);headRight=Math.max(headRight,x);}
             int cx=(headLeft+headRight)/2;
-            if((gray[cy*width+cx]&255)>125)continue;
+            int[] pocket=closedTempoHead(gray,width,note,unit,inkLimit);
+            boolean hollow=pocket!=null;
+            if(hollow){cx=pocket[0];cy=pocket[1];}
+            else if((gray[cy*width+cx]&255)>125)continue;
             // Locate the long upright stem independently of the flag's bounding box.
             int stem=-1,best=0;
             for(int x=note[0];x<=note[1];x++) {
-                int ink=0;for(int y=note[2];y<note[2]+nh*2/3;y++)if((gray[y*width+x]&255)<=200)ink++;
+                int ink=0;for(int y=note[2];y<note[2]+nh*2/3;y++)if((gray[y*width+x]&255)<=inkLimit)ink++;
                 if(ink>=best){best=ink;stem=x;}
             }
             if(stem<0||best<nh*.5f)continue;
@@ -240,10 +256,12 @@ final class TempoChangeDetector {
             for(int y=note[2];y<note[2]+nh*2/3;y++) {
                 boolean protrudes=false;
                 for(int x=stem+Math.max(2,Math.round(unit*.2f));x<=note[1];x++)
-                    if((gray[y*width+x]&255)<=200){protrudes=true;break;}
+                    if((gray[y*width+x]&255)<=inkLimit){protrudes=true;break;}
                 if(protrudes)flaggedRows++;
             }
-            double beat=flaggedRows>=Math.max(3,Math.round(unit*.25f))?.5:1;
+            boolean flagged=flaggedRows>=Math.max(3,Math.round(unit*.25f));
+            if(hollow&&flagged)continue;
+            double beat=hollow?2:flagged?.5:1;
             for(int[] dot:parts) {
                 int dw=dot[1]-dot[0]+1,dh=dot[3]-dot[2]+1;
                 float gap=dot[0]-note[1],dy=Math.abs((dot[2]+dot[3])*.5f-cy);
@@ -255,5 +273,31 @@ final class TempoChangeDetector {
             return beat;
         }
         return 1;
+    }
+
+    /** A half head needs a paper pocket enclosed by ink, not merely a light letter edge. */
+    private static int[] closedTempoHead(byte[] gray,int width,int[] note,int unit,int inkLimit) {
+        int w=note[1]-note[0]+1,h=note[3]-note[2]+1;
+        boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];
+        for(int start=0;start<seen.length;start++) {
+            if(seen[start]||(gray[(note[2]+start/w)*width+note[0]+start%w]&255)<=inkLimit)continue;
+            int size=1,take=0,minX=w,maxX=0,minY=h,maxY=0;boolean edge=false;
+            queue[0]=start;seen[start]=true;
+            while(take<size) {
+                int p=queue[take++],x=p%w,y=p/w;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+                if(x==0||x==w-1||y==0||y==h-1)edge=true;
+                for(int[] d:new int[][]{{-1,0},{1,0},{0,-1},{0,1}}) {
+                    int nx=x+d[0],ny=y+d[1];if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                    int next=ny*w+nx;
+                    if(!seen[next]&&(gray[(note[2]+ny)*width+note[0]+nx]&255)>inkLimit){seen[next]=true;queue[size++]=next;}
+                }
+            }
+            if(!edge&&size>=Math.max(2,unit*unit*.008f)&&size<=unit*unit*.18f
+                    &&maxX-minX+1>=unit*.12f&&maxY-minY+1>=unit*.08f
+                    &&maxX-minX+1<=unit*.8f&&maxY-minY+1<=unit*.45f&&minY>=h-unit*.6f)
+                return new int[]{note[0]+(minX+maxX)/2,note[2]+(minY+maxY)/2};
+        }
+        return null;
     }
 }

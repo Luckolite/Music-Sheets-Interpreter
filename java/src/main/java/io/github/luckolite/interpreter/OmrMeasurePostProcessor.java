@@ -79,6 +79,7 @@ final class OmrMeasurePostProcessor {
         for (RawStaffLineDetector.StaffLines semantic : semanticStaffs) {
             int[] rows = semantic.rows();
             float gap = semantic.gap();
+            StaffPitchTrack track=null;
             int top = Math.max(0, Math.round(rows[0] - gap * 0.65f));
             int bottom = Math.min(height - 1, Math.round(rows[4] + gap * 0.65f));
             int[] columns = new int[width];
@@ -102,7 +103,7 @@ final class OmrMeasurePostProcessor {
                 // Very faded horizontal rules may disappear while the closing
                 // bar remains clear. A verified full-height bar can preserve
                 // those final notes without guessing a regular measure width.
-                List<Integer> outer=findBoundaries(labels,gray,width,height,rows,gap,left,width-1,slope);
+                List<Integer> outer=findBoundaries(labels,gray,width,height,rows,gap,left,width-1,slope,track);
                 if(outer.size()>2) {
                     int closing=outer.get(outer.size()-2);
                     if(closing>right&&closing-right<width*.25f)right=closing;
@@ -112,9 +113,9 @@ final class OmrMeasurePostProcessor {
             }
             if (right - left >= Math.max(width / 4, Math.round(gap * 18f))) {
                 List<Integer> boundaries = findBoundaries(labels, gray, width, height, rows,
-                        gap, left, right, slope);
+                        gap, left, right, slope,track);
                 if (boundaries.size() >= 2)
-                    result.add(new StaffRun(rows[0], rows[4], gap, left, right, boundaries, slope));
+                    result.add(new StaffRun(rows[0], rows[4], gap, left, right, boundaries, slope,track));
             }
         }
         recoverRawStaffs(labels, gray, width, height, result, 0f);
@@ -146,6 +147,28 @@ final class OmrMeasurePostProcessor {
         }
         List<RawStaffLineDetector.StaffLines> rawStaffs=RawStaffLineDetector.detect(detectionGray,width,height);
         for (RawStaffLineDetector.StaffLines raw : rawStaffs) {
+            // A curved physical row can make two page-wide projection peaks.
+            // The established five-rule track owns every overlapping phase.
+            boolean duplicateCurve=false;
+            for(int index=0;index<result.size();index++) {
+                StaffRun existing=result.get(index);
+                if(Math.abs(existing.gap-raw.gap())>=existing.gap*.18f
+                        ||raw.top()>=existing.bottom||raw.bottom()<=existing.top
+                        ||Math.abs(raw.center()-(existing.top+existing.bottom)*.5f)<=Math.max(raw.gap()*2.2f,height*.008f))continue;
+                StaffPitchTrack track=existing.track==null?StaffPitchTrack.detect(gray,width,height,existing.top,existing.bottom,existing.gap):existing.track;
+                if(track==null)continue;
+                for(float fraction:new float[]{.15f,.35f,.65f,.85f}) {
+                    float[] physical=track.at(width*fraction);
+                    if(Math.abs(physical[0]-raw.bottom())<existing.gap*.6f)duplicateCurve=true;
+                }
+                if(duplicateCurve) {
+                    int[] rows=new int[5];for(int j=0;j<5;j++)rows[j]=Math.round(existing.bottom-(4-j)*existing.gap);
+                    List<Integer> boundaries=findBoundaries(labels,gray,width,height,rows,existing.gap,existing.left,existing.right,existing.slope,track);
+                    result.set(index,new StaffRun(existing.top,existing.bottom,existing.gap,existing.left,existing.right,boundaries,existing.slope,track));
+                    break;
+                }
+            }
+            if(duplicateCurve)continue;
             int representedIndex = -1;
             for (int index = 0; index < result.size(); index++) {
                 StaffRun existing = result.get(index);
@@ -177,7 +200,7 @@ final class OmrMeasurePostProcessor {
                 if (existing.boundaries.size() == 2 && boundaries.size() > 2
                         && boundaries.size() <= 9)
                     result.set(representedIndex, new StaffRun(existing.top, existing.bottom,
-                            existing.gap, left, right, boundaries, existing.slope));
+                            existing.gap, left, right, boundaries, existing.slope,existing.track));
                 else if (Math.abs(raw.top()-existing.top) <= existing.gap*.5f
                         && Math.abs(raw.gap()-existing.gap) <= existing.gap*.18f) {
                     // The mask may fade before the printed staff ends. Preserve
@@ -193,7 +216,7 @@ final class OmrMeasurePostProcessor {
                         extended.set(0,expandedLeft);
                         extended.set(extended.size()-1,expandedRight);
                         result.set(representedIndex,new StaffRun(existing.top,existing.bottom,
-                                existing.gap,expandedLeft,expandedRight,List.copyOf(extended),existing.slope));
+                                existing.gap,expandedLeft,expandedRight,List.copyOf(extended),existing.slope,existing.track));
                     }
                 }
             } else if (boundaries.size() >= 2
@@ -353,13 +376,23 @@ final class OmrMeasurePostProcessor {
 
     private static List<Integer> findBoundaries(byte[] labels, byte[] gray, int width, int height, int[] rows,
                                                  float gap, int left, int right, float slope) {
+        return findBoundaries(labels,gray,width,height,rows,gap,left,right,slope,null);
+    }
+
+    private static List<Integer> findBoundaries(byte[] labels, byte[] gray, int width, int height, int[] seedRows,
+                                                 float gap, int left, int right, float slope,StaffPitchTrack track) {
         float centerX = width / 2f;
-        int span = Math.max(1, Math.round(rows[4] - rows[0] + gap * 0.5f));
+        int span = Math.max(1, Math.round(seedRows[4] - seedRows[0] + gap * 0.5f));
         List<Integer> candidates = new ArrayList<>();
         boolean inRun = false;
         int runStart = 0;
         for (int x = left + 1; x <= right; x++) {
             float shift = slope * (x - centerX);
+            int[] rows=seedRows;
+            if(track!=null) {
+                float[] physical=track.at(x);rows=new int[5];
+                for(int line=0;line<5;line++)rows[line]=Math.round(physical[0]-(4-line)*physical[1]-shift);
+            }
             int top = Math.max(0, Math.round(rows[0] + shift - gap * 0.25f));
             int bottom = Math.min(height - 1, Math.round(rows[4] + shift + gap * 0.25f));
             int covered = 0;
@@ -381,7 +414,7 @@ final class OmrMeasurePostProcessor {
             boolean semanticCandidate = covered >= Math.max(gap * 1.65f, span * 0.36f)
                     && (touchesTop || touchesBottom);
             int rawColumn = gray != null && semanticCandidate ? rawBarlineColumn(gray, width, height,
-                    x, rows, gap, shift, slope) : Integer.MIN_VALUE;
+                    x, rows, gap, shift, slope,RAW_BARLINE_DARK,track==null?12:32) : Integer.MIN_VALUE;
             // A one-pixel staff-row bias can exclude the lower edge of a short
             // printed rule. Retry only when the original raw page still shows
             // an isolated full-height line at this semantic candidate.
@@ -389,14 +422,14 @@ final class OmrMeasurePostProcessor {
                     && isolatedFullHeightRule(gray,width,height,x,rows,gap,shift)) {
                 int[] adjustedRows = rows.clone();
                 for (int index = 0; index < adjustedRows.length; index++) adjustedRows[index]--;
-                rawColumn = rawBarlineColumn(gray,width,height,x,adjustedRows,gap,shift,slope);
+                rawColumn = rawBarlineColumn(gray,width,height,x,adjustedRows,gap,shift,slope,RAW_BARLINE_DARK,track==null?12:32);
             }
             // A nearly complete semantic rule can survive a scan whose raw core
             // is slightly paler. Keep all raw continuity, space and branch gates,
             // plus note ownership, instead of accepting the semantic trace alone.
             if (gray != null && rawColumn == Integer.MIN_VALUE && touchesTop && touchesBottom
                     && covered >= span * .85f)
-                rawColumn = rawBarlineColumn(gray,width,height,x,rows,gap,shift,slope,220);
+                rawColumn = rawBarlineColumn(gray,width,height,x,rows,gap,shift,slope,220,track==null?12:32);
             boolean rawSpansStaff = rawColumn != Integer.MIN_VALUE;
             boolean semanticBar = semanticCandidate && (gray == null || rawSpansStaff);
             // Note ownership can only veto a proven bar; it cannot create one. Avoid scanning
@@ -428,6 +461,9 @@ final class OmrMeasurePostProcessor {
                 attachedHead = symbolHeadTouchesColumn(labels,width,height,rawColumn,top,bottom,gap);
             // Raw pixels validate a semantic candidate, but never create one by themselves:
             // aligned note stems can span all five lines on dense music such as Humoresque.
+            if (semanticBar && !attachedHead && gray != null)
+                attachedHead = ClosedHeadBarlineGuard.attached(gray, width, height, rawColumn,
+                        Math.round(rows[0] + shift), Math.round(rows[4] + shift), gap);
             boolean bar = semanticBar && !attachedHead;
             if (bar && !inRun) { inRun = true; runStart = x; }
             if ((!bar || x == right) && inRun) {
@@ -642,6 +678,11 @@ final class OmrMeasurePostProcessor {
 
     private static int rawBarlineColumn(byte[] gray,int width,int height,int centerX,
             int[] rows,float gap,float shift,float slope,int inkLimit) {
+        return rawBarlineColumn(gray,width,height,centerX,rows,gap,shift,slope,inkLimit,12);
+    }
+
+    private static int rawBarlineColumn(byte[] gray,int width,int height,int centerX,
+            int[] rows,float gap,float shift,float slope,int inkLimit,int contrast) {
         shift += printedRuleOffset(gray,width,height,centerX,rows,gap,shift);
         int top = Math.max(0, Math.round(rows[0] + shift - gap * .12f));
         int bottom = Math.min(height - 1, Math.round(rows[4] + shift + gap * .12f));
@@ -668,7 +709,7 @@ final class OmrMeasurePostProcessor {
             int paper = 0;
             for (int j = Math.max(0, i - paperRadius); j <= Math.min(paperTones.length - 1, i + paperRadius); j++)
                 paper = Math.max(paper, paperTones[j]);
-            inkCutoff[i] = Math.min(inkLimit, Math.max(0, paper - 12));
+            inkCutoff[i] = Math.min(inkLimit, Math.max(0, paper - contrast));
         }
         int darkRows = 0, longest = 0, current = 0;
         boolean touchesTop = false, touchesBottom = false;
@@ -904,10 +945,19 @@ final class OmrMeasurePostProcessor {
                         && verticalGap <= gap * MAX_CONNECTED_STAFF_SEPARATION_GAPS
                         && connectedByVerticalRule(gray, width, height, previous, staff, gap);
                 if ((compactAligned && (gray == null || verticalGap < 0)) || visiblyConnected) {
+                    List<Integer> upperBoundaries = previous.boundaries, lowerBoundaries = staff.boundaries;
+                    if (gray != null) {
+                        upperBoundaries = ClosedHeadBarlineGuard.withoutOwnedByOtherStaff(
+                                previous.boundaries, staff.boundaries, gray, width, height,
+                                Math.round(staff.top), Math.round(staff.bottom), staff.gap);
+                        lowerBoundaries = ClosedHeadBarlineGuard.withoutOwnedByOtherStaff(
+                                staff.boundaries, previous.boundaries, gray, width, height,
+                                Math.round(previous.lastStaff.top), Math.round(previous.lastStaff.bottom), previous.lastStaff.gap);
+                    }
                     previous.bottom = staff.bottom;
                     previous.lastStaff = staff;
                     previous.gap = (previous.gap + staff.gap) / 2f;
-                    previous.boundaries = mergeBoundaries(previous.boundaries, staff.boundaries,
+                    previous.boundaries = mergeBoundaries(upperBoundaries, lowerBoundaries,
                             width, previous.gap);
                     continue;
                 }
@@ -1074,6 +1124,14 @@ final class OmrMeasurePostProcessor {
                     - system.gap * 2.1f) / height);
             float bottom = Math.min(1f, (system.bottom + Math.max(shiftLeft, shiftRight)
                     + system.gap * 2.1f) / height);
+            if(system.firstStaff.track!=null) {
+                float[] a=system.firstStaff.track.at(rawLeft),b=system.firstStaff.track.at(rawRight);
+                top=Math.max(0,(Math.min(a[0]-4*a[1],b[0]-4*b[1])-system.gap*2.1f)/height);
+            }
+            if(system.lastStaff.track!=null) {
+                float[] a=system.lastStaff.track.at(rawLeft),b=system.lastStaff.track.at(rawRight);
+                bottom=Math.min(1,(Math.max(a[0],b[0])+system.gap*2.1f)/height);
+            }
             int inset = Math.max(2, Math.round(system.gap * 0.55f));
             int playableLeft = rawLeft + inset;
             if (index == 0) {
@@ -1151,7 +1209,11 @@ final class OmrMeasurePostProcessor {
     }
 
     private record StaffRun(int top, int bottom, float gap, int left, int right,
-                            List<Integer> boundaries, float slope) { }
+                            List<Integer> boundaries, float slope,StaffPitchTrack track) {
+        StaffRun(int top,int bottom,float gap,int left,int right,List<Integer> boundaries,float slope) {
+            this(top,bottom,gap,left,right,boundaries,slope,null);
+        }
+    }
 
     private static final class SystemRun {
         final int top;
@@ -1159,9 +1221,11 @@ final class OmrMeasurePostProcessor {
         float gap;
         List<Integer> boundaries;
         final float slope;
+        final StaffRun firstStaff;
         // Connector evidence belongs to the adjacent staff, not the system's average scale.
         StaffRun lastStaff;
         SystemRun(StaffRun staff) {
+            this.firstStaff=staff;
             this.top = staff.top; this.bottom = staff.bottom; this.gap = staff.gap;
             this.boundaries = staff.boundaries; this.slope = staff.slope;
             this.lastStaff = staff;

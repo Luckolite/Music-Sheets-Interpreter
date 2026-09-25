@@ -1,6 +1,5 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -125,7 +124,7 @@ public final class ScoreNoteTiming {
             if (attackNotes==null) {
                 boolean moving = notes.stream().anyMatch(n->!hasIndependentSustain(n));
                 attackNotes=moving ? notes.stream().filter(n->!hasIndependentSustain(n))
-                        .toList() : notes;
+                        .collect(java.util.stream.Collectors.toList()) : notes;
             }
             return attackNotes;
         }
@@ -205,25 +204,30 @@ public final class ScoreNoteTiming {
     }
 
     private record GracePlayback(List<ScoreNoteEvent> metrical, ScoreNoteEvent principal,
-                                 int index, int count) { }
+                                 int index, int count,boolean trailing,boolean bothSides) { }
 
     private static GracePlayback gracePlayback(ScoreNoteEvent target, List<ScoreNoteEvent> notes) {
         if(target==null || notes==null)return null;
         TimingSession session=SESSION.get();
         if(session==null&&notes.stream().noneMatch(ScoreNoteTiming::grace))return null;
         List<ScoreNoteEvent> metrical=session==null
-                ?notes.stream().filter(n->!grace(n)).toList()
+                ?notes.stream().filter(n->!grace(n)).collect(java.util.stream.Collectors.toList())
                 :session.metrical(notes);
         if(metrical==notes)return null;
-        List<ScoreNoteEvent> prefix=new ArrayList<>();
+        List<ScoreNoteEvent> prefix=new ArrayList<>();ScoreNoteEvent prior=null;GracePlayback prefixContext=null;
         for(ScoreNoteEvent note:measureVoice(target,notes)) {
             if(grace(note)) { prefix.add(note);continue; }
             if(!prefix.isEmpty() && (Math.abs(note.positionInMeasure()-target.positionInMeasure())<=SAME_ONSET_POSITION && !grace(target)
                     ||prefix.contains(target)))
-                return new GracePlayback(metrical,note,prefix.indexOf(target),prefix.size());
+                prefixContext=new GracePlayback(metrical,note,prefix.indexOf(target),prefix.size(),false,false);
             prefix.clear();
+            prior=note;
         }
-        return new GracePlayback(metrical,null,-1,0);
+        if(!prefix.isEmpty()&&prior!=null&&(prefix.contains(target)||prior.equals(target))) {
+            if(prefixContext!=null&&prior.equals(target))return new GracePlayback(metrical,prior,-1,prefixContext.count,false,true);
+            return new GracePlayback(metrical,prior,prefix.indexOf(target),prefix.size(),true,false);
+        }
+        return prefixContext!=null?prefixContext:new GracePlayback(metrical,null,-1,0,false,false);
     }
 
     private static double graceBudget(GracePlayback context, float beats) {
@@ -240,6 +244,11 @@ public final class ScoreNoteTiming {
             if(grace.principal==null)return beatInMeasure(target,grace.metrical,beatsPerMeasure);
             double onset=beatInMeasure(grace.principal,grace.metrical,beatsPerMeasure);
             double budget=graceBudget(grace,beatsPerMeasure);
+            if(grace.trailing) {
+                if(grace.index<0)return onset;
+                double duration=resolvedWrittenDurationBeats(grace.principal,grace.metrical,beatsPerMeasure);
+                return onset+duration-budget+budget*grace.index/grace.count;
+            }
             return onset+(grace.index<0?budget:budget*grace.index/grace.count);
         }
         double safeBeats = Math.max(.125, Math.min(128, beatsPerMeasure));
@@ -291,7 +300,7 @@ public final class ScoreNoteTiming {
         // A half-note melody can overlap a short beamed tail in another voice on this same
         // staff. Its sounding length must not push that tail (or its tie) later in the bar.
         if(!hasIndependentSustain(target)&&groups.get(0).notes.stream().allMatch(ScoreNoteTiming::hasIndependentSustain)) {
-            List<RhythmGroup> tail=groups.stream().filter(g->g.notes.stream().noneMatch(ScoreNoteTiming::hasIndependentSustain)).toList();
+            List<RhythmGroup> tail=groups.stream().filter(g->g.notes.stream().noneMatch(ScoreNoteTiming::hasIndependentSustain)).collect(java.util.stream.Collectors.toList());
             double[] written=tail.stream().mapToDouble(RhythmGroup::writtenDuration).toArray();
             boolean printedTail=completePrintedRestRhythm(tail,safeBeats);
             double start=printedTail?leadingRest(tail):contiguousTailRunStart(tail,written,safeBeats);
@@ -445,7 +454,7 @@ public final class ScoreNoteTiming {
 
         List<ScoreNoteEvent> measure = measureNotes(target,allNotes).stream()
                 .filter(note->Float.isFinite(note.positionInMeasure()))
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
         if (measure.isEmpty()) return voiceOnset;
 
         List<ScoreNoteEvent> aligned = new ArrayList<>();
@@ -558,7 +567,7 @@ public final class ScoreNoteTiming {
         if(grace!=null) {
             if(grace.principal==null)return resolvedWrittenDurationBeats(target,grace.metrical,beatsPerMeasure);
             double budget=graceBudget(grace,beatsPerMeasure);
-            return grace.index<0?resolvedWrittenDurationBeats(target,grace.metrical,beatsPerMeasure)-budget
+            return grace.index<0?resolvedWrittenDurationBeats(target,grace.metrical,beatsPerMeasure)-budget*(grace.bothSides?2:1)
                     :budget/grace.count;
         }
         // A hollow notehead may share an onset/staff with a faster independent voice.
@@ -636,7 +645,7 @@ public final class ScoreNoteTiming {
         if (target.staffCount()!=2 || !Double.isFinite(beats)) return List.of();
         List<ScoreNoteEvent> phrase = new ArrayList<>();
         int bridges=0;
-        for(ScoreNoteEvent note:measureNotes(target,notes)) if(note.staffCount()==2) {
+        for(ScoreNoteEvent note:measureNotes(target,notes)) {
             // A held melody/bass is a separate voice; it does not break a proved moving beam.
             if(hasIndependentSustain(note))continue;
             if(note.followingRestBeats()>0||note.leadingRestBeats()>0)return List.of();
@@ -770,15 +779,14 @@ public final class ScoreNoteTiming {
         return voice;
     }
 
-    private static List<ScoreNoteEvent> measureNotes(ScoreNoteEvent target,
-                                                     List<ScoreNoteEvent> notes) {
+    private static List<ScoreNoteEvent> measureNotes(ScoreNoteEvent target,List<ScoreNoteEvent> notes) {
         TimingSession session=SESSION.get();
         if(session!=null)return session.index(notes).measures.getOrDefault(
                 new MeasureKey(target.measureIndex(),target.staffCount()),List.of());
-        List<ScoreNoteEvent> measure=new ArrayList<>();
+        List<ScoreNoteEvent> result=new ArrayList<>();
         for(ScoreNoteEvent note:notes)if(note!=null&&note.measureIndex()==target.measureIndex()
-                &&note.staffCount()==target.staffCount())measure.add(note);
-        return measure;
+                &&note.staffCount()==target.staffCount())result.add(note);
+        return result;
     }
 
     private static List<RhythmGroup> rhythmGroups(List<ScoreNoteEvent> voice) {
@@ -893,8 +901,8 @@ public final class ScoreNoteTiming {
     private static double openingPickupStart(ScoreNoteEvent target, List<ScoreNoteEvent> notes,
                                               double beats) {
         if (!target.compactOpening()) return Double.NaN;
-        List<ScoreNoteEvent> opening = measureNotes(target,notes).stream()
-                .filter(n -> !grace(n)).toList();
+        List<ScoreNoteEvent> opening = measureNotes(target,notes).stream().filter(n -> !grace(n))
+                .collect(java.util.stream.Collectors.toList());
         if (opening.isEmpty() || opening.stream().anyMatch(n -> !n.compactOpening()
                 || n.leadingRestBeats()>0 || n.followingRestBeats()>0 || n.tiedFromPrevious())) return Double.NaN;
         double span=0;
@@ -1341,16 +1349,15 @@ public final class ScoreNoteTiming {
             session.leadingInsetCalculations++;
         }
         List<ScoreNoteEvent> sameStaff;
-        if(session!=null)sameStaff=session.index(allNotes).staves.getOrDefault(key,List.of());
-        else {
-            sameStaff = new ArrayList<>();
+        if(session==null) {
+            sameStaff=new ArrayList<>();
             for (ScoreNoteEvent note : allNotes) if (note != null
                     && note.staffIndex() == target.staffIndex()
                     && note.staffCount() == target.staffCount()
                     && Float.isFinite(note.positionInMeasure())) sameStaff.add(note);
             sameStaff.sort(Comparator.comparingInt(ScoreNoteEvent::measureIndex)
                     .thenComparingDouble(ScoreNoteEvent::positionInMeasure));
-        }
+        } else sameStaff=session.index(allNotes).staves.getOrDefault(key,List.of());
         List<Float> firstPositions = new ArrayList<>();
         int previousMeasure = Integer.MIN_VALUE;
         for (ScoreNoteEvent note : sameStaff) {

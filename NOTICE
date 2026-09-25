@@ -4,8 +4,9 @@ Copyright 2026 Luckolite
 The original source code, documentation, generated examples and model weights
 in this repository are offered under the Apache License, Version 2.0.
 
-Training font files and their accompanying notices in training/fonts retain the
-SIL Open Font License 1.1. External runtime and training dependencies retain
+Training font files and the bundled Bravura/Leland recognition glyph rasters,
+with their accompanying notices, retain the SIL Open Font License 1.1.
+External runtime and training dependencies retain
 their own licenses; see THIRD_PARTY_NOTICES.md.
 
 This project is not affiliated with or endorsed by HOMR, Andromr, oemer,

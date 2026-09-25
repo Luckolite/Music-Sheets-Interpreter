@@ -4,11 +4,29 @@
 """Build the standalone Java 17 core with the JDK only; no Gradle, Maven or Android SDK."""
 import os
 import hashlib
+import json
 import shutil
 import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def resource_snapshots(root=ROOT):
+    """Verify every bundled glyph and notice before hashing and packaging exact bytes."""
+    resources = root / 'java/src/main/resources'
+    glyphs = resources / 'io/github/luckolite/interpreter/glyphs'
+    manifest = json.loads((glyphs / 'manifest.json').read_text(encoding='utf-8'))
+    listed = {row['path']: row for row in manifest['files']}
+    snapshots = [(path, path.read_bytes()) for path in sorted(resources.rglob('*')) if path.is_file()]
+    actual = {path.relative_to(glyphs).as_posix(): data for path, data in snapshots
+              if path.is_relative_to(glyphs) and path.name != 'manifest.json'}
+    if set(actual) != set(listed) or len(listed) != len(manifest['files']):
+        raise ValueError('Glyph manifest must account for every bundled template and notice')
+    for name, data in actual.items():
+        if len(data) != listed[name]['bytes'] or hashlib.sha256(data).hexdigest() != listed[name]['sha256']:
+            raise ValueError('Bundled glyph checksum mismatch: ' + name)
+    return snapshots
 
 
 def jdk_tool(name):
@@ -31,6 +49,9 @@ def main():
     snapshots=[(source,source.read_bytes().replace(b'\r\n',b'\n')) for source in sources]
     for source,data in snapshots:
         digest.update(source.name.encode()+b'\0'+data+b'\0')
+    resources = resource_snapshots()
+    for source,data in resources:
+        digest.update(source.relative_to(ROOT/'java/src/main/resources').as_posix().encode()+b'\0'+data+b'\0')
     # Compile exactly the bytes fingerprinted, even if live sources change mid-build.
     generated=ROOT/'build/source-snapshots'/digest.hexdigest()
     compiled=[]
@@ -42,6 +63,10 @@ def main():
     resource=classes/'io/github/luckolite/interpreter/native-decoder-sha256.txt'
     resource.parent.mkdir(parents=True,exist_ok=True)
     resource.write_text(digest.hexdigest(),encoding='utf-8')
+    for source,data in resources:
+        destination=classes/source.relative_to(ROOT/'java/src/main/resources')
+        destination.parent.mkdir(parents=True,exist_ok=True)
+        destination.write_bytes(data)
     subprocess.run([jdk_tool('javac'), '--release', '17', '-encoding', 'UTF-8', '-d', str(classes),
                     *map(str, compiled)], check=True)
     target = ROOT / 'src/sheet_interpreter/interpreter.jar'

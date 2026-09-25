@@ -12,9 +12,10 @@ public class TempoUnitNoteTest {
     static final class Page {
         final int w=500,h=260;
         final byte[] labels=new byte[w*h],gray=new byte[w*h];
-        Page() {
+        Page() {this(16);}
+        Page(int gap) {
             Arrays.fill(gray,(byte)255);
-            for(int y=100;y<=164;y+=16)rect(20,y,460,1,(byte)4);
+            for(int y=100;y<=100+gap*4;y+=gap)rect(20,y,460,1,(byte)4);
             note(110,89,false);rect(120,45,1,45,(byte)1);
             rect(131,73,19,3,(byte)5);rect(131,80,19,3,(byte)5);
             digit();
@@ -50,6 +51,14 @@ public class TempoUnitNoteTest {
     }
     @Test public void hollowBeatUnitUsesTheSamePrintedEquationEvidence(){
         Page p=new Page();p.note(110,89,true);assertEquals(0,p.heads(p.normalized()));
+    }
+    @Test public void shorterCueSizedTempoStemStillBelongsToItsEquation(){
+        Page p=new Page();p.erase(120,45,1,16);p.note(110,89,true);
+        assertEquals(0,p.heads(p.normalized()));
+    }
+    @Test public void equalsThicknessRoundsToTheSameRasterGrid(){
+        Page p=new Page(15);p.rect(131,73,19,4,(byte)5);p.rect(131,80,19,4,(byte)5);
+        assertEquals(0,p.heads(p.normalized()));
     }
     @Test public void preparationPreservesInputsAndTheRealNote(){
         Page p=new Page();p.realNote();byte[] original=p.labels.clone(),ink=p.gray.clone();byte[] clean=p.normalized();

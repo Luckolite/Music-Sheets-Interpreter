@@ -20,15 +20,19 @@ final class PrintedNoteContrast {
         if(papers<16||heads<12)return false;
         int background=percentile(paper,papers,75);
         // White-paper faded notation and genuinely dark ink remain untouched.
-        if(background>=220||percentile(head,heads,10)<120)return false;
+        if(background<80||background>=220||percentile(head,heads,10)<Math.min(120,background-50))return false;
         // The model can label only a pale head interior, leaving its printed
         // outline and attached stem just outside the semantic bounds.
         int fringe=Math.max(2,Math.round(Math.min(right-left+1,bottom-top+1)*.25f));
-        int printed=0,limit=Math.min(160,background-35);
+        int printed=0,leftInk=0,rightInk=0,topInk=0,bottomInk=0,limit=Math.min(160,background-35);
         for(int y=Math.max(0,top-fringe);y<=Math.min(height-1,bottom+fringe);y++)
             for(int x=Math.max(0,left-fringe);x<=Math.min(width-1,right+fringe);x++)
-                if((gray[y*width+x]&255)<=limit)printed++;
-        if(printed>=Math.max(4,heads*.06f))return false;
+                if((gray[y*width+x]&255)<=limit) {
+                    printed++;
+                    if(y>=top&&y<=bottom){if(x<left)leftInk++;if(x>right)rightInk++;}
+                    if(x>=left&&x<=right){if(y<top)topInk++;if(y>bottom)bottomInk++;}
+                }
+        if(printed>=Math.max(4,heads*.06f)&&((leftInk>=2&&rightInk>=2)||(topInk>=2&&bottomInk>=2)))return false;
         return background-percentile(head,heads,25)<20;
     }
 

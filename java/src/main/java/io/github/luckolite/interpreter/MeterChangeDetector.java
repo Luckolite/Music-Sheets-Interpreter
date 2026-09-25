@@ -10,6 +10,28 @@ public final class MeterChangeDetector {
     public record Crop(int left, int top, int right, int bottom, int firstLine, float gap) { }
     private record SignatureStaff(RawStaffLineDetector.StaffLines lines,float slope) { }
 
+    /** Engraved C / cut-C signs, independent of digit OCR; conflicting staff copies abstain. */
+    public static List<ScoreMeterChange> commonTimeReadings(byte[] labels,byte[] gray,
+            int width,int height,List<MeasureRegion> measures,List<ScoreNoteEvent> notes) {
+        if(labels==null || gray==null || labels.length!=width*height || gray.length!=width*height)
+            return List.of();
+        var readings=new java.util.TreeMap<Integer,java.util.Set<Integer>>();
+        for(var geometry:signatureStaffs(labels,gray,width,height))
+            for(var reading:CommonTimeMeter.candidates(labels,gray,width,height,
+                    geometry.lines().top(),geometry.lines().gap(),geometry.slope())) {
+                var crop=reading.crop();
+                int measure=followingMeasure(crop,width,height,measures);
+                if(measure<0 || !precedesNotes(crop,width,height,measure,measures,notes))continue;
+                readings.computeIfAbsent(measure,ignored->new java.util.HashSet<>()).add(reading.numerator());
+            }
+        var result=new ArrayList<ScoreMeterChange>();
+        for(var entry:readings.entrySet())if(entry.getValue().size()==1) {
+            int value=entry.getValue().iterator().next();
+            result.add(new ScoreMeterChange(entry.getKey(),value,value));
+        }
+        return List.copyOf(result);
+    }
+
     /** Resolve contradictory staff copies only when two complete written bars support one reading. */
     static ScoreMeterChange resolveConflict(java.util.Set<ScoreMeterChange> choices,
             List<ScoreNoteEvent> notes,int nextChange) {

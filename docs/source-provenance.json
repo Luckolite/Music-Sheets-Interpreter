@@ -20,9 +20,9 @@
     },
     "PrintedNoteContrast.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedNoteContrast.java",
-      "source_sha256": "df4dfa1737b32897474edb1c2485e8a0d840b4bc4db55df7e26db1345fa63731",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "notes": "Reviewed working-tree helper rejects low-contrast semantic head candidates on shaded paper using local histogram evidence. Dark printed heads, hollow heads, faded white-paper notation and missing-pixel inputs remain protected. Original synthetic tests; no dependencies or model changes."
+      "source_sha256": "912f6a2eefba1f6a67bb7608391ced3c9daf1f5d4ed23d5ae6ef2060d165bad2",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "NativeOcrWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeOcrWire.java",
@@ -123,8 +123,9 @@
     },
     "MeasureNumberReconciler.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureNumberReconciler.java",
-      "source_sha256": "96c26d7ad0159cdfc9958fc4c386a4742b34ace92459576e33071ea547caac59",
-      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
+      "source_sha256": "5d3d93e1c3d86d1967b6b9624ead0dbb12434a759d92c14f28c2aa757acbd5b1",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "MeasureRegion.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureRegion.java",
@@ -132,10 +133,10 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "9cc4974f1b438069215f17c79027cc9b8a84ec3e1a85eaee94baa53e04ea2359",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "source_sha256": "1e09576609b6f6a1608c5021bc11e9a88bc4a26c733ac1a31361a8d720da266f",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "latest_review": "Reviewed working-tree change: the existing two-complete-bar contradiction guard also rejects spurious 1/2 OCR readings. Genuine two-quarter-beat bars and a following real meter boundary remain authoritative. Four original synthetic regressions; no private score data, new dependencies or weights. Existing unrelated OmrScoreInterpreter drift remains visible.",
-      "notes": "Whole-note-denominator OCR filter retains its two-written-bar guard. Joined system-header ink can hide non-four stacked signatures from the initial projection scan; a bounded symbol-pair recovery now presents them to OCR only after nearby clef/key evidence and before the first notehead. Synthetic positive/head-veto controls; private 121-page candidate audit added 126 crops, retained all 1963 older crops, and recovered printed 6/4 headers on PDFs 6, 106, 116. Corrected private meter annotations clear eight out-of-bar timing events without changing note counts. Standalone explicit annotations remain authoritative, and Android OCR recognition of the recovered crops is not device-verified. Uses Collectors.toList for Android API 26 compatibility. Reviewed inline 12/8 recovery: permits a lower numeral mislabeled as a notehead only after a complete preceding barline and an upper numeral. Original synthetic joined-meter control; private four-page trial recovered both printed changes, with Android OCR reading both crops."
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
@@ -160,15 +161,15 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "984afdaba88be7aa111addddca5c71af7e33f115dda61744a874f17d81323d2c",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "notes": "App and standalone source and synthetic regression were reviewed for full text parity apart from the package name. Raw barline validation rejects oscillating arpeggios and preserves straight thick and faint bars. A narrow symbol-only opening key/meter pocket does not create a measure. A symbolic harmonic head with nearby stem evidence vetoes a false full-height barline, while an isolated printed bar and a symbol-only header stroke remain boundaries. Private 121-page replay and source crops remain outside this repository. No model or dependency changes. A one-pixel semantic staff-row bias can make the local printed-rule offset alias to the neighboring line; only an isolated full-height raw rule gets a one-row retry. Synthetic offset regression and private matched-input 121-page replay confirm one recovered printed bar and no extra bars; private source fixtures remain excluded. A verified printed five-rule fringe no longer connects a nearby notehead to an isolated full-height bar; an attached head near the column or a connection through a true staff space still vetoes a note stem. Synthetic old-failing regression and private 121-page matched-input replay recovered two source-checked bars with unchanged note count and pitches. Two printed quarter notes on one affected page also recovered their durations. Private source crops remain excluded."
+      "source_sha256": "2dc85691502de8e0e9f4a1ee03e045560e199a5e7ccb06d54dcb9f6debfa0018",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "f932e96a582b74de8fb49e2f7eb4b8b01e171dc52304709fd99b4bf1e3f63696",
-      "reviewed_app_commit": "e84a7129f84b8d22e3df1fac27d80c0a5ab7768e",
-      "notes": "Scoped finiteBeamOverRule repair tolerates a bounded articulation followed by a fresh uninterrupted thin witness, not a long thick tail. Raw hollow-core guard for a side-by-side unison rejects a bright notch over a filled head. Original synthetic tests. A small spurious head inside two matching printed meter numerals is removed only in a first-system measure, preserving an independently stemmed note; source-reviewed PDF55 and PDF104 changes and all 121-page replay stayed private. A parallel-beam mask island can be nearly as large as its owning head; paired raw beam continuity and a complete attached main stem still guard rejection. Original synthetic ownership and rounded-head controls; private 121-page Flesch replay found 141 source-reviewed beam-only removals on 64 pages. Short paired merged beams can also contain a false mask island; a separate synthetic regression guards stem ownership, paired raw cores, single beams, and protruding real heads. A private 121-page replay found 69 additional source-reviewed beam-only removals across 54 pages, with timing effects confined to those measures and stable measure geometry. Detached fingering numerals beneath independently stemmed notes are rejected only when small, stemless, aligned and below staff; synthetic controls preserve a stemmed low note, missing owner and offset note. A matched-input 121-page private replay removed exactly two source-reviewed finger numerals on PDFs70 and100, with six onsets and two durations changed only in affected measures, no added events or measure geometry changes. A natural touching the following note can have its semantic box extended by that note stem. A narrower raw crop only at the touching edge retains the natural spines and excludes the foreign stem; original synthetic natural and flat controls plus existing boundary regressions pass. Private matched-input 121-page replay changed 104 pitches across 38 pages, with no note-count, timing, tie, or measure-geometry changes; source contact sheets reviewed the printed accidental passages. Interrupted staff rules can remain in a natural crop at both spine endpoints and make the genuine natural appear symmetric. A second shape check removes only long horizontal rows from a copied crop; original natural and flat synthetic controls preserve the endpoint and false-positive boundary. Matched-input private 121-page production replay changed 73 source-reviewed pitches across 41 pages, including both affected chapter openings, with unchanged note counts, onsets, durations, ties and measure geometry. A wide printed double sharp may share its semantic box with a nearby stem and staff rules; paired raw white notches around a dark waist recover it. Original synthetic paired-notch, one-notch, and natural controls; private matched-input 121-page replay changed 53 pitches on PDFs80-84 with unchanged note counts, timing, ties and measure geometry. Contact sheets were reviewed; a pre-existing false beam note on PDF83 remains open. No weights or dependencies changed. A tiny stemless semantic island on one core of a paired beam can appear near its endpoint; probing the offset seam with existing straight-core evidence rejects it without suppressing a full head, a single beam or an independently stemmed note. Original synthetic controls, private matched-input 121-page replay, and private source crops show eight removed beam-only events on seven pages. No pitches, ties, or measure geometry changed; 72 onsets and nine durations changed only within affected measures. PDF83 opening returns two voices of sixteen sixteenth notes. Exact timing on other passages remains under audit. A bounded 1.2-gap tall island and half-gap offset seam probe remove 66 additional source-reviewed beam-only events across 43 pages in a matched-input private 121-page replay; no pitch or measure geometry changed, with one exposed tie classification still under audit. Original synthetic owner, no-owner and tall-island controls. A round mark below the next rising head is its staccato, not an augmentation dot to the prior head. Original synthetic aligned, absent-owner, ordinary-dot, and same-height controls; private matched-input 121-page replay changed 136 durations and 448 onsets across 29 pages, with no event, pitch, tie, or measure-geometry changes. Source crops for all affected durations were reviewed; PDF89m25 now has 16 consecutive sixteenths. A printed pitch-changing accidental cannot complete a tie to a previous different sounding pitch; keep key-signature and missing-key controls and preserve carried-accidental cases. Original synthetic slur, courtesy-sharp, absent-key and carried-accidental tests; private matched-input 121-page replay clears 1605 previously marked ties across 108 pages with no event, pitch, timing, or measure-geometry changes. Thirty private source crops sampled across chapters show accidental notes and slurs; the full independent source-note audit remains open. No model or dependency change. Prior stemBeforePaperTail repair retained. Unrelated pre-existing app decoder drift remains visible; source_sha256 intentionally unchanged, not whole-file parity. Scoped shortPairedMergedBeamHeads bound refinement: accept head-sized mask islands only when two larger independently stemmed heads own a short paired beam; source-reviewed private 121-page replay removed 24 beam-only events across 17 pages. Original synthetic large-island, one-owner, thin-beam and protruding-oval controls; one adjacent island on PDF69 remains under audit. Existing unrelated app decoder drift remains visible; source_sha256 intentionally unchanged. Scoped Evil Twin violin repairs reviewed and ported: remove isolated beam-tip, grace-flag and inline denominator false heads; suppress joined grace-tail false accidental; classify offset natural/sharp spines and a flat bowl beneath an upper beamed stem. Original synthetic regressions and private four-page source-glyph comparison. Existing unrelated app decoder drift remains visible; source_sha256 intentionally unchanged. Scoped working-tree repair reviewed on app commit 75c25e4349e7a27e5303dd0645c53dec58eb3353: side-by-side unison accepts a hollow head crossed by a dark staff rule only when separate bright upper and lower pockets remain; a filled head with an upper notch stays rejected. Original synthetic pixels and private score regression were reviewed; no private fixture or model change was published. Other app decoder drift remains visible, so the whole-file source_sha256 is intentionally unchanged. A second source-reviewed raster exposed a smaller lower hollow pocket (4 of 35 samples); the lower-pocket threshold is now 10 percent while the upper-pocket and dark-rule guards remain. Generated narrow-pocket and filled-notch controls passed; source image remains private.",
+      "source_sha256": "40767c1f8792cc417cea715e20d718d9b944152e133a36dd9fd177cfad6d0c76",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "grace_and_pale_tremolo_review": "Scoped working-tree repairs: reject a small stemless grace-slur island only with independently stemmed grace and principal neighbors plus a complete returning raw curve. Preserve the original dark detached-tremolo pass before a pale-stroke fallback; keep stemless whole-note ownership and bounded parallel-stroke guards. Ten new original synthetic regressions cover asymmetric connectors, missing evidence and owners, independent real heads, shaded scans, pale slashes and pale chords. Private matched-input source review confirms 19 false-event removals with no added heads or retained pitch, accidental, duration or tie changes across 24 pages. No score pixels, model changes or new dependencies. Unrelated pre-existing app drift remains visible; whole-file source_sha256 intentionally unchanged."
     },
@@ -182,11 +183,15 @@
     },
     "ScoreDynamicChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicChange.java",
-      "source_sha256": "55e6d34a34f9d4dc4520933ee6467ebb57c34658006abfd5530541c0e065e8b7"
+      "source_sha256": "ef3581c38a24ee59e1dce68d760ee7dfdd248a1c4693724688f6d89a28c8343b",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "ddfe6d5eeee508ac97e677bf96de2109ca65da3bdb9476e77d0eded638619634"
+      "source_sha256": "77e3ceecb7c40c99f777a052f88afca79fa59e6e0ad68a6d828a71b60e0ca570",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "ScoreKeyChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreKeyChange.java",
@@ -203,14 +208,15 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "034bdb22df4a059ddeebec433c8f78906bb3c9e91e7c8543e7126cba412815fa",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
+      "source_sha256": "99d2a57e4b069088819dede6a208cb0ea2dd8a128931717207bee4a2100a139d",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
-      "source_sha256": "44f4fec6c310a38c88397227e37f197f93e528233af8e213b9882dba9b6eb9fa",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "notes": "Reviewed the app working tree at this commit: page-local dynamic projection matches the public synthetic cross-page hairpin regression. The app uses Collectors.toList() for Android stream compatibility; public Java 17 uses toList() with the same read-only use of the result. PDF overlay lifecycle remains app-specific."
+      "source_sha256": "53896591a233865cbb433bcddcbddde260598addabc20def4b6edd6e47577a45",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "ScoreRestEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreRestEvent.java",
@@ -228,23 +234,24 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "717d2d2c725f2cbc929a6b438798df928225e85d9c5b95d1c493b89d19b0ca24",
-      "reviewed_app_commit": "8f2dfd3a67db83ac46aaae376aaa38bde6f3521a",
-      "notes": "Reviewed faint-staff-edge repair and original synthetic eighth-rest regression. The row before a verified staff line may be ignored when measuring the otherwise narrow rest tail. No private score images or logs included."
+      "source_sha256": "1b381c6b244aadda87013d5588d8a595c4af937c065ad30980aaad3d07c60f84",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
-      "source_sha256": "6a3091dc386a4c362c68b04b53a91e7b9297fbc22eb85e5124f6be3041b4793e",
+      "source_sha256": "4068cdc17b671591b76650f0e9aec1c0c32c24cf6edbc5739e8a285cba5f530e",
       "faded_equals_review": "Scoped repair keeps the strong-ink equals pass first, then permits two separated pale strokes only on predominantly white paper. Five original synthetic positive, shadow, connected-letter and single-stroke controls. Private faded tempo verification remains outside this repository. Prior upstream-only dot-fringe behavior is retained; no whole-file semantic parity claim.",
       "pulse_dot_review": "Scoped working-tree port: a second dark-core component pass recovers an augmentation dot connected to the pulse by a pale scan bridge, only when its result is exactly the dotted version of the original unit. Three original generated controls retain undotted and faint isolated-dot readings. Prior upstream-only equals-fringe behavior remains documented below.",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "latest_review": "Scoped working-tree parity: size equals-sign strokes from BPM digit ink instead of a padded whole-line OCR box. Retains separated-component, placement and pulse checks; original padded-digit and connected-letter controls. The app desktop adapter and standalone OCR parser also accept a closing parenthesis/bracket after tempo digits and exclude that punctuation from the digit bounds. Four original parser controls and private actual-page verification recover the printed quarter-note tempo. The earlier upstream equals-fringe dot repair remains an upstream-only addition pending app integration; no whole-file semantic parity claim. No models, dependencies or private fixtures added.",
-      "notes": "Reviewed opening-tempo OCR anchor fallback: an out-of-bounds annotation start may resolve only to the opening measure when its original verified digits independently belong there. Existing equals-ink, vertical staff exclusion and printed pulse-unit checks remain unchanged. Positive and later-row negative synthetic regressions included. Prior pulse-unit/fractional quarter-BPM behavior retained. No private evidence included."
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "93847aa4b95e751c81b882e4c07ea4f21b1031e3cb12115ebf39dd38ab5386b4",
-      "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b"
+      "source_sha256": "0a7d8fafe8302a032e4dcdff460402d2e9602925ee655cdc6b25e8efa3eb8f4c",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
@@ -266,9 +273,9 @@
     },
     "StaffPitchTrack.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
-      "source_sha256": "2170afbc85d23483ac27964e99082deb1ffd246fdfecd63e58f9c260f7cd7fd3",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "notes": "Reviewed working-tree repair: on shaded local strips, candidate projection uses contrasted thin strokes, then verifies all five proposed rules against the original scan. No change to source pixels, coordinates or model input. Original curved-shadow, blank-shadow and sparse-fragment regressions accompany existing staff tests. A compressed four-rule semantic seed can now consider up to 1.45-times spacing, still requiring complete five-rule raw groups, nearby physical phase, multiple samples and broad track agreement. Five new original synthetic tests cover white and shaded source rules, incomplete staffs, sparse ledger groups and a remote staff. A private 24-page replay changes seven source-confirmed pitches and corrects four false beam counts to printed quarter notes on one page; no added or removed heads."
+      "source_sha256": "a00a983c26a163e4affc6a5c083912de2656163b88db50b29cdd92b1f0c7b53c",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed working-tree source is identical to the existing standalone implementation after package/header/newline adaptation; no pitch behavior was replaced or omitted."
     },
     "OpeningMeasureLayout.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpeningMeasureLayout.java",
@@ -325,9 +332,9 @@
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
-      "source_sha256": "6023d6fa33db6d3c59bbf95dcbbecdf2116295c8123d340c64bd848d07ccda68",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
-      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+      "source_sha256": "7e2f55e201bb928aecee841b4bd9e30c9025114e740e7f94320b2ab2c12abe2d",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "TabNotation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabNotation.java",
@@ -349,8 +356,9 @@
     },
     "ParallelBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ParallelBeamTip.java",
-      "source_sha256": "9bd0a546b82071aa44adf8a62f016ba6273a6478f87d40b3a0ba57c823bdc5cd",
-      "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b"
+      "source_sha256": "5824ac661c0aadbfb544df53c1b1dc177c9cbcb2bc8a652a518a448cc9268940",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "PrintedFlatGlyph.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedFlatGlyph.java",
@@ -370,15 +378,15 @@
     },
     "TabMeter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabMeter.java",
-      "source_sha256": "6f5875ad735554075b36307b32e34ea844b2d1611e3ae8cd89cdc87276cf54dc",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
-      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+      "source_sha256": "95f1286f50467d837fef97cfc49f59658df32fa2175a15e4542ca860037c66da",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "TabTempo.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabTempo.java",
-      "source_sha256": "42ff354968a3e507c08f3cff234a9433a059fa9bc2062c125b07551c759fea99",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
-      "notes": "Shared tab geometry, text, tuning, rhythm or performance semantics. Standalone package adaptation; equivalent Android collection terminals may differ."
+      "source_sha256": "a3166617c95ce427dc5e1282cee0cea8618b5b24859268ff035ac40cd924a567",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "TabPerformanceMarks.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabPerformanceMarks.java",
@@ -406,16 +414,265 @@
     },
     "ScoreTiePitchGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTiePitchGuard.java",
-      "source_sha256": "cadb6581cdb1894d8b8c2ff95f52ce39f15003665758ddb8360ff2c275221255",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "source_sha256": "89f9c05bdedcefc95d5e83bd78dc6179aaebe0dffc8a068969881b58045cc9cd",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "latest_review": "Working-tree repair retains a verified top-staff tie across adjacent systems when a lower staff is hidden or restored. Requires matching known clefs and system-break geometry; different pitches and explicit accidental changes still reject ties. Shared helper is also used by the scoped OmrScoreInterpreter tie search, whose unrelated drift remains visible. Synthetic raster and pitch controls; private matched-input page comparison restores one printed tie with no note-count or pitch changes. Standalone MIDI and app audio also preserve the held attack across this verified transition, with silence-gap and unmarked-note controls. No new dependency or model change.",
-      "notes": "Standalone package adaptation of the shared decoded-pitch tie guard. Where no key is known, distinct explicit accidentals on the same staff pitch clear a false tie; ambiguous key-derived cases and measure-zero cross-page ties remain untouched. Original synthetic controls and privately reviewed chromatic-scale source crops; no source score distributed."
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "ScoreTempoSelection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/playback/ScoreTempoSelection.java",
       "source_sha256": "e507a82d4313befb20ac377503e49c9ff86ec90c229a7a1684e36315eda54587",
       "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5",
       "notes": "Reviewed pulse-unit repair: eighth and dotted-eighth glyphs retain exact fractional quarter BPM and the printed pulse length. Standalone API retains the three-argument tempo constructor. Android binary cache generation 252, viewer propagation, and selected-tempo integration remain platform adapters. No score images or private logs included."
+    },
+    "AttachedTremoloInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/AttachedTremoloInk.java",
+      "source_sha256": "eceedd890bad317abd5f48e6d818e6940c7cc903ccc725026a35220432cdad33",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "BeamInkThreshold.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/BeamInkThreshold.java",
+      "source_sha256": "f28e9da14a9a264edea80f9a6eefd2080f680e04c46c9e2af57891c852c798d9",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "CappedStemBeam.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/CappedStemBeam.java",
+      "source_sha256": "504c7037175e6242e10f84e2ef3ae13c5004db35feed3df36b229fb1398f8c4c",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ClosedHeadBarlineGuard.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ClosedHeadBarlineGuard.java",
+      "source_sha256": "d12178085eea58d98e25a8e73428616e5a5d9ac1e2ddabbb752a7830e4c73ab0",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ClosedHeadFragmentJoiner.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ClosedHeadFragmentJoiner.java",
+      "source_sha256": "b9f82e69f3e481f6d425d1523f9fd9001b20e38eb5dc2a418603a1360d05d045",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "CommonTimeMeter.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/CommonTimeMeter.java",
+      "source_sha256": "d92fac10e0314831abb21edf1cfc2945f9e806eb2f384602d744d1869d39ed85",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "CompactQuarterRestContour.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/CompactQuarterRestContour.java",
+      "source_sha256": "e163b2fca603574305ea02936aa54625327e329816976467569d27cc0e772937",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ConnectedItalicDynamic.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ConnectedItalicDynamic.java",
+      "source_sha256": "b24b468f7f2b4f98d28ef8bd114a73ef03faa11c3ebed3e8a439077815dd796e",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "DetachedAnnotationInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/DetachedAnnotationInk.java",
+      "source_sha256": "779af20fae0bfbe8ea4706fe45f34f97fe724960d635bc58af6d832f024188b5",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "DynamicGlyphEvidence.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/DynamicGlyphEvidence.java",
+      "source_sha256": "6c95a0a3e0786d1186f4096bd93ce8f5e72bd2d9725596eb6f0f99f833d87ea1",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "DynamicOcrBounds.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/DynamicOcrBounds.java",
+      "source_sha256": "331b7574e4d1509282ffde977149042121fc90464c16086369b1566e8a210855",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ExplicitEmptySignature.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ExplicitEmptySignature.java",
+      "source_sha256": "4f309c80e0b65e9057cccbbfb152a8740933fd3cebf912a238aa48e6f0c6e408",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "FingeringAnnotationFilter.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/FingeringAnnotationFilter.java",
+      "source_sha256": "30974a5487b830f680af2911934883fbc30cef0768cc006c3cf6e3e8f8fedc8b",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "GlyphInkContrast.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/GlyphInkContrast.java",
+      "source_sha256": "961b5efb557c77554618290318f0e74add649df15a113a0f3c4e4a6d9be5345a",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "GraceConnectorInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/GraceConnectorInk.java",
+      "source_sha256": "7a9af24c26f00e382f804d3cc2f9482a23403743be65c53b231d588d6740ba5e",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "HandwrittenTwoHeadInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/HandwrittenTwoHeadInk.java",
+      "source_sha256": "6e834e0ca2614afe0cbf6c987eaf17ddcac1c0e8921231d2f9779c43a6db4623",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "LedgerSpacePhase.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/LedgerSpacePhase.java",
+      "source_sha256": "e468a5cc5796fc6cd4a995141c62c364cfaa40ebdbaa62c946e0f502ba55417d",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "LongSlurFragmentInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/LongSlurFragmentInk.java",
+      "source_sha256": "28f8eb283193f2f16cd908a71b248ac6a187120c7579693747c64d1d27854d30",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "MusicalOcrEvidence.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MusicalOcrEvidence.java",
+      "source_sha256": "353658468e2b7ba4592f0a91ecc69555604b02dd2964e553209b4c55143e6f36",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "NavigationSegnoGlyphs.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/NavigationSegnoGlyphs.java",
+      "source_sha256": "bb3fc097dad2f8d1b2a2c7b34b5f5a5562d3a9b02ec60cd7164232a36bab7b9f",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "NeighboringStaffPhase.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/NeighboringStaffPhase.java",
+      "source_sha256": "835375093371efc517e53ed891f7cdc110b395672f97070c1b50c178cf7dae7c",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "NoteSlideDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteSlideDetector.java",
+      "source_sha256": "0385dd3c1f0d1fd9eaf2e1c02e81feb8b4b4115ced0d7d54dc93895b753b8b2b",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "OutlinedBeamInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OutlinedBeamInk.java",
+      "source_sha256": "00a62caf8d96c42d3e9cdb16849f3da313ec13f5073319121cec803af53705e9",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "PairedGraceBeamInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PairedGraceBeamInk.java",
+      "source_sha256": "6af532b3a1ced0166fe561057c74a29688ab4a3c8e89e64b63fe57340144abde",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "PaleChordHeadRecovery.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PaleChordHeadRecovery.java",
+      "source_sha256": "dcc94daeca5347fafc270e0bbe31c78ce951dcfca1b378db472e641fff24be6a",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "PaleFilledHeadCore.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PaleFilledHeadCore.java",
+      "source_sha256": "eb11fbbb763cf4cc257b8d1951144c39435812f7477877542e9c1122d5c5b034",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "PortableNoteOrnaments.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableNoteOrnaments.java",
+      "source_sha256": "119ff232613649622b3b99a45c307192acd40ef6d2119daebdcda21ca3cbf4f0",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "PortableOrnamentGlyphs.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableOrnamentGlyphs.java",
+      "source_sha256": "57c776887786bb828962fda550c39b90a29fd5b8ebffe0526419b47e5503a3f0",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "RestDiagonalContinuation.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestDiagonalContinuation.java",
+      "source_sha256": "438eafbae880b0e91677b4f8d2d5a50a9b12f349fd9eabf7f4bbb0b3c8a8f98f",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ScoreNavigationDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationDetector.java",
+      "source_sha256": "eda33e5a63a1ebac8ddd0d51c85d3254dfd8646e57f55c0893fbba18572ff8f1",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ScoreNavigationPlan.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationPlan.java",
+      "source_sha256": "c3264aded7c878a91b55a8d0938108805ca25d3f456982eff12abba94e93fd7b",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ScorePlaybackDirection.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePlaybackDirection.java",
+      "source_sha256": "a729cca2c7c59cbe32aae26eee6adab109515b3ebc816a64b8117c972802846d",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "SegnoFragmentInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/SegnoFragmentInk.java",
+      "source_sha256": "8bfb275599ea03830580d56b1a23a052d5e4fe620c8b38d74381ccced59e0452",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ShadedNoteheadRecovery.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedNoteheadRecovery.java",
+      "source_sha256": "f315d7bc79efc251e59aefddb559d25e7078ee1c548c378573ff8c1c6ee74369",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "StemOwnedBeamTip.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/StemOwnedBeamTip.java",
+      "source_sha256": "cbd3a0918a16cb120d2a889a6bfe81173032e0b8c8bd4d036f56e80d32a470d4",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "TupletNumeralInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TupletNumeralInk.java",
+      "source_sha256": "eee3b500cea142c2a8ad6959a9d66807d3ddff250897c4385c9282b2a1e9584b",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ScoreNavigationProjection.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationProjection.java",
+      "source_sha256": "b12313e12f4f04f2216fa8f365ef0b2ca72e70ad9e0426c67b42f92246de833c",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "ScoreMeterMap.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreMeterMap.java",
+      "source_sha256": "86d169223e8e3f2ef964d1b739d76057476c62a18acdac7fc577a4f3d3814186",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+    },
+    "MusicalOcr.java": {
+      "source_path": "tools/native-worker/NativeMusicalOcr.java",
+      "source_sha256": "e0ca1ef11b4694f3a9359af448ed915096176de76583c175041e7a3306c39395",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed staff-local musical OCR stages ported to injected caller-owned PortableOcr.Inference and existing JDK MeterFontMatcher. Default constructor/runtime ONNX loading and close ownership remain excluded. Public overload makes meters, dynamics and ornament words reachable; original fake-inference integration tests cover the optional path."
+    },
+    "NativeDynamicGlyphs.java": {
+      "source_path": "tools/native-worker/NativeDynamicGlyphs.java",
+      "source_sha256": "da51ad2cea9e9ccb55007fb96d7ac8ba61571e4b0cf111f08542546c3d02a5f2",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed ImageIO glyph adapter ported to lazily loaded, checksum-manifested classpath templates; no personal file paths, score assets or model dependencies. Bravura/Leland glyph resources and notices retain SIL OFL 1.1; matching and ownership logic is unchanged."
+    },
+    "NativeOrnamentGlyphs.java": {
+      "source_path": "tools/native-worker/NativeOrnamentGlyphs.java",
+      "source_sha256": "fff72288c5c056ff8ba497180594f3bf63fef312780056ae05d1dc57618d8d83",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed ImageIO glyph adapter ported to lazily loaded, checksum-manifested classpath templates; no personal file paths, score assets or model dependencies. Bravura/Leland glyph resources and notices retain SIL OFL 1.1; matching and ownership logic is unchanged."
+    },
+    "GlyphResources.java": {
+      "notes": "New standalone JDK-only, lazy classpath resource adapter. BundledGlyphResourcesTest and test_glyph_resources.py cover loading, matching, complete manifest accounting, hashes and tampering. No app source or private assets imported."
     }
   },
   "ocr_adapter_review": {
@@ -513,7 +770,7 @@
   },
   "displaced_whole_chord_and_tempo_review": {
     "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-    "status": "Upstream repair; app integration pending completion of a concurrent repository migration.",
+    "status": "Previously published whole-note seconds, chord-dot, caret-beam and tempo-equals safeguards are now retained in the reviewed app worktree and this standalone batch; no app deployment is claimed.",
     "boundary": "Original synthetic geometry covers displaced hollow whole-note seconds, independent chord dots, solid-blob rejection, staff-crossed marcato carets, genuine parallel strokes and an equals-sign fringe beside a tempo unit. Private source comparison recovered four missing chord tones and seven dotted-whole values, corrected six false sixteenth readings, and restored a quarter-equals-125 tempo previously multiplied by 1.5. Existing app drift remains visible; no hashes were advanced before app integration. No private score, annotations, logs, dependencies or model weights are included. The targeted fixes do not establish complete score accuracy or deployment."
   },
   "compact_tie_and_shaded_paper_review": {
@@ -531,5 +788,14 @@
   "scale_book_overlapping_staff_review": {
     "reviewed_app_commit": "4dad109507b3cc6ab5191b642bd6b5fa9330319a",
     "boundary": "A half-scale semantic staff that overlaps a full-size page-scale staff by at least two small gaps is removed before note ownership. A separate compact staff remains. The app and public helper and synthetic regression are identical apart from package names. Private matched-input 121-page replay changed only PDF79: one net recovered note event, three retained pitches and two durations changed, and its single measured out-of-bar event cleared; printed stopped heads and sixteen sixteenth attacks were reviewed in private source crops. No private source image, fixture, model or dependency is published. The older whole-file OmrScoreInterpreter hash remains intentionally unchanged because unrelated app drift is still present."
+  },
+  "hard_scan_and_navigation_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "reviewed_app_state": "Selected reviewed working-tree changes; not a whole-app import.",
+    "boundary": "Global repairs cover fragmented and pale noteheads, hollow heads, staff phase, enclosed beam bands and grace attachments, raw accidental ownership, ties and explicit accidental changes, whole and polyphonic rests, tuplets, numeric pulse units, OCR-backed fingering/dynamics/ornaments, and curved duplicated staff geometry. Existing public whole-note/caret/tempo safeguards are retained and restored to the app. Original synthetic geometry and logical-record regressions are public; commercial source pages, transcriptions, replay coordinates, logs and audit checkpoints remain private. Passing regressions and bounded source comparisons do not certify every note, rhythm, expressive marking or score.",
+    "navigation": "Compatible direction and dynamics records, a bounded unambiguous D.S. al Coda plan, and a pure source-to-performance projector are shared. State resets preserve key, tempo, meter, independent technique categories and exact lane dynamics; source cursor mapping remains available through the plan. App cache, selected-arrangement UI, row controls and audio rendering remain app adapters. JSON documents fixedTarget and sharedTiming. Existing Python MIDI and MusicXML exports remain linear and do not automatically execute document-level navigation.",
+    "adapters": "SheetInterpreter invokes common/cut-time reading, fingering filtering, portable ornament ownership, glyph-backed dynamics and navigation after final geometry. Optional MusicalOcr uses caller-owned PortableOcr.Inference and MeterFontMatcher for bounded staff-local OCR; ONNX is not a default Java dependency. Native decoder transport carries core analysis, not the app guide-cache wire. App NativePageGuide also retains the shared staffless-page guard.",
+    "assets": "Only 27 reviewed single-glyph Bravura/Leland PNG templates and two complete SIL OFL notices are bundled. The separate resource manifest records source attribution, exact sizes and SHA-256. Build fingerprinting covers all resource bytes. No score scans, font binaries, new OCR models or segmentation weights were added.",
+    "tests": "New and updated Java tests use original procedural shapes or generic logical records. Existing standalone-only controls are preserved; an Android-only OCR-adapter test is replaced by public API coverage. App converter tests are adapted to shared record/page/offset behavior rather than importing the converter."
   }
 }

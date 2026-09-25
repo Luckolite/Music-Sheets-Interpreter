@@ -27,8 +27,9 @@ The CLI writes a document with `schemaVersion: 1`, `inputName`, `initialBpm` and
 | `score.notes` | Raw `ScoreNoteEvent` fields: staff steps, beams, dots, accidentals, ties and other notation |
 | `score.keyChanges` | Zero-based measure index and number of sharps/negative flats |
 | `score.tempoChanges` | Quarter-note tempos supported by supplied OCR and raw printed geometry |
-| `score.meterChanges` | Caller-supplied validated meter changes |
+| `score.meterChanges` | Validated caller readings and independently supported common/cut-time signs |
 | `score.rests`, `techniqueChanges`, `dynamicChanges` | Available rest/direction evidence |
+| `score.playbackDirections` | Page-local measure boundaries and navigation kinds; absent in older output |
 | `events` | MIDI pitch, start/duration in quarter-note beats, staff identity, analysis-pixel x/y, tie and fallback flags |
 | `measureBeats`, `totalBeats` | Measure durations and total, in quarter-note beats |
 | `warnings` | Recognition and metadata limitations |
@@ -85,10 +86,19 @@ but an isolated `P` from a lyric or tab marking cannot become a piano dynamic.
 
 For desktop integrations that crop stacked printed meter digits, `MeterFontMatcher`
 accepts a cleaned ARGB crop, its staff-line offset and spacing, and the bundled
-`java/assets/Bravura.otf`. It compares music-font numerals only after ordinary OCR
-provides at least one digit, and callers should require agreement with that OCR
-digit. This is a bounded fallback for music glyphs that text OCR misses; it does
+`java/assets/Bravura.otf`. `MusicalOcrEvidence` accepts sufficiently strong paired
+font readings without generic OCR, or compatible partial OCR evidence; conflicting
+digits remain unresolved. This is a bounded fallback for music glyphs that text OCR misses; it does
 not make the general Python page reader infer every printed meter automatically.
+
+Java callers can opt into staff-local meter, dynamics and ornament OCR with
+`new MusicalOcr(inference, meterFontMatcher)` and the six-argument
+`SheetInterpreter.analyze(labels, gray, width, height, annotations, musicalOcr)`.
+The supplied `PortableOcr.Inference` remains caller-owned, including its lifetime
+and thread-safety. The decoder does not load OCR models or require ONNX itself.
+This overload propagates OCR errors; it does not silently substitute empty results.
+Explicit meter annotations remain authoritative. The normal overload uses supplied
+whole-page words and the bundled glyph templates without starting another OCR engine.
 
 The automatic offline OCR path now sends a bounded `= BPM` line reading to the
 Java tempo detector. It still requires the printed equals sign and nearby
@@ -130,5 +140,31 @@ cadenza and unusual engraving timing can need correction. Cross-page ties, repea
 ornament realization and exact polyphonic voice separation are not fully handled.
 Tempo/meter arguments are explicit fallbacks, not claims of automatic recognition.
 Use the retained geometry and raw score events to implement editing and richer playback.
+
+## Bounded navigation and projected dynamics
+
+`ScorePlaybackDirection` uses a zero-based measure boundary and stable kind values:
+`0` segno, `1` to-coda, `2` D.S. al Coda, `3` coda. A boundary can equal the page's
+measure count. Offset boundaries when assembling pages; retain the printed source
+score separately from performance occurrences.
+
+`ScoreNavigationPlan` follows one complete, unambiguous D.S. al Coda route only.
+Missing, contradictory or unsupported directions leave the route linear. A
+to-coda marker is armed only after the D.S. jump; execution is bounded, not an
+unlimited repeat interpreter. `ScoreNavigationProjection.project` takes explicit
+opening key, quarter-note BPM and meter defaults, restores effective source state
+at jumps, cuts incoming ties across discontinuities, and clips/resumes hairpins.
+The plan maps performance occurrences back to source measures for cursor use.
+The existing Python MIDI/MusicXML exporters still traverse pages in reading order;
+detecting these directions does not make those exporters execute the route.
+
+Dynamic records append two backward-compatible flags. Missing `fixedTarget`
+defaults to false; missing `sharedTiming` defaults to `sharedStaffs`.
+`fixedTarget=true` means exact projected staff-topology-addressed state: a hairpin's
+`decibels` is its absolute endpoint, not a relative six-decibel change or a request
+to search for the next printed level. Generated absolute resets use the same exact
+staff identity. `sharedTiming` uses both staves' onset geometry independently of
+gain ownership; it is always true for a shared-staff broadcast. Renderers must
+preserve these flags and apply these semantics before consuming projected dynamics.
 
 Double-sharp notes use `writtenAccidental: 3` (two sounding semitones); `2` remains the no-local-accidental sentinel. A treble clef with an 8 above uses `clefBottomDiatonic: 37` (E5), and ends at the next printed clef. MIDI events already include these pitch changes.

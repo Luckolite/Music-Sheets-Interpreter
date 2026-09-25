@@ -51,6 +51,13 @@ public final class SheetInterpreter {
     }
     public static ScorePageInterpretation analyze(byte[] labels,byte[] gray,int width,int height,
                                                  Annotations annotations) {
+        try{return analyze(labels,gray,width,height,annotations,null);}
+        catch(RuntimeException failure){throw failure;}
+        catch(Exception failure){throw new IllegalStateException("Unexpected optional OCR failure",failure);}
+    }
+    /** Optional caller-owned OCR inference; the default overload has no ONNX or model dependency. */
+    public static ScorePageInterpretation analyze(byte[] labels,byte[] gray,int width,int height,
+                                                 Annotations annotations,MusicalOcr ocr) throws Exception {
         long pixels=(long)width*height;
         if(width<=0||height<=0||pixels>20_000_000||labels==null||gray==null
                 ||labels.length!=pixels||gray.length!=pixels)
@@ -86,18 +93,42 @@ public final class SheetInterpreter {
                 OmrScoreInterpreter.techniqueStaffs(labels,gray,width,height,measures),notes,height);
         var words=annotations.words.stream().map(Word::internal).toList();
         notes=OctaveMarkDetector.apply(words,staffs,measures,notes,gray,width,height);
+        notes=FingeringAnnotationFilter.apply(words,staffs,measures,notes,gray,width,height);
+        if(!notes.isEmpty()&&!staffs.isEmpty()) {
+            var ornamentWords=new java.util.ArrayList<PlayingTechniqueDetector.Word>();
+            for(var word:words) {
+                String token=MusicalOcrEvidence.ornamentToken(word.text());
+                if(!token.isEmpty())ornamentWords.add(new PlayingTechniqueDetector.Word(token,
+                        word.left(),word.top(),word.right(),word.bottom()));
+            }
+            if(ocr!=null)ornamentWords.addAll(ocr.ornamentWords(gray,width,height,staffs));
+            notes=PortableNoteOrnaments.apply(GlyphResources.ornaments(),labels,gray,width,height,
+                    measures,notes,ornamentWords);
+        }
         notes=ArtificialHarmonics.apply(gray,width,height,measures,notes,staffs);
         notes=ScoreTiePitchGuard.apply(notes,score.keyChanges());
+        var dynamicEvidence=new java.util.ArrayList<>(words);
+        if(ocr!=null)for(var word:ocr.dynamics(gray,width,height,staffs))
+            if(!dynamicEvidence.contains(word))dynamicEvidence.add(word);
+        var dynamicWords=staffs.isEmpty()?words:GlyphResources.dynamics().recognize(gray,width,height,staffs,dynamicEvidence);
+        var meters=new java.util.ArrayList<>(annotations.meters);
+        if(ocr!=null)for(var meter:ocr.meters(labels,gray,width,height,measures,notes))
+            if(meters.stream().noneMatch(explicit->explicit.measureIndex()==meter.measureIndex()))meters.add(meter);
+        for(var meter:MeterChangeDetector.commonTimeReadings(labels,gray,width,height,measures,notes))
+            if(meters.stream().noneMatch(explicit->explicit.measureIndex()==meter.measureIndex()))meters.add(meter);
+        meters.sort(java.util.Comparator.comparingInt(ScoreMeterChange::measureIndex));
         var decoded=TablatureDecoder.apply(new ScorePageInterpretation(measures,notes,
                 MeasureNumberReconciler.firstMeasureNumber(measures,numbers),score.keyChanges(),
                 TempoChangeDetector.detect(annotations.tempoNumbers.stream().map(NumberToken::internal).toList(),
                         gray,width,height,measures),
-                annotations.meters,rhythm.rests(),
+                meters,rhythm.rests(),
                 PlayingTechniqueDetector.detect(words,staffs,measures,notes,width,height),
-                ScoreDynamicsDetector.detect(words,staffs,measures,notes,gray,width,height)),tabs,width,height);
+                ScoreDynamicsDetector.detect(dynamicWords,staffs,measures,notes,gray,width,height)),tabs,width,height);
         for(var meter:annotations.meters)if(meter.measureIndex()>=decoded.measures().size())
             throw new IllegalArgumentException("Meter change is outside the detected measure range");
-        return PrintedPageEvidence.rejectStafflessPage(
+        var finalScore=PrintedPageEvidence.rejectStafflessPage(
                 TabMeter.apply(decoded,tabs,tabWords,width,height),gray,width,height,!tabs.isEmpty());
+        return finalScore.withPlaybackDirections(ScoreNavigationDetector.detect(words,
+                NavigationSegnoGlyphs.detect(gray,width,height,staffs),staffs,finalScore.measures(),width,height));
     }
 }

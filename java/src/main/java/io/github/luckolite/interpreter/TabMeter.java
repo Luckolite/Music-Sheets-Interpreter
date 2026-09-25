@@ -23,6 +23,6 @@ public final class TabMeter {
    boolean empty=score.notes().stream().noneMatch(n->n.measureIndex()==rest.measureIndex());
    rests.add(empty&&rest.durationBeats()==4?new ScoreRestEvent(rest.measureIndex(),rest.positionInMeasure(),rest.pageY(),rest.pageHeight(),rest.staffIndex(),rest.staffCount(),beats):rest);
   }
-  return TabTempo.apply(new ScorePageInterpretation(score.measures(),score.notes(),score.firstMeasureNumber(),score.keyChanges(),score.tempoChanges(),changes,rests,score.techniqueChanges(),score.dynamicChanges()),tabs,words,w,h);
+  return TabTempo.apply(new ScorePageInterpretation(score.measures(),score.notes(),score.firstMeasureNumber(),score.keyChanges(),score.tempoChanges(),changes,rests,score.techniqueChanges(),score.dynamicChanges(),score.playbackDirections()),tabs,words,w,h);
  }
 }

@@ -15,6 +15,9 @@ public class PrintedNoteContrastTest {
         return PrintedNoteContrast.paperTexture(gray,w,h,40,40,60,54);
     }
     @Test public void shadedPaperNoiseIsRejected(){assertTrue(texture(175,166,false,false));}
+    @Test public void deepShadowNoiseIsRejected(){assertTrue(texture(130,119,false,false));}
+    @Test public void deepShadowPrintedHeadIsPreserved(){assertFalse(texture(130,35,false,false));}
+    @Test public void solidBlackPrintedRegionIsNotPaperTexture(){assertFalse(texture(0,0,false,false));}
     @Test public void isolatedDustDoesNotValidateTexture(){assertTrue(texture(175,166,false,true));}
     @Test public void printedHeadOnShadowIsPreserved(){assertFalse(texture(175,25,false,false));}
     @Test public void hollowHeadOnShadowIsPreserved(){assertFalse(texture(175,25,true,false));}
@@ -27,5 +30,10 @@ public class PrintedNoteContrastTest {
             if(x==38||x==62||y==38||y==56)gray[y*w+x]=90;
         for(int y=40;y<=54;y++)for(int x=40;x<=60;x++)gray[y*w+x]=(byte)198;
         assertFalse(PrintedNoteContrast.paperTexture(gray,w,w,40,40,60,54));
+    }
+    @Test public void oneSidedNearbySlurDoesNotValidateBlankPaper(){
+        int w=100;byte[] gray=new byte[w*w];Arrays.fill(gray,(byte)145);
+        for(int x=38;x<=62;x++)gray[38*w+x]=35;
+        assertTrue(PrintedNoteContrast.paperTexture(gray,w,w,40,40,60,54));
     }
 }

@@ -22,7 +22,7 @@ public class HalfRestRecognitionTest {
     @Test public void aFilledRectangleOnTheMiddleRuleIsTwoBeatsOfSilence(){var p=new Page();p.half();var rests=p.detect(List.of());assertEquals(1,rests.size());assertEquals(2,rests.get(0).durationBeats(),0);}
     @Test public void aDotExtendsTheHalfRestToThreeBeats(){var p=new Page();p.half();p.ellipse(134,104,3,3,false);assertEquals(3,p.detect(List.of()).get(0).durationBeats(),0);}
     @Test public void coordinatesKeepTheOriginalRectangle(){var p=new Page();p.half();var r=p.detect(List.of()).get(0);assertEquals(109.5,r.positionInMeasure()*W,.01);assertEquals(107.5,r.pageY()*H,.01);}
-    @Test public void aHangingWholeRestIsNotMisreadAsAHalfRest(){var p=new Page();p.rect(100,97,119,104);assertTrue(p.detect(List.of()).isEmpty());}
+    @Test public void aHangingWholeRestIsNotMisreadAsAHalfRest(){var p=new Page();p.rect(100,97,119,104);var r=p.detect(List.of());assertEquals(1,r.size());assertEquals(4,r.get(0).durationBeats(),0);}
     @Test public void aThinTenutoMarkIsNotAHalfRest(){var p=new Page();p.rect(100,109,119,110);assertTrue(p.detect(List.of()).isEmpty());}
     @Test public void anOvalHeadDoesNotSupplyRectangularRestProof(){var p=new Page();p.ellipse(110,107,9,4,false);assertTrue(p.detect(List.of()).isEmpty());}
     @Test public void aBeamJoinedToItsStemIsNotARest(){var p=new Page();p.half();p.rect(119,96,120,146);assertTrue(p.detect(List.of()).isEmpty());}

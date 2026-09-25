@@ -59,6 +59,6 @@ public final class TabTempo {
         changes.sort(Comparator.comparingInt(ScoreTempoChange::measureIndex)
                 .thenComparingDouble(ScoreTempoChange::positionInMeasure));
         return new ScorePageInterpretation(score.measures(),score.notes(),score.firstMeasureNumber(),
-                score.keyChanges(),changes,score.meterChanges(),score.rests(),score.techniqueChanges(),score.dynamicChanges());
+                score.keyChanges(),changes,score.meterChanges(),score.rests(),score.techniqueChanges(),score.dynamicChanges(),score.playbackDirections());
     }
 }

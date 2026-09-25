@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "description": "Recognition-only raster glyphs from Bravura and Leland; no score content. 27 PNGs plus complete SIL OFL notices.",
+  "license": "SIL-OFL-1.1",
+  "sources": {
+    "Bravura": "https://github.com/steinbergmedia/bravura",
+    "Leland": "https://github.com/MuseScoreFonts/Leland"
+  },
+  "rendering": {
+    "resize": "Pillow LANCZOS",
+    "rasterHeight": 64,
+    "fontSize": 256,
+    "grayscale": "black glyph on white background"
+  },
+  "files": [
+    {
+      "path": "BRAVURA-OFL.txt",
+      "sha256": "bdca252186865f3b2c0e76da4a4e335c14ba1d37f80194fca254ddfa88e84fbf",
+      "bytes": 4420
+    },
+    {
+      "path": "dynamic_templates/f.png",
+      "sha256": "744186ba879d7d45d931d92ad8872454591d74fc1af3c8b937ad60ff2379c6d3",
+      "bytes": 1167
+    },
+    {
+      "path": "dynamic_templates/ff.png",
+      "sha256": "fb405927ba034c2392b470e07e8f361d6a06a606b28a76dc2bfc0e9ef367f8f0",
+      "bytes": 1956
+    },
+    {
+      "path": "dynamic_templates/fff.png",
+      "sha256": "eeccf6652da27ce36b7a045a7b02aa304512772f1da393d6051df15bfdda9f7a",
+      "bytes": 2681
+    },
+    {
+      "path": "dynamic_templates/m.png",
+      "sha256": "2a990d7bfd5ac7252bd0e54748851553fcd435f60e9f533848019cc576b7caaf",
+      "bytes": 2563
+    },
+    {
+      "path": "dynamic_templates/mf.png",
+      "sha256": "37668523771584eed46377daf9785a807a285187359ef8322a15718421debf98",
+      "bytes": 2148
+    },
+    {
+      "path": "dynamic_templates/mp.png",
+      "sha256": "c2786ccadf1a10263dce64ac5a7cd84e54018fb93dff376951fb21a5bc3e1460",
+      "bytes": 3030
+    },
+    {
+      "path": "dynamic_templates/p.png",
+      "sha256": "37b83318b9723dbd6dcd8ee28e43f536f0914ba57d83f3de8c0aba33251789df",
+      "bytes": 1554
+    },
+    {
+      "path": "dynamic_templates/pp.png",
+      "sha256": "3ca677ebfb34d115f0c64c593b4219bab57f8d13ac45bb215df2b7361039e2ac",
+      "bytes": 2729
+    },
+    {
+      "path": "dynamic_templates/ppp.png",
+      "sha256": "5c4e0cfe78c0c543fe91710769aa74fd1aff306b268680e987e39bf847295e87",
+      "bytes": 3884
+    },
+    {
+      "path": "LELAND-OFL.txt",
+      "sha256": "5267f6c8e8bac5b78ac024be1bc6e325eb3621485647902fb684cc41e22ffc11",
+      "bytes": 4400
+    },
+    {
+      "path": "ornament_templates/flat_leland.png",
+      "sha256": "06e86dfaefb6d87e03a9949ac4c5fbd0f8ef26916352d63f191647d74d64eb0c",
+      "bytes": 623
+    },
+    {
+      "path": "ornament_templates/flat.png",
+      "sha256": "9dcb2b9b74620ef4ba2490de79c50ad9a29da6cdf09f41e37fe3517337aeb230",
+      "bytes": 695
+    },
+    {
+      "path": "ornament_templates/inverted_mordent_leland.png",
+      "sha256": "66e8f912f2bd4c7f311a632d0cadd4a8d1ed5cfa66440ef15b8648d50e2b0b33",
+      "bytes": 1411
+    },
+    {
+      "path": "ornament_templates/inverted_mordent.png",
+      "sha256": "4808818746c692770d93f3ee3b9f67031376aba0d5cb068ca5c7f6fc137fcacb",
+      "bytes": 1642
+    },
+    {
+      "path": "ornament_templates/inverted_turn_leland.png",
+      "sha256": "ac7efc2896434b458797ad37e0bfa0c44f62e01c3f09148bab3cb0add8ac211d",
+      "bytes": 2594
+    },
+    {
+      "path": "ornament_templates/inverted_turn_slash_leland.png",
+      "sha256": "f60db59970db8c5d1059c2520bfac7135c764fd4e62dda45f2cc72f797706277",
+      "bytes": 1514
+    },
+    {
+      "path": "ornament_templates/inverted_turn_slash.png",
+      "sha256": "1b856d12a2a24e3ebe0571f777d375d472116a6dfb50de90def6f3c4b43948ee",
+      "bytes": 1550
+    },
+    {
+      "path": "ornament_templates/inverted_turn.png",
+      "sha256": "c8f9cd0e8cede54a84fcfe5d270b2b8ec332e89ada9395e2ca5bbcaa89dcdaa5",
+      "bytes": 2824
+    },
+    {
+      "path": "ornament_templates/mordent_leland.png",
+      "sha256": "425a951df85a9428247bfd72c26cd2b95e819013af0f81ec9953e94c23ae6e66",
+      "bytes": 2245
+    },
+    {
+      "path": "ornament_templates/mordent.png",
+      "sha256": "2d806a024a3240c4378ba3cec3673d57e521fe0f047a96912448c6a539ae90f6",
+      "bytes": 2470
+    },
+    {
+      "path": "ornament_templates/natural_leland.png",
+      "sha256": "269279d092f80ace196a3cf4e99489729afcd4eb07482df71d47b7eb3cf6797f",
+      "bytes": 445
+    },
+    {
+      "path": "ornament_templates/natural.png",
+      "sha256": "f6f1145c1963b881d4d833de84ae048f7a352c657e9a468dafaa729dea0d7c9c",
+      "bytes": 418
+    },
+    {
+      "path": "ornament_templates/sharp_leland.png",
+      "sha256": "b2be087251dd47912d0d24ffe69bb86ce5149ff6031ffe384013260ef5e898d6",
+      "bytes": 663
+    },
+    {
+      "path": "ornament_templates/sharp.png",
+      "sha256": "4dfe88a4228c6fea68d44fa02dabeee0c65b28353a2a191585b81b9e6a2dd4e3",
+      "bytes": 751
+    },
+    {
+      "path": "ornament_templates/trill_leland.png",
+      "sha256": "1dc98c78f00085b0e2b8cecb2f603bbea680eaa824e48c2cad0cca7a49672e05",
+      "bytes": 1516
+    },
+    {
+      "path": "ornament_templates/trill.png",
+      "sha256": "72e970c4ca78aa941fbf7b6529b95dd750528f49a6faf28deaafdd47f7248162",
+      "bytes": 2099
+    },
+    {
+      "path": "ornament_templates/turn_leland.png",
+      "sha256": "1f030addd2d36199f480e9a170d8b8827523dceb1486fdd1d29a5aa2568bacc6",
+      "bytes": 2558
+    },
+    {
+      "path": "ornament_templates/turn.png",
+      "sha256": "49db9d7daa48827f0828e9fdb13a5f5593cd00488ae6365b434b66d535a509fc",
+      "bytes": 2797
+    }
+  ]
+}

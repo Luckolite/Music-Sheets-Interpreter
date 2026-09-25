@@ -14,8 +14,8 @@ public class IsolatedBeamProbeTest {
         var staff=Class.forName(OmrScoreInterpreter.class.getName()+"$Staff");
         var ctor=staff.getDeclaredConstructor(float.class,float.class,float.class);ctor.setAccessible(true);
         var method=OmrScoreInterpreter.class.getDeclaredMethod("supportedBeamBands",byte[].class,byte[].class,
-                int.class,int.class,int.class,int.class,int.class,staff,int.class);method.setAccessible(true);
-        return (int)method.invoke(null,gray,labels,300,180,150,40,65,ctor.newInstance(80f,144f,16f),150);
+                int.class,int.class,int.class,int.class,int.class,staff,int.class,boolean.class);method.setAccessible(true);
+        return (int)method.invoke(null,gray,labels,300,180,150,40,65,ctor.newInstance(80f,144f,16f),150,false);
     }
     @Test public void isolatedExtraBandDoesNotShortenTheNote()throws Exception {assertEquals(1,count(1));}
     @Test public void broaderSecondaryBeamIsPreserved()throws Exception {assertEquals(2,count(10));}

@@ -122,6 +122,7 @@ public final class Main {
         }
         if(value instanceof Number n)return Double.isFinite(n.doubleValue())?n.toString():"null";
         if(value instanceof Boolean)return value.toString();
+        if(value instanceof ScorePlaybackDirection.Kind kind)return Integer.toString(kind.ordinal());
         var items=new ArrayList<String>();
         if(value instanceof Map<?,?> map){for(var e:map.entrySet())items.add(json(e.getKey().toString())+":"+json(e.getValue()));return "{"+String.join(",",items)+"}";}
         if(value.getClass().isRecord()) {

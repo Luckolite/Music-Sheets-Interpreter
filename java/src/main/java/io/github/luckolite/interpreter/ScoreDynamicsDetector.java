@@ -1,6 +1,5 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.*;
@@ -190,8 +189,8 @@ final class ScoreDynamicsDetector {
         PlayingTechniqueDetector.Staff best=null;float score=Float.MAX_VALUE;
         for(var staff:staffs) {
             float distance;
-            if(top>=staff.bottom()+staff.gap()*.25f)distance=(top-staff.bottom())/staff.gap();
-            else if(bottom<=staff.top()-staff.gap()*.25f)distance=(staff.top()-bottom)/staff.gap()+.75f;
+            if(top>=Math.round(staff.bottom()+staff.gap()*.25f))distance=(top-staff.bottom())/staff.gap();
+            else if(bottom<=Math.round(staff.top()-staff.gap()*.25f))distance=(staff.top()-bottom)/staff.gap()+.75f;
             else continue;
             if(distance<=4.5f&&distance<score){score=distance;best=staff;}
         }

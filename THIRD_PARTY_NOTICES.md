@@ -1,7 +1,8 @@
 # Third-party notices
 
-The runtime wheel and Java JAR contain our original code and our independent weights.
-Dependencies are installed separately, not copied into the wheel or JAR. Preserve their
+The runtime wheel and Java JAR contain our original code, our independent weights,
+and the recognition-only glyph rasters described below. Other dependencies are
+installed separately, not copied into the wheel or JAR. Preserve their
 complete upstream notices if you redistribute them as part of a larger application.
 
 | Component | Role | Upstream license information |
@@ -22,6 +23,22 @@ complete upstream notices if you redistribute them as part of a larger applicati
 Dependency licenses are not replaced by this project's Apache license. In particular,
 an upstream package's headline license is not a substitute for its complete binary
 distribution notices.
+
+## Bundled recognition glyphs
+
+The JAR includes 27 small grayscale templates: nine dynamic symbols rendered from
+Bravura, and nine ornament/auxiliary-accidental symbols rendered in both Bravura and
+Leland. They are individual glyph samples, not score excerpts or font binaries.
+Bravura is copyright Steinberg Media Technologies GmbH; Leland is copyright
+MuseScore BVBA. Both retain SIL OFL 1.1. Their complete notices and exact per-file
+SHA-256 checksums are packaged beside the templates under
+`io/github/luckolite/interpreter/glyphs/` and kept in
+[`java/src/main/resources/io/github/luckolite/interpreter/glyphs/`](java/src/main/resources/io/github/luckolite/interpreter/glyphs/).
+These materials are not relicensed under Apache-2.0. The build verifies their
+manifest and includes all resource bytes in the decoder fingerprint.
+
+The desktop adapter also renders `tr`/`tr.` in the user's JDK logical serif font
+at runtime; those generated candidates are not bundled font assets.
 
 ## Training fonts
 

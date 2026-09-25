@@ -262,7 +262,7 @@ public final class TablatureDecoder {
             rests.add(new ScoreRestEvent(bar,position,target.pageY(),tab.gap/h,target.staffIndex(),target.staffCount(),duration));
         }
         notes.sort(Comparator.comparingInt(ScoreNoteEvent::measureIndex).thenComparingDouble(ScoreNoteEvent::positionInMeasure).thenComparingInt(ScoreNoteEvent::staffStep));
-        return new ScorePageInterpretation(measures,notes,score.firstMeasureNumber(),score.keyChanges(),score.tempoChanges(),score.meterChanges(),rests,score.techniqueChanges(),score.dynamicChanges());
+        return new ScorePageInterpretation(measures,notes,score.firstMeasureNumber(),score.keyChanges(),score.tempoChanges(),score.meterChanges(),rests,score.techniqueChanges(),score.dynamicChanges(),score.playbackDirections());
     }
     private static int[] tabTuning(Staff staff,int[] supplied) {
         if(supplied!=null){if(supplied.length!=staff.stringCount)throw new IllegalArgumentException("Tuning/string count mismatch");return supplied;}

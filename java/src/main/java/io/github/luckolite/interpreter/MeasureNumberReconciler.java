@@ -1,6 +1,5 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -317,7 +316,8 @@ final class MeasureNumberReconciler {
         for (MeasureRegion measure : sorted) {
             Row row = rows.isEmpty() ? null : rows.get(rows.size() - 1);
             float tolerance = Math.max(0.012f, (measure.bottom() - measure.top()) * 0.22f);
-            if (row == null || Math.abs(row.top - measure.top()) > tolerance) {
+            if (row == null || Math.abs(row.top - measure.top()) > tolerance
+                    && !curvedRowNeighbor(row.measures,measure)) {
                 row = new Row(measure.top(), measure.bottom());
                 rows.add(row);
             }
@@ -328,6 +328,18 @@ final class MeasureNumberReconciler {
         }
         for (Row row : rows) row.measures.sort(Comparator.comparing(MeasureRegion::left));
         return rows;
+    }
+
+    /** Adjacent measure boxes may climb beyond the first box's fixed top tolerance. */
+    private static boolean curvedRowNeighbor(List<MeasureRegion> row,MeasureRegion measure) {
+        for(MeasureRegion other:row) {
+            float separation=Math.min(Math.abs(other.left()-measure.right()),Math.abs(measure.left()-other.right()));
+            float overlap=Math.min(other.bottom(),measure.bottom())-Math.max(other.top(),measure.top());
+            float shorter=Math.min(other.bottom()-other.top(),measure.bottom()-measure.top());
+            if(separation<=.02f&&Math.min(other.right(),measure.right())-Math.max(other.left(),measure.left())<=.002f
+                    &&shorter>0&&overlap>=shorter*.65f)return true;
+        }
+        return false;
     }
 
     /** Finds the longest increasing left-margin number sequence, excluding page/BPM/time text. */

@@ -140,7 +140,7 @@ final class TripletRhythmDetector {
 
     static List<ScoreNoteEvent> apply(List<ScoreNoteEvent> notes,List<MeasureRegion> measures,
             byte[] gray,int width,int height) {
-        if(notes==null||notes.size()<3||measures==null||gray==null
+        if(notes==null||notes.size()<2||measures==null||gray==null
                 ||width<1||height<1||gray.length!=width*height)return notes;
         List<ScoreNoteEvent> result=new ArrayList<>(notes);List<Onset> groups=onsets(notes);
         for(int i=0;i+2<groups.size();i++) {
@@ -206,7 +206,42 @@ final class TripletRhythmDetector {
             }
             if(marked)i+=2;
         }
+        result=mixedBracketPairs(result,measures,gray,width,height);
         return beamedTuplets(beamedTuplets(result,measures,gray,width,height,7),measures,gray,width,height,5);
+    }
+
+    private static List<ScoreNoteEvent> mixedBracketPairs(List<ScoreNoteEvent> notes,
+            List<MeasureRegion> measures,byte[] gray,int width,int height) {
+        List<ScoreNoteEvent> result=new ArrayList<>(notes);List<Onset> groups=onsets(notes);
+        for(int i=0;i+1<groups.size();i++) {
+            Onset a=groups.get(i),b=groups.get(i+1);
+            if(a.indices().size()!=1||b.indices().size()!=1)continue;
+            ScoreNoteEvent first=result.get(a.indices().get(0)),last=result.get(b.indices().get(0));
+            if(!sameVoice(first,last)||first.measureIndex()<0||first.measureIndex()>=measures.size()
+                    ||first.augmentationDots()!=0||last.augmentationDots()!=0
+                    ||first.tupletDivisor()!=1||last.tupletDivisor()!=1
+                    ||((first.articulations()|last.articulations())&NoteOrnament.GRACE)!=0)continue;
+            double d1=ScoreNoteTiming.writtenDurationBeats(first),d2=ScoreNoteTiming.writtenDurationBeats(last);
+            if(d1<=0||d2<=0||Math.max(d1,d2)>2||Math.abs(Math.max(d1,d2)/Math.min(d1,d2)-2)>.001)continue;
+            MeasureRegion region=measures.get(first.measureIndex());
+            float gap=Math.max(4,(region.bottom()-region.top())*height/(8*first.staffCount()));
+            float x1=(region.left()+a.position()*(region.right()-region.left()))*width;
+            float x2=(region.left()+b.position()*(region.right()-region.left()))*width;
+            if(x2-x1<gap*2||x2-x1>gap*18)continue;
+            Glyph numeral=findPrintedThree(gray,width,height,x1,x2,Math.min(a.top(),b.top())*height,
+                    Math.max(a.bottom(),b.bottom())*height,gap,false,Float.NaN,Float.NaN);
+            if(numeral==null||insideOtherSystem(numeral,region,measures,width,height))continue;
+            for(int index:new int[]{a.indices().get(0),b.indices().get(0)}) {
+                ScoreNoteEvent n=result.get(index);
+                result.set(index,new ScoreNoteEvent(n.measureIndex(),n.positionInMeasure(),n.staffStep(),
+                        n.staffIndex(),n.staffCount(),n.pageY(),n.tiedFromPrevious(),n.augmentationDots(),
+                        n.beamCount(),n.writtenAccidental(),n.unbeamedDurationBeats(),3,n.followingRestBeats(),
+                        n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),
+                        n.compactOpening(),n.octaveShift()));
+            }
+            i++;
+        }
+        return result;
     }
 
     private static List<ScoreNoteEvent> beamedTuplets(List<ScoreNoteEvent> notes,
@@ -318,7 +353,20 @@ final class TripletRhythmDetector {
 
     private static Glyph findPrintedThree(byte[] gray,int width,int height,float firstX,
             float lastX,float firstY,float lastY,float gap,boolean shortNotes,float headX,float headY) {
-        return findPrintedNumeral(gray,width,height,firstX,lastX,firstY,lastY,gap,shortNotes,headX,headY,3);
+        Glyph normal=findPrintedNumeral(gray,width,height,firstX,lastX,firstY,lastY,gap,shortNotes,headX,headY,3);
+        if(normal!=null&&TupletNumeralInk.hasGlyphContrast(gray,width,height,normal.left(),normal.top(),normal.right(),normal.bottom(),gap))return normal;
+        for(int level:new int[]{165,140,120,190,210}) {
+            var local=TupletNumeralInk.window(gray,width,height,firstX,lastX,firstY,lastY,gap,level);
+            if(local==null)continue;
+            Glyph retry=findPrintedNumeral(local.pixels(),local.width(),local.height(),
+                    firstX-local.left(),lastX-local.left(),firstY-local.top(),lastY-local.top(),gap,shortNotes,
+                    headX-local.left(),headY-local.top(),3);
+            if(retry!=null&&TupletNumeralInk.hasGlyphContrast(gray,width,height,
+                    retry.left()+local.left(),retry.top()+local.top(),retry.right()+local.left(),
+                    retry.bottom()+local.top(),gap))return new Glyph(retry.left()+local.left(),retry.top()+local.top(),
+                    retry.right()+local.left(),retry.bottom()+local.top());
+        }
+        return null;
     }
 
     private static Glyph findPrintedNumeral(byte[] gray,int width,int height,float firstX,
@@ -538,7 +586,9 @@ final class TripletRhythmDetector {
             if (nextFraction > .60f && fraction <= .82f) {
                 // The lower curve must bulge before the baseline; a 2 only widens at its foot.
                 if(fraction<=.75f)lowerLobe = Math.max(lowerLobe, max[y]);
-                if (min[y] >= w * .40f) lowerOpen++;
+                // An italic lower bowl sits left of the upper bowl. Its opening
+                // is relative to its own right edge, not the whole glyph width.
+                if (max[y]>=w*.5f&&min[y]>=Math.min(w*.40f,max[y]*.50f)) lowerOpen++;
                 if (hasLobePocket(gray, width, left, top + y, w)) lowerPocket++;
             }
             if (fraction >= .37f && fraction <= .55f) waist = Math.min(waist, max[y]);
@@ -551,7 +601,7 @@ final class TripletRhythmDetector {
         boolean lower = lowerOpen >= required || lowerOpen >= 1 && lowerPocket >= required;
         int indentation = Math.max(1, (int) Math.floor(w * .08f));
         int foot=-1;
-        for(int y=(int)(h*.92);y<h;y++)foot=Math.max(foot,max[y]);
+        for(int y=(int)Math.ceil(h*.92);y<h;y++)foot=Math.max(foot,max[y]);
         return lowerLobe-foot>=indentation && upper && lower && upperLobe - waist >= indentation
                 && lowerLobe - waist >= indentation;
     }
