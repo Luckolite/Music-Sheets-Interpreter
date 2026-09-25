@@ -280,6 +280,12 @@
       "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "notes": "Retains independently barred duet staves and rejects a ledger-line extension that overlaps an upper staff and crosses its separators. Original synthetic regressions; private score comparison excluded. The reviewed app source uses Collectors.toList() in the two overlap filters for Android stream compatibility; public Java 17 uses toList() with the same read-only filtering behavior."
     },
+    "PrintedPageEvidence.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedPageEvidence.java",
+      "source_sha256": "99291b3bbee48c8cb95c9c54e868a91ca0f24cdbccd66e3577b897f19abe9cbc",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Rejects a page of inferred measures only when it has no notes, tab rows or verified printed five-line staff. Synthetic artwork and empty-bar regressions; private source pages stay outside this repository."
+    },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
       "source_sha256": "790d04670331e5be6ab9ec68b1ea2dc90f6dc7cbcfe1ed97305c32e791d6bf7a",

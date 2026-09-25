@@ -97,6 +97,7 @@ public final class SheetInterpreter {
                 ScoreDynamicsDetector.detect(words,staffs,measures,notes,gray,width,height)),tabs,width,height);
         for(var meter:annotations.meters)if(meter.measureIndex()>=decoded.measures().size())
             throw new IllegalArgumentException("Meter change is outside the detected measure range");
-        return TabMeter.apply(decoded,tabs,tabWords,width,height);
+        return PrintedPageEvidence.rejectStafflessPage(
+                TabMeter.apply(decoded,tabs,tabWords,width,height),gray,width,height,!tabs.isEmpty());
     }
 }
