@@ -39,7 +39,55 @@ The auxiliary centre output is available through `forward_with_centres`. The def
 deployment model uses only semantic classes. Validate centre predictions separately
 before using them to reject or create notes.
 
-## Export
+## Hard-scan candidate training
+
+`train_hard_scan.py` provides an experimental, resumable fine-tuning recipe for
+the existing six-class v4 architecture. It is not a newly released model and
+does not deploy or export weights automatically. It uses original renderer
+labels, clean retention examples, paired page curvature, faint/thin strokes,
+paper shadows, and procedural marginal clutter. Geometric transforms move the
+semantic masks, renderer-category masks, and note centres together. Thin ink is
+attenuated rather than entirely erased to avoid teaching invisible-note targets.
+
+Copy `hard-scan-config.example.json`, set your original corpus path and manifest
+SHA-256, and confirm the parent checkpoint hash. Additional reviewed original
+corpora can be listed with sampling weights. The loader checks image/label hashes,
+path containment, and exercise-seed split isolation across corpora. It rejects
+commercial/pretrained training provenance; test pixel files remain unopened.
+Full-precision CUDA training is the default. PyTorch and OpenCV are required.
+
+```sh
+python training/train_hard_scan.py --config my-hard-scan-config.json --out training/runs/hard-scan
+# After an interruption, use exactly the same config, code and output directory:
+python training/train_hard_scan.py --config my-hard-scan-config.json --out training/runs/hard-scan --resume
+python -m unittest discover -s training -p 'test_hard_scan_*.py'
+```
+
+The run freezes code/config/provenance and a parent-model development baseline.
+It saves `last.pt` for resumption and saves `best-development.pt` only when the
+candidate passes the development gates. No qualifying checkpoint is guaranteed.
+The fixed comparison covers clean, warp, faint, shadow, thin, combined, and blank
+strata. A 64-pixel crop border is excluded to avoid scoring warped edge fragments;
+these are **crop development metrics, not whole-page or independent accuracy**.
+Class-2 components use maximum-cardinality one-to-one renderer-box matching, with
+IoU >= 0.5 and component area >= 3. Connected touching heads remain a limitation
+of this proxy, as they are in the unchanged parent comparison.
+
+Screening requires hard-stratum mean head F1 improvement of at least 0.003; no
+extra blank heads; no increased false/missed-head counts or decreased true-head
+counts in any clean crop; head precision/recall within 0.01 per stratum; semantic
+precision/recall within 0.015; and renderer-category pixel recall within 0.02 for
+categories with at least 100 pixels. Category recall is **not** rest/symbol
+instance accuracy. The auxiliary centre head is trained but is not used to create
+or suppress deployment notes.
+
+Before promotion, separately require source-note retention with an identical
+frozen decoder, a sealed original holdout, export/native parity, latency checks,
+and reviewed model lineage/checksums. Keep private score evaluation separate from
+training and public artifacts. A model experiment does not complete decoder,
+tempo, repeat-navigation, or symbol-semantics work.
+
+## Exporting qualified weights
 
 ```sh
 python -m pip install -r training/requirements-export.txt

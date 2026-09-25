@@ -1,0 +1,22 @@
+{
+  "candidate": "original-hard-scan-experiment",
+  "checkpoint": "models/best.pt",
+  "parent_sha256": "dece0e04c14552483427c00f81110f148f1dc5d46378b7953381bbb287ff178e",
+  "steps": 6000,
+  "batch": 6,
+  "lr": 0.00001,
+  "seed": 7409242026,
+  "workers": 2,
+  "mixed_precision": false,
+  "validate_every": 500,
+  "save_every": 100,
+  "validation_pages_per_corpus": 8,
+  "corpora": [
+    {
+      "name": "original",
+      "root": "training/corpus-v3",
+      "manifest_sha256": "REPLACE_WITH_SHA256_OF_YOUR_ORIGINAL_CORPUS_MANIFEST",
+      "weight": 1.0
+    }
+  ]
+}
