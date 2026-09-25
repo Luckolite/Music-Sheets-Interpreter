@@ -43,13 +43,15 @@ final class OmrScoreInterpreter {
         if (staffs.isEmpty()) return new Analysis(List.of(), List.of());
         List<Component> rawHeadComponents = findComponents(labels, width, height,
                 OmrMeasurePostProcessor.NOTEHEAD);
+        List<Component> recoveredFadedHeads = new ArrayList<>();
         for(Staff staff:staffs)for(FadedNoteheadRecovery.Head recovered:FadedNoteheadRecovery.find(
                 labels,gray,width,height,staff.gap,Math.round(staff.top-staff.gap),Math.round(staff.bottom+staff.gap))) {
             float x=(recovered.left()+recovered.right())*.5f,y=(recovered.top()+recovered.bottom())*.5f;
             if(rawHeadComponents.stream().anyMatch(head->Math.abs(head.centerX-x)<staff.gap*.8f
                     &&Math.abs(head.centerY-y)<staff.gap*.65f))continue;
-            rawHeadComponents.add(new Component((recovered.right()-recovered.left()+1)*(recovered.bottom()-recovered.top()+1),
-                    recovered.left(),recovered.right(),recovered.top(),recovered.bottom(),x,y));
+            Component head=new Component((recovered.right()-recovered.left()+1)*(recovered.bottom()-recovered.top()+1),
+                    recovered.left(),recovered.right(),recovered.top(),recovered.bottom(),x,y);
+            rawHeadComponents.add(head);recoveredFadedHeads.add(head);
         }
         rawHeadComponents.removeIf(head -> PrintedNoteContrast.paperTexture(gray,width,height,
                 head.minX,head.minY,head.maxX,head.maxY));
@@ -130,8 +132,14 @@ final class OmrScoreInterpreter {
             return AccidentalEnclosure.contains(ring,c.minX,c.minY,c.maxX,c.maxY)
                     &&!enclosedCenters.contains(candidate);
         }));
-        List<Component> demotedDotHeads = augmentationDotHeads(labels, gray, width, height, heads, staffs);
-        demotedDotHeads.addAll(articulationDotHeads(labels, gray, width, height, heads, staffs));
+        // Recovered boxes have no semantic area measurement. Comparing their
+        // rectangular area with a clipped semantic head can falsely demote that
+        // neighboring real note to a dot. Keep the existing semantic evidence
+        // for these relative-size decisions; recovered heads have their own stem.
+        List<Component> dotEvidenceHeads=new ArrayList<>(heads);
+        dotEvidenceHeads.removeAll(recoveredFadedHeads);
+        List<Component> demotedDotHeads = augmentationDotHeads(labels, gray, width, height, dotEvidenceHeads, staffs);
+        demotedDotHeads.addAll(articulationDotHeads(labels, gray, width, height, dotEvidenceHeads, staffs));
         List<Component> accidentalGraces=new ArrayList<>();
         var graceSeeds=joinLocalAccidentalFragments(labels,gray,width,height,accidentalCandidates,staffs);
         for(Component head:demotedDotHeads)

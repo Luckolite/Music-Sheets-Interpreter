@@ -65,9 +65,10 @@ final class FadedNoteheadRecovery {
             int middle=((int)h-1)/2,edge=Math.max(0,Math.round(h*.12f));
             float bow=Math.max((rowLeft[edge]+rowLeft[(int)h-1-edge])*.5f-rowLeft[middle],
                     rowRight[middle]-(rowRight[edge]+rowRight[(int)h-1-edge])*.5f);
-            // Keep a strong curved-side requirement. Rule-clipped near-rectangles
-            // need a separate treatment of adjacent undersegmented head fragments.
-            if(bow<Math.max(1.5f,gap*.10f))continue;
+            // Staff rules can clip an oval's curved cap down to half a pixel.
+            // A perfectly rectangular cell still has no returning side; require
+            // the closed contrasted pocket and independently printed/model stem.
+            if(bow<Math.max(.5f,gap*.025f))continue;
             if(!stem(labels,gray,width,height,left-2,cy,gap,1)
                     &&!stem(labels,gray,width,height,right+2,cy,gap,-1))continue;
             result.add(new Head(left-2,upper-2,right+2,lower+2));

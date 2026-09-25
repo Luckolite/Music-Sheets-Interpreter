@@ -288,7 +288,9 @@ final class NoteArticulationDetector {
                 &&w/h>.65f&&w/h<1.55f&&density>.6f)return NoteArticulation.STACCATO;
         if(w>=gap*.65f&&w<=gap*1.65f&&h<=gap*.4f&&w/h>=3.5f&&density>.7f)
             return NoteArticulation.TENUTO;
-        if(w>=gap*.75f&&w<=gap*2.1f&&h>=gap*.35f&&h<=gap*1.25f&&w/h>=1.25f
+        // A fractional staff gap and two rasterized outer edges can make an
+        // otherwise complete accent one pixel wider than its scaled bound.
+        if(w>=gap*.75f&&w<=gap*2.1f+1&&h>=gap*.35f&&h<=gap*1.25f&&w/h>=1.25f
                 &&fit(g,width,0))return NoteArticulation.ACCENT;
         // A V above a note is an up-bow. Only an upward peak above / downward peak below
         // may be marcato; flat-topped down-bow squares fail the two-line fit.

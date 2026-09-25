@@ -8,9 +8,9 @@
   "files": {
     "FadedNoteheadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/FadedNoteheadRecovery.java",
-      "source_sha256": "9d136681e31f5b29c0f21a7fe68f5f24fdd7cc6dab3fe57d64fa46373833c7c9",
+      "source_sha256": "0da5f723a8881c78b6da29cd7158f4d8f0b937b323e2aba5ea53189a968e50b2",
       "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "notes": "Reviewed working-tree helper recovers unlabelled pale filled heads using enclosed raw outlines, strong curvature, local contrast and independently printed and semantic stems. Twelve original synthetic regressions include a complete note extraction with pitch and duration. No score fixtures, dependencies or model changes."
+      "notes": "Reviewed working-tree helper recovers unlabelled pale filled heads using enclosed raw outlines, returning side curvature, local contrast and independently printed and semantic stems. Fourteen original synthetic regressions include complete extraction, rule-clipped curved caps and preservation of an adjacent clipped semantic head. The scoped interpreter integration excludes recovered rectangular areas from relative semantic dot-size comparisons. A private 24-page replay restores 51 additional source-confirmed pale heads on four pages without removing existing heads or changing retained pitches. All private note crops stay outside this repository; no dependencies or model changes."
     },
     "PrintedNoteContrast.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedNoteContrast.java",
@@ -144,7 +144,9 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "d2ae401833e8d59a6a1025c135a6dda9da28ef726dfccb9488085f29158e7fe4"
+      "source_sha256": "1d5e31a1a4a2701f36ccea0f3fd2724b7fc5c3e3847a5cb7f60f215af6aa5405",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "notes": "Allow one pixel of rounding at the accent-width upper bound while retaining full two-arm fit, coverage, ownership and height constraints. Four original synthetic regressions cover fractional spacing, separate staff chords, isolated arms and wide hairpins. Private replay/source review verifies the new accent flags; no source images or model changes."
     },
     "NoteOrnament.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",

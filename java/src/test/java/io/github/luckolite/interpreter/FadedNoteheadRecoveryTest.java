@@ -34,6 +34,14 @@ public class FadedNoteheadRecoveryTest {
     @Test public void doesNotTreatHollowHeadAsPaleFilled(){fixture(false,240,240,false);assertTrue(find().isEmpty());}
     @Test public void doesNotRecoverLowContrastPaperPocket(){fixture(false,195,180,false);assertTrue(find().isEmpty());}
     @Test public void excludesRectangularStaffCell(){fixture(false,240,175,true);assertTrue(find().isEmpty());}
+    @Test public void recoversOvalWithRuleClippedCaps(){
+        fixture(false,240,175,true);
+        for(int y=82;y<=98;y++) {
+            int radius=Math.round(12*(float)Math.sqrt(1-Math.pow((y-90)/16f,2)));
+            for(int x=78;x<=102;x++)gray[y*W+x]=(byte)(Math.abs(x-90)>radius?240:Math.abs(x-90)==radius?30:175);
+        }
+        assertEquals(1,find().size());
+    }
     @Test public void requiresSemanticStemSupport(){fixture(false,240,175,false);Arrays.fill(labels,(byte)0);assertTrue(find().isEmpty());}
     @Test public void requiresPrintedStem(){fixture(false,240,175,false);for(int y=42;y<78;y++)gray[y*W+102]=(byte)240;assertTrue(find().isEmpty());}
     @Test public void doesNotDuplicateRecognizedHead(){fixture(false,240,175,false);labels[90*W+90]=2;assertTrue(find().isEmpty());}
@@ -45,5 +53,19 @@ public class FadedNoteheadRecoveryTest {
                 List.of(new MeasureRegion(.06f,.95f,.2f,.75f)));
         assertEquals(1,notes.size());assertEquals(5,notes.get(0).staffStep());
         assertEquals(1f,notes.get(0).unbeamedDurationBeats(),.001f);
+    }
+    @Test public void recoveredBoxCannotDemoteAdjacentClippedSemanticHead(){
+        fixture(false,240,175,false);
+        for(int y=81;y<=99;y++)for(int x=128;x<=152;x++) {
+            float oval=(x-140)*(x-140)/144f+(y-90)*(y-90)/81f;
+            if(oval<=1) {
+                gray[y*W+x]=(byte)(oval>.65f?30:175);
+                if(x>=129&&x<=136&&y>=85&&y<=95)labels[y*W+x]=2;
+            }
+        }
+        for(int y=42;y<=90;y++){gray[y*W+152]=30;labels[y*W+152]=1;}
+        var notes=OmrScoreInterpreter.extract(labels,gray,W,H,List.of(new MeasureRegion(.06f,.95f,.2f,.75f)));
+        assertEquals(2,notes.size());
+        for(var n:notes)assertEquals(5,n.staffStep());
     }
 }
