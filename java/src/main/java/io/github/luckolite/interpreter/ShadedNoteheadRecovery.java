@@ -56,15 +56,17 @@ final class ShadedNoteheadRecovery {
             int middle=h/2,edge=Math.max(0,Math.round(h*.12f));
             float bow=Math.max((rowLeft[edge]+rowLeft[h-1-edge])*.5f-rowLeft[middle],
                     rowRight[middle]-(rowRight[edge]+rowRight[h-1-edge])*.5f);
+            // Integer edge coordinates average to half-pixel bow measurements.
+            float minimumBow=Math.max(.5f,gap*.025f);
             // A staff-rule remnant can flatten the exact middle scan row. A
-            // darker oval may instead show its bow on two adjacent inner rows;
+            // gray oval may instead show its bow on two adjacent inner rows;
             // never accept a lone raster nick or an uncurved rectangle.
-            if(bow<gap*.05f&&minimum<=130)for(int row=Math.max(1,h/3);row<Math.min(h-2,h*2/3);row++) {
+            if(bow<minimumBow)for(int row=Math.max(1,h/3);row<Math.min(h-2,h*2/3);row++) {
                 float leftBow=(rowLeft[edge]+rowLeft[h-1-edge])*.5f-Math.max(rowLeft[row],rowLeft[row+1]);
                 float rightBow=Math.min(rowRight[row],rowRight[row+1])-(rowRight[edge]+rowRight[h-1-edge])*.5f;
                 bow=Math.max(bow,Math.max(leftBow,rightBow));
             }
-            if(bow<gap*.05f)continue;
+            if(bow<minimumBow)continue;
             Arrays.sort(values);int fill=values[end/2];
             int[] paper=new int[18];int count=0;float cx=(left+right)*.5f,cy=(upper+lower)*.5f;
             for(int side:new int[]{-1,1})for(int dy=-1;dy<=1;dy++)for(int dx=0;dx<3;dx++) {

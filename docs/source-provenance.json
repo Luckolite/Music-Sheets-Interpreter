@@ -1,6 +1,14 @@
 {
   "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
+  "returning_flag_contrast_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Reviewed working-tree returning-flag continuation uses the existing local paper threshold and preserves its original bright-paper values. A candidate cannot bridge low-contrast paper into a separate curved glyph; all existing rooted flag proof remains. Six original regressions cover detached, genuinely connected, bright-paper and immutable-input cases; the old core fails only the intended shaded bridge positive. All28 focused flag controls pass. Matched-input24-page source review corrects one false eighth to its printed quarter and leaves every other note and all non-note metadata unchanged. No private pixel, annotation, score-specific rule, model or dependency is included; full audit completion is not claimed."
+  },
+  "contrasted_rest_edge_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected additive working-tree retry extends a single staff-mask edge only with three gaps of continuous raw support below200 and at least35 gray levels of contrast against both paper shoulders, for both the edge and adjacent masked core. Existing masks retain priority and all rest shape, note and voice ownership checks remain. New pale-mask evidence is restricted to actual staff frames, preserving legacy displaced-voice behavior and preventing quarter-rest aliases. Eighteen original procedural regressions accompany the repair;261 focused controls pass. Private matched-input24-page review adds exactly nine source-confirmed rests and six linked following-rest fields with no removed rests or other changes. The initial broad virtual-frame experiment was rejected. No private score evidence, schema, model, external dependency or device execution is included; the complete source audit remains open."
+  },
   "rule_clipped_chord_caps_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Reviewed working-tree chord-cap recovery keeps repeated lobes, neck separation, dimensions, density, contrast and dual raw/semantic stem proof. An unrounded outer cap is accepted only when a thin contrasted rule is independently supported beyond both flanks; one-sided or broad bands fail. Eight original procedural tests cover positive extraction and negative ownership/shape cases. Matched-input24-page source review restores eight genuine missing heads and correctly recenters one existing beamed head, with all other22 pages and non-note metadata unchanged. One recovered incoming tie and other source defects remain open; private pitch-label corrections were source-verified before accepting the repair. No commercial score material, model or external dependency is included."
@@ -100,7 +108,8 @@
     },
     "RestStaffRuleEdge.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestStaffRuleEdge.java",
-      "source_sha256": "3652aecfb31573ffaef24a6c96f5ab53c7a86f247e600522b23680ee4013b066",
+      "source_sha256": "047ee7cdda3cd5275771fd40a3a9e095004aa8287253952b72f63df5a7cf58b0",
+      "contrasted_review": "See contrasted_rest_edge_review; the legacy threshold path is unchanged and the additional one-row evidence requires independently light paper on both sides.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed JDK-only bounded raster-rule edge and note-stem ownership helper. Original synthetic tests, standalone package adaptation only; see rest_rule_edge_review."
     },
@@ -295,7 +304,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "d61daa1e6fd7a6c0d68343894330fbfb851d1b00b6c998f000bbcfed27c135fb",
+      "source_sha256": "631102911e63612d1fe86a7e1d53d8aa248cf3b0fb260653fc6ece6d8828a5de",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
@@ -364,7 +373,8 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "5eb8cc5298491f19ff34fd78433d637c98b8b4c3ae9745bbfb3ca6605ef2c755",
+      "source_sha256": "ff4abf8230ae6f59c4d64fc135ea10f6090f8917ca1d2773fd9645123a3ea127",
+      "contrasted_review": "Appends only a distinct contrasted mask on an actual staff frame; the identical ordinary-frame predicate is evaluated once per placement. See contrasted_rest_edge_review.",
       "hanging_review": "Only after the original whole-rest proof fails on an ordinary staff, reuses the raw rectangle helper in the hanging direction; all later ownership remains unchanged.",
       "quarter_tail_review": "See quarter_rest_tail_speck_review; an alternative bound is used only after the unchanged strict quarter shape succeeds.",
       "raw_half_review": "Only after legacy half-rest proof fails on an ordinary staff, uses bounded raw body proof while retaining all existing note, measure and dot ownership; see raw_half_rest_body_review.",
@@ -778,7 +788,7 @@
     },
     "ShadedNoteheadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedNoteheadRecovery.java",
-      "source_sha256": "870f5e9b9ca5f868628c02d14a9023ec7d2f9413385d2ab4de3d07e235dd89c7",
+      "source_sha256": "7832bba22212314be22a81120a63b5c5a160919f39822e60ddb59ef5256e7075",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },

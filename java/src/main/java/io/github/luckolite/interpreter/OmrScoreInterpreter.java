@@ -8555,6 +8555,9 @@ final class OmrScoreInterpreter {
     private static int[] stemToReturningFlag(byte[] labels,byte[] gray,int width,int height,
             Component head,float gap,int[] stem) {
         if(stem==null||gray==null||hasCurvedFlag(labels,gray,width,height,head,gap,stem[0],stem[1],stem[2]<0))return stem;
+        // A continuation must contrast with local paper before it can join a hook.
+        int threshold=BeamInkThreshold.at(gray,width,height,stem[0],
+                Math.round(head.centerY-gap*5),Math.round(head.centerY+gap*5),gap)+5;
         int radius=Math.max(1,Math.round(gap*.22f)),x=stem[0],end=stem[1];
         for(int distance=1;distance<=Math.round(gap*1.8f);distance++) {
             int y=stem[1]+stem[2]*distance;
@@ -8563,8 +8566,8 @@ final class OmrScoreInterpreter {
             for(int offset:new int[]{0,-1,1}) {
                 int candidate=x+offset;
                 if(candidate<1||candidate>=width-1||Math.abs(candidate-stem[0])>radius)continue;
-                if((gray[y*width+candidate]&255)<170
-                        &&((gray[y*width+candidate-1]&255)<205||(gray[y*width+candidate+1]&255)<205)) {
+                if((gray[y*width+candidate]&255)<threshold
+                        &&((gray[y*width+candidate-1]&255)<threshold+35||(gray[y*width+candidate+1]&255)<threshold+35)) {
                     next=candidate;break;
                 }
             }

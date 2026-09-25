@@ -6,6 +6,12 @@ package io.github.luckolite.interpreter;
 final class RestStaffRuleEdge {
     private RestStaffRuleEdge() { }
     static boolean[] extend(byte[] gray,int width,int height,int top,float staffTop,float gap,boolean[] mask) {
+        return extend(gray,width,height,top,staffTop,gap,mask,false);
+    }
+    static boolean[] extendContrasted(byte[] gray,int width,int height,int top,float staffTop,float gap,boolean[] mask) {
+        return extend(gray,width,height,top,staffTop,gap,mask,true);
+    }
+    private static boolean[] extend(byte[] gray,int width,int height,int top,float staffTop,float gap,boolean[] mask,boolean contrasted) {
         if(gray==null||width<=0||height<=0||gray.length!=(long)width*height||mask==null
                 ||top<0||(long)top+mask.length>height||gap<6||!Float.isFinite(gap)
                 ||!Float.isFinite(staffTop))return mask;
@@ -20,7 +26,15 @@ final class RestStaffRuleEdge {
             if(adjacent<0)continue;
             int run=0;boolean proven=false;
             for(int x=0;x<width;x++) {
-                if((gray[y*width+x]&255)<170&&(gray[adjacent*width+x]&255)<170) {
+                int value=gray[y*width+x]&255,other=gray[adjacent*width+x]&255;
+                boolean ink=value<(contrasted?200:170)&&other<(contrasted?200:170);
+                if(ink&&contrasted) {
+                    int radius=Math.max(3,Math.round(gap*.35f));
+                    ink=y>=radius&&y+radius<height
+                            &&Math.min(gray[(y-radius)*width+x]&255,gray[(y+radius)*width+x]&255)
+                            -Math.max(value,other)>=35;
+                }
+                if(ink) {
                     if(++run>=minimum){proven=true;break;}
                 } else run=0;
             }

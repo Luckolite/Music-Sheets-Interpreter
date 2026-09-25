@@ -52,6 +52,8 @@ final class SixteenthRestDetector {
             placements.add(new Staff(s.top()+offset*s.gap(),s.bottom()+offset*s.gap(),s.gap(),s.index(),s.count()));
         for (Staff staff : placements) {
             float gap = staff.gap();
+            boolean ordinary=staffs.stream().anyMatch(s->s.index()==staff.index()
+                    &&s.count()==staff.count()&&Math.abs(s.top()-staff.top())<gap*.1f);
             boolean deepVoice=staffs.stream().anyMatch(s->s.index()==staff.index()
                     &&s.count()==staff.count()&&staff.top()-s.top()>gap*1.9f&&staff.top()-s.top()<gap*4.1f);
             int top = Math.max(0, Math.round(staff.top() + gap * (deepVoice?.75f:.25f)));
@@ -83,6 +85,11 @@ final class SixteenthRestDetector {
             boolean[][] masks=edgeLine==narrowLine
                     ?(sameMask?new boolean[][]{line}:new boolean[][]{narrowLine,line})
                     :(sameMask?new boolean[][]{line,edgeLine}:new boolean[][]{narrowLine,line,edgeLine});
+            boolean[] contrasted=ordinary
+                    ?RestStaffRuleEdge.extendContrasted(gray,width,height,top,staff.top(),gap,narrowLine):narrowLine;
+            if(contrasted!=narrowLine&&!java.util.Arrays.equals(contrasted,edgeLine)) {
+                masks=java.util.Arrays.copyOf(masks,masks.length+1);masks[masks.length-1]=contrasted;
+            }
             for(boolean[] mask:masks) {
             int start = -1;
             for (int x = 0; x <= width; x++) {
@@ -91,8 +98,6 @@ final class SixteenthRestDetector {
                     if (!mask[y - top] && (gray[y * width + x] & 255) < 170) ink++;
                 if (ink >= 2) { if (start < 0) start = x; }
                 else if (start >= 0) {
-                    boolean ordinary=staffs.stream().anyMatch(s->s.index()==staff.index()
-                            &&s.count()==staff.count()&&Math.abs(s.top()-staff.top())<gap*.1f);
                     boolean lowered=staffs.stream().anyMatch(s->s.index()==staff.index()
                             &&s.count()==staff.count()&&staff.top()-s.top()>gap*.9f&&staff.top()-s.top()<gap*4.1f);
                     boolean deepLowered=staffs.stream().anyMatch(s->s.index()==staff.index()
