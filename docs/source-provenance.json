@@ -1,6 +1,14 @@
 {
   "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
+  "contrasted_stems_flags_and_dense_gray_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Reviewed working-tree tremolo shaft tracing now uses the existing local paper contrast threshold, preserving the bright-paper value and all stroke ownership. Seven original regressions and all43 existing tremolo controls pass; the old core fails the intended low-contrast tail case. Matched-input24-page source review removes13 false ornaments and corrects one affected quarter duration without altering other fields. A separate independently contrasted pale-shaft flag path uses a bounded brighter-paper retry only with complete rooted curved topology; four original controls protect detached hooks, corners and shaded backgrounds. It recovers three source-confirmed flags while preserving ten independently checked ordinary quarters. Dense-gray head recovery unions an additional strict-contrast pass, retaining previous accepted ovals and dual stem evidence, with ten original controls. Its source replay restores five genuine notes and recenters four existing notes without changing their musical fields. No private pixels, annotations, model, external dependency or full-audit completion claim is included."
+  },
+  "hanging_rest_rule_body_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Reuses the bounded raw rest-rectangle proof in a downward direction after the legacy whole-rest reader fails. The half-rest direction retains its prior gates. Only hanging rests may use one adjacent edge row backed by a fully supported two-sided rule and at least half of both side spans; a second edge, isolated or one-sided stroke, stem, oval and unexplained ink are rejected. Eighteen original procedural regressions accompany the change; 243 focused tests pass. A matched-input private 24-page comparison adds exactly two source-confirmed whole-bar rests, with every other field, including exact note coordinates, unchanged. No private score evidence, model, schema, dependency, pixel mutation or device execution is included. Complete page and score accuracy are not claimed."
+  },
   "offset_dark_head_curvature_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Selected darker-gray recovery retry keeps the exact middle-row bow test first; two adjacent inner rows on the same side may independently establish the existing minimum curvature only when that first test fails. All original size, density, contrast, paper and dual stem requirements remain. Eight original procedural controls reject rectangles, single-row nicks and absent stem evidence; the baseline fails the three intended positives. A private matched-input24-page comparison restores six genuine notes and correctly recenters one existing dotted note, with all other20 pages and non-note metadata unchanged. No private source image or annotation, dependency or model change is included; remaining source omissions and field defects stay open."
@@ -64,7 +72,8 @@
   "files": {
     "HalfRestRuleBody.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HalfRestRuleBody.java",
-      "source_sha256": "8b5be452dc73a26bce2a6ce9fae6e93f554ce46a58503ee5c93df98f8dfae950",
+      "source_sha256": "ab7111670a90f50d5a777163d3ef0cd72e79dde011a9c76d54a0325b458977dc",
+      "hanging_review": "See hanging_rest_rule_body_review; directional reuse preserves the previous upward half-rest path and avoids duplicate rectangle validation.",
       "baseline_fringe_review": "See half_rest_baseline_fringe_review; all previous side-clearance behavior is retained outside the one baseline-touching row.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed bounded raw-rectangle and independently supported rule-fragment geometry, JDK-only with original synthetic tests; see raw_half_rest_body_review."
@@ -272,7 +281,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "bfdc355054768ba28c46dab333b376ec7066dca401497e7ed7ed4d30ef95faf1",
+      "source_sha256": "2342cd9cba3652183f9f0a14ee45c840e33230ce3d5815a2a6c78f47f503fbef",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
@@ -341,7 +350,8 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "7c6cb578bd7a7ce3a5c3e36392ee69cff770e45ef888cbaea9ad9e24b8001718",
+      "source_sha256": "5eb8cc5298491f19ff34fd78433d637c98b8b4c3ae9745bbfb3ca6605ef2c755",
+      "hanging_review": "Only after the original whole-rest proof fails on an ordinary staff, reuses the raw rectangle helper in the hanging direction; all later ownership remains unchanged.",
       "quarter_tail_review": "See quarter_rest_tail_speck_review; an alternative bound is used only after the unchanged strict quarter shape succeeds.",
       "raw_half_review": "Only after legacy half-rest proof fails on an ordinary staff, uses bounded raw body proof while retaining all existing note, measure and dot ownership; see raw_half_rest_body_review.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
@@ -754,7 +764,7 @@
     },
     "ShadedNoteheadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedNoteheadRecovery.java",
-      "source_sha256": "3ef4f9f32f53d8d53c21b9f965a327c243e28f36567a3affb10936313231c9ee",
+      "source_sha256": "870f5e9b9ca5f868628c02d14a9023ec7d2f9413385d2ab4de3d07e235dd89c7",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },

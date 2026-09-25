@@ -7806,7 +7806,10 @@ final class OmrScoreInterpreter {
             Component head,float gap,List<Component> heads) {
         int[] empty={0,0};
         if(gray==null||head.maxX-head.minX+1<gap*.95f)return empty;
-        int[] stem=attachedRawStem(gray,width,height,head,gap);
+        // Shaded paper beyond the actual shaft must not connect nearby lettering.
+        int threshold=BeamInkThreshold.at(gray,width,height,Math.round(head.centerX),
+                Math.round(head.centerY-gap*5),Math.round(head.centerY+gap*5),gap)+5;
+        int[] stem=attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),threshold);
         if(stem==null)return empty;
         int side=Math.max(2,Math.round(gap*.38f)),far=Math.max(side+2,Math.round(gap*1.4f));
         if(stem[0]-far<0||stem[0]+far>=width)return empty;
@@ -7929,6 +7932,10 @@ final class OmrScoreInterpreter {
         int count=detectBeamCount(labels,gray,width,height,head,staff);
         if(count==0&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f)
             count=detectBeamCount(labels,gray,width,height,head,staff,false,true);
+        if(count==0&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f) {
+            int[] pale=paleStemToDoubleBeam(labels,gray,width,height,head,staff);
+            if(pale!=null&&rootedPaleFlag(labels,gray,width,height,head,staff.gap,pale[0],pale[1],pale[2]<0))count=1;
+        }
         if(count>0&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f
                 &&barePaleStemEndpoint(labels,gray,width,height,head,staff))count=0;
         if(gray!=null&&count<3&&head.maxX-head.minX+1>staff.gap*1.05f) {
@@ -8396,7 +8403,10 @@ final class OmrScoreInterpreter {
         if(attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),threshold)!=null)return false;
         int[] stem=paleStemEndpoint(labels,gray,width,height,head,staff);
         if(stem==null)return false;boolean up=stem[2]<0;
+        int[] flagged=paleStemToDoubleBeam(labels,gray,width,height,head,staff);
+        if(flagged!=null&&rootedPaleFlag(labels,gray,width,height,head,gap,flagged[0],flagged[1],flagged[2]<0))return false;
         if(hasCurvedFlag(labels,gray,width,height,head,gap,stem[0],stem[1],up)
+                ||rootedPaleFlag(labels,gray,width,height,head,gap,stem[0],stem[1],up)
                 ||OutlinedBeamInk.count(gray,width,height,stem,head.centerY,gap)>0)return false;
         int top=Math.max(0,stem[1]-Math.round(gap*(up?.2f:1.85f)));
         int bottom=Math.min(height-1,stem[1]+Math.round(gap*(up?1.85f:.2f)));
@@ -8499,10 +8509,11 @@ final class OmrScoreInterpreter {
 
     private static boolean rootedPaleFlag(byte[] labels,byte[] gray,int width,int height,
             Component head,float gap,int x,int end,boolean upward) {
-        if(!hasCurvedFlag(labels,gray,width,height,head,gap,x,end,upward))return false;
+        if(!hasCurvedFlag(labels,gray,width,height,head,gap,x,end,upward,true))return false;
         int direction=upward?1:-1,rows=0,span=Math.max(3,Math.round(gap*.3f));
         int threshold=BeamInkThreshold.at(gray,width,height,x,
                 Math.max(0,end-Math.round(gap)),Math.min(height-1,end+Math.round(gap)),gap);
+        if(threshold==165)threshold=205;
         if(x<0||x+span>=width)return false;
         for(int d=0;d<=Math.round(gap*1.15f);d++) {
             int y=end+direction*d;if(y<0||y>=height)continue;
@@ -8809,11 +8820,18 @@ final class OmrScoreInterpreter {
     private static boolean hasCurvedFlag(byte[] labels, byte[] gray, int width, int height,
                                           Component head, float gap, int stemX, int end,
                                           boolean upward) {
+        return hasCurvedFlag(labels,gray,width,height,head,gap,stemX,end,upward,false);
+    }
+
+    private static boolean hasCurvedFlag(byte[] labels, byte[] gray, int width, int height,
+                                          Component head, float gap, int stemX, int end,
+                                          boolean upward,boolean pale) {
         int left = Math.max(0, Math.round(stemX + gap * .25f));
         int right = Math.min(width - 1, Math.round(stemX + gap * 1.5f));
         int top = Math.max(0, Math.round(upward ? end : end - gap * 2.3f));
         int bottom = Math.min(height - 1, Math.round(upward ? end + gap * 2.3f : end));
         int flagThreshold=BeamInkThreshold.at(gray,width,height,stemX,top,bottom,gap);
+        if(pale&&flagThreshold==165)flagThreshold=205;
         int rows = 0, nearEnd = 0, bulge = 0, exterior = 0, rootRows = 0;
         boolean skippedDetachedInk = false;
         for (int y = top; y <= bottom; y++) {

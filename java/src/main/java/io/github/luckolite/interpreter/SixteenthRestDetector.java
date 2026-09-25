@@ -207,6 +207,8 @@ final class SixteenthRestDetector {
             if(bounds!=null){half=true;minY=bounds[0];maxY=bounds[1];}
         }
         int[] wholeBounds=ordinary?wholeRest(gray,width,staff,top,ink,left,right):null;
+        if(wholeBounds==null&&ordinary)
+            wholeBounds=HalfRestRuleBody.hanging(gray,width,height,staff.top(),gap,left,right,top,ink);
         boolean whole=wholeBounds!=null;
         if(whole){minY=wholeBounds[0];maxY=wholeBounds[1];}
         boolean quarter = !deepLowered&&quarterRest(gray,width,staff,top,line,left,right,minY,maxY);

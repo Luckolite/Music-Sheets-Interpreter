@@ -7,22 +7,35 @@ final class HalfRestRuleBody {
     private HalfRestRuleBody() { }
     static int[] find(byte[] gray,int width,int height,float staffTop,float gap,
             int left,int right,int bandTop,int[] maskedInk) {
+        return find(gray,width,height,staffTop,gap,left,right,bandTop,maskedInk,false);
+    }
+    static int[] hanging(byte[] gray,int width,int height,float staffTop,float gap,
+            int left,int right,int bandTop,int[] maskedInk) {
+        return find(gray,width,height,staffTop,gap,left,right,bandTop,maskedInk,true);
+    }
+    private static int[] find(byte[] gray,int width,int height,float staffTop,float gap,
+            int left,int right,int bandTop,int[] maskedInk,boolean hanging) {
         if(gray==null||width<=0||height<=0||gray.length!=(long)width*height||!Float.isFinite(gap)||!Float.isFinite(staffTop)||gap<4||left<0||right>=width
                 ||left>right||maskedInk==null||bandTop<0||bandTop+maskedInk.length>height)return null;
         int w=right-left+1;if(w<gap*.7f||w>gap*1.6f)return null;
-        float middle=staffTop+2*gap;
+        float middle=staffTop+(hanging?gap:2*gap);int direction=hanging?1:-1;
         for(int rule=Math.max(1,(int)Math.ceil(middle-gap*.25f));rule<=Math.min(height-2,(int)Math.floor(middle+gap*.25f));rule++) {
-            if(!supportedRule(gray,width,height,left,right,rule,gap))continue;
+            if(!supportedRule(gray,width,height,left,right,rule,gap)
+                    &&!(hanging&&supportedRule(gray,width,height,left,right,rule-1,gap)
+                    &&supportedRuleEdge(gray,width,left,right,rule,gap)))continue;
             int first=rule;
-            while(first>0&&rule-first<gap*.7f&&rowInk(gray,width,left,right,first-1)>=w*.80f)first--;
-            int rows=rule-first;
-            if(rows<Math.max(3,Math.round(gap*.25f))||rows>gap*.65f||first<=bandTop)continue;
-            int fringe=rowInk(gray,width,left,right,first-1);
+            while(first+direction>=0&&first+direction<height&&Math.abs(rule-first)<gap*.7f
+                    &&rowInk(gray,width,left,right,first+direction)>=w*.80f)first+=direction;
+            int rows=Math.abs(rule-first),minY=hanging?rule+1:first,maxY=hanging?first:rule-1;
+            int fringeY=first+direction;
+            if(rows<Math.max(3,Math.round(gap*.25f))||rows>gap*.65f
+                    ||minY<=bandTop||hanging&&maxY>=bandTop+maskedInk.length-1||fringeY<0||fringeY>=height)continue;
+            int fringe=rowInk(gray,width,left,right,fringeY);
             if(fringe>w*.45f)continue;
             int margin=Math.max(2,Math.round(gap*.25f));boolean clear=true;
             if(left-margin<0||right+margin>=width)continue;
-            for(int y=first;y<rule&&clear;y++) {
-                float fringeLimit=y==rule-1?Math.max(margin*.2f,Math.max(1,Math.round(gap*.10f))):margin*.2f;
+            for(int y=minY;y<=maxY&&clear;y++) {
+                float fringeLimit=y==rule+direction?Math.max(margin*.2f,Math.max(1,Math.round(gap*.10f))):margin*.2f;
                 if(rowInk(gray,width,left-margin,left-1,y)>fringeLimit
                         ||rowInk(gray,width,right+1,right+margin,y)>fringeLimit)clear=false;
             }
@@ -30,10 +43,10 @@ final class HalfRestRuleBody {
             int outside=0;
             for(int i=0;i<maskedInk.length;i++) {
                 int y=bandTop+i;
-                if(y>=first&&y<rule||y==first-1&&maskedInk[i]<=w*.45f)continue;
+                if(y>=minY&&y<=maxY||y==fringeY&&maskedInk[i]<=w*.45f)continue;
                 if(maskedInk[i]>0&&!thinRuleFragment(gray,width,height,left,right,y,staffTop,gap))outside+=maskedInk[i];
             }
-            if(outside<=Math.max(1,Math.round(gap*.12f)))return new int[]{first,rule-1};
+            if(outside<=Math.max(1,Math.round(gap*.12f)))return new int[]{minY,maxY};
         }
         return null;
     }
@@ -58,6 +71,13 @@ final class HalfRestRuleBody {
         if(y<0||y>=h||left-span<0||right+span>=w)return false;
         return rowInk(g,w,left-span,left-1,y)>=span*.90f
                 &&rowInk(g,w,right+1,right+span,y)>=span*.90f
+                &&rowInk(g,w,left,right,y)>=(right-left+1)*.90f;
+    }
+    private static boolean supportedRuleEdge(byte[] g,int w,int left,int right,int y,float gap) {
+        int span=Math.max(4,Math.round(gap*1.6f));
+        return left>=span&&right+span<w
+                &&rowInk(g,w,left-span,left-1,y)>=span*.50f
+                &&rowInk(g,w,right+1,right+span,y)>=span*.50f
                 &&rowInk(g,w,left,right,y)>=(right-left+1)*.90f;
     }
     private static int rowInk(byte[] g,int w,int left,int right,int y) {

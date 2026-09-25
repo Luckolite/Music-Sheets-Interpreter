@@ -12,7 +12,7 @@ final class ShadedNoteheadRecovery {
     record Head(int left,int top,int right,int bottom,float centerX,float centerY) { }
     static List<Head> find(byte[] labels,byte[] gray,int width,int height,float gap,int top,int bottom) {
         List<Head> result=find(labels,gray,width,height,gap,top,bottom,155);
-        for(Head candidate:find(labels,gray,width,height,gap,top,bottom,130)) {
+        for(int minimum:new int[]{130,105})for(Head candidate:find(labels,gray,width,height,gap,top,bottom,minimum)) {
             boolean duplicate=false;
             for(Head existing:result)if(Math.abs(existing.centerX-candidate.centerX)<gap*.8f
                     &&Math.abs(existing.centerY-candidate.centerY)<gap*.65f){duplicate=true;break;}
@@ -59,7 +59,7 @@ final class ShadedNoteheadRecovery {
             // A staff-rule remnant can flatten the exact middle scan row. A
             // darker oval may instead show its bow on two adjacent inner rows;
             // never accept a lone raster nick or an uncurved rectangle.
-            if(bow<gap*.05f&&minimum==130)for(int row=Math.max(1,h/3);row<Math.min(h-2,h*2/3);row++) {
+            if(bow<gap*.05f&&minimum<=130)for(int row=Math.max(1,h/3);row<Math.min(h-2,h*2/3);row++) {
                 float leftBow=(rowLeft[edge]+rowLeft[h-1-edge])*.5f-Math.max(rowLeft[row],rowLeft[row+1]);
                 float rightBow=Math.min(rowRight[row],rowRight[row+1])-(rowRight[edge]+rowRight[h-1-edge])*.5f;
                 bow=Math.max(bow,Math.max(leftBow,rightBow));
@@ -72,7 +72,9 @@ final class ShadedNoteheadRecovery {
                 if(x>=0&&x<width&&y>=0&&y<height)paper[count++]=gray[y*width+x]&255;
             }
             Arrays.sort(paper,0,count);if(count<12)continue;
-            if(minimum==130) {
+            if(minimum==105) {
+                if(fill>150||paper[count*3/4]<190||paper[count*3/4]-fill<65)continue;
+            } else if(minimum==130) {
                 if(fill>170||paper[count*3/4]<190||paper[count*3/4]-fill<50)continue;
             } else if(paper[count*3/4]<205||paper[count*3/4]-fill<(paper[count*3/4]<220?50:30))continue;
             int down=stem(labels,gray,width,height,left-3,cy,gap,1);
