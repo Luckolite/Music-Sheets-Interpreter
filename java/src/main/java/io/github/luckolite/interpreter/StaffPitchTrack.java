@@ -10,6 +10,7 @@ import java.util.List;
 /** Follows complete printed five-line groups across a curved page. */
 final class StaffPitchTrack {
     private final float[][] points;
+    private float tailStart=Float.NEGATIVE_INFINITY,tailEnd=Float.POSITIVE_INFINITY,tailBottom,tailGap;
     private StaffPitchTrack(List<float[]> points) { this.points=points.toArray(new float[0][]); }
 
     /** Carry an already established straight staff slope into column rectification. */
@@ -231,7 +232,10 @@ final class StaffPitchTrack {
         return true;
     }
 
+    boolean activeAt(float x) {return x>=tailStart&&x<=tailEnd;}
+
     float[] at(float x) {
+        if(x<tailStart||x>tailEnd)return new float[]{tailBottom,tailGap};
         int right=1;
         while(right<points.length-1&&x>points[right][0])right++;
         float[] a=points[right-1],b=points[right];
@@ -279,6 +283,17 @@ final class StaffPitchTrack {
             if(found!=null)return found;
         }
         return null;
+    }
+
+    /** A flat main staff can curl only after the broad sampling windows end.
+     * Keep the original reference outside the independently closed tail. */
+    static StaffPitchTrack closedTail(byte[] gray,int width,int height,float bottom,float gap) {
+        CurvedStaffTail.Track tail=CurvedStaffTail.track(gray,width,height,Math.round(width*.85f),bottom,gap,0);
+        if(tail==null)return null;
+        StaffPitchTrack result=new StaffPitchTrack(tail.points());
+        result.tailStart=tail.points().get(0)[0];result.tailEnd=tail.end();
+        result.tailBottom=bottom;result.tailGap=gap;
+        return result;
     }
 
     /** Beyond a photographed page's last reliable strip, prove five complete

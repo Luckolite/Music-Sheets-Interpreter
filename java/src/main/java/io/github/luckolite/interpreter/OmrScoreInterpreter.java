@@ -3366,6 +3366,8 @@ final class OmrScoreInterpreter {
             if(staff.printedPhase&&staff.pitchTrack!=null
                     &&Math.abs(staff.pitchTrack.at(width*.5f)[0]-staff.pitchBottom)>staff.pitchGap*.5f)
                 staff.pitchTrack=null;
+            if(staff.pitchTrack==null&&!staff.printedPhase&&!staff.printedSlope)
+                staff.pitchTrack=StaffPitchTrack.closedTail(gray,width,height,staff.pitchBottom,staff.pitchGap);
         }
         assignSystemPositions(staffs, measures, height);
         return staffs;
@@ -6642,19 +6644,20 @@ final class OmrScoreInterpreter {
     private static float[] localStaffPitch(byte[] labels, byte[] gray, int width, int height, Staff staff,
                                          Component head) {
         float gap=staff.pitchGap, referenceBottom=staff.pitchBottom+staff.pitchSlope*(head.centerX-width*.5f);
-        if(staff.pitchTrack!=null){float[] local=staff.pitchTrack.at(head.centerX);referenceBottom=local[0];gap=local[1];}
+        boolean curved=staff.pitchTrack!=null&&staff.pitchTrack.activeAt(head.centerX);
+        if(curved){float[] local=staff.pitchTrack.at(head.centerX);referenceBottom=local[0];gap=local[1];}
         boolean shaded=StaffPitchTrack.needsContrast(gray,width,height,head.centerX,referenceBottom,gap);
         float[] complete=shaded
-                ?StaffPitchTrack.localRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap,staff.pitchTrack!=null)
+                ?StaffPitchTrack.localRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap,curved)
                 :StaffPitchTrack.localPrintedRules(labels,gray,width,height,head.centerX,head.minX,head.maxX,referenceBottom,gap);
         if(complete==null)complete=StaffPitchTrack.localOccludedRules(labels,gray,width,height,head.centerX,
                 head.minX,head.maxX,referenceBottom,gap);
         if(complete==null)complete=StaffPitchTrack.localFadedRules(labels,gray,width,height,head.centerX,
                 head.minX,head.maxX,referenceBottom,gap);
-        if(complete==null&&shaded&&staff.pitchTrack!=null&&(head.centerX<width*.2f||head.centerX>width*.8f))
+        if(complete==null&&shaded&&curved&&(head.centerX<width*.2f||head.centerX>width*.8f))
             complete=StaffPitchTrack.localCurledEdgeRules(gray,width,height,head.centerX,
                     head.minX,head.maxX,referenceBottom,gap);
-        if(complete!=null&&Math.abs(complete[1]-gap)>gap*.04f&&staff.pitchTrack==null) {
+        if(complete!=null&&Math.abs(complete[1]-gap)>gap*.04f&&!curved) {
             float[] broad=StaffPitchTrack.broadStraightPitch(gray,width,height,referenceBottom,gap,false);
             if(broad!=null&&Math.abs(complete[1]-broad[1])>gap*.035f)return broad;
         }

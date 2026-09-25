@@ -107,6 +107,8 @@ final class OmrMeasurePostProcessor {
                     int closing=outer.get(outer.size()-2);
                     if(closing>right&&closing-right<width*.25f)right=closing;
                 }
+                int curvedRight=CurvedStaffTail.closingBar(gray,width,height,right,rows[4],gap,slope);
+                if(clippedClosingHead(labels,width,height,right,curvedRight,rows,gap,slope))right=curvedRight;
             }
             if (right - left >= Math.max(width / 4, Math.round(gap * 18f))) {
                 List<Integer> boundaries = findBoundaries(labels, gray, width, height, rows,

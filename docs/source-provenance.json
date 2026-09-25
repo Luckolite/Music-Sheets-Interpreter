@@ -6,6 +6,12 @@
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "files": {
+    "CurvedStaffTail.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/CurvedStaffTail.java",
+      "source_sha256": "75843c7d13861b515212f10eb6ac02d9de4aec4882f00799bf70dd505be9a707",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "notes": "Reviewed working-tree addition follows contrasting five-rule geometry into a curled page edge. Extension requires a closing bar, repeated complete groups, limited interruptions and independently detected heads in the excluded region. A closed tail can supply a bounded pitch reference without changing the earlier flat staff. Eleven original synthetic regressions cover curvature, beam occlusion, shadow, incomplete/disconnected rules, first-bar stopping, phase and untouched regions. No new dependencies or model changes."
+    },
     "FadedNoteheadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/FadedNoteheadRecovery.java",
       "source_sha256": "0da5f723a8881c78b6da29cd7158f4d8f0b937b323e2aba5ea53189a968e50b2",
@@ -154,8 +160,8 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "b2c656af80c7c9b329ee5975931ec2f607c9f0fc437cf697988bac6147cb9b75",
-      "reviewed_app_commit": "41d5366a4c0a378e1bac248edfcf1956a014d9fd",
+      "source_sha256": "984afdaba88be7aa111addddca5c71af7e33f115dda61744a874f17d81323d2c",
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "notes": "App and standalone source and synthetic regression were reviewed for full text parity apart from the package name. Raw barline validation rejects oscillating arpeggios and preserves straight thick and faint bars. A narrow symbol-only opening key/meter pocket does not create a measure. A symbolic harmonic head with nearby stem evidence vetoes a false full-height barline, while an isolated printed bar and a symbol-only header stroke remain boundaries. Private 121-page replay and source crops remain outside this repository. No model or dependency changes. A one-pixel semantic staff-row bias can make the local printed-rule offset alias to the neighboring line; only an isolated full-height raw rule gets a one-row retry. Synthetic offset regression and private matched-input 121-page replay confirm one recovered printed bar and no extra bars; private source fixtures remain excluded. A verified printed five-rule fringe no longer connects a nearby notehead to an isolated full-height bar; an attached head near the column or a connection through a true staff space still vetoes a note stem. Synthetic old-failing regression and private 121-page matched-input replay recovered two source-checked bars with unchanged note count and pitches. Two printed quarter notes on one affected page also recovered their durations. Private source crops remain excluded."
     },
     "OmrScoreInterpreter.java": {
@@ -260,7 +266,7 @@
     },
     "StaffPitchTrack.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
-      "source_sha256": "0fbd866f02dc359be9337dd7e91afb894096aed432ffe978ceb7fd23ecb1339c",
+      "source_sha256": "2170afbc85d23483ac27964e99082deb1ffd246fdfecd63e58f9c260f7cd7fd3",
       "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "notes": "Reviewed working-tree repair: on shaded local strips, candidate projection uses contrasted thin strokes, then verifies all five proposed rules against the original scan. No change to source pixels, coordinates or model input. Original curved-shadow, blank-shadow and sparse-fragment regressions accompany existing staff tests. A compressed four-rule semantic seed can now consider up to 1.45-times spacing, still requiring complete five-rule raw groups, nearby physical phase, multiple samples and broad track agreement. Five new original synthetic tests cover white and shaded source rules, incomplete staffs, sparse ledger groups and a remote staff. A private 24-page replay changes seven source-confirmed pitches and corrects four false beam counts to printed quarter notes on one page; no added or removed heads."
     },
@@ -511,6 +517,10 @@
   "pale_filled_note_recovery_review": {
     "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
     "boundary": "Only the scoped recovery call and original helper/tests are ported. A bounded matched-input 24-page private replay recovered 17 source-reviewed notes with no existing note removal or pitch change. Four leading-rest fields changed when the newly recovered first attack took ownership of the preceding rest. A broader near-rectangular-pocket trial was rejected because it affected an existing head fragment and articulation ownership. Remaining clipped pockets, incomplete semantic heads and full library pitch/note accounting are not claimed solved. Existing unrelated OmrScoreInterpreter drift remains visible; its whole-file hash is deliberately not advanced. No private source image, library, annotations, logs, model weight or dependency is included. Native worker source manifest includes the helper; deployment is separate."
+  },
+  "curled_staff_ending_review": {
+    "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+    "boundary": "The scoped working-tree geometry and pitch repair is mirrored with eleven original synthetic tests. A matched-input private 24-page replay adds four source-confirmed repeated high notes with correct staff steps and corrects one preceding pitch; no existing heads are removed and the other pages remain unchanged. Remaining beam-count, dot and articulation defects in that passage are explicitly not claimed solved. The helper is included in the app native-worker source manifest. No private score image, annotation, library, device data, weight or dependency is published. The unrelated OmrScoreInterpreter whole-file drift remains visible; its old source hash is intentionally retained. APK and native-worker rollout are separate."
   },
   "scale_book_overlapping_staff_review": {
     "reviewed_app_commit": "4dad109507b3cc6ab5191b642bd6b5fa9330319a",
