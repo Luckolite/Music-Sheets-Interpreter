@@ -20,8 +20,17 @@ final class StaffPitchTrack {
     }
 
     static StaffPitchTrack detect(byte[] gray,int width,int height,float top,float bottom,float gap) {
+        return detect(gray,width,height,top,bottom,gap,false);
+    }
+
+    /** Symbol line removal requires sub-line tracking even when note pitch rounding is stable. */
+    static StaffPitchTrack detectForSymbols(byte[] gray,int width,int height,float top,float bottom,float gap) {
+        return detect(gray,width,height,top,bottom,gap,true);
+    }
+
+    private static StaffPitchTrack detect(byte[] gray,int width,int height,float top,float bottom,float gap,boolean subtle) {
         if(gray==null||gap<3)return null;
-        if(straightRules(gray,width,height,bottom,gap,true))return null;
+        if(!subtle&&straightRules(gray,width,height,bottom,gap,true))return null;
         boolean broadlyStraight=straightRules(gray,width,height,bottom,gap);
         int stripWidth=Math.min(width,Math.max(80,Math.round(gap*10)));
         int first=Math.max(0,Math.round(top-gap*6)),last=Math.min(height,Math.round(bottom+gap*6));
@@ -38,26 +47,33 @@ final class StaffPitchTrack {
             // threshold. Project only locally contrasted strokes in that case;
             // still validate every proposed rule against the original pixels.
             byte[] projection=local;
-            if(needsContrast(local,stripWidth,last-first,stripWidth*.5f,bottom-first,gap)) {
+            if(subtle||needsContrast(local,stripWidth,last-first,stripWidth*.5f,bottom-first,gap)) {
                 projection=new byte[local.length];Arrays.fill(projection,(byte)255);
                 int flank=Math.max(2,Math.round(gap*.32f));
                 for(int y=flank;y<last-first-flank;y++)for(int x=0;x<stripWidth;x++) {
                     int at=y*stripWidth+x,ink=local[at]&255;
-                    if(ink<=170&&(local[at-flank*stripWidth]&255)>=ink+12
-                            &&(local[at+flank*stripWidth]&255)>=ink+12)projection[at]=local[at];
+                    if(ink<=(subtle?225:170)&&(local[at-flank*stripWidth]&255)>=ink+12
+                            &&(local[at+flank*stripWidth]&255)>=ink+12)projection[at]=subtle?0:local[at];
                 }
             }
-            for(var lines:RawStaffLineDetector.detect(projection,stripWidth,last-first)) {
+            int[] symbolStrength=subtle?new int[last-first]:null;
+            if(subtle)for(int y=0;y<symbolStrength.length;y++)for(int x=0;x<stripWidth;x++)
+                if((projection[y*stripWidth+x]&255)<170)symbolStrength[y]++;
+            var candidates=subtle?RawStaffLineDetector.detectFromStrength(symbolStrength,
+                    Math.max(24,Math.round(stripWidth*.25f)),last-first)
+                    :RawStaffLineDetector.detect(projection,stripWidth,last-first);
+            for(var lines:candidates) {
                 // A four-rule semantic group can be divided into four intervals,
                 // compressing its seed to about three quarters of the true gap.
                 // Complete raw rules, nearby phase and broad track agreement below
                 // must still independently establish any larger spacing.
-                if(lines.gap()<gap*.8f||lines.gap()>gap*1.45f)continue;
+                if(lines.gap()<gap*(subtle?.88f:.8f)||lines.gap()>gap*(subtle?1.12f:1.45f))continue;
                 float d=Math.abs(lines.bottom()+first-bottom);
+                if(subtle&&d>gap*.65f)continue;
                 // Broad straight-rule evidence anchors the physical staff phase.
                 // A locally shifted group must be unambiguous before replacing
                 // it; nearby tilted groups can safely keep their existing track.
-                if(!completeRules(local,stripWidth,last-first,lines,broadlyStraight&&d>gap*.6f))continue;
+                if(!completeRules(local,stripWidth,last-first,lines,subtle||broadlyStraight&&d>gap*.6f,subtle?225:170))continue;
                 // Incomplete semantic stripes can compress or widen the seed's
                 // spacing. A complete raw group may recalibrate that seed only
                 // while its outer rule remains close to the same physical staff.
@@ -86,14 +102,17 @@ final class StaffPitchTrack {
         if(samples.size()<4)return null;
         samples.sort(Comparator.comparingDouble(a->a[0]));
         if(samples.get(samples.size()-1)[0]-samples.get(0)[0]<width*.36f)return null;
+        if(subtle&&(samples.size()<6
+                ||samples.get(samples.size()-1)[0]-samples.get(0)[0]<width*.6f))return null;
         float min=Float.MAX_VALUE,max=-Float.MAX_VALUE;
         for(float[] p:samples){min=Math.min(min,p[1]);max=Math.max(max,p[1]);}
+        if(subtle&&max-min>typicalGap*1.25f)return null;
         if(max-min<typicalGap*.8f) {
             // Even a sub-line tilt can move the local search onto the adjacent
             // rule near a page edge. Accept it only with dense, broadly spaced
             // five-rule samples agreeing on a smooth trend; sparse ledger ink
             // or alternating offsets must not create a new pitch reference.
-            if(max-min<typicalGap*.4f||samples.size()<6
+            if(!subtle&&max-min<typicalGap*.4f||samples.size()<6
                     ||samples.get(samples.size()-1)[0]-samples.get(0)[0]<width*.6f)return null;
             float variation=0;
             for(int i=1;i<samples.size();i++) {
@@ -206,6 +225,10 @@ final class StaffPitchTrack {
     }
 
     private static boolean completeRules(byte[] gray,int width,int height,RawStaffLineDetector.StaffLines lines,boolean requireUnambiguousPhase) {
+        return completeRules(gray,width,height,lines,requireUnambiguousPhase,170);
+    }
+
+    private static boolean completeRules(byte[] gray,int width,int height,RawStaffLineDetector.StaffLines lines,boolean requireUnambiguousPhase,int threshold) {
         int radius=Math.max(1,Math.round(lines.gap()*.2f)),flank=Math.max(2,Math.round(lines.gap()*.32f));
         // Six equally spaced rules do not establish which five belong to the
         // staff. A beam extending the group must not shift the sampled phase.
@@ -213,7 +236,7 @@ final class StaffPitchTrack {
             int columns=0;
             for(int x=0;x<width;x++)for(int y=Math.max(flank,outside-radius);y<=Math.min(height-1-flank,outside+radius);y++) {
                 int ink=gray[y*width+x]&255;
-                if(ink<=170&&(gray[(y-flank)*width+x]&255)>=ink+12&&(gray[(y+flank)*width+x]&255)>=ink+12) {
+                if(ink<=threshold&&(gray[(y-flank)*width+x]&255)>=ink+12&&(gray[(y+flank)*width+x]&255)>=ink+12) {
                     columns++;break;
                 }
             }
@@ -223,7 +246,7 @@ final class StaffPitchTrack {
             int columns=0;
             for(int x=0;x<width;x++)for(int y=Math.max(flank,row-radius);y<=Math.min(height-1-flank,row+radius);y++) {
                 int ink=gray[y*width+x]&255;
-                if(ink<=170&&(gray[(y-flank)*width+x]&255)>=ink+12&&(gray[(y+flank)*width+x]&255)>=ink+12) {
+                if(ink<=threshold&&(gray[(y-flank)*width+x]&255)>=ink+12&&(gray[(y+flank)*width+x]&255)>=ink+12) {
                     columns++;break;
                 }
             }

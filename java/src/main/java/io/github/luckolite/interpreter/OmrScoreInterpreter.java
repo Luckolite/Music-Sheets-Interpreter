@@ -45,6 +45,34 @@ final class OmrScoreInterpreter {
                 OmrMeasurePostProcessor.NOTEHEAD);
         List<Component> recoveredFadedHeads = new ArrayList<>();
         List<Component> recoveredFilledFragmentHeads=new ArrayList<>();
+        Map<Component,Integer> recoveredCreaseGraces=new HashMap<>();
+        List<Component> recoveredGraceCaps=new ArrayList<>();
+        List<Component> originalHeads=List.copyOf(rawHeadComponents);
+        for(Component first:originalHeads) {
+            Staff owner=nearestHeadStaff(staffs,first.centerY);if(owner==null)continue;
+            for(Component principal:originalHeads) {
+                if(first==principal||recoveredCreaseGraces.containsKey(first))continue;
+                CreaseGracePairRecovery.Pair pair=CreaseGracePairRecovery.find(gray,width,height,owner.gap,owner.top,owner.bottom,
+                        new CreaseGracePairRecovery.Box(first.minX,first.minY,first.maxX,first.maxY,first.centerX,first.centerY),
+                        new CreaseGracePairRecovery.Box(principal.minX,principal.minY,principal.maxX,principal.maxY,principal.centerX,principal.centerY));
+                if(pair==null)continue;
+                var box=pair.recovered();Component second=null;
+                for(Component candidate:rawHeadComponents)if(Math.abs(candidate.centerX-box.x())<owner.gap*.6f
+                        &&Math.abs(candidate.centerY-box.y())<owner.gap*.45f){second=candidate;break;}
+                if(second==null) {
+                    second=new Component((box.right()-box.left()+1)*(box.bottom()-box.top()+1),
+                            box.left(),box.right(),box.top(),box.bottom(),box.x(),box.y());
+                    rawHeadComponents.add(second);recoveredFadedHeads.add(second);recoveredFilledFragmentHeads.add(second);
+                }
+                recoveredCreaseGraces.put(first,pair.beams());recoveredCreaseGraces.put(second,pair.beams());
+                for(Component cap:originalHeads)if(cap!=first&&cap!=second
+                        &&cap.maxX-cap.minX+1<=owner.gap&&cap.maxY-cap.minY+1<=owner.gap*1.1f
+                        &&cap.centerX>=pair.firstStem()-owner.gap*.25f&&cap.centerX<=pair.firstStem()+owner.gap*.7f
+                        &&cap.centerY>=pair.firstEnd()-owner.gap*.2f&&cap.centerY<=pair.firstEnd()+owner.gap)
+                    recoveredGraceCaps.add(cap);
+            }
+        }
+        rawHeadComponents.removeAll(recoveredGraceCaps);
         for(int first=0;first<rawHeadComponents.size();first++) {
             Component a=rawHeadComponents.get(first);Staff owner=nearestHeadStaff(staffs,a.centerY);if(owner==null)continue;
             for(int second=first+1;second<rawHeadComponents.size();second++) {
@@ -147,6 +175,7 @@ final class OmrScoreInterpreter {
             }
         }
         List<Component> rejectedBeamHeads=beamJunctionHeads(gray,width,height,heads,staffs);
+        rejectedBeamHeads.addAll(recoveredGraceCaps);
         rejectedBeamHeads.addAll(mergedBeamInteriorHeads(gray,width,height,heads,staffs));
         rejectedBeamHeads.addAll(singleBeamInteriorHeads(gray,width,height,heads,staffs));
         rejectedBeamHeads.addAll(shortPairedMergedBeamHeads(gray,width,height,heads,staffs));
@@ -417,6 +446,7 @@ final class OmrScoreInterpreter {
             if(recoveredPaleChordHeads.contains(head)||recoveredFilledFragmentHeads.contains(head))unbeamedDuration=beamCount==0?1f:0f;
             if(detachedTremolos.containsKey(head))unbeamedDuration=ScoreNoteEvent.DURATION_WHOLE;
             if(attachedTremolos.containsKey(head))unbeamedDuration=ScoreNoteEvent.DURATION_HALF;
+            if(recoveredCreaseGraces.containsKey(head)){beamCount=recoveredCreaseGraces.get(head);unbeamedDuration=0;}
             // Beamed notes cannot have open heads. If a staff line, slur, or artwork edge near
             // an open half/whole head looked like a beam, retain the notehead's stronger direct
             // evidence instead of collapsing the sustained passage into eighths/sixteenths.
@@ -456,6 +486,7 @@ final class OmrScoreInterpreter {
                     clamp(normalizedY), false, augmentationDots, beamCount,
                     writtenAccidental, unbeamedDuration);
             if(accidentalGraces.contains(head))event=event.withArticulations(event.articulations()|NoteOrnament.GRACE);
+            if(recoveredCreaseGraces.containsKey(head))event=event.withArticulations(event.articulations()|NoteOrnament.GRACE);
             if(tremolo[0]>0)event=event.withArticulations(NoteOrnament.withTremolo(
                     event.articulations(),beamCount+tremolo[0]));
             if(detachedTremolos.containsKey(head))event=event.withArticulations(
@@ -8693,7 +8724,7 @@ final class OmrScoreInterpreter {
         List<DetectedNote> result = new ArrayList<>(source);
         for (int currentIndex = 1; currentIndex < result.size(); currentIndex++) {
             DetectedNote current = result.get(currentIndex);
-            int previousIndex = previousSamePitch(result, currentIndex, width);
+            int previousIndex = previousSamePitch(result, currentIndex, width, labels, gray, height);
             if (previousIndex < 0) continue;
             DetectedNote previous = result.get(previousIndex);
             if (!hasTieArc(labels, gray, width, height, previous, current)) continue;
@@ -8709,6 +8740,11 @@ final class OmrScoreInterpreter {
     }
 
     private static int previousSamePitch(List<DetectedNote> notes, int currentIndex, int width) {
+        return previousSamePitch(notes,currentIndex,width,null,null,0);
+    }
+
+    private static int previousSamePitch(List<DetectedNote> notes,int currentIndex,int width,
+            byte[] labels,byte[] gray,int height) {
         DetectedNote current = notes.get(currentIndex);
         DetectedNote previousOnset = null;
         for (int index = currentIndex - 1; index >= 0; index--) {
@@ -8749,7 +8785,11 @@ final class OmrScoreInterpreter {
             if (horizontal < gap * 1.3f || horizontal > width * .34f) continue;
             // Quantization alone can occasionally put two heads near a step boundary in the same
             // bucket. A real repeated pitch remains within less than half a staff-space vertically.
-            if (Math.abs(current.head.centerY - previous.head.centerY) > gap * .45f) continue;
+            if (Math.abs(current.head.centerY - previous.head.centerY) > gap * .45f
+                    && !LocalTieStaffAlignment.same(labels,gray,width,height,
+                    previous.head.centerX,previous.head.centerY,previous.head.minX,previous.head.maxX,previous.staffGap,
+                    current.head.centerX,current.head.centerY,current.head.minX,current.head.maxX,current.staffGap,
+                    current.event.staffStep())) continue;
             return index;
         }
         return -1;

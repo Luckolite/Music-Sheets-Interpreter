@@ -5,11 +5,27 @@
     "Luckolite"
   ],
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
+  "symbol_staff_rest_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected working-tree repair follows subtly sloping, locally contrasted five-rule groups only for additive raster-rest recovery. Existing note-pitch detection and curved-staff paths retain their prior branches. Symbol tracks require dense broad samples, restricted phase and scale, original-pixel contrast, smoothness and rejection of a competing sixth rule. Existing glyph and note/voice ownership gates remain. Ten original procedural tests cover both slants and rejection controls; 166 focused app-package tests and 10 standalone-package tests pass. A private matched-input 24-page replay adds eight source-reviewed rests and nine associated rest-timing fields with no other changed fields. Full audit completeness, device validation and deployment are not claimed. No private image, annotation, fixture, model or dependency is published."
+  },
   "detached_marks_and_grace_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Scoped working-tree repairs recover detached rounded-arm articulations, tolerate an antialiased thin staff-rule witness beside a finite beam, and distinguish solitary grace flags from crossing slashes. Paired grace heads veto the solitary fallback even when one stem is too faint to trace. Thirty-four original procedural regressions accompany the three repairs. Full private page comparisons and source review establish the bounded deltas, not exhaustive score accuracy. One pre-existing false beam-hook note is tracked separately for removal; no private scan or annotations are published. No model weights, dependencies or app deployment change."
   },
   "files": {
+    "LocalTieStaffAlignment.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/LocalTieStaffAlignment.java",
+      "source_sha256": "b361c5a499088fd1ee0e075a0a00f37ac0c68db8798e79a81c49ef6164307dca",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed original JDK-only tie endpoint alignment against complete local five-rule groups. Matching pitch, staff ownership and a returning printed arc remain required; a competing sixth rule rejects alignment. Nine original procedural controls include candidate-search integration and preserved flat fallback. Private source review confirmed three restored ties and unchanged other note fields; no private fixtures or weights."
+    },
+    "CreaseGracePairRecovery.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/CreaseGracePairRecovery.java",
+      "source_sha256": "7bbf421bf58599458d00ffb3e71a125819670c278acc1720130e6803f7b8ec96",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed original JDK-only recovery of a small beamed pair separated by a narrow white scan crease. Requires independent reduced and principal ovals, two traced stems, a surviving second oval core and two beam cores; only the proven false cap is removed. Thirteen procedural tests include full decoding, missing evidence, invalid ranges and input preservation. Private source pages remain private; no dependencies or weight changes."
+    },
     "RoundedAngularArticulation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RoundedAngularArticulation.java",
       "source_sha256": "aef1488d606bc4db36c5431c4a62e870ebf45b3c60dfd53f37b514516e36df10",
@@ -183,7 +199,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "ffed89cb3c091ee8d0a94aa357ccc2b1073aea13fd84c4fafc1f854d18a3f300",
+      "source_sha256": "1e525cf147cf407be71bbab1ba10566bbd4941149dde6c55e235c8b95732d563",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
@@ -250,9 +266,9 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "1b381c6b244aadda87013d5588d8a595c4af937c065ad30980aaad3d07c60f84",
+      "source_sha256": "8a8b0d0b2729509459771605d308b46f83d2104a3a52439ed08c143e99bd6058",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
+      "notes": "Reviewed additive symbol-staff refinement preserves legacy detections and all existing rest-shape/ownership gates, avoids recursive refinement of rectified rasters, and ignores invalid unrelated note indices during mapping. Existing curved processing and input pixels are preserved. Ten original synthetic controls plus existing focused rest regressions; see symbol_staff_rest_review."
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -289,9 +305,9 @@
     },
     "StaffPitchTrack.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
-      "source_sha256": "a00a983c26a163e4affc6a5c083912de2656163b88db50b29cdd92b1f0c7b53c",
+      "source_sha256": "84ff973ac99a05b96d5204079b0ed5740e346110a8c75ba22326dbce467b3882",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "notes": "Reviewed working-tree source is identical to the existing standalone implementation after package/header/newline adaptation; no pitch behavior was replaced or omitted."
+      "notes": "Reviewed symbol-only sampling mode shares the existing track machinery with the original note-pitch mode unchanged. Tighter symbol phase/scale bounds, six samples across sixty percent of page width, original five-rule contrast and competing-rule veto guard the extra recovery. Package/header adaptation only; no new dependency or model. See symbol_staff_rest_review."
     },
     "OpeningMeasureLayout.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpeningMeasureLayout.java",

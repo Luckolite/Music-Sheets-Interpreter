@@ -23,11 +23,16 @@ final class SixteenthRestDetector {
 
     static Detection detectWithDots(byte[] gray, int width, int height,
             List<MeasureRegion> measures, List<Staff> staffs, List<ScoreNoteEvent> notes) {
+        return detectWithDots(gray,width,height,measures,staffs,notes,true);
+    }
+
+    private static Detection detectWithDots(byte[] gray, int width, int height,
+            List<MeasureRegion> measures, List<Staff> staffs, List<ScoreNoteEvent> notes,boolean refineSymbols) {
         if (gray == null || gray.length != width * height) return new Detection(List.of(),List.of());
         if(staffs.stream().anyMatch(staff->staff.pitchTrack()!=null)) {
             List<Staff> straight=new ArrayList<>();
             for(Staff staff:staffs)if(staff.pitchTrack()==null)straight.add(staff);
-            Detection plain=detectWithDots(gray,width,height,measures,straight,notes);
+            Detection plain=detectWithDots(gray,width,height,measures,straight,notes,refineSymbols);
             List<ScoreRestEvent> combined=new ArrayList<>(plain.rests());
             List<RestDot> dots=new ArrayList<>(plain.dots());
             for(Staff staff:staffs)if(staff.pitchTrack()!=null) {
@@ -95,6 +100,15 @@ final class SixteenthRestDetector {
             }
             }
         }
+        if(refineSymbols)for(Staff staff:staffs) {
+            StaffPitchTrack track=StaffPitchTrack.detectForSymbols(gray,width,height,staff.top(),staff.bottom(),staff.gap());
+            if(track==null)continue;
+            float localGap=track.at(width*.5f)[1];
+            Staff calibrated=new Staff(staff.bottom()-4*localGap,staff.bottom(),localGap,
+                    staff.index(),staff.count(),track);
+            Detection additional=detectOnPrintedStaff(gray,width,height,measures,calibrated,notes);
+            result.addAll(additional.rests());restDots.addAll(additional.dots());
+        }
         return collected(result,restDots);
     }
 
@@ -133,6 +147,7 @@ final class SixteenthRestDetector {
         }
         List<ScoreNoteEvent> mappedNotes=new ArrayList<>();
         for(ScoreNoteEvent n:notes) {
+            if(n.measureIndex()<0||n.measureIndex()>=measures.size())continue;
             MeasureRegion region=measures.get(n.measureIndex());
             float x=(region.left()+n.positionInMeasure()*(region.right()-region.left()))*width;
             float y=(flatY(staff,x,n.pageY()*height)-first)/bandHeight;
@@ -142,7 +157,7 @@ final class SixteenthRestDetector {
                     n.articulations(),n.clefBottomDiatonic(),n.crossStaffBeam(),n.leadingRestBeats(),n.compactOpening()));
         }
         Staff rectified=new Staff(staff.top()-first,staff.bottom()-first,staff.gap(),staff.index(),staff.count());
-        Detection detected=detectWithDots(flat,width,bandHeight,mappedMeasures,List.of(rectified),mappedNotes);
+        Detection detected=detectWithDots(flat,width,bandHeight,mappedMeasures,List.of(rectified),mappedNotes,false);
         List<ScoreRestEvent> rests=new ArrayList<>();List<RestDot> dots=new ArrayList<>();
         for(ScoreRestEvent rest:detected.rests())rests.add(sourceRest(rest,staff,measures,width,height,first,bandHeight));
         for(RestDot dot:detected.dots())dots.add(new RestDot(dot.x(),
