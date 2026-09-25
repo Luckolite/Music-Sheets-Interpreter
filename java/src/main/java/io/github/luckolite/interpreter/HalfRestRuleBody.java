@@ -21,9 +21,11 @@ final class HalfRestRuleBody {
             if(fringe>w*.45f)continue;
             int margin=Math.max(2,Math.round(gap*.25f));boolean clear=true;
             if(left-margin<0||right+margin>=width)continue;
-            for(int y=first;y<rule&&clear;y++)
-                if(rowInk(gray,width,left-margin,left-1,y)>margin*.2f
-                        ||rowInk(gray,width,right+1,right+margin,y)>margin*.2f)clear=false;
+            for(int y=first;y<rule&&clear;y++) {
+                float fringeLimit=y==rule-1?Math.max(margin*.2f,Math.max(1,Math.round(gap*.10f))):margin*.2f;
+                if(rowInk(gray,width,left-margin,left-1,y)>fringeLimit
+                        ||rowInk(gray,width,right+1,right+margin,y)>fringeLimit)clear=false;
+            }
             if(!clear)continue;
             int outside=0;
             for(int i=0;i<maskedInk.length;i++) {

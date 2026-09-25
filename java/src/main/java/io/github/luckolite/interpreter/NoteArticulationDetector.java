@@ -203,7 +203,7 @@ final class NoteArticulationDetector {
                         &&glyph.bottom-glyph.top+1<=Math.max(2,Math.round(note.gap*.23f))
                         &&horizontalRuleInk(gray,width,height,Math.round(glyph.x()),Math.round(glyph.y()),note.gap,235,.50f))continue;
                 if(candidate==NoteArticulation.STACCATO && (durationDot(glyph,notes)
-                        || (raw&&shelteredDot(glyph,labels,gray,width,height,note.gap))))continue;
+                        || (raw&&shelteredDot(glyph,labels,gray,width,height,note.gap,dy))))continue;
                 // A small off-axis dot beside a head is a duration dot, not staccato.
                 if(candidate==NoteArticulation.STACCATO&&dx>.35f)continue;
                 double score=dx*3+dy;
@@ -239,7 +239,7 @@ final class NoteArticulationDetector {
     }
 
     /** The dot under a fermata arch is not a staccato instruction. */
-    private static boolean shelteredDot(Glyph glyph,byte[] labels,byte[] gray,int width,int height,float gap) {
+    private static boolean shelteredDot(Glyph glyph,byte[] labels,byte[] gray,int width,int height,float gap,float distance) {
         for(int direction:new int[]{-1,1}) {
             int occupied=0;
             for(int bin=-2;bin<=2;bin++) {
@@ -258,7 +258,47 @@ final class NoteArticulationDetector {
                 }
                 if(found)occupied++;
             }
-            if(occupied==5)return true;
+            if(occupied==5) {
+                if(distance>2.5f)return true;
+                int[] tone=new int[glyph.pixels.length];for(int i=0;i<tone.length;i++)tone[i]=gray[glyph.pixels[i]]&255;
+                java.util.Arrays.sort(tone);
+                // Only a near, independently dark dot may override the original
+                // shelter veto. Gray scan grain and distant text dots abstain.
+                if(tone[tone.length/2]>130||connectedFermataRoof(glyph,labels,gray,width,height,gap,direction))return true;
+            }
+        }
+        return false;
+    }
+
+    /** A fermata roof is one compact centered curve, not unrelated scan specks or a long slur. */
+    private static boolean connectedFermataRoof(Glyph dot,byte[] labels,byte[] gray,int width,int height,float gap,int direction) {
+        int l=Math.max(0,Math.round(dot.x()-gap*1.8f)),r=Math.min(width-1,Math.round(dot.x()+gap*1.8f));
+        int a=Math.round(dot.y()+direction*gap*.30f),b=Math.round(dot.y()+direction*gap*1.7f);
+        int t=Math.max(0,Math.min(a,b)),bottom=Math.min(height-1,Math.max(a,b));
+        int w=r-l+1,h=bottom-t+1;if(w<3||h<3)return false;
+        boolean[] valid=new boolean[w*h],seen=new boolean[w*h];int[] queue=new int[w*h];
+        for(int y=t;y<=bottom;y++)for(int x=l;x<=r;x++) {
+            int p=y*width+x;byte label=labels[p];
+            valid[(y-t)*w+x-l]=(gray[p]&255)<155&&label!=OmrMeasurePostProcessor.NOTEHEAD
+                    &&label!=OmrMeasurePostProcessor.STAFF&&label!=OmrMeasurePostProcessor.STEM_OR_REST
+                    &&!horizontalStaffInk(gray,width,height,x,y,gap);
+        }
+        for(int seed=0;seed<valid.length;seed++) {
+            if(seen[seed]||!valid[seed])continue;
+            int read=0,count=1,minX=w,maxX=0,minY=h,maxY=0;boolean clipped=false;queue[0]=seed;seen[seed]=true;
+            while(read<count) {
+                int at=queue[read++],x=at%w,y=at/w;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+                if(x==0||x==w-1||(direction<0?y==0:y==h-1))clipped=true;
+                // A one-pixel antialias gap must not split a genuine roof.
+                for(int dy=-2;dy<=2;dy++)for(int dx=-2;dx<=2;dx++) {
+                    int nx=x+dx,ny=y+dy;if(nx<0||nx>=w||ny<0||ny>=h)continue;
+                    int next=ny*w+nx;if(!seen[next]&&valid[next]){seen[next]=true;queue[count++]=next;}
+                }
+            }
+            if(!clipped&&count>=gap&&maxX-minX>=gap&&maxY-minY>=gap*.2f
+                    &&Math.abs(l+(minX+maxX)*.5f-dot.x())<=gap*.35f
+                    &&l+minX<=dot.x()-gap*.45f&&l+maxX>=dot.x()+gap*.45f)return true;
         }
         return false;
     }

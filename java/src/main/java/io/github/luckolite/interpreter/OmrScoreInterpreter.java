@@ -109,6 +109,17 @@ final class OmrScoreInterpreter {
                 rawHeadComponents.remove(existing);recoveredFadedHeads.remove(existing);
                 recoveredFilledFragmentHeads.remove(existing);
             }
+            // One printed oval can have two disjoint, individually small mask
+            // islands. Consume only fragments wholly enclosed by that proven
+            // oval; a nearby separate note keeps its own noncontained bounds.
+            List<Component> enclosedFragments=new ArrayList<>();
+            for(Component fragment:rawHeadComponents)if(fragment.area<staff.gap*staff.gap*.55f
+                    &&fragment.minX>=recovered.left()-1&&fragment.maxX<=recovered.right()+1
+                    &&fragment.minY>=recovered.top()-1&&fragment.maxY<=recovered.bottom()+1
+                    &&Math.abs(fragment.centerX-x)<staff.gap*.8f
+                    &&Math.abs(fragment.centerY-y)<staff.gap*.65f)enclosedFragments.add(fragment);
+            rawHeadComponents.removeAll(enclosedFragments);recoveredFadedHeads.removeAll(enclosedFragments);
+            recoveredFilledFragmentHeads.removeAll(enclosedFragments);
             Component head=new Component((recovered.right()-recovered.left()+1)*(recovered.bottom()-recovered.top()+1),
                     recovered.left(),recovered.right(),recovered.top(),recovered.bottom(),x,y);
             rawHeadComponents.add(head);recoveredFadedHeads.add(head);recoveredFilledFragmentHeads.add(head);
@@ -242,6 +253,7 @@ final class OmrScoreInterpreter {
             return AccidentalEnclosure.contains(ring,c.minX,c.minY,c.maxX,c.maxY)
                     &&!enclosedCenters.contains(candidate);
         }));
+        heads.removeAll(naturalCrossbarHeads(gray,width,height,heads,staffs,accidentalCandidates));
         // Recovered boxes have no semantic area measurement. Comparing their
         // rectangular area with a clipped semantic head can falsely demote that
         // neighboring real note to a dot. Keep the existing semantic evidence
@@ -6338,6 +6350,44 @@ final class OmrScoreInterpreter {
         return false;
     }
 
+    /** A natural's right upper connector can be mislabeled as a small head.
+     * Require the complete natural from both its accidental seed and the joined
+     * candidate, with an independent full-sized following note as crop anchor. */
+    private static List<Component> naturalCrossbarHeads(byte[] gray,int width,int height,
+            List<Component> heads,List<Staff> staffs,List<AccidentalCandidate> candidates) {
+        List<Component> result=new ArrayList<>();if(gray==null)return result;
+        for(Component candidate:heads) {
+            Staff staff=nearestHeadStaff(staffs,candidate.centerY);if(staff==null)continue;
+            float gap=staff.gap;
+            if(candidate.area>gap*gap*.5f||candidate.maxX-candidate.minX+1>gap*.9f
+                    ||candidate.maxY-candidate.minY+1>gap*.9f)continue;
+            boolean owned=false;
+            for(AccidentalCandidate accidental:candidates) {
+                Component seed=accidental.component;
+                if(seed.minX>=candidate.minX||candidate.centerX-seed.centerX>gap*1.3f
+                        ||candidate.centerX<seed.centerX||Math.abs(seed.centerY-candidate.centerY)>gap*1.7f)continue;
+                int left=Math.min(seed.minX,candidate.minX),right=Math.max(seed.maxX,candidate.maxX);
+                int top=Math.min(seed.minY,candidate.minY),bottom=Math.max(seed.maxY,candidate.maxY);
+                if(right-left+1>gap*1.65f||bottom-top+1>gap*3.1f)continue;
+                Component joined=new Component(seed.area+candidate.area,left,right,top,bottom,
+                        (left+right)*.5f,(top+bottom)*.5f);
+                for(Component following:heads) {
+                    if(following==candidate||nearestHeadStaff(staffs,following.centerY)!=staff
+                            ||following.minX-right<gap*.1f||following.centerX-candidate.centerX<gap*.8f
+                            ||following.centerX-candidate.centerX>gap*4
+                            ||Math.abs(following.centerY-candidate.centerY)>gap*1.5f
+                            ||following.maxX-following.minX+1<gap*.85f
+                            ||following.maxY-following.minY+1<gap*.5f)continue;
+                    if(rawNaturalAtSeed(gray,width,height,seed,following,gap)
+                            &&rawNaturalAtSeed(gray,width,height,joined,following,gap)){owned=true;break;}
+                }
+                if(owned)break;
+            }
+            if(owned)result.add(candidate);
+        }
+        return result;
+    }
+
     /** Two surviving crossbars can locate a faded natural whose thin spines were
      * labelled as stems. Confirm the offset endpoints in the original pixels. */
     private static boolean rawNaturalFromCrossbars(byte[] gray,int width,int height,
@@ -7879,6 +7929,8 @@ final class OmrScoreInterpreter {
         int count=detectBeamCount(labels,gray,width,height,head,staff);
         if(count==0&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f)
             count=detectBeamCount(labels,gray,width,height,head,staff,false,true);
+        if(count>0&&gray!=null&&head.maxX-head.minX+1>staff.gap*1.05f
+                &&barePaleStemEndpoint(labels,gray,width,height,head,staff))count=0;
         if(gray!=null&&count<3&&head.maxX-head.minX+1>staff.gap*1.05f) {
             int threshold=BeamInkThreshold.at(gray,width,height,Math.round(head.centerX),
                     Math.round(head.centerY-staff.gap*5),Math.round(head.centerY+staff.gap*5),staff.gap)+5;
@@ -8331,6 +8383,62 @@ final class OmrScoreInterpreter {
             int inner=x+side*Math.round(gap*.4f),outer=x+side*Math.round(gap*.65f);
             if(thickNonHeadBands(gray,labels,width,height,inner,top,bottom,staff)>0
                     &&thickNonHeadBands(gray,labels,width,height,outer,top,bottom,staff,inner)>0)return stem;
+        }
+        return null;
+    }
+
+    /** Reject a false semantic endpoint only when the longer raw shaft is bare. */
+    private static boolean barePaleStemEndpoint(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff) {
+        float gap=staff.gap;
+        int threshold=BeamInkThreshold.at(gray,width,height,Math.round(head.centerX),
+                Math.round(head.centerY-gap*5),Math.round(head.centerY+gap*5),gap)+5;
+        if(attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),threshold)!=null)return false;
+        int[] stem=paleStemEndpoint(labels,gray,width,height,head,staff);
+        if(stem==null)return false;boolean up=stem[2]<0;
+        if(hasCurvedFlag(labels,gray,width,height,head,gap,stem[0],stem[1],up)
+                ||OutlinedBeamInk.count(gray,width,height,stem,head.centerY,gap)>0)return false;
+        int top=Math.max(0,stem[1]-Math.round(gap*(up?.2f:1.85f)));
+        int bottom=Math.min(height-1,stem[1]+Math.round(gap*(up?1.85f:.2f)));
+        for(float offset:new float[]{-.65f,-.4f,.4f,.65f}) {
+            int x=stem[0]+Math.round(offset*gap);
+            int inner=stem[0]+Math.round(Math.copySign(.4f,offset)*gap);
+            if(thickNonHeadBands(gray,labels,width,height,x,top,bottom,staff,inner,true)>0)return false;
+        }
+        return true;
+    }
+
+    private static int[] paleStemEndpoint(byte[] labels,byte[] gray,int width,int height,
+            Component head,Staff staff) {
+        if(gray==null)return null;
+        float gap=staff.gap;
+        int[] trace=attachedRawStem(gray,width,height,head,gap,Math.max(1,Math.round(gap*.16f)),245);
+        if(trace==null||Math.abs(trace[1]-head.centerY)>gap*5.5f)return null;
+        int flank=Math.max(3,Math.round(gap*.45f)),direction=trace[2];
+        int centerRadius=Math.max(2,Math.round(gap*.3f));
+        for(int offset=-centerRadius;offset<=centerRadius;offset++) {
+            int x=trace[0]+offset;
+            int edge=direction<0?head.maxX:head.minX;
+            if(x-flank<0||x+flank>=width||Math.abs(x-edge)>Math.round(gap*.3f))continue;
+            int blanks=0;boolean connected=true;
+            for(int y=Math.round(head.centerY);(trace[1]-y)*direction>=0;y+=direction) {
+                if((gray[y*width+x]&255)<245)blanks=0;
+                else if(++blanks>Math.max(1,Math.round(gap*.16f))){connected=false;break;}
+            }
+            if(!connected)continue;
+            float localGap=staff.pitchGap,localBottom=staff.pitchBottom+staff.pitchSlope*(x-width*.5f);
+            if(staff.pitchTrack!=null){float[] local=staff.pitchTrack.at(x);localBottom=local[0];localGap=local[1];}
+            int first=Math.round(head.centerY)+direction*Math.round(gap*.85f);
+            int last=trace[1]-direction*Math.round(gap*1.35f),samples=0,support=0;
+            for(int y=first;(last-y)*direction>=0;y+=direction) {
+                float rule=localBottom+Math.round((y-localBottom)/localGap)*localGap;
+                if(Math.abs(y-rule)<=localGap*.2f)continue;
+                int ink=gray[y*width+x]&255;samples++;
+                if(ink<245&&(gray[y*width+x-flank]&255)>=ink+8
+                        &&(gray[y*width+x+flank]&255)>=ink+8)support++;
+            }
+            if(samples<Math.max(8,Math.round(gap*.6f))||support<samples*.75f)continue;
+            return new int[]{x,trace[1],direction};
         }
         return null;
     }

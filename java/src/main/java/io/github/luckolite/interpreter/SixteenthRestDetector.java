@@ -210,6 +210,10 @@ final class SixteenthRestDetector {
         boolean whole=wholeBounds!=null;
         if(whole){minY=wholeBounds[0];maxY=wholeBounds[1];}
         boolean quarter = !deepLowered&&quarterRest(gray,width,staff,top,line,left,right,minY,maxY);
+        if(!quarter&&!half&&!whole&&ordinary) {
+            int tail=quarterTailWithoutSpeck(ink,top,minY,maxY,gap);
+            if(tail<maxY&&quarterRest(gray,width,staff,top,line,left,right,minY,tail)) {quarter=true;maxY=tail;}
+        }
         if(deepLowered&&(minY<=top||maxY>=bottom))return;
         if(lowered&&!half&&CompactQuarterRestContour.parallelSpines(gray,width,left,right,minY,maxY,line,top,gap))return;
         if(!half&&!whole&&!CompactQuarterRestContour.hasContrastedInk(gray,width,left,right,minY,maxY,line,top,gap))return;
@@ -422,6 +426,14 @@ final class SixteenthRestDetector {
             } else rows++;
         }
         return rows>=Math.max(3,Math.round(gap*.25f))?new int[]{minY,maxY}:null;
+    }
+
+    /** One isolated retained pixel cannot extend an otherwise provable quarter-rest contour. */
+    static int quarterTailWithoutSpeck(int[] ink,int top,int minY,int maxY,float gap) {
+        if(ink==null||!Float.isFinite(gap)||gap<4||minY<top||maxY-top>=ink.length
+                ||maxY<minY||ink[maxY-top]!=1)return maxY;
+        int tail=maxY-1;while(tail>=minY&&ink[tail-top]==0)tail--;
+        return tail-minY+1>=gap*2.1f&&maxY-tail>=Math.ceil(gap*.25f)?tail:maxY;
     }
 
     /** Quarter rests have a narrow zigzag above a left-facing lower hook. */

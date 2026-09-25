@@ -1,6 +1,26 @@
 {
   "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
+  "offset_dark_head_curvature_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected darker-gray recovery retry keeps the exact middle-row bow test first; two adjacent inner rows on the same side may independently establish the existing minimum curvature only when that first test fails. All original size, density, contrast, paper and dual stem requirements remain. Eight original procedural controls reject rectangles, single-row nicks and absent stem evidence; the baseline fails the three intended positives. A private matched-input24-page comparison restores six genuine notes and correctly recenters one existing dotted note, with all other20 pages and non-note metadata unchanged. No private source image or annotation, dependency or model change is included; remaining source omissions and field defects stay open."
+  },
+  "faint_endpoints_and_symbol_fragments_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Reviewed selected working-tree changes reject a clipped semantic beam endpoint only when the ordinary raw trace is absent and an independently contrasted continuous longer shaft is bare at four side columns, preserving curved flags and outlined beams. Nine original controls accompany ten source-confirmed quarter corrections. A recovered gray oval consumes only small wholly enclosed semantic fragments, with four original controls; complete natural ownership requires both semantic-seed and joined raw proof and an independent nonoverlapping following head, with seven original controls. Private full24-page comparisons remove two false events, recenter two genuine heads without changing their musical fields, and leave other pages and metadata unchanged. No song-specific production rules, scans, annotations, dependencies or weights are included."
+  },
+  "connected_staccato_shelter_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected additive working-tree repair only relaxes the old five-bin shelter veto for a nearby independently dark dot. A compact centered connected roof, including a one-pixel antialias gap and ends beside the dot, retains fermata ownership; long clipped slurs and unrelated grain cannot form that roof. Eleven original procedural regressions protect actual roofs, inverted roofs, grain, distant typography and existing isolated faint dots. The initial wider private trial was rejected for false fermata, lyric and grain interpretations. Final matched-input24-page replay restores26 source-confirmed staccatos, with every other note field and metadata unchanged. Several other missing articulations remain deliberately open. No score pixels, private annotations, model or external dependency are published; exhaustive score accuracy and device execution are not claimed."
+  },
+  "quarter_rest_tail_speck_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected additive quarter-rest retry excludes only one isolated bottom-row pixel, separated from a retained body of at least2.1 staff gaps by at least one quarter staff gap. The complete existing strict quarter-contour and contrast proof must then pass; already accepted shapes, connected tails, multi-pixel rows and all note/measure ownership remain unchanged. Nine original procedural regressions accompany it;225 focused tests pass. A matched-input private24-page comparison adds exactly one source-confirmed quarter rest and its linked following-rest timing field, with all other fields unchanged. No pixels are mutated, and no private score evidence, model, schema, dependency or device-execution claim is included. The complete source audit remains open."
+  },
+  "half_rest_baseline_fringe_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected additive half-rest rectangle refinement permits a staff-scaled one-to-two-pixel side fringe only on the single body row adjoining the independently proved supporting rule. All earlier-row side margins, rectangle, contrast, rule, stray-ink and note ownership checks remain. Eight original procedural regressions cover bounded foot fringes and rejection of broad, early or vertically connected strokes;216 focused tests pass. A matched-input private24-page comparison adds exactly three source-reviewed half rests and three linked timing fields, with no other changes. One newly represented half rest still follows a separate missing quarter rest; partial progress is not claimed as complete bar or score accuracy. No model, schema, dependency or private source evidence is published."
+  },
   "raw_half_rest_body_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Selected additive working-tree repair verifies a raw filled half-rest rectangle when a global row mask erased its lower body. Two-sided middle-rule support, flat bounded rows, clear sides, bounded upper fringe, thin local rule-fragment proof and unchanged note/measure ownership reject note and beam fragments. Seventeen original procedural tests accompany the helper;208 focused tests pass and the baseline fails the intended end-to-end mask-erasure regression. A private matched-input24-page comparison adds exactly three source-confirmed half rests and their three linked timing fields, with no other changes. No private scan, annotation, model, schema or external dependency is published; complete source-audit accuracy and device execution are not claimed."
@@ -44,7 +64,8 @@
   "files": {
     "HalfRestRuleBody.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HalfRestRuleBody.java",
-      "source_sha256": "7178030af2215255d1bdb0059506c0578979a2025b3286e552faf29e1c74ea6b",
+      "source_sha256": "8b5be452dc73a26bce2a6ce9fae6e93f554ce46a58503ee5c93df98f8dfae950",
+      "baseline_fringe_review": "See half_rest_baseline_fringe_review; all previous side-clearance behavior is retained outside the one baseline-touching row.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed bounded raw-rectangle and independently supported rule-fragment geometry, JDK-only with original synthetic tests; see raw_half_rest_body_review."
     },
@@ -235,7 +256,7 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "ecba06b338a30ae7385b03f53f4609e2e2afc873dbd8e683b07db6de8982ca0b",
+      "source_sha256": "102533a04a7f586965ab3ae3ff458fe0fa7d57948e231d528f0ace83cfb99a78",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Retains prior fractional-width safeguard and adds the reviewed RoundedAngularArticulation detached-mark fallback. Only marcato may use the extended vertical reach; strict classification and notehead demotion are unchanged. Original synthetic controls and private source-checked full-page deltas; no score pixels or model changes."
     },
@@ -251,7 +272,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "e23a52bc2dd854057924cc808852bbc11f6d9b8c6fd83c4be105e0d74ccc98db",
+      "source_sha256": "bfdc355054768ba28c46dab333b376ec7066dca401497e7ed7ed4d30ef95faf1",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
@@ -320,7 +341,8 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "5667e594f486637b4701d53a8c2ecc326ad2b8bbce1821ce09098631adc1d9f2",
+      "source_sha256": "7c6cb578bd7a7ce3a5c3e36392ee69cff770e45ef888cbaea9ad9e24b8001718",
+      "quarter_tail_review": "See quarter_rest_tail_speck_review; an alternative bound is used only after the unchanged strict quarter shape succeeds.",
       "raw_half_review": "Only after legacy half-rest proof fails on an ordinary staff, uses bounded raw body proof while retaining all existing note, measure and dot ownership; see raw_half_rest_body_review.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed additive symbol-staff refinement and adjacent-rule-edge fallback preserve legacy detections and all shape/ownership gates. No recursive raster refinement or pixel mutation; invalid unrelated note indices are skipped. Fallback-only moving-note stem veto and full staff identity prevent flag and rest-dot aliases. See symbol_staff_rest_review and rest_rule_edge_review; original regressions only."
@@ -732,7 +754,7 @@
     },
     "ShadedNoteheadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedNoteheadRecovery.java",
-      "source_sha256": "6b2ac6a4110c0cec703ea3d11a23b6fd2d3b691ed8d1cd7c0c4a865fcbe66d98",
+      "source_sha256": "3ef4f9f32f53d8d53c21b9f965a327c243e28f36567a3affb10936313231c9ee",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
