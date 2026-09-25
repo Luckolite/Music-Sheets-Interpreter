@@ -96,6 +96,20 @@ class HeadCountsTest(unittest.TestCase):
         np.testing.assert_array_equal(prediction, original)
         np.testing.assert_array_equal(boxes, [[2., 2., 7., 7.]])
 
+    def test_matching_prediction_may_cross_artificial_region_boundary(self):
+        # Original synthetic note: GT ends just inside the scored region;
+        # one extra predicted row must not turn a .944-IoU match into a miss.
+        prediction = self.mask([[227, 238, 248, 256]], shape=(320, 320))
+        self.assertEqual(head_counts(prediction, [[227, 238, 248, 255]], boundary_margin=64),
+                         {'tp': 1, 'fp': 0, 'fn': 0})
+
+    def test_unmatched_boundary_noise_is_still_excluded(self):
+        boxes = [[100, 100, 116, 112]]
+        prediction = self.mask(boxes + [[52, 90, 67, 100], [150, 250, 165, 265]],
+                               shape=(320, 320))
+        self.assertEqual(head_counts(prediction, boxes, boundary_margin=64),
+                         {'tp': 1, 'fp': 0, 'fn': 0})
+
     def test_invalid_inputs(self):
         for prediction in (np.zeros((2, 3, 1)), np.zeros((0, 3))):
             with self.assertRaises(ValueError):

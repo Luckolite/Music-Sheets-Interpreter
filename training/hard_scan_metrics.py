@@ -99,9 +99,11 @@ def head_counts(prediction2d, boxes, *, min_area=3, iou_threshold=.5,
     By default all renderer boxes and predictions are scored. Set
     ``boundary_margin`` to a nonnegative pixel distance to ignore boxes touching
     or crossing that distance from the image edge (0 means the image edge).
-    A predicted fragment at least half inside an ignored truth box is also
-    ignored unless it can match a retained truth box. This accommodates an
-    eroded clipped head without letting it claim an interior target.
+    A prediction crossing the boundary remains eligible if it can match a
+    retained interior truth box. A one-pixel expansion beyond the artificial
+    crop region must not discard an otherwise correct detection. A predicted
+    fragment at least half inside an ignored truth box is also ignored unless
+    it can match a retained truth box.
 
     Boundary exclusion must be fixed identically for parent and candidate and
     must not be used for full-page retention claims. Inputs are not modified.
@@ -136,7 +138,12 @@ def head_counts(prediction2d, boxes, *, min_area=3, iou_threshold=.5,
 
         keep_truth = interior(truth)
         ignored_truth, truth = truth[~keep_truth], truth[keep_truth]
-        predicted = predicted[interior(predicted)]
+        # The region determines which targets are evaluated, not whether a
+        # valid detection is allowed to extend slightly beyond their region.
+        # Keep crossing detections capable of matching an interior target;
+        # unmatched boundary-only noise remains outside evaluation.
+        matches_interior = (_ious(truth, predicted) >= threshold).any(axis=0)
+        predicted = predicted[interior(predicted) | matches_interior]
         if len(ignored_truth) and len(predicted):
             area = (predicted[:, 2:] - predicted[:, :2]).prod(axis=1)
             in_ignored = (_overlap(ignored_truth, predicted) / area[None, :] >= .5).any(axis=0)

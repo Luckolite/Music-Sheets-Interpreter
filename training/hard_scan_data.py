@@ -82,13 +82,16 @@ def page_arrays(root, image, labels, categories):
     return a, b, c
 
 
-def crop(page, rng, scale=False):
+def crop(page, rng, scale=False, focus=None):
     a, b, c = page_arrays(page['root'], page['image'], page['labels'], page.get('categories', ''))
     side = min(int(rng.uniform(250, 430)) if scale else 320, *a.shape)
     categories = [v for v in range(3, 17) if page.get('category_pixels', [0]*17)[v] > 0]
     chosen = int(rng.choice(categories)) if categories and rng.random() < .75 else None
     points = np.column_stack(np.nonzero(c == chosen if chosen else ((b > 0) & (b != 4))))
-    if len(points) and rng.random() < .9:
+    if focus is not None:
+        cx, cy = focus
+        x, y = int(np.clip(cx-side//2, 0, a.shape[1]-side)), int(np.clip(cy-side//2, 0, a.shape[0]-side))
+    elif len(points) and rng.random() < .9:
         cy, cx = points[int(rng.integers(len(points)))]
         x, y = int(np.clip(cx-side//2, 0, a.shape[1]-side)), int(np.clip(cy-side//2, 0, a.shape[0]-side))
     else:

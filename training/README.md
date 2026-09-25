@@ -56,6 +56,20 @@ path containment, and exercise-seed split isolation across corpora. It rejects
 commercial/pretrained training provenance; test pixel files remain unopened.
 Full-precision CUDA training is the default. PyTorch and OpenCV are required.
 
+The example enables `paired_precision`: every original exercise contributes a
+clean student view and a degraded student view, plus geometrically aligned clear
+reference views for a frozen copy of the parent. `batch` counts images and must be
+even (six images means three pairs). The renderer labels remain authoritative:
+the detached teacher contributes only where its prediction agrees with truth and
+has confidence >= 0.9, averaged equally over represented classes. It cannot
+replace labels or preserve known parent errors. The objective uses CE weights
+`[1, 1.5, 2, 2, 1, 1.5]`, Dice 0.4, centre loss 0.25, a 0.3 penalty for false
+head ink within two pixels of true heads, and teacher KL 0.5. Nearby separated
+TRAIN head boxes receive additional crop sampling; touching real chords are not
+split into invented targets. Omit this option or set it to false for the original
+unpaired loss/sampler. Existing run directories require their exact frozen code
+and config; use a new directory when changing a recipe.
+
 ```sh
 python training/train_hard_scan.py --config my-hard-scan-config.json --out training/runs/hard-scan
 # After an interruption, use exactly the same config, code and output directory:
@@ -72,6 +86,13 @@ these are **crop development metrics, not whole-page or independent accuracy**.
 Class-2 components use maximum-cardinality one-to-one renderer-box matching, with
 IoU >= 0.5 and component area >= 3. Connected touching heads remain a limitation
 of this proxy, as they are in the unchanged parent comparison.
+Predictions that slightly cross the artificial border can still match retained
+interior targets; unmatched boundary-only objects remain excluded. This prevents
+an otherwise correct detection from being counted as missing merely because its
+box extends a pixel farther than the renderer box. Always recompute the parent
+baseline when changing evaluator code and preserve historical reports. Even a
+perfect semantic mask can contain one component for two touching printed heads,
+so component recall is not a direct estimate of real-score note accuracy.
 
 Screening requires hard-stratum mean head F1 improvement of at least 0.003; no
 extra blank heads; no increased false/missed-head counts or decreased true-head

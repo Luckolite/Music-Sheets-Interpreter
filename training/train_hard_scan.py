@@ -19,6 +19,8 @@ import torch
 
 from hard_scan_data import STRATA, blank, corpus_records, crop, sha, training_sample, transform
 from hard_scan_metrics import head_counts
+from hard_scan_pairs import paired_training_sample
+from hard_scan_losses import precision_losses
 from model_v4 import Segmenter
 from train import scores
 from train_v4 import losses
@@ -37,15 +39,20 @@ def save_checkpoint(path, value):
 
 
 class Samples(torch.utils.data.Dataset):
-    def __init__(self, pools, specs, seed, start, stop):
+    def __init__(self, pools, specs, seed, start, stop, paired=False):
         self.pools, self.specs, self.seed = pools, specs, seed
         self.start, self.stop = start, stop
+        self.paired = paired
 
     def __len__(self):
         return self.stop-self.start
 
     def __getitem__(self, index):
         cv2.setNumThreads(1)
+        if self.paired:
+            a, b, h, reference = paired_training_sample(self.pools, self.specs, self.seed+self.start+index)
+            return (torch.from_numpy(a), torch.from_numpy(b.astype(np.int64)),
+                    torch.from_numpy(h), torch.from_numpy(reference))
         a, b, _, h, _ = training_sample(self.pools, self.specs, self.seed+self.start+index)
         return (torch.from_numpy(a[None]), torch.from_numpy(b.astype(np.int64)), torch.from_numpy(h))
 
@@ -151,6 +158,14 @@ def gate(report, baseline):
 
 def run(args):
     config = json.loads(args.config.read_text(encoding='utf-8'))
+    paired = config.get('paired_precision', False)
+    for field in ('steps', 'batch', 'validate_every', 'save_every'):
+        if type(config[field]) is not int or config[field] <= 0:
+            raise ValueError(field + ' must be a positive integer')
+    if paired and config['batch'] % 2:
+        raise ValueError('Paired precision training requires an even image batch')
+    if not np.isfinite(config['lr']) or config['lr'] <= 0:
+        raise ValueError('Learning rate must be finite and positive')
     out = args.out.resolve()
     if args.resume:
         if sha(out/'config.json') != sha(args.config):
@@ -161,6 +176,7 @@ def run(args):
     if sha(config['checkpoint']) != config['parent_sha256']:
         raise ValueError('Parent checkpoint changed')
     dependencies = ('hard_scan_data.py', 'hard_scan_metrics.py', 'train_hard_scan.py',
+                    'hard_scan_pairs.py', 'hard_scan_losses.py',
                     'model.py', 'model_v4.py', 'train.py', 'train_v4.py', 'book_geometry.py')
     code_hashes = {name: sha(Path(__file__).parent/name) for name in dependencies}
     if args.resume and json.loads((out/'code-hashes.json').read_text()) != code_hashes:
@@ -184,6 +200,12 @@ def run(args):
     if parent['architecture_config'] != model.config:
         raise ValueError('Parent architecture mismatch')
     model.load_state_dict(parent['state_dict'])
+    teacher = None
+    if paired:
+        teacher = Segmenter().to(device).eval()
+        teacher.load_state_dict(parent['state_dict'])
+        for parameter in teacher.parameters():
+            parameter.requires_grad_(False)
     optimizer = torch.optim.AdamW(model.parameters(), lr=config['lr'], weight_decay=1e-5)
     amp_enabled = config.get('mixed_precision', False)
     scaler = torch.cuda.amp.GradScaler(enabled=amp_enabled)
@@ -207,19 +229,28 @@ def run(args):
     write_json(out/'runtime.json', dict(pid=os.getpid(), torch=torch.__version__, numpy=np.__version__,
         opencv=cv2.__version__, gpu=torch.cuda.get_device_name(0), cuda=torch.version.cuda,
         started_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), start_step=start,
-        test_evaluated=False, deployed=False, candidate='hard-scan-74'))
-    dataset = Samples(pools, config['corpora'], config['seed'], start*config['batch'], config['steps']*config['batch'])
+        test_evaluated=False, deployed=False, candidate=config.get('candidate', 'hard-scan'), paired_precision=paired))
+    sample_batch = config['batch']//2 if paired else config['batch']
+    dataset = Samples(pools, config['corpora'], config['seed'], start*sample_batch,
+                      config['steps']*sample_batch, paired=paired)
     workers = config.get('workers', 2)
-    loader = torch.utils.data.DataLoader(dataset, batch_size=config['batch'], num_workers=workers,
+    loader = torch.utils.data.DataLoader(dataset, batch_size=sample_batch, num_workers=workers,
         pin_memory=True, persistent_workers=workers > 0, shuffle=False)
     started = time.monotonic()
     model.train()
-    for step, (x, labels, heat) in enumerate(loader, start+1):
+    for step, values in enumerate(loader, start+1):
+        x, labels, heat = values[:3]
+        teacher_logits = None
+        if paired:
+            x, labels, heat = x.flatten(0, 1), labels.flatten(0, 1), heat.flatten(0, 1)
+            reference = values[3].flatten(0, 1).to(device, non_blocking=True)
+            with torch.no_grad():
+                teacher_logits = teacher(reference)
         x, labels, heat = x.to(device, non_blocking=True), labels.to(device, non_blocking=True), heat.to(device, non_blocking=True)
         optimizer.zero_grad(set_to_none=True)
         with torch.cuda.amp.autocast(enabled=amp_enabled):
             logits, centres = model.forward_with_centres(x)
-            loss = losses(logits, centres, labels, heat)
+            loss = precision_losses(logits, centres, labels, heat, teacher_logits) if paired else losses(logits, centres, labels, heat)
         if not bool(torch.isfinite(loss)):
             raise FloatingPointError('Non-finite training loss')
         scaler.scale(loss).backward()
