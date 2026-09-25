@@ -7141,6 +7141,9 @@ final class OmrScoreInterpreter {
                     head.minX,head.maxX,referenceBottom,gap);
         if(complete==null&&shaded)
             complete=NeighboringStaffPhase.rawBracket(gray,width,height,head.centerX,referenceBottom,gap);
+        if(complete==null&&curved&&shaded)
+            complete=BeamOccludedStaffPhase.resolve(labels,gray,width,height,head.centerX,
+                    head.minX,head.maxX,referenceBottom,gap);
         if(complete!=null&&Math.abs(complete[1]-gap)>gap*.04f&&!curved) {
             float[] broad=StaffPitchTrack.broadStraightPitch(gray,width,height,referenceBottom,gap,false);
             if(broad!=null&&Math.abs(complete[1]-broad[1])>gap*.035f)return broad;

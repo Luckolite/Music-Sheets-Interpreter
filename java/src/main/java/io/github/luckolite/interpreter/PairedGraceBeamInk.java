@@ -20,15 +20,24 @@ final class PairedGraceBeamInk {
         if(span<gap*.95f||span>gap*3||Math.abs(a[1]-b[1])>gap*.75f)return 0;
         int maximum=0;
         for(float fraction:new float[]{.5f,.75f,1f}) {
-            int count=countAtContrast(gray,width,height,a,b,gap,fraction,inside);
+            int count=countAtContrast(gray,width,height,a,b,gap,fraction,inside,new float[]{.25f,.5f,.75f});
             if(count>0&&inside==1.5f)return count;
             maximum=Math.max(maximum,count);
         }
+        // A compact blurred pair can close the white channel close to one stem.
+        // Require three separated, aligned double cores on the clear inner side;
+        // this path is not used for full-size notes or very short connectors.
+        if(maximum==0&&inside==1.5f&&span>=gap*1.4f)
+            for(float[] columns:new float[][]{{.2f,.4f,.6f},{.4f,.6f,.8f}})
+                for(float fraction:new float[]{.5f,.75f}) {
+                    int count=countAtContrast(gray,width,height,a,b,gap,fraction,inside,columns);
+                    if(count==2)return count;
+                }
         return maximum;
     }
-    private static int countAtContrast(byte[] gray,int width,int height,int[] a,int[] b,float gap,float fraction,float inside) {
+    private static int countAtContrast(byte[] gray,int width,int height,int[] a,int[] b,float gap,float fraction,float inside,float[] columns) {
         int wanted=0;float[] previous=null;
-        for(float f:new float[]{.25f,.5f,.75f}) {
+        for(float f:columns) {
             int x=Math.round(a[0]+(b[0]-a[0])*f);
             float end=a[1]+(b[1]-a[1])*f;
             int top=Math.max(1,Math.round(end-(a[2]<0?.35f:inside)*gap));

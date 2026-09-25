@@ -1,0 +1,3 @@
+# These licensed resources are checksummed and packaged as exact reviewed bytes.
+# Git must not rewrite notices or the manifest during a Windows CRLF checkout.
+java/src/main/resources/** -text

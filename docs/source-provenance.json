@@ -167,7 +167,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "40767c1f8792cc417cea715e20d718d9b944152e133a36dd9fd177cfad6d0c76",
+      "source_sha256": "4b74cfbe5f712efa66a88b5e66435bd1b25df70a9ffaceb9d45e1697b49fc322",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
@@ -545,6 +545,12 @@
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
+    "BeamOccludedStaffPhase.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/BeamOccludedStaffPhase.java",
+      "source_sha256": "fabb4303d575ac9a39367ec179a31cfc351075d99c2fd25e7a42baf7d387ec0d",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "notes": "Reviewed working-tree fallback only after complete staff methods fail on curved shaded scans. Four thin semantic-supported rules on both sides plus a beam-covered outer rule establish local phase; conflicting or sixth-rule fits are rejected. Eighteen original geometric regressions. Matched private replay changes one source-confirmed pitch and no other fields; no score pixels, dependencies or model changes."
+    },
     "NeighboringStaffPhase.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NeighboringStaffPhase.java",
       "source_sha256": "835375093371efc517e53ed891f7cdc110b395672f97070c1b50c178cf7dae7c",
@@ -565,7 +571,7 @@
     },
     "PairedGraceBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PairedGraceBeamInk.java",
-      "source_sha256": "6af532b3a1ced0166fe561057c74a29688ab4a3c8e89e64b63fe57340144abde",
+      "source_sha256": "b9240ef7923ff652cc1108666bcb4f56b66567a9cb7b40fc41d02bd9b2339900",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
