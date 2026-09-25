@@ -26,6 +26,12 @@ final class TupletNumeralInk {
         return 255;
     }
     static Window window(byte[] gray,int w,int h,float x1,float x3,float y1,float y3,float gap,int requested) {
+        return window(gray,w,h,x1,x3,y1,y3,gap,requested,false);
+    }
+    static Window ruleEdgesWindow(byte[] gray,int w,int h,float x1,float x3,float y1,float y3,float gap,int requested) {
+        return window(gray,w,h,x1,x3,y1,y3,gap,requested,true);
+    }
+    private static Window window(byte[] gray,int w,int h,float x1,float x3,float y1,float y3,float gap,int requested,boolean ruleEdges) {
         if(gray==null||gap<4)return null;
         int left=Math.max(0,Math.round(x1-gap*2)),right=Math.min(w-1,Math.round(x3+gap*2));
         int top=Math.max(0,Math.round(y1-gap*7.5f)),bottom=Math.min(h-1,Math.round(y3+gap*7.5f));
@@ -39,6 +45,7 @@ final class TupletNumeralInk {
             pixels[y*ww+x]=ink?0:(byte)255;if(ink)occupancy[y]++;
         }
         byte[] original=pixels.clone();
+        if(ruleEdges)removeLevelRuleEdges(pixels,ww,hh,gap);
         for(int y=1;y<hh-1;y++) {
             if(occupancy[y]<ww*.83f)continue;
             int end=y;while(end+1<hh-1&&occupancy[end+1]>=ww*.83f)end++;
@@ -54,6 +61,30 @@ final class TupletNumeralInk {
         }
         removeSlopedRules(pixels,ww,hh,gap);
         return new Window(pixels,ww,hh,left,top);
+    }
+    private static void removeLevelRuleEdges(byte[] pixels,int w,int h,float gap) {
+        byte[] original=pixels.clone();int max=Math.max(2,Math.round(gap*.30f));
+        for(int cy=max+2;cy<h-max-2;cy++) {
+            int valid=0,thin=0;
+            for(int x=0;x<w;x++) {
+                if(original[cy*w+x]!=0)continue;valid++;
+                int top=cy,bottom=cy;
+                while(top>cy-max&&original[(top-1)*w+x]==0)top--;
+                while(bottom<cy+max&&original[(bottom+1)*w+x]==0)bottom++;
+                if(bottom-top+1<=max)thin++;
+            }
+            if(valid<w*.90f||thin<w*.82f)continue;
+            for(int x=1;x<w-1;x++) {
+                if(original[cy*w+x]!=0)continue;
+                int top=cy,bottom=cy;
+                while(top>cy-max&&original[(top-1)*w+x]==0)top--;
+                while(bottom<cy+max&&original[(bottom+1)*w+x]==0)bottom++;
+                if(bottom-top+1>max)continue;
+                boolean continuation=false;
+                for(int dx=-1;dx<=1;dx++)continuation|=original[(top-1)*w+x+dx]==0||original[(bottom+1)*w+x+dx]==0;
+                if(!continuation)for(int yy=top;yy<=bottom;yy++)pixels[yy*w+x]=(byte)255;
+            }
+        }
     }
     private static void removeSlopedRules(byte[] pixels,int w,int h,float gap) {
         byte[] original=pixels.clone();int max=Math.max(2,Math.round(gap*.30f));

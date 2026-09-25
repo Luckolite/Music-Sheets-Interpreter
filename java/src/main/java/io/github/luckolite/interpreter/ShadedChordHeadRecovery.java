@@ -9,13 +9,23 @@ final class ShadedChordHeadRecovery {
     record Head(int left,int top,int right,int bottom,float centerX,float centerY) { }
     record Chord(int left,int top,int right,int bottom,List<Head> heads) { }
     static List<Chord> find(byte[] labels,byte[] gray,int width,int height,float gap,int top,int bottom) {
+        List<Chord> result=find(labels,gray,width,height,gap,top,bottom,155);
+        for(Chord candidate:find(labels,gray,width,height,gap,top,bottom,130)) {
+            boolean overlaps=false;
+            for(Chord existing:result)if(candidate.right>=existing.left&&candidate.left<=existing.right
+                    &&candidate.bottom>=existing.top&&candidate.top<=existing.bottom){overlaps=true;break;}
+            if(!overlaps)result.add(candidate);
+        }
+        return result;
+    }
+    private static List<Chord> find(byte[] labels,byte[] gray,int width,int height,float gap,int top,int bottom,int minimum) {
         List<Chord> result=new ArrayList<>();
         if(gray==null||labels==null||width<3||height<3||gray.length!=(long)width*height
                 ||labels.length!=gray.length||gap<8||!Float.isFinite(gap))return result;
         top=Math.max(1,top);bottom=Math.min(height-2,bottom);if(bottom<=top)return result;
         int size=width*(bottom-top+1);boolean[] core=new boolean[size],seen=new boolean[size];int[] queue=new int[size];
         for(int y=top;y<=bottom;y++)for(int x=1;x<width-1;x++){
-            int p=y*width+x;core[(y-top)*width+x]=middle(gray[p])&&middle(gray[p-1])&&middle(gray[p+1])&&middle(gray[p-width])&&middle(gray[p+width]);
+            int p=y*width+x;core[(y-top)*width+x]=middle(gray[p],minimum)&&middle(gray[p-1],minimum)&&middle(gray[p+1],minimum)&&middle(gray[p-width],minimum)&&middle(gray[p+width],minimum);
         }
         for(int seed=0;seed<size;seed++){
             if(seen[seed]||!core[seed])continue;
@@ -55,11 +65,12 @@ final class ShadedChordHeadRecovery {
                 int x=Math.round(cx+side*gap*(1.3f+dx*.2f)),y=Math.round(cy+dy*gap*.2f);
                 if(x>=0&&x<width&&y>=0&&y<height)paper[samples++]=gray[y*width+x]&255;
             }
-            Arrays.sort(paper,0,samples);if(samples<12||paper[samples*3/4]<205)continue;
-            if(paper[samples*3/4]<220) {
-                int[] fills=new int[end];for(int i=0;i<end;i++)fills[i]=gray[(top+queue[i]/width)*width+queue[i]%width]&255;
-                Arrays.sort(fills);if(paper[samples*3/4]-fills[end/2]<50)continue;
-            }
+            Arrays.sort(paper,0,samples);if(samples<12)continue;
+            int[] fills=new int[end];for(int i=0;i<end;i++)fills[i]=gray[(top+queue[i]/width)*width+queue[i]%width]&255;
+            Arrays.sort(fills);int fill=fills[end/2];
+            if(minimum==130) {
+                if(fill>170||paper[samples*3/4]<190||paper[samples*3/4]-fill<50)continue;
+            } else if(paper[samples*3/4]<205||paper[samples*3/4]<220&&paper[samples*3/4]-fill<50)continue;
             int down=stem(labels,gray,width,height,left-3,lower-first,gap,1);
             int up=stem(labels,gray,width,height,right+3,upper+first,gap,-1);
             if(down<0&&up<0)continue;
@@ -73,7 +84,7 @@ final class ShadedChordHeadRecovery {
         }
         return result;
     }
-    private static boolean middle(byte pixel){int value=pixel&255;return value>=155&&value<=205;}
+    private static boolean middle(byte pixel,int minimum){int value=pixel&255;return value>=minimum&&value<=205;}
     /** Grey fill can occlude the middle of a ledger, but both short printed rails must remain. */
     static boolean hasLedgerRails(byte[] gray,int width,int height,int left,int right,float cy,float top,float bottom,float gap){
         if(gray==null||width<1||height<1||gray.length!=(long)width*height||gap<8||!Float.isFinite(gap)

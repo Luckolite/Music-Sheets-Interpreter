@@ -11,6 +11,16 @@ final class ShadedNoteheadRecovery {
     private ShadedNoteheadRecovery() { }
     record Head(int left,int top,int right,int bottom,float centerX,float centerY) { }
     static List<Head> find(byte[] labels,byte[] gray,int width,int height,float gap,int top,int bottom) {
+        List<Head> result=find(labels,gray,width,height,gap,top,bottom,155);
+        for(Head candidate:find(labels,gray,width,height,gap,top,bottom,130)) {
+            boolean duplicate=false;
+            for(Head existing:result)if(Math.abs(existing.centerX-candidate.centerX)<gap*.8f
+                    &&Math.abs(existing.centerY-candidate.centerY)<gap*.65f){duplicate=true;break;}
+            if(!duplicate)result.add(candidate);
+        }
+        return result;
+    }
+    private static List<Head> find(byte[] labels,byte[] gray,int width,int height,float gap,int top,int bottom,int minimum) {
         List<Head> result=new ArrayList<>();
         if(gray==null||labels==null||width<3||height<3||gray.length!=(long)width*height
                 ||labels.length!=gray.length||gap<6||!Float.isFinite(gap))return result;
@@ -18,8 +28,8 @@ final class ShadedNoteheadRecovery {
         int size=width*(bottom-top+1);boolean[] core=new boolean[size],seen=new boolean[size];int[] queue=new int[size];
         for(int y=top;y<=bottom;y++)for(int x=1;x<width-1;x++) {
             int p=y*width+x;
-            core[(y-top)*width+x]=middle(gray[p])&&middle(gray[p-1])&&middle(gray[p+1])
-                    &&middle(gray[p-width])&&middle(gray[p+width]);
+            core[(y-top)*width+x]=middle(gray[p],minimum)&&middle(gray[p-1],minimum)&&middle(gray[p+1],minimum)
+                    &&middle(gray[p-width],minimum)&&middle(gray[p+width],minimum);
         }
         for(int seed=0;seed<size;seed++) {
             if(seen[seed]||!core[seed])continue;
@@ -53,8 +63,10 @@ final class ShadedNoteheadRecovery {
                 int x=Math.round(cx+side*gap*(1.3f+dx*.2f)),y=Math.round(cy+dy*gap*.2f);
                 if(x>=0&&x<width&&y>=0&&y<height)paper[count++]=gray[y*width+x]&255;
             }
-            Arrays.sort(paper,0,count);if(count<12||paper[count*3/4]<205
-                    ||paper[count*3/4]-fill<(paper[count*3/4]<220?50:30))continue;
+            Arrays.sort(paper,0,count);if(count<12)continue;
+            if(minimum==130) {
+                if(fill>170||paper[count*3/4]<190||paper[count*3/4]-fill<50)continue;
+            } else if(paper[count*3/4]<205||paper[count*3/4]-fill<(paper[count*3/4]<220?50:30))continue;
             int down=stem(labels,gray,width,height,left-3,cy,gap,1);
             int up=stem(labels,gray,width,height,right+3,cy,gap,-1);
             if(down<0&&up<0)continue;
@@ -65,7 +77,7 @@ final class ShadedNoteheadRecovery {
         }
         return result;
     }
-    private static boolean middle(byte pixel){int value=pixel&255;return value>=155&&value<=205;}
+    private static boolean middle(byte pixel,int minimum){int value=pixel&255;return value>=minimum&&value<=205;}
     private static int stem(byte[] labels,byte[] gray,int width,int height,int edge,float cy,float gap,int direction) {
         for(int x=Math.max(0,edge-3);x<=Math.min(width-1,edge+3);x++) {
             int ink=0,semantic=0,total=0;

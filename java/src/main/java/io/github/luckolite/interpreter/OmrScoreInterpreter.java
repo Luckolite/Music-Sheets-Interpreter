@@ -129,12 +129,15 @@ final class OmrScoreInterpreter {
                     recovered.centerX(),recovered.stemHeadY()));
         }
         List<Component> recoveredShadedChordHeads=new ArrayList<>();
+        List<Component> shadedChordSemanticEvidence=new ArrayList<>();
         for(Staff staff:staffs)for(ShadedChordHeadRecovery.Chord chord:ShadedChordHeadRecovery.find(
                 labels,gray,width,height,staff.gap,Math.round(staff.top-staff.gap*3),Math.round(staff.bottom+staff.gap*4))) {
             List<Component> replaced=new ArrayList<>();
             for(Component existing:rawHeadComponents)if(existing.centerX>=chord.left()-staff.gap*.15f
                     &&existing.centerX<=chord.right()+staff.gap*.15f&&existing.centerY>=chord.top()-staff.gap*.15f
                     &&existing.centerY<=chord.bottom()+staff.gap*.15f)replaced.add(existing);
+            for(Component existing:replaced)if(!recoveredFadedHeads.contains(existing))
+                shadedChordSemanticEvidence.add(existing);
             rawHeadComponents.removeAll(replaced);recoveredFadedHeads.removeAll(replaced);
             recoveredFilledFragmentHeads.removeAll(replaced);recoveredPaleChordHeads.removeAll(replaced);
             for(Component existing:replaced)paleChordRhythmHeads.remove(existing);
@@ -245,6 +248,9 @@ final class OmrScoreInterpreter {
         // for these relative-size decisions; recovered heads have their own stem.
         List<Component> dotEvidenceHeads=new ArrayList<>(heads);
         dotEvidenceHeads.removeAll(recoveredFadedHeads);
+        // Replacing a fused semantic chord must not erase its preexisting dot
+        // ownership. Preserve only measured mask parts, never recovered boxes.
+        dotEvidenceHeads.addAll(splitStackedHeads(labels,gray,width,height,shadedChordSemanticEvidence,staffs));
         List<Component> demotedDotHeads = augmentationDotHeads(labels, gray, width, height, dotEvidenceHeads, staffs);
         demotedDotHeads.addAll(articulationDotHeads(labels, gray, width, height, dotEvidenceHeads, staffs));
         List<Component> accidentalGraces=new ArrayList<>();
@@ -7772,7 +7778,7 @@ final class OmrScoreInterpreter {
                             &&center>=other.minY-gap*.25f&&center<=other.maxY+gap*.25f){otherHead=true;break;}
                     int leftKey=otherHead?-1:strokeWingKey(gray,width,height,stem[0],center,gap,-1,strokeThreshold);
                     int rightKey=otherHead?-1:strokeWingKey(gray,width,height,stem[0],center,gap,1,strokeThreshold);
-                    if(leftKey>=0&&rightKey>=0) {
+                    if(leftKey>=0&&rightKey>=0&&!thinStaffRuleThroughStroke(gray,width,height,stem[0],center,gap,strokeThreshold)) {
                         // A nearby staff rule can seed this same pair of wings twice.
                         long key=((long)leftKey<<32)|(rightKey&0xffffffffL);strokeKeys.add(key);
                         if((stem[1]-center)*stem[2]>=-gap*.2f
@@ -7783,6 +7789,26 @@ final class OmrScoreInterpreter {
             }
         }
         return strokeKeys.size()>3?empty:new int[]{strokeKeys.size(),nearKeys.size()};
+    }
+
+    /** A finite dark patch in a thin continuous staff rule is not a tremolo wing. */
+    private static boolean thinStaffRuleThroughStroke(byte[] gray,int width,int height,int x,float center,float gap,int threshold) {
+        int side=Math.max(2,Math.round(gap*.38f)),y=Math.round(center);
+        if(thickStrokeInk(gray,width,height,x-side,y,gap,threshold)
+                &&thickStrokeInk(gray,width,height,x+side,y,gap,threshold))return false;
+        int near=Math.round(gap*2),far=Math.round(gap*4),level=Math.min(220,threshold+20);
+        for(int direction:new int[]{-1,1}) {
+            int hits=0,total=0;
+            for(int d=near;d<=far;d++) {
+                int xx=x+direction*d;if(xx<0||xx>=width)return false;
+                total++;boolean ink=false;
+                for(int yy=Math.max(0,y-1);yy<=Math.min(height-1,y+1);yy++)
+                    if((gray[yy*width+xx]&255)<level)ink=true;
+                if(ink)hits++;
+            }
+            if(total==0||hits<total*.85f)return false;
+        }
+        return true;
     }
 
     private static boolean boundedStrokeWing(byte[] gray,int width,int height,int stemX,
@@ -7857,15 +7883,23 @@ final class OmrScoreInterpreter {
             int threshold=BeamInkThreshold.at(gray,width,height,Math.round(head.centerX),
                     Math.round(head.centerY-staff.gap*5),Math.round(head.centerY+staff.gap*5),staff.gap)+5;
             int[] own=attachedRawStem(gray,width,height,head,staff.gap,Math.max(1,Math.round(staff.gap*.16f)),threshold);
+            if(own!=null&&Math.abs(own[1]-head.centerY)>=staff.gap*5.5f) {
+                int[] compact=attachedRawStem(gray,width,height,head,staff.gap,
+                        Math.max(1,Math.round(staff.gap*.16f)),Math.max(60,Math.round(threshold*.8f)));
+                if(compact!=null&&compact[2]==own[2]&&Math.abs(compact[1]-head.centerY)<staff.gap*5.5f
+                        &&(own[1]-compact[1])*own[2]>=staff.gap*.65f)own=compact;
+            }
             if(count>0&&OutlinedBeamInk.count(gray,width,height,own,head.centerY,staff.gap)>0)return count;
             if(own!=null&&Math.abs(own[1]-head.centerY)<staff.gap*5.5f)for(Component other:heads) {
                 if(other==head||Math.abs(other.centerX-head.centerX)<staff.gap*.95f
-                        ||Math.abs(other.centerX-head.centerX)>staff.gap*3
+                        ||Math.abs(other.centerX-head.centerX)>staff.gap*(count==2?4:3)
                         ||Math.abs(other.centerY-head.centerY)>staff.gap*2
                         ||other.maxX-other.minX+1<=staff.gap*1.05f)continue;
                 int[] pair=attachedRawStem(gray,width,height,other,staff.gap,Math.max(1,Math.round(staff.gap*.16f)),threshold);
                 if(pair==null||Math.abs(pair[1]-other.centerY)>staff.gap*5.5f)continue;
-                int paired=PairedGraceBeamInk.countFullSize(gray,width,height,own,pair,staff.gap);
+                int paired=Math.abs(other.centerX-head.centerX)>staff.gap*3
+                        ?WideTripleBeamInk.count(gray,width,height,own,pair,staff.gap)
+                        :PairedGraceBeamInk.countFullSize(gray,width,height,own,pair,staff.gap);
                 if(paired>count)return paired;
             }
         }
@@ -8338,6 +8372,9 @@ final class OmrScoreInterpreter {
                         &&(gray[y*width+x+flank]&255)>=ink+8)support++;
             }
             if(samples<Math.max(8,Math.round(gap*.6f))||support<samples*.75f)continue;
+            if(Math.abs(trace[1]-head.centerY)<=gap*5.5f
+                    &&rootedPaleFlag(labels,gray,width,height,head,gap,x,trace[1],direction<0))
+                return new int[]{x,trace[1],direction};
             int top=Math.max(0,trace[1]-Math.round(gap*(direction<0?.2f:1.85f)));
             int bottom=Math.min(height-1,trace[1]+Math.round(gap*(direction<0?1.85f:.2f)));
             for(int side:new int[]{-1,1}) {
@@ -8350,6 +8387,22 @@ final class OmrScoreInterpreter {
             }
         }
         return null;
+    }
+
+    private static boolean rootedPaleFlag(byte[] labels,byte[] gray,int width,int height,
+            Component head,float gap,int x,int end,boolean upward) {
+        if(!hasCurvedFlag(labels,gray,width,height,head,gap,x,end,upward))return false;
+        int direction=upward?1:-1,rows=0,span=Math.max(3,Math.round(gap*.3f));
+        int threshold=BeamInkThreshold.at(gray,width,height,x,
+                Math.max(0,end-Math.round(gap)),Math.min(height-1,end+Math.round(gap)),gap);
+        if(x<0||x+span>=width)return false;
+        for(int d=0;d<=Math.round(gap*1.15f);d++) {
+            int y=end+direction*d;if(y<0||y>=height)continue;
+            if(rawRuleBeyondFlag(gray,width,y,x,gap,threshold))continue;
+            int ink=0;for(int xx=x;xx<=x+span;xx++)if((gray[y*width+xx]&255)<threshold)ink++;
+            if(ink>=(span+1)*.85f)rows++;
+        }
+        return rows>=Math.max(2,Math.round(gap*.16f));
     }
 
     /** A slightly leaning stem can leave every fixed column before its flag root.

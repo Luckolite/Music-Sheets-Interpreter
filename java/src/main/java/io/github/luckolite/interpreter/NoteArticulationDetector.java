@@ -193,6 +193,9 @@ final class NoteArticulationDetector {
                 if(dx>.7f||dy<.7f||dy>6f)continue;
                 int candidate=classify(glyph,width,note.gap,glyph.y()<note.y);
                 if(candidate==0)candidate=roundedAngular(glyph,width,note.gap,glyph.y()<note.y);
+                // A faint rounded dash needs nearby note ownership, not a lyric
+                // extender several spaces beyond the staff.
+                if(candidate==0&&dy<=3f&&roundedTenuto(glyph,width,note.gap))candidate=NoteArticulation.TENUTO;
                 if(candidate==0||dy>5.5f&&candidate!=NoteArticulation.MARCATO)continue;
                 if(semanticNotation&&(!raw||candidate!=NoteArticulation.STACCATO||nearHead(glyph,notes)))continue;
                 if(candidate==NoteArticulation.TENUTO&&nearHead(glyph,notes))continue;
@@ -280,6 +283,20 @@ final class NoteArticulationDetector {
             if(samples==0||hits<samples*coverage)return false;
         }
         return true;
+    }
+
+    /** Antialiased outer pixels need not fill an entire bounding-box row. */
+    private static boolean roundedTenuto(Glyph g,int width,float gap) {
+        int w=g.right-g.left+1,h=g.bottom-g.top+1;
+        if(w<gap*.65f||w>gap*1.65f+1||h>gap*.4f+1||w/(float)h<3.5f)return false;
+        int[] rows=new int[h];
+        for(int p:g.pixels)rows[p/width-g.top]++;
+        int top=0,bottom=h-1;
+        if(rows[top]<w*.25f)top++;
+        if(bottom>top&&rows[bottom]<w*.25f)bottom--;
+        int count=0,wide=0;
+        for(int y=top;y<=bottom;y++){count+=rows[y];if(rows[y]>=w*.75f)wide++;}
+        return bottom>=top&&wide>=2&&count>w*(bottom-top+1)*.7f;
     }
 
     private static int classify(Glyph g,int width,float gap,boolean above) {

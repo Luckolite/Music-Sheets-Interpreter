@@ -373,8 +373,9 @@ final class TripletRhythmDetector {
             float lastX,float firstY,float lastY,float gap,boolean shortNotes,float headX,float headY,int number) {
         Glyph normal=findPrintedNumeral(gray,width,height,firstX,lastX,firstY,lastY,gap,shortNotes,headX,headY,number);
         if(normal!=null&&TupletNumeralInk.hasGlyphContrast(gray,width,height,normal.left(),normal.top(),normal.right(),normal.bottom(),gap))return normal;
-        for(int level:new int[]{165,140,120,190,210}) {
-            var local=TupletNumeralInk.window(gray,width,height,firstX,lastX,firstY,lastY,gap,level);
+        for(int pass=0;pass<2;pass++)for(int level:new int[]{165,140,120,190,210}) {
+            var local=pass==0?TupletNumeralInk.window(gray,width,height,firstX,lastX,firstY,lastY,gap,level)
+                    :TupletNumeralInk.ruleEdgesWindow(gray,width,height,firstX,lastX,firstY,lastY,gap,level);
             if(local==null)continue;
             Glyph retry=findPrintedNumeral(local.pixels(),local.width(),local.height(),
                     firstX-local.left(),lastX-local.left(),firstY-local.top(),lastY-local.top(),gap,shortNotes,
@@ -592,7 +593,7 @@ final class TripletRhythmDetector {
             }
         }
         int upperOpen = 0, lowerOpen = 0, upperPocket = 0, lowerPocket = 0;
-        int upperLobe = -1, lowerLobe = -1, waist = w;
+        int upperLobe = -1, lowerLobe = -1, waist = w, waistLeft=w, lowerOpenLeft=w;
         for (int y = 0; y < h; y++) {
             float fraction = y / (float) h;
             // A row occupies a whole pixel band; include a short opening that
@@ -608,10 +609,10 @@ final class TripletRhythmDetector {
                 if(fraction<=.75f)lowerLobe = Math.max(lowerLobe, max[y]);
                 // An italic lower bowl sits left of the upper bowl. Its opening
                 // is relative to its own right edge, not the whole glyph width.
-                if (max[y]>=w*.5f&&min[y]>=Math.min(w*.40f,max[y]*.50f)) lowerOpen++;
+                if (max[y]>=w*.5f&&min[y]>=Math.min(w*.40f,max[y]*.50f)) {lowerOpen++;lowerOpenLeft=Math.min(lowerOpenLeft,min[y]);}
                 if (hasLobePocket(gray, width, left, top + y, w)) lowerPocket++;
             }
-            if (fraction >= .37f && fraction <= .55f) waist = Math.min(waist, max[y]);
+            if (fraction >= .37f && fraction <= .55f) {waist = Math.min(waist, max[y]);waistLeft=Math.min(waistLeft,min[y]);}
         }
         int required = Math.max(2, h / 12);
         // Curled terminals put ink on the left of an otherwise open lobe. Allow
@@ -620,10 +621,13 @@ final class TripletRhythmDetector {
         boolean upper = upperOpen >= required || upperOpen >= 1 && upperPocket >= required;
         boolean lower = lowerOpen >= required || lowerOpen >= 1 && lowerPocket >= required;
         int indentation = Math.max(1, (int) Math.floor(w * .08f));
-        int foot=-1;
+        int foot=-1,capLeft=w;
+        for(int y=0;y<Math.max(2,(int)Math.ceil(h*.10));y++)capLeft=Math.min(capLeft,min[y]);
         for(int y=(int)Math.ceil(h*.92);y<h;y++)foot=Math.max(foot,max[y]);
         return lowerLobe-foot>=indentation && upper && lower && upperLobe - waist >= indentation
-                && lowerLobe - waist >= indentation;
+                && (lowerLobe - waist >= indentation
+                ||lowerLobe>=w*.5f&&lowerOpen>=required&&lowerOpenLeft-waistLeft>=indentation
+                  &&upperLobe-capLeft>=Math.max(2,(int)Math.ceil(w*.25f)));
     }
 
     private static boolean hasLobePocket(byte[] gray, int width, int left, int y, int w) {

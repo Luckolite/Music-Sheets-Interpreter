@@ -202,6 +202,10 @@ final class SixteenthRestDetector {
             if (ink[y - top] > 0) { minY = Math.min(minY, y); maxY = y; }
         }
         boolean half=ordinary&&halfRest(staff,top,line,ink,left,right,minY,maxY);
+        if(!half&&ordinary) {
+            int[] bounds=HalfRestRuleBody.find(gray,width,height,staff.top(),gap,left,right,top,ink);
+            if(bounds!=null){half=true;minY=bounds[0];maxY=bounds[1];}
+        }
         int[] wholeBounds=ordinary?wholeRest(gray,width,staff,top,ink,left,right):null;
         boolean whole=wholeBounds!=null;
         if(whole){minY=wholeBounds[0];maxY=wholeBounds[1];}
