@@ -67,6 +67,26 @@ final class TempoChangeDetector {
             for(int x=Math.max(0,Math.round(token.left()*width));x<=Math.min(width-1,Math.round(token.right()*width));x++)
                 if((gray[y*width+x]&255)<=125){top=Math.min(top,y);bottom=Math.max(bottom,y);count++;}
         if(count<6||bottom-top<3)return token;
+        // Generous OCR padding can include a separated slur or staff stroke.
+        // Retain the dominant tall digit band only when every other band is thin.
+        List<int[]> bands=new ArrayList<>();int start=-1;
+        for(int y=top;y<=bottom+1;y++) {
+            boolean ink=false;
+            if(y<=bottom)for(int x=Math.max(0,Math.round(token.left()*width));x<=Math.min(width-1,Math.round(token.right()*width));x++)
+                if((gray[y*width+x]&255)<=125){ink=true;break;}
+            if(ink&&start<0)start=y;
+            if(!ink&&start>=0){bands.add(new int[]{start,y-1});start=-1;}
+        }
+        if(bands.size()>1) {
+            int[] main=bands.stream().max(Comparator.comparingInt(b->b[1]-b[0]))
+                    .orElseThrow(java.util.NoSuchElementException::new);
+            int span=main[1]-main[0]+1;boolean separate=span>=6;
+            for(int[] band:bands)if(band!=main) {
+                int clearance=Math.max(main[0]-band[1]-1,band[0]-main[1]-1);
+                if(band[1]-band[0]+1>span*.3f||clearance<span*.3f)separate=false;
+            }
+            if(separate){top=main[0];bottom=main[1];}
+        }
         return new MeasureNumberReconciler.NumberToken(token.value(),token.left(),top/(float)height,
                 token.right(),(bottom+1)/(float)height,token.annotationLeft());
     }

@@ -1,6 +1,18 @@
 {
   "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
+  "overlapping_system_tie_shoulders_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Preserves the original positive-clearance system-end arc search, then adds a bounded overlapping-shoulder retry underneath the notehead edges. Both systems must still independently prove complete returning raw curves on the same side of equal-pitch consecutive measures. Six original synthetic controls protect one-sided, straight-stroke and immutable-input cases alongside the existing system-tie suite. A private matched-input page comparison recovers two source-confirmed ties without changing any other event fields. No private score, model, dependency or device-execution evidence is included."
+  },
+  "unsupported_interstitial_staff_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "A shared semantic-projection overload rejects only a tightly sandwiched staff candidate with at most one independently printed rule at a permissive230 cutoff, surrounded by two candidates with at least four strongly printed rules each. Raw detection retains its existing five-rule proof and170 cutoff. Both measure and note readers use the same rejection; tilted measure projections retain their prior path. Nine original synthetic controls include faint real rules, partial surviving evidence, absent raw data, unsupported neighbors, wider spacing, immutable inputs and end-to-end measure grouping. The baseline end-to-end fixture incorrectly yields six measures instead of two. Private matched-input verification restores aligned three-staff measures while preserving the detected note count. No score-derived fixture, new dependency, model or device deployment is included."
+  },
+  "displaced_chords_compact_beams_and_tempo_padding_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected working-tree repairs search inside touching seconds for a long shared stem only after the edge trace fails, rejecting opposite-direction ambiguity. Hollow displaced-second chords require independent open printed ovals, bounded recursive splitting and shared-stem dot ownership retained through rest filtering. Tiny beam islands require two independently stemmed neighboring full-size heads and paired raw beam cores within a narrow span. Tempo digits may discard only separated thin row bands beside a dominant tall band; other note, equals-sign and dot proofs remain unchanged. Twenty-nine original procedural regressions cover the changes and counterexamples, without score-derived pixels or coordinates. An initial ambiguous interior-stem trial was rejected during private source comparison. No new external dependency, model weight, private score fixture or device deployment is included. Page replay and focused source verification do not establish an exhaustive note-by-note audit."
+  },
   "local_rhythm_cross_and_compact_tie_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Selected working-tree repairs reuse an independently detected local staff frame for beam counting only when the untracked global frame is displaced and its scale remains compatible. Existing tracked frames, pixel buffers and pitch coordinates remain unchanged. Nine original tests cover real single/double beams, established curves, invalid geometry and immutability. A steep unpitched cross retains both diagonal convergence and symmetry proofs while permitting a scale-bounded semantic corner offset; eight original controls retain nearby, oval, grace and single-stroke rejection. Separate matched-input24-page reviews correct one false eighth and suppress four nonpitched click glyphs, with other note fields unchanged. The compact-tie repair permits the existing dark overlapping-shoulder proof for a small positive inter-head gap, while preserving semantic-only and large-gap behavior; seven original controls accompany source-confirmed recovered ties. Combined validation is required. No private score, coordinate fixture, model, dependency or device execution is included; remaining source audit findings remain open."
@@ -307,13 +319,13 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "d1f87ec3442972aeef7c1e02f345aa3dece6e05a82fc660c29797e6c2d90d3bc",
+      "source_sha256": "fe00b3c325749e94fb48af4becc4c57046f1bdaa98d0d9ce5062e0a83cd43559",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "d0ff36aa4a09a12786e3d7d5175463bfd410c8a519a377235ae729b3d9dc1dba",
+      "source_sha256": "98d7fdda52f4afda890e8431d72af234a165407f7ff45de00ac9b48042d69e35",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
@@ -325,7 +337,7 @@
     },
     "RawStaffLineDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RawStaffLineDetector.java",
-      "source_sha256": "35332699e43bec1a3777d13e51065d5511f4e7d6970144ae3cb83e0ac040ae24"
+      "source_sha256": "5be77411feee48c869c4a963354f039b7d6fb36cc32e8a7dc1614bcadffb25ee"
     },
     "ScoreDynamicChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicChange.java",
@@ -362,7 +374,8 @@
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
-      "source_sha256": "53896591a233865cbb433bcddcbddde260598addabc20def4b6edd6e47577a45",
+      "source_sha256": "c002013d329e76e8c7b9297e17d80c11b06980f408c46990c44022acd29a53ef",
+      "android_compatibility_review": "Concurrent app-only directionsOnPage change uses Collectors.toList for Android compatibility. Filtering, offsets and ordering are identical. The standalone Java17 method deliberately retains Stream.toList and its immutable public return; the app record constructor still copies its supplied directions. No interpretation change is hidden by this reviewed spelling difference.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
@@ -392,7 +405,7 @@
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
-      "source_sha256": "4068cdc17b671591b76650f0e9aec1c0c32c24cf6edbc5739e8a285cba5f530e",
+      "source_sha256": "8c6c07d31c9ef9d27bfb0be62a6266dde8ceab36e032dfaa45a88433baa20080",
       "faded_equals_review": "Scoped repair keeps the strong-ink equals pass first, then permits two separated pale strokes only on predominantly white paper. Five original synthetic positive, shadow, connected-letter and single-stroke controls. Private faded tempo verification remains outside this repository. Prior upstream-only dot-fringe behavior is retained; no whole-file semantic parity claim.",
       "pulse_dot_review": "Scoped working-tree port: a second dark-core component pass recovers an augmentation dot connected to the pulse by a pale scan bridge, only when its result is exactly the dotted version of the original unit. Three original generated controls retain undotted and faint isolated-dot readings. Prior upstream-only equals-fringe behavior remains documented below.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",

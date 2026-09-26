@@ -73,7 +73,7 @@ final class OmrMeasurePostProcessor {
             }
         int minimumStrength = Math.max(10, width / 80);
         List<RawStaffLineDetector.StaffLines> semanticStaffs =
-                RawStaffLineDetector.detectFromStrength(rowStrength, minimumStrength, height);
+                RawStaffLineDetector.detectFromStrength(rowStrength, minimumStrength, height,slope==0f?gray:null,width);
 
         List<StaffRun> result = new ArrayList<>();
         for (RawStaffLineDetector.StaffLines semantic : semanticStaffs) {

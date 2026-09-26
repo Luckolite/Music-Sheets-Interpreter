@@ -45,6 +45,24 @@ final class RawStaffLineDetector {
         return detectFromStrength(rowStrength,minimumStrength,height,true);
     }
 
+    /** A few staff-labelled slurs can invent a sixth-to-tenth-rule group in the
+     * narrow whitespace between two independently printed staves. */
+    static List<StaffLines> detectFromStrength(int[] strength,int minimum,int height,byte[] gray,int width) {
+        List<StaffLines> original=detectFromStrength(strength,minimum,height);
+        if(gray==null||width<=0||gray.length!=width*height||original.size()<3)return original;
+        List<StaffLines> result=new ArrayList<>(original);
+        for(int i=1;i+1<original.size();i++) {
+            StaffLines a=original.get(i-1),b=original.get(i),c=original.get(i+1);
+            float gap=Math.max(b.gap(),Math.max(a.gap(),c.gap()));
+            int above=b.top()-a.bottom(),below=c.top()-b.bottom();
+            if(above<=0||below<=0||above>gap*1.5f||below>gap*1.5f)continue;
+            if(printedRuleCount(new Candidate(b.rows(),b.gap(),0),gray,width,height,230)<=1
+                    &&printedRuleCount(new Candidate(a.rows(),a.gap(),0),gray,width,height)>=4
+                    &&printedRuleCount(new Candidate(c.rows(),c.gap(),0),gray,width,height)>=4)result.remove(b);
+        }
+        return List.copyOf(result);
+    }
+
     private static List<StaffLines> detectFromStrength(int[] rowStrength,int minimumStrength,int height,boolean filterScale) {
         return detectFromStrength(rowStrength,minimumStrength,height,filterScale,null,0);
     }
@@ -83,14 +101,23 @@ final class RawStaffLineDetector {
      * Validate before resolving overlaps so an invalid high-scoring group cannot hide a staff.
      * Partial support is sufficient when a beam obscures the middle rules. */
     private static boolean hasPrintedRules(Candidate candidate,byte[] gray,int width,int height) {
+        return printedRuleCount(candidate,gray,width,height)==5;
+    }
+
+    private static int printedRuleCount(Candidate candidate,byte[] gray,int width,int height) {
+        return printedRuleCount(candidate,gray,width,height,DARK);
+    }
+
+    private static int printedRuleCount(Candidate candidate,byte[] gray,int width,int height,int inkLimit) {
+        int supported=0;
         int probe=Math.max(2,Math.round(candidate.gap()*.32f));
         int minimum=Math.max(24,Math.round(width*.12f));
         for(int y:candidate.rows()) {
-            if(y<probe||y>=height-probe)return false;
+            if(y<probe||y>=height-probe)continue;
             int count=0,run=0,longest=0;
             for(int x=0;x<width;x++) {
                 int ink=gray[y*width+x]&255;
-                if(ink<=DARK&&(gray[(y-probe)*width+x]&255)>=ink+12
+                if(ink<=inkLimit&&(gray[(y-probe)*width+x]&255)>=ink+12
                         &&(gray[(y+probe)*width+x]&255)>=ink+12) {
                     count++;
                     longest=Math.max(longest,++run);
@@ -98,9 +125,9 @@ final class RawStaffLineDetector {
             }
             // Text baselines have plenty of thin ink, but each glyph interrupts the rule.
             // Require a short continuous segment as well as aggregate page-wide support.
-            if(count<minimum || longest<Math.max(12,Math.round(candidate.gap()*3)))return false;
+            if(count>=minimum && longest>=Math.max(12,Math.round(candidate.gap()*3)))supported++;
         }
-        return true;
+        return supported;
     }
 
     /**
