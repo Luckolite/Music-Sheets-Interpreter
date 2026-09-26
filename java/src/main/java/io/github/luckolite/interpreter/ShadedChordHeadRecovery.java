@@ -52,11 +52,13 @@ final class ShadedChordHeadRecovery {
                 for(int y=a;y<=b;y++){int span=rowRight[y]-rowLeft[y]+1;if(span>peaks[i]){peaks[i]=span;peakRows[i]=y;}}
                 if(peaks[i]<gap*.55f)curved=false;
             }
+            boolean necked=true;
             for(int i=1;i<count;i++){
                 int neck=Integer.MAX_VALUE;
                 for(int y=peakRows[i-1]+1;y<peakRows[i];y++)neck=Math.min(neck,rowRight[y]-rowLeft[y]+1);
-                if(neck>Math.min(peaks[i-1],peaks[i])-Math.max(1.5f,gap*.1f))curved=false;
+                if(neck>Math.min(peaks[i-1],peaks[i])-Math.max(1.5f,gap*.1f))necked=false;
             }
+            if(!necked&&!outlinedNecks(gray,width,height,left,right,upper,lower,first,count,gap))curved=false;
             if(rowRight[0]-rowLeft[0]+1>peaks[0]*.9f&&!clippedByRule(gray,width,height,left,right,upper,gap))curved=false;
             if(rowRight[h-1]-rowLeft[h-1]+1>peaks[count-1]*.9f&&!clippedByRule(gray,width,height,left,right,lower,gap))curved=false;
             if(!curved)continue;
@@ -86,6 +88,35 @@ final class ShadedChordHeadRecovery {
         return result;
     }
     private static boolean middle(byte pixel,int minimum){int value=pixel&255;return value>=minimum&&value<=205;}
+    private static boolean outlinedNecks(byte[] gray,int width,int height,int left,int right,int top,int bottom,float first,int count,float gap) {
+        for(int side:new int[]{-1,1}){
+            int outer=Math.round((side<0?left:right)+side*gap*.6f);
+            int inner=Math.round((side<0?left:right)-side*gap*.25f);
+            if(outer<0||outer>=width||inner<0||inner>=width)continue;
+            float[] edge=new float[bottom-top+1];Arrays.fill(edge,Float.NaN);
+            for(int y=top;y<=bottom;y++)for(int x=outer;side<0?x<=inner:x>=inner;x-=side){
+                if((gray[y*width+x]&255)<140){
+                    if(Math.abs(x-outer)>1)edge[y-top]=x*side;
+                    break;
+                }
+            }
+            float[] lobes=new float[count];boolean complete=true;
+            for(int i=0;i<count;i++){
+                float peak=Float.NEGATIVE_INFINITY;
+                int a=Math.max(0,Math.round(first+i*gap-gap*.3f)),b=Math.min(edge.length-2,Math.round(first+i*gap+gap*.3f));
+                for(int y=a;y<=b;y++)if(Float.isFinite(edge[y])&&Float.isFinite(edge[y+1]))peak=Math.max(peak,Math.min(edge[y],edge[y+1]));
+                lobes[i]=peak;if(!Float.isFinite(peak))complete=false;
+            }
+            for(int i=1;i<count;i++){
+                float neck=Float.POSITIVE_INFINITY;
+                int a=Math.max(0,Math.round(first+(i-.5f)*gap-gap*.3f)),b=Math.min(edge.length-2,Math.round(first+(i-.5f)*gap+gap*.3f));
+                for(int y=a;y<=b;y++)if(Float.isFinite(edge[y])&&Float.isFinite(edge[y+1]))neck=Math.min(neck,Math.max(edge[y],edge[y+1]));
+                if(!Float.isFinite(neck)||neck>Math.min(lobes[i-1],lobes[i])-Math.max(1.5f,gap*.1f))complete=false;
+            }
+            if(complete)return true;
+        }
+        return false;
+    }
     private static boolean clippedByRule(byte[] gray,int width,int height,int left,int right,int edge,float gap) {
         int begin=Math.max(3,Math.round(gap*.45f)),reach=Math.max(begin+2,Math.round(gap*.75f)),offset=Math.max(2,Math.round(gap*.2f));
         if(left-reach<0||right+reach>=width)return false;

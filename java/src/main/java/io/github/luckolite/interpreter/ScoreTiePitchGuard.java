@@ -10,11 +10,34 @@ final class ScoreTiePitchGuard {
     private ScoreTiePitchGuard() { }
 
     static List<ScoreNoteEvent> apply(List<ScoreNoteEvent> notes,List<ScoreKeyChange> keys) {
-        List<ScoreNoteEvent> result=new ArrayList<>(notes);
+        return apply(notes,keys,false);
+    }
+
+    /** Revisit only an evidenced accidental contradiction after pages are assembled.
+     * Do not rerun page-local absence checks or infer C major for an unknown key. */
+    static List<ScoreNoteEvent> recheckWithKeyContext(List<ScoreNoteEvent> notes,List<ScoreKeyChange> keys) {
+        return apply(notes,keys,true);
+    }
+
+    /** Caller-supplied inherited key is evaluation context, not a new printed mark.
+     * Explicit page changes override it, including a signature at the opening. */
+    static ScorePageInterpretation withInitialKeyContext(ScorePageInterpretation score,int fifths) {
+        var keys=new ArrayList<ScoreKeyChange>();keys.add(new ScoreKeyChange(0,fifths));
+        keys.addAll(score.keyChanges());
+        var notes=recheckWithKeyContext(score.notes(),keys);
+        if(notes==score.notes())return score;
+        return new ScorePageInterpretation(score.measures(),notes,score.firstMeasureNumber(),
+                score.keyChanges(),score.tempoChanges(),score.meterChanges(),score.rests(),
+                score.techniqueChanges(),score.dynamicChanges(),score.playbackDirections());
+    }
+
+    private static List<ScoreNoteEvent> apply(List<ScoreNoteEvent> notes,List<ScoreKeyChange> keys,boolean contextOnly) {
+        List<ScoreNoteEvent> result=contextOnly?null:new ArrayList<>(notes);
         for(int i=0;i<notes.size();i++) {
             ScoreNoteEvent current=notes.get(i);
             if(!current.tiedFromPrevious())continue;
-            boolean changed=explicitPitchChange(notes,i);
+            boolean changed=explicitPitchChange(notes,i,keys);
+            if(contextOnly&&!changed)continue;
             if(current.measureIndex()==0&&!changed)continue;
             int pitch=midi(current,keys);
             if(pitch==Integer.MIN_VALUE && !changed)continue;
@@ -28,6 +51,7 @@ final class ScoreTiePitchGuard {
                 if(midi(earlier,keys)==pitch){prior=true;break;}
             }
             if(prior)continue;
+            if(result==null)result=new ArrayList<>(notes);
             result.set(i,new ScoreNoteEvent(current.measureIndex(),current.positionInMeasure(),
                     current.staffStep(),current.staffIndex(),current.staffCount(),current.pageY(),
                     false,current.augmentationDots(),current.beamCount(),current.writtenAccidental(),
@@ -35,12 +59,12 @@ final class ScoreTiePitchGuard {
                     current.articulations(),current.clefBottomDiatonic(),current.crossStaffBeam(),
                     current.leadingRestBeats(),current.compactOpening(),current.octaveShift()));
         }
-        return result;
+        return result==null?notes:result;
     }
 
-    /** Two different printed accidentals on one staff position cannot form a tie,
-     * even when the caller has not supplied the page's inherited key. */
-    private static boolean explicitPitchChange(List<ScoreNoteEvent> notes,int index) {
+    /** Two different printed accidentals on one staff position cannot form a tie.
+     * An inherited accidental is compared only with known key and clef evidence. */
+    private static boolean explicitPitchChange(List<ScoreNoteEvent> notes,int index,List<ScoreKeyChange> keys) {
         ScoreNoteEvent current=notes.get(index);
         if(current.writtenAccidental()==ScoreNoteEvent.ACCIDENTAL_FROM_KEY)return false;
         for(int j=index-1;j>=0;j--) {
@@ -50,8 +74,10 @@ final class ScoreTiePitchGuard {
                     ||earlier.diatonicPitchIdentity()!=current.diatonicPitchIdentity())continue;
             if(earlier.measureIndex()==current.measureIndex()
                     && earlier.positionInMeasure()>=current.positionInMeasure()-.018f)continue;
-            return earlier.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY
-                    && earlier.writtenAccidental()!=current.writtenAccidental();
+            if(earlier.writtenAccidental()!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY)
+                return earlier.writtenAccidental()!=current.writtenAccidental();
+            int prior=midi(earlier,keys),pitch=midi(current,keys);
+            return prior!=Integer.MIN_VALUE&&pitch!=Integer.MIN_VALUE&&prior!=pitch;
         }
         return false;
     }

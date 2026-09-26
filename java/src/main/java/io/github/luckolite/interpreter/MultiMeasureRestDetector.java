@@ -25,7 +25,7 @@ final class MultiMeasureRestDetector {
 
         List<MeasureNumberReconciler.NumberToken> readings = new ArrayList<>(tokens);
         for (RestBarCandidate candidate : restBars) {
-            var count = standaloneCount(gray, width, height, candidate);
+            var count = standaloneCount(gray, width, height, candidate, true);
             if (count != null && aboveStaff(count, labels, gray, width, height, candidate.region())) readings.add(count);
         }
         List<MeasureNumberReconciler.NumberToken> result = new ArrayList<>();
@@ -87,7 +87,7 @@ final class MultiMeasureRestDetector {
             MeasureNumberReconciler.NumberToken countGlyph = null;
             if (noteheadPixels[index] > noteFreeLimit && hasThickHorizontalBar(gray, width, height, parent)) {
                 MeasureNumberReconciler.NumberToken count = standaloneCount(gray, width, height,
-                        new RestBarCandidate(index, parent));
+                        new RestBarCandidate(index, parent), true);
                 if (count != null && aboveStaff(count, labels, gray, width, height, parent))
                     countGlyph = count;
                 // The shape-only fallback reads single digits. A complete OCR
@@ -146,6 +146,11 @@ final class MultiMeasureRestDetector {
      */
     static MeasureNumberReconciler.NumberToken standaloneCount(byte[] gray, int width, int height,
                                                                  RestBarCandidate candidate) {
+        return standaloneCount(gray,width,height,candidate,false);
+    }
+
+    private static MeasureNumberReconciler.NumberToken standaloneCount(byte[] gray,int width,int height,
+                                                                        RestBarCandidate candidate,boolean contrastRetry) {
         if (gray == null || gray.length != width * height || candidate == null) return null;
         MeasureRegion region = candidate.region;
         int regionTop = clamp(Math.round(region.top() * height), 0, height - 1);
@@ -156,6 +161,26 @@ final class MultiMeasureRestDetector {
         int top = clamp(Math.round(regionTop - regionHeight * .95f), 0, height - 1);
         int bottom = clamp(Math.round(regionTop + regionHeight * .30f), top, height - 1);
         int localWidth = right - left + 1, localHeight = bottom - top + 1;
+        var result=scanCount(gray,width,height,regionHeight,left,right,top,bottom);
+        if(result!=null||!contrastRetry||!hasThickHorizontalBar(gray,width,height,region))return result;
+        // A fixed cutoff can flood the bowls on gray paper. Retry only the
+        // already-proven heavy rest bar with unchanged shape and isolation tests.
+        int[] histogram=new int[256];int count=0;
+        for(int y=top;y<=bottom;y++)for(int x=left;x<=right;x++){histogram[gray[y*width+x]&255]++;count++;}
+        int paper=0,seen=histogram[0];while(paper<255&&seen<count*.85f)seen+=histogram[++paper];
+        if(paper<100||paper>=200)return null;
+        int shift=200-paper;byte[] contrasted=new byte[localWidth*localHeight];
+        for(int y=0;y<localHeight;y++)for(int x=0;x<localWidth;x++)
+            contrasted[y*localWidth+x]=(byte)Math.min(255,(gray[(top+y)*width+left+x]&255)+shift);
+        result=scanCount(contrasted,localWidth,localHeight,regionHeight,0,localWidth-1,0,localHeight-1);
+        return result==null?null:new MeasureNumberReconciler.NumberToken(result.value(),
+                (left+result.left()*localWidth)/width,(top+result.top()*localHeight)/height,
+                (left+result.right()*localWidth)/width,(top+result.bottom()*localHeight)/height);
+    }
+
+    private static MeasureNumberReconciler.NumberToken scanCount(byte[] gray,int width,int height,
+            int regionHeight,int left,int right,int top,int bottom) {
+        int localWidth=right-left+1,localHeight=bottom-top+1;
         boolean[] visited = new boolean[localWidth * localHeight];
         int[] stack = new int[visited.length];
         MeasureNumberReconciler.NumberToken best = null;

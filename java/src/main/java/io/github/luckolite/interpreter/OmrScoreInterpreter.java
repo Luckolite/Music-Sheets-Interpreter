@@ -473,7 +473,8 @@ final class OmrScoreInterpreter {
             float localGap=localPitch[1];
             float localBottom=printedLedgerBottom(gray,width,height,head,localPitch[0],localGap);
             int step = printedPitchStep(gray,width,height,head,localBottom,localGap);
-            int beamCount = detectBeamCount(beamLabels, gray, width, height, paleChordRhythmHeads.getOrDefault(head,head), staff,heads);
+            Staff rhythmStaff=beamStaffFrame(staff,localPitch,width);
+            int beamCount = detectBeamCount(beamLabels, gray, width, height, paleChordRhythmHeads.getOrDefault(head,head), rhythmStaff,heads);
             int[] tremolo = tremoloStrokeCounts(gray,width,height,head,staff.gap,heads);
             beamCount = Math.max(0,beamCount-tremolo[1]);
             if(tremolo[0]>0)beamCount=Math.max(beamCount,
@@ -5716,8 +5717,9 @@ final class OmrScoreInterpreter {
                 }
                 if(!converges||Math.abs(upper[1]-lower[1])>gap*.25f
                         ||Math.abs(upper[2]-lower[2])>gap*.25f)continue;
-                if(head.centerX<Math.min(upper[0],lower[0])-1
-                        ||head.centerX>Math.max(upper[3],lower[3])+1
+                int cornerMargin=Math.max(1,Math.round(gap*.2f));
+                if(head.centerX<Math.min(upper[0],lower[0])-cornerMargin
+                        ||head.centerX>Math.max(upper[3],lower[3])+cornerMargin
                         ||Math.abs(head.centerY-cy)>outer+1)continue;
                 return true;
             }
@@ -5735,7 +5737,7 @@ final class OmrScoreInterpreter {
         while(begin>cx-radius&&(gray[y*width+begin-1]&255)<165)begin--;
         while(end<cx+radius&&(gray[y*width+end+1]&255)<165)end++;
         if(left-begin+1<2||end-right+1<2||left-begin+1>gap*.55f||end-right+1>gap*.55f
-                ||end-begin<gap*.85f||end-begin>gap*1.9f)return null;
+                ||end-begin<gap*.45f||end-begin>gap*1.9f)return null;
         return new int[]{begin,left,right,end};
     }
 
@@ -7927,6 +7929,16 @@ final class OmrScoreInterpreter {
         return Math.min(3,beams);
     }
 
+    /** Reuse the proved local five-rule frame without changing the stored staff or pitch. */
+    private static Staff beamStaffFrame(Staff staff,float[] localPitch,int width) {
+        if(staff.pitchTrack!=null||!Float.isFinite(localPitch[0])||!Float.isFinite(localPitch[1])
+                ||Math.abs(localPitch[0]-staff.bottom)<=staff.gap*.25f
+                ||Math.abs(localPitch[1]-staff.gap)>=staff.gap*.25f)return staff;
+        Staff local=new Staff(localPitch[0]-4*localPitch[1],localPitch[0],localPitch[1]);
+        local.pitchTrack=StaffPitchTrack.linear(width,localPitch[0],localPitch[1],0);
+        return local;
+    }
+
     private static int detectBeamCount(byte[] labels,byte[] gray,int width,int height,
             Component head,Staff staff,List<Component> heads) {
         int count=detectBeamCount(labels,gray,width,height,head,staff);
@@ -9239,10 +9251,12 @@ final class OmrScoreInterpreter {
         int left = Math.max(0, previous.head.maxX + 1);
         int right = Math.min(width - 1, current.head.minX - 1);
         float gap = Math.max(2f, (previous.staffGap + current.staffGap) * .5f);
-        if (right <= left || right - left + 1 < gap * 1.3f) return false;
+        if (right <= left || right-left+1<gap*1.3f
+                &&current.head.centerX-previous.head.centerX<gap*1.8f) return false;
         float centerY = (previous.head.centerY + current.head.centerY) * .5f;
         if (gray != null && gray.length == labels.length) {
-            if (hasPrintedTieArc(labels, gray, width, height, left, right, centerY, gap))return true;
+            if (right-left+1>=gap*1.3f
+                    &&hasPrintedTieArc(labels, gray, width, height, left, right, centerY, gap))return true;
             // Engraved ties may begin below the heads, before their horizontal edges.
             // Recover the returning shoulders instead of testing only the flattened middle.
             int overlap = Math.round(gap * .6f);
@@ -9253,6 +9267,7 @@ final class OmrScoreInterpreter {
             // fragments cannot establish a tie, even after a sustained note.
             return false;
         }
+        if(right-left+1<gap*1.3f)return false;
         ArcStats above = arcStats(labels, gray, width, height, left, right,
                 Math.round(centerY - gap * 3f), Math.round(centerY - gap * .12f));
         ArcStats below = arcStats(labels, gray, width, height, left, right,

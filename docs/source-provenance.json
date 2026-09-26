@@ -1,6 +1,14 @@
 {
   "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
+  "local_rhythm_cross_and_compact_tie_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected working-tree repairs reuse an independently detected local staff frame for beam counting only when the untracked global frame is displaced and its scale remains compatible. Existing tracked frames, pixel buffers and pitch coordinates remain unchanged. Nine original tests cover real single/double beams, established curves, invalid geometry and immutability. A steep unpitched cross retains both diagonal convergence and symmetry proofs while permitting a scale-bounded semantic corner offset; eight original controls retain nearby, oval, grace and single-stroke rejection. Separate matched-input24-page reviews correct one false eighth and suppress four nonpitched click glyphs, with other note fields unchanged. The compact-tie repair permits the existing dark overlapping-shoulder proof for a small positive inter-head gap, while preserving semantic-only and large-gap behavior; seven original controls accompany source-confirmed recovered ties. Combined validation is required. No private score, coordinate fixture, model, dependency or device execution is included; remaining source audit findings remain open."
+  },
+  "contextual_accidental_tie_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected working-tree pitch guard compares an inherited accidental with a following explicit sign only when the supplied key and clef resolve both pitches. A separate document-context pass removes only evidenced accidental contradictions, not ties whose predecessor is absent; unknown page context remains unchanged. Explicit CLI initial keys are evaluation context, never synthesized printed changes, and source signatures override them. Twenty original shared regressions cover known/unknown keys, incoming and genuine cross-page ties, future and overriding signatures, voices, octaves, immutable inputs and all retained score metadata. Four additional app-only synthetic conversion-join controls cover actual two-page assembly; the converter is not imported. App viewer assembly reuses already assembled keys, and standalone Main applies its existing initial-key contract before writing both score and MIDI-event JSON. Private record comparisons across24 cached-core and24 fresh-native pages remove exactly two source-confirmed chromatic-slur flags and change no other records; pixel inference is not rerun by this check. No score fixture, model, dependency or device validation is included; remaining rests and expressive-symbol audit stays open."
+  },
   "returning_flag_contrast_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Reviewed working-tree returning-flag continuation uses the existing local paper threshold and preserves its original bright-paper values. A candidate cannot bridge low-contrast paper into a separate curved glyph; all existing rooted flag proof remains. Six original regressions cover detached, genuinely connected, bright-paper and immutable-input cases; the old core fails only the intended shaded bridge positive. All28 focused flag controls pass. Matched-input24-page source review corrects one false eighth to its printed quarter and leaves every other note and all non-note metadata unchanged. No private pixel, annotation, score-specific rule, model or dependency is included; full audit completion is not claimed."
@@ -102,8 +110,9 @@
     },
     "ShadedChordHeadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedChordHeadRecovery.java",
-      "source_sha256": "6b816944766a035904459cecb66a50371418684f8693cac7e30b7ad643aebf01",
+      "source_sha256": "05f8246c910660292da6179cedce5835205610b3c271b42999edda2ae66005e7",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "outlined_neck_review": "Original bounded raw-edge fallback proves every lobe and intervening neck with adjacent raster rows when gray-core neck widths quantize flat. Existing cap, contrast, density and shared-stem checks remain required. Seven original OutlinedGrayNeckTest controls include full decoder coverage; CompactHeadGapTieTest separately covers the inclusive/exclusive tie gap boundary. No score fixtures, new dependencies or weight changes.",
       "notes": "Reviewed original JDK-only recovery of two to four shaded curved lobes with shared stem evidence, bounded scale and independent ledger rails. Moderately dim paper additionally requires at least fifty levels of median fill contrast. Fourteen original regressions plus eight shared contrast controls and guarded accidental/tie tests accompany it. Private source evidence remains private; no dependencies or weight changes."
     },
     "RestStaffRuleEdge.java": {
@@ -277,9 +286,9 @@
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
-      "source_sha256": "b334214cec1149239f24a674d0198d2f8ba7ef34188633c6ccc34b7e98fa8c0f",
+      "source_sha256": "b1be4819e0745ddf5bbb5f4b91338f306bdd6734f577bfb77f68a745c1ebe5e0",
       "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "latest_review": "Scoped working-tree port: verified OCR counts above a heavy multi-rest can explain mislabeled digit ink, including multi-digit counts. Real note ink elsewhere still vetoes expansion. Four original generated regressions; no private fixtures, dependencies or model changes."
+      "latest_review": "Scoped working-tree port: a shadowed numeral crop above a proven heavy multi-rest receives a bounded additive brightness retry through unchanged glyph, isolation, above-staff and note-free guards. Only internal rest detection enables this retry; external head-suppression callers retain original semantics. Eleven original synthetic regressions and a 24-page private all-field replay; no private fixtures, dependencies or model changes. Earlier verified OCR-count support is preserved."
     },
     "NoteArticulation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulation.java",
@@ -304,7 +313,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "631102911e63612d1fe86a7e1d53d8aa248cf3b0fb260653fc6ece6d8828a5de",
+      "source_sha256": "d0ff36aa4a09a12786e3d7d5175463bfd410c8a519a377235ae729b3d9dc1dba",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
@@ -559,7 +568,8 @@
     },
     "ScoreTiePitchGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTiePitchGuard.java",
-      "source_sha256": "89f9c05bdedcefc95d5e83bd78dc6179aaebe0dffc8a068969881b58045cc9cd",
+      "source_sha256": "95176df1480eec710efcdc4ad9e096ee585d3436fd3b7d6a5d97452fb03b5e2a",
+      "contextual_review": "See contextual_accidental_tie_review. The document-only recheck does not repeat page-local missing-predecessor checks; unchanged lists and scores retain identity.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "latest_review": "Working-tree repair retains a verified top-staff tie across adjacent systems when a lower staff is hidden or restored. Requires matching known clefs and system-break geometry; different pitches and explicit accidental changes still reject ties. Shared helper is also used by the scoped OmrScoreInterpreter tie search, whose unrelated drift remains visible. Synthetic raster and pitch controls; private matched-input page comparison restores one printed tie with no note-count or pitch changes. Standalone MIDI and app audio also preserve the held attack across this verified transition, with silence-gap and unmarked-note controls. No new dependency or model change.",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."

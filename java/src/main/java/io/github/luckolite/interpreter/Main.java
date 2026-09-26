@@ -62,7 +62,8 @@ public final class Main {
         if(tabs.stream().filter(t->t.standardTop()<0).flatMap(t->t.frets().stream()).anyMatch(f->f.duration()==0&&f.beams()==0))tabWarnings.add("Some standalone tab durations are unknown and playback timing is estimated.");
         if(!tabs.isEmpty())tabWarnings.add("Guitar effects require explicit OCR symbols; unsupported graphical bend curves and performance directions are not inferred.");
         if(!tabs.isEmpty())tabWarnings.add("Tab pitch uses an explicit tuning header when available, otherwise standard six- or seven-string guitar tuning.");
-        var score=SheetInterpreter.analyze(labels,gray,width,height,annotations);
+        var score=ScoreTiePitchGuard.withInitialKeyContext(
+                SheetInterpreter.analyze(labels,gray,width,height,annotations),initialKey);
         float[] beats=new float[score.measures().size()];Arrays.fill(beats,initialMeter.quarterBeats());
         for(var change:score.meterChanges().stream().sorted(Comparator.comparingInt(ScoreMeterChange::measureIndex)).toList())
             Arrays.fill(beats,change.measureIndex(),beats.length,change.quarterBeats());
