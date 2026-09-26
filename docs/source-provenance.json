@@ -325,7 +325,8 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "98d7fdda52f4afda890e8431d72af234a165407f7ff45de00ac9b48042d69e35",
+      "source_sha256": "e5fdacdc15b08e428e6f2c7af17e4e97ad6e8670b0ca443018de7789838ac1dc",
+      "concurrent_braces_review": "After the interpreter commit, the app added explicit braces around the two existing nested clearance loops in hasSystemEndTieArc. Loop bounds, scope, order and body are identical; standalone source retains its equivalent unbraced loops. Current app focused51 tests passed. No recognition behavior or dependency changed.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
