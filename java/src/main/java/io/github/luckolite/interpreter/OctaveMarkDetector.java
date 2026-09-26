@@ -13,6 +13,8 @@ final class OctaveMarkDetector {
     static int shift(String text) {
         if(text==null)return 0;
         String s=text.toLowerCase(Locale.ROOT).replaceAll("[\\s()\\[\\].,:;_\\-–—]","");
+        // OCR can append the printed octave-line end hook to its direction.
+        s=s.replaceAll("[┘┐」]+$","");
         return switch(s) {
             case "8va","8vaa","8vaalta","ottava" -> 1;
             case "8vb","8vab","8vabassa" -> -1;

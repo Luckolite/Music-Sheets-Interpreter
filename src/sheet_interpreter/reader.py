@@ -166,20 +166,16 @@ class Interpreter:
             if self.ocr is None:
                 from .ocr import LocalOcr
                 self.ocr = LocalOcr()
-            from .ocr import tempo_numbers, rest_count_numbers, measure_numbers
+            from .ocr import page_annotations
             words = self.ocr.words(gray)
-            annotations = {"words": words, "measureNumbers": measure_numbers(words), "tempoNumbers": tempo_numbers(words),
-                           "restCounts": rest_count_numbers(words)}
+            annotations = page_annotations(words, [])
         elif "tabWords" in annotations and "words" not in annotations:
             if self.ocr is None:
                 from .ocr import LocalOcr
                 self.ocr = LocalOcr()
-            from .ocr import tempo_numbers, rest_count_numbers, measure_numbers
+            from .ocr import page_annotations
             words = self.ocr.words(gray)
-            annotations = dict(annotations, words=words,
-                               measureNumbers=annotations.get("measureNumbers", measure_numbers(words)),
-                               tempoNumbers=annotations.get("tempoNumbers", tempo_numbers(words)),
-                               restCounts=annotations.get("restCounts", rest_count_numbers(words)))
+            annotations = dict(page_annotations(words, annotations["tabWords"]), **annotations)
         with tempfile.TemporaryDirectory(prefix="sheet-interpreter-") as folder:
             page = Path(folder) / "page.page.gz"
             output = Path(folder) / "score.json"

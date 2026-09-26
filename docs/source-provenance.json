@@ -1,6 +1,11 @@
 {
   "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
+  "opening_header_and_ocr_direction_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected working-tree repairs expand the existing symbol-only opening-header pocket bound from three to four staff gaps, tolerating only one or two isolated note-label pixels while retaining header and zero stem/rest evidence. Eight original synthetic controls protect notes, rests, wider regions and input immutability. The octave text normalizer accepts a terminal OCR line-hook glyph only after an exact octave direction; six original controls retain span endpoints and reject embedded hooks/prose. Python tempo parsing accepts a grammar-bounded adjacent chord label without widening BPM digit boxes or accepting arbitrary prose/fractions; six synthetic tests cover it. Musical OCR and native PDF tablature words are separate channels; four original regressions protect directions from numeric PDF tokens. The app native-worker adapter previously replaced musical words when native numeric text existed; it now uses the same page_annotations helper as the standalone reader, which already supported separate channels. No model, dependency, private score fixture or deployment is included. Seven-page private replay and source-delta review do not establish exhaustive note-by-note accuracy.",
+    "app_native_worker_sha256": "8718e1dcf52bbaeea32e1da5f4eb9940ca2d357743f9533e6327f18334771c37"
+  },
   "overlapping_system_tie_shoulders_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Preserves the original positive-clearance system-end arc search, then adds a bounded overlapping-shoulder retry underneath the notehead edges. Both systems must still independently prove complete returning raw curves on the same side of equal-pitch consecutive measures. Six original synthetic controls protect one-sided, straight-stroke and immutable-input cases alongside the existing system-tie suite. A private matched-input page comparison recovers two source-confirmed ties without changing any other event fields. No private score, model, dependency or device-execution evidence is included."
@@ -319,7 +324,7 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "fe00b3c325749e94fb48af4becc4c57046f1bdaa98d0d9ce5062e0a83cd43559",
+      "source_sha256": "127922ec52237f2f2161718fb47194f2b1f1b008d624f8e0b44adb892771d20b",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
@@ -463,7 +468,7 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "790d04670331e5be6ab9ec68b1ea2dc90f6dc7cbcfe1ed97305c32e791d6bf7a",
+      "source_sha256": "5eba59a984f9342aaddee6728fd80769bb1730c6d301ed138b3e30403b38c430",
       "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "latest_review": "Scoped working-tree port: split an OCR-joined system number from a complete parenthesized octave continuation, preserve its horizontal anchor, follow bounded one-pixel scan skew after an established dashed chain, and include a verified terminal hook. Eight original generated controls cover continuation prefixes, phrase rejection, skew, gaps and terminal boundaries. No private score imagery or annotations included."
     },

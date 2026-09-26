@@ -1197,12 +1197,12 @@ final class OmrMeasurePostProcessor {
             // classifies as a barline. It may enclose a tiny symbol-only pocket before the
             // first printed note. That pocket has no musical time and must not add a bar.
             if (index == 0 && boundaries.size() > 2
-                    && playableRight - playableLeft <= system.gap * 3f
+                    && playableRight - playableLeft <= system.gap * 4f
                     && countLabel(labels,width,height,CLEF_OR_KEY,rawLeft,rawRight,
                             Math.round(system.top-system.gap),Math.round(system.bottom+system.gap))
                             >= system.gap * 2f
                     && countLabel(labels,width,height,NOTEHEAD,playableLeft,playableRight,
-                            Math.round(headTop),Math.round(headBottom)) == 0
+                            Math.round(headTop),Math.round(headBottom)) <= Math.max(1,Math.round(system.gap*.1f))
                     && countLabel(labels,width,height,STEM_OR_REST,playableLeft,playableRight,
                             Math.round(system.top),Math.round(system.bottom)) == 0)
                 continue;

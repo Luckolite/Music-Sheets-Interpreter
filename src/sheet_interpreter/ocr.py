@@ -25,7 +25,9 @@ def tempo_numbers(words):
     result = []
     for word in words:
         value = str(word.get("text", ""))
-        match = re.search(r"=\s*(\d{2,3})\s*[)\]]?\s*$", value)
+        # OCR can join the adjacent chord symbol to the tempo direction.
+        # Keep the BPM box separate; arbitrary trailing prose remains rejected.
+        match = re.search(r"=\s*(\d{2,3})\s*[)\]]?(?:\s+[A-G][#b♯♭]?(?:(?:maj|min|dim|aug|sus|add|m|M|Δ|∆|ø|°)?[0-9#b♯♭+\-]*)?(?:/[A-G][#b♯♭]?)?)?\s*$", value)
         if not match:
             continue
         bpm = int(match.group(1))
@@ -53,6 +55,13 @@ def rest_count_numbers(words):
             result.append(dict(value=count, left=word["left"], top=word["top"],
                                right=word["right"], bottom=word["bottom"]))
     return result
+
+
+def page_annotations(words, tab_words):
+    """Keep musical OCR separate from native PDF tablature annotations."""
+    return {"words": list(words), "tabWords": list(tab_words),
+            "measureNumbers": measure_numbers(words), "tempoNumbers": tempo_numbers(words),
+            "restCounts": rest_count_numbers(words)}
 
 
 class LocalOcr:
