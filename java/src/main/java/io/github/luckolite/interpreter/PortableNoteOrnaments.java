@@ -226,6 +226,18 @@ final class PortableNoteOrnaments {
                 }
             }
         for (Bounds box : boxes) {
+            // Ledger lines through an open head can resemble a compressed mordent.
+            // A component already containing a written head cannot ornament another note.
+            boolean noteInk = false;
+            for (var note : notes)
+                if (note.x >= box.left
+                        && note.x < box.right
+                        && note.y >= box.top
+                        && note.y < box.bottom) {
+                    noteInk = true;
+                    break;
+                }
+            if (noteInk) continue;
             var match =
                     textTrills.contains(box) || repeatedTrills.confirmed(box)
                             ? new PortableOrnamentGlyphs.Match(NoteOrnament.TRILL, 1, 1)
