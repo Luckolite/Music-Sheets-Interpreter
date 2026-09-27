@@ -262,7 +262,8 @@ public final class ScoreNavigationProjection {
                 n.crossStaffBeam(),
                 n.leadingRestBeats(),
                 n.compactOpening(),
-                n.octaveShift());
+                n.octaveShift(),
+                n.boundaryTies());
     }
 
     // Source dynamics are evaluated below in musical time, not page distance or bar count.

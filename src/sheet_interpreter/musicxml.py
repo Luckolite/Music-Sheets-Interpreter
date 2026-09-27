@@ -89,6 +89,8 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
     Derived voices, gap rests and enharmonic spellings are reconstructed. Original
     engraving, guitar string/fret placement and expressive playback are not reconstructed.
     """
+    from .boundary_ties import resolve_boundary_ties
+    document = resolve_boundary_ties(document)
     meter = tuple(document.get('initialMeter', meter))
     key_fifths = document.get('initialKeyFifths', key_fifths)
     bpm = document.get('initialBpm', 120) if bpm is None else bpm

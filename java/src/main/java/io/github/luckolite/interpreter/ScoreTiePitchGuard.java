@@ -89,7 +89,8 @@ final class ScoreTiePitchGuard {
                             current.crossStaffBeam(),
                             current.leadingRestBeats(),
                             current.compactOpening(),
-                            current.octaveShift()));
+                            current.octaveShift(),
+                            current.boundaryTies()));
         }
         return result == null ? notes : result;
     }

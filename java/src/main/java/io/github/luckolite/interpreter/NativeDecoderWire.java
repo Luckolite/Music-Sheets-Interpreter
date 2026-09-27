@@ -241,6 +241,7 @@ public final class NativeDecoderWire {
             out.writeFloat(n.leadingRestBeats());
             out.writeBoolean(n.compactOpening());
             out.writeInt(n.octaveShift());
+            out.writeInt(n.boundaryTies());
         }
         out.writeInt(score.keyChanges().size());
         for (var k : score.keyChanges()) {
@@ -284,7 +285,8 @@ public final class NativeDecoderWire {
                             in.readBoolean(),
                             finite(in),
                             in.readBoolean(),
-                            in.readInt()));
+                            in.readInt(),
+                            count(in, ScoreNoteEvent.BOUNDARY_TIES_ALL)));
         count = count(in, MAX_MEASURES);
         var keys = new ArrayList<ScoreKeyChange>(count);
         for (int i = 0; i < count; i++) {

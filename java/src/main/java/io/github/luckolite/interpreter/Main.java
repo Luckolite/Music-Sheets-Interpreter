@@ -178,6 +178,13 @@ public final class Main {
                 event.put("staffIndex", note.staffIndex());
                 event.put("staffCount", note.staffCount());
                 if (note.octaveShift() != 0) event.put("octaveShift", note.octaveShift());
+                if (note.boundaryTies() != 0 && !guessed) {
+                    event.put("boundaryTies", note.boundaryTies());
+                    event.put(
+                            "boundaryPitch", note.diatonicPitchIdentity() + note.octaveShift() * 7);
+                    event.put("boundaryAccidental", note.writtenAccidental());
+                    event.put("sourceNoteIndex", score.notes().indexOf(note));
+                }
                 event.put("midi", midi);
                 event.put("clefInferred", guessed);
                 event.put(

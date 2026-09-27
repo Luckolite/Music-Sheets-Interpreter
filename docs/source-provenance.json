@@ -109,8 +109,8 @@
     },
     "NativeDecoderWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderWire.java",
-      "source_sha256": "cde86135d9641cccd64efbbe6d4b6ad73e506280bd54d78a9f05d8375a500ca9",
-      "reviewed_app_commit": "38007cb"
+      "source_sha256": "ef86cc92c569cb3e6464e395e8007516699f98873396c6cd47aae4ada01a12da",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "NativeDecoderStages.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderStages.java",
@@ -190,7 +190,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "c9d9eff8d9594969d6d907f0f9f8b16847d9dff976ab652edf5e09fcd0a114f0",
+      "source_sha256": "2dc788e4da4c652261ad5cdba64750acb1a7fa27826637d73aa28b6e670f38ea",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
     },
@@ -222,7 +222,7 @@
     },
     "ScoreNoteEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteEvent.java",
-      "source_sha256": "b3bf3295029035877b62a809b24989b790618a6bca89ed1b01957509d6ff1e3d",
+      "source_sha256": "52d5956afd4622c4c6897d8e4fbd7d7ac6228d02e6b550b0f6468e706109a6a4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreNoteTiming.java": {
@@ -260,7 +260,7 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "155777e881f48f14bcfffcc90ca72ea6417073a60eb30e34aabfd7a5871fedee",
+      "source_sha256": "5d51e6f5ec97601b5eaea26ae0837c6f84ccab12359c924f1f041d6bc23965d4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "training/model.py": {
@@ -336,7 +336,7 @@
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
-      "source_sha256": "7e2f55e201bb928aecee841b4bd9e30c9025114e740e7f94320b2ab2c12abe2d",
+      "source_sha256": "0b6475036d3ff96138b5c176279801569ba11853ff5ba820504cb1a0c5ef7ae4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "TabNotation.java": {
@@ -406,7 +406,7 @@
     },
     "ScoreTiePitchGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTiePitchGuard.java",
-      "source_sha256": "95176df1480eec710efcdc4ad9e096ee585d3436fd3b7d6a5d97452fb03b5e2a",
+      "source_sha256": "39ce9a561656d1f4bd5a925e76120bbdc7fc6cc89d08b22b5dc679cec842e2c4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreTempoSelection.java": {
@@ -621,7 +621,7 @@
     },
     "ScoreNavigationProjection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationProjection.java",
-      "source_sha256": "b12313e12f4f04f2216fa8f365ef0b2ca72e70ad9e0426c67b42f92246de833c",
+      "source_sha256": "795af8300c27a3eb1ea8703332dfe9c60ddb609f5e507a691cda9cdd635cf9bc",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreMeterMap.java": {
@@ -660,6 +660,11 @@
     "RestVerticalWave.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestVerticalWave.java",
       "source_sha256": "ec888163863f47980672461872910ca2461aff9b3dff19fd8452adc103ed0d99",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "ScoreBoundaryTies.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreBoundaryTies.java",
+      "source_sha256": "11b403bae4d743df324edb9d5bb2fe1850d0d458b9398aa71a16cb0ed8cc0f21",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     }
   }

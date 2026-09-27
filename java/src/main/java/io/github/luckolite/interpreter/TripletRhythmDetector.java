@@ -133,7 +133,8 @@ final class TripletRhythmDetector {
                             note.crossStaffBeam(),
                             (float) Math.max(0, note.leadingRestBeats() - before),
                             note.compactOpening(),
-                            note.octaveShift()));
+                            note.octaveShift(),
+                            note.boundaryTies()));
         }
         return new Rhythm(List.copyOf(result), List.copyOf(scaled));
     }
@@ -387,7 +388,8 @@ final class TripletRhythmDetector {
                                         n.crossStaffBeam(),
                                         n.leadingRestBeats(),
                                         n.compactOpening(),
-                                        n.octaveShift()));
+                                        n.octaveShift(),
+                                        n.boundaryTies()));
                     }
                 marked = true;
             }
@@ -483,7 +485,8 @@ final class TripletRhythmDetector {
                                 n.crossStaffBeam(),
                                 n.leadingRestBeats(),
                                 n.compactOpening(),
-                                n.octaveShift()));
+                                n.octaveShift(),
+                                n.boundaryTies()));
             }
             i++;
         }
@@ -614,7 +617,8 @@ final class TripletRhythmDetector {
                                         n.crossStaffBeam(),
                                         n.leadingRestBeats(),
                                         n.compactOpening(),
-                                        n.octaveShift()));
+                                        n.octaveShift(),
+                                        n.boundaryTies()));
                     }
             }
         }

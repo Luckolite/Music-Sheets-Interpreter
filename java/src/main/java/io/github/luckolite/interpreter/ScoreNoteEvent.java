@@ -23,7 +23,79 @@ public record ScoreNoteEvent(
         boolean crossStaffBeam,
         float leadingRestBeats,
         boolean compactOpening,
-        int octaveShift) {
+        int octaveShift,
+        int boundaryTies) {
+
+    /** Optical evidence only: incoming above/below, then outgoing above/below. */
+    public static final int BOUNDARY_TIES_ALL = 15;
+
+    public ScoreNoteEvent(
+            int measureIndex,
+            float positionInMeasure,
+            int staffStep,
+            int staffIndex,
+            int staffCount,
+            float pageY,
+            boolean tiedFromPrevious,
+            int augmentationDots,
+            int beamCount,
+            int writtenAccidental,
+            float unbeamedDurationBeats,
+            int tupletDivisor,
+            float followingRestBeats,
+            int articulations,
+            int clefBottomDiatonic,
+            boolean crossStaffBeam,
+            float leadingRestBeats,
+            boolean compactOpening,
+            int octaveShift) {
+        this(
+                measureIndex,
+                positionInMeasure,
+                staffStep,
+                staffIndex,
+                staffCount,
+                pageY,
+                tiedFromPrevious,
+                augmentationDots,
+                beamCount,
+                writtenAccidental,
+                unbeamedDurationBeats,
+                tupletDivisor,
+                followingRestBeats,
+                articulations,
+                clefBottomDiatonic,
+                crossStaffBeam,
+                leadingRestBeats,
+                compactOpening,
+                octaveShift,
+                0);
+    }
+
+    public ScoreNoteEvent withBoundaryTies(int evidence) {
+        return new ScoreNoteEvent(
+                measureIndex,
+                positionInMeasure,
+                staffStep,
+                staffIndex,
+                staffCount,
+                pageY,
+                tiedFromPrevious,
+                augmentationDots,
+                beamCount,
+                writtenAccidental,
+                unbeamedDurationBeats,
+                tupletDivisor,
+                followingRestBeats,
+                articulations,
+                clefBottomDiatonic,
+                crossStaffBeam,
+                leadingRestBeats,
+                compactOpening,
+                octaveShift,
+                evidence);
+    }
+
     /** Compatibility constructor: notes without an octave mark keep their written register. */
     public ScoreNoteEvent(
             int measureIndex,
@@ -88,7 +160,8 @@ public record ScoreNoteEvent(
                 crossStaffBeam,
                 leadingRestBeats,
                 compactOpening,
-                shift);
+                shift,
+                boundaryTies);
     }
 
     /** Source-compatible constructor for callers without opening-measure geometry. */
@@ -151,7 +224,8 @@ public record ScoreNoteEvent(
                 crossStaffBeam,
                 leadingRestBeats,
                 true,
-                octaveShift);
+                octaveShift,
+                boundaryTies);
     }
 
     public ScoreNoteEvent(
@@ -211,7 +285,8 @@ public record ScoreNoteEvent(
                 crossStaffBeam,
                 beats,
                 compactOpening,
-                octaveShift);
+                octaveShift,
+                boundaryTies);
     }
 
     public ScoreNoteEvent(
@@ -269,7 +344,8 @@ public record ScoreNoteEvent(
                 true,
                 leadingRestBeats,
                 compactOpening,
-                octaveShift);
+                octaveShift,
+                boundaryTies);
     }
 
     public static final int CLEF_UNKNOWN = -1;
@@ -330,7 +406,8 @@ public record ScoreNoteEvent(
                 crossStaffBeam,
                 leadingRestBeats,
                 compactOpening,
-                octaveShift);
+                octaveShift,
+                boundaryTies);
     }
 
     public int diatonicPitchIdentity() {
@@ -388,7 +465,8 @@ public record ScoreNoteEvent(
                 crossStaffBeam,
                 leadingRestBeats,
                 compactOpening,
-                octaveShift);
+                octaveShift,
+                boundaryTies);
     }
 
     public ScoreNoteEvent(
@@ -589,6 +667,8 @@ public record ScoreNoteEvent(
     }
 
     public ScoreNoteEvent {
+        if ((boundaryTies & ~BOUNDARY_TIES_ALL) != 0)
+            throw new IllegalArgumentException("Invalid boundary tie evidence");
         if (octaveShift < -2 || octaveShift > 2)
             throw new IllegalArgumentException("Octave shift must be -2..2");
         if (!Float.isFinite(leadingRestBeats) || leadingRestBeats < 0 || leadingRestBeats > 16)

@@ -4,6 +4,7 @@
 import math
 import struct
 from pathlib import Path
+from .boundary_ties import resolve_boundary_ties
 
 
 def variable_length(value):
@@ -18,6 +19,7 @@ def variable_length(value):
 
 
 def write_midi(document, path, bpm=120):
+    document = resolve_boundary_ties(document)
     if not math.isfinite(bpm) or not 15 <= bpm <= 400:
         raise ValueError("Initial BPM must be 15..400 quarter notes per minute")
     ppq = 480

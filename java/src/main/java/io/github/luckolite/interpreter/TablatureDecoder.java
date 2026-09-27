@@ -721,7 +721,8 @@ public final class TablatureDecoder {
                 n.crossStaffBeam(),
                 n.leadingRestBeats(),
                 n.compactOpening(),
-                n.octaveShift());
+                n.octaveShift(),
+                n.boundaryTies());
     }
 
     private static int printedMidi(ScoreNoteEvent n, ScorePageInterpretation score) {

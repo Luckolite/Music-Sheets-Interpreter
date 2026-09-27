@@ -100,6 +100,8 @@ def main():
         if annotations is not None and len(annotations) != len(results):
             raise ValueError("Annotation count must match the number of selected pages")
         document = {"schemaVersion": 1, "inputName": args.input.name, "initialBpm": args.bpm, "initialMeter": initial_meter, "initialKeyFifths": args.key_fifths, "pages": results}
+        from .boundary_ties import resolve_boundary_ties
+        document = resolve_boundary_ties(document)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(document, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         if args.midi:

@@ -1562,13 +1562,54 @@ final class OmrScoreInterpreter {
         boolean[] printedAccidental = new boolean[joined.size()];
         for (int i = 0; i < joined.size(); i++)
             printedAccidental[i] = printedAccidentalHeads.contains(joined.get(i).head);
-        return new Analysis(
+        var finalNotes =
                 withoutPitchChangedTies(
                         OpeningMeasureLayout.mark(withRests, rests, measures),
                         keyChanges,
-                        printedAccidental),
+                        printedAccidental);
+        return new Analysis(
+                markBoundaryTieEvidence(
+                        tieLabels, gray, width, height, joined, finalNotes, measures.size()),
                 keyChanges,
                 rests);
+    }
+
+    /** Keep both page-edge shoulders as evidence; assembly must still match pitch and continuity. */
+    private static List<ScoreNoteEvent> markBoundaryTieEvidence(
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            List<DetectedNote> detected,
+            List<ScoreNoteEvent> notes,
+            int measureCount) {
+        if (gray == null || gray.length != (long) width * height) return notes;
+        var result = new ArrayList<>(notes);
+        for (int i = 0; i < notes.size(); i++) {
+            var note = notes.get(i);
+            int evidence = 0;
+            if (note.measureIndex() != 0 && note.measureIndex() != measureCount - 1) continue;
+            boolean first = true, last = true;
+            for (var other : notes)
+                if (other.measureIndex() == note.measureIndex()
+                        && other.staffIndex() == note.staffIndex()
+                        && other.staffCount() == note.staffCount()) {
+                    if (other.positionInMeasure() < note.positionInMeasure() - .018f) first = false;
+                    if (other.positionInMeasure() > note.positionInMeasure() + .018f) last = false;
+                }
+            if (note.measureIndex() == 0 && first && note.leadingRestBeats() == 0)
+                for (int side : new int[] {-1, 1})
+                    if (hasSystemEndTieArc(
+                            labels, gray, width, height, detected.get(i), false, side))
+                        evidence |= side < 0 ? 1 : 2;
+            if (note.measureIndex() == measureCount - 1 && last && note.followingRestBeats() == 0)
+                for (int side : new int[] {-1, 1})
+                    if (hasSystemEndTieArc(
+                            labels, gray, width, height, detected.get(i), true, side))
+                        evidence |= side < 0 ? 4 : 8;
+            if (evidence != 0) result.set(i, note.withBoundaryTies(evidence));
+        }
+        return result;
     }
 
     /** A printed slur may connect two heads at the same staff step while an
@@ -1622,7 +1663,8 @@ final class OmrScoreInterpreter {
                             current.crossStaffBeam(),
                             current.leadingRestBeats(),
                             current.compactOpening(),
-                            current.octaveShift()));
+                            current.octaveShift(),
+                            current.boundaryTies()));
         }
         return result;
     }
@@ -9710,7 +9752,8 @@ final class OmrScoreInterpreter {
                 e.crossStaffBeam(),
                 e.leadingRestBeats(),
                 e.compactOpening(),
-                e.octaveShift());
+                e.octaveShift(),
+                e.boundaryTies());
     }
 
     private static boolean sameGraceVoice(DetectedNote a, DetectedNote b) {
@@ -15516,7 +15559,8 @@ final class OmrScoreInterpreter {
                                 e.crossStaffBeam(),
                                 e.leadingRestBeats(),
                                 e.compactOpening(),
-                                e.octaveShift());
+                                e.octaveShift(),
+                                e.boundaryTies());
                 result.set(j, new DetectedNote(corrected, n.head, n.staffGap));
             }
         }
