@@ -258,6 +258,7 @@ final class NoteArticulationDetector {
         boolean raw = gray != null && gray.length == labels.length;
         boolean[] seen = new boolean[labels.length];
         int[] queue = new int[labels.length];
+        List<Glyph> glyphs = new ArrayList<>();
         for (int p = 0; p < labels.length; p++) {
             if (seen[p] || !ink(labels, gray, p, raw)) continue;
             int start = 0, end = 1;
@@ -282,27 +283,29 @@ final class NoteArticulationDetector {
                     }
             }
             if (end < 3 || right - left > width * .025f || bottom - top > height * .018f) continue;
+            glyphs.add(
+                    new Glyph(left, top, right, bottom, end, java.util.Arrays.copyOf(queue, end)));
+        }
+        for (Glyph glyph : glyphs) {
             // Semantic notation normally vetoes an articulation. A raw isolated
             // dot may have been mislabeled as a head and rejected by the pitch
             // reader; it can still be staccato if it is not an accepted head.
             int notation = 0;
-            for (int i = 0; i < end; i++) {
-                byte label = labels[queue[i]];
+            for (int pixel : glyph.pixels) {
+                byte label = labels[pixel];
                 if (label == OmrMeasurePostProcessor.NOTEHEAD
                         || label == OmrMeasurePostProcessor.STEM_OR_REST
                         || label == OmrMeasurePostProcessor.CLEF_OR_KEY
                         || label == OmrMeasurePostProcessor.STAFF) notation++;
             }
-            boolean semanticNotation = notation > end * .25f;
-            Glyph glyph =
-                    new Glyph(left, top, right, bottom, end, java.util.Arrays.copyOf(queue, end));
+            boolean semanticNotation = notation > glyph.count * .25f;
             int best = -1, mark = 0;
             double distance = Double.MAX_VALUE;
             for (int n = 0; n < notes.size(); n++) {
                 Anchor note = notes.get(n);
                 float dx = Math.abs(glyph.x() - note.x) / note.gap,
                         dy = Math.abs(glyph.y() - note.y) / note.gap;
-                if (dx > .7f || dy < .7f || dy > 6f) continue;
+                if (dx > .7f || dy < .7f || dy > 8f) continue;
                 int candidate = classify(glyph, width, note.gap, glyph.y() < note.y);
                 if (candidate == 0)
                     candidate = roundedAngular(glyph, width, note.gap, glyph.y() < note.y);
@@ -310,7 +313,23 @@ final class NoteArticulationDetector {
                 // extender several spaces beyond the staff.
                 if (candidate == 0 && dy <= 3f && roundedTenuto(glyph, width, note.gap))
                     candidate = NoteArticulation.TENUTO;
-                if (candidate == 0 || dy > 5.5f && candidate != NoteArticulation.MARCATO) continue;
+                boolean stemOwnedDot =
+                        raw
+                                && candidate == NoteArticulation.STACCATO
+                                && dy > 5.5f
+                                && longStemDot(glyph, note, gray, width, height);
+                if (candidate == 0
+                        || dy > 6f && !stemOwnedDot
+                        || dy > 5.5f && candidate != NoteArticulation.MARCATO && !stemOwnedDot)
+                    continue;
+                if (raw
+                        && (candidate == NoteArticulation.TENUTO
+                                || candidate == NoteArticulation.STACCATO)
+                        && directionText(glyph, glyphs, note.gap, labels)) continue;
+                if (raw
+                        && candidate == NoteArticulation.STACCATO
+                        && endingNumberDot(glyph, glyphs, note.gap, gray, labels, width, height))
+                    continue;
                 if (semanticNotation
                         && (!raw
                                 || candidate != NoteArticulation.STACCATO
@@ -332,7 +351,16 @@ final class NoteArticulationDetector {
                         && (durationDot(glyph, notes)
                                 || (raw
                                         && shelteredDot(
-                                                glyph, labels, gray, width, height, note.gap, dy))))
+                                                glyph,
+                                                labels,
+                                                gray,
+                                                width,
+                                                height,
+                                                note.gap,
+                                                dy,
+                                                stemOwnedDot
+                                                        || pairedTenuto(
+                                                                glyph, glyphs, note, width)))))
                     continue;
                 // A small off-axis dot beside a head is a duration dot, not staccato.
                 if (candidate == NoteArticulation.STACCATO && dx > .35f) continue;
@@ -355,6 +383,108 @@ final class NoteArticulationDetector {
         return result;
     }
 
+    /** A text word and its spaced extension dashes are not note articulations. */
+    private static boolean directionText(
+            Glyph target, List<Glyph> glyphs, float gap, byte[] labels) {
+        List<Glyph> letters = new ArrayList<>();
+        for (Glyph g : glyphs) {
+            float h = g.bottom - g.top + 1, w = g.right - g.left + 1;
+            if (g == target
+                    || g.right > target.left + gap * .2f
+                    || target.left - g.right > gap * 36
+                    || h < gap * .5f
+                    || h > gap * 2.2f
+                    || w < gap * .25f
+                    || w > gap * 3f
+                    || g.top > target.y() + gap * .15f
+                    || g.bottom < target.y() - gap * .15f) continue;
+            int notation = 0;
+            for (int p : g.pixels)
+                if (labels[p] == OmrMeasurePostProcessor.NOTEHEAD
+                        || labels[p] == OmrMeasurePostProcessor.STEM_OR_REST
+                        || labels[p] == OmrMeasurePostProcessor.CLEF_OR_KEY
+                        || labels[p] == OmrMeasurePostProcessor.STAFF) notation++;
+            if (notation <= g.count * .25f) letters.add(g);
+        }
+        letters.sort(java.util.Comparator.comparingInt(Glyph::left));
+        for (int i = 0; i + 2 < letters.size(); i++) {
+            Glyph first = letters.get(i), last = first;
+            int count = 1;
+            for (int j = i + 1; j < letters.size(); j++) {
+                Glyph next = letters.get(j);
+                if (next.left - last.right > gap * .65f
+                        || Math.abs(next.bottom - first.bottom) > gap * .45f) break;
+                last = next;
+                count++;
+            }
+            if (count < 3) continue;
+            if (target.left - last.right < gap * .65f) return true;
+            // Require a continuous run of thin dashes back to the word. Three
+            // isolated tenutos elsewhere on the page do not constitute text.
+            List<Glyph> dashes = new ArrayList<>();
+            for (Glyph g : glyphs)
+                if (g.left >= last.right
+                        && g.left <= target.right + gap * 12
+                        && Math.abs(g.y() - target.y()) <= gap * .15f
+                        && g.bottom - g.top + 1 <= gap * .25f
+                        && g.right - g.left + 1 >= gap * .55f
+                        && g.right - g.left + 1 <= gap * 1.8f) dashes.add(g);
+            dashes.sort(java.util.Comparator.comparingInt(Glyph::left));
+            float edge = last.right;
+            int matched = 0;
+            for (Glyph dash : dashes) {
+                if (dash.left - edge > gap * 4.5f) break;
+                edge = dash.right;
+                matched++;
+            }
+            if (matched >= 3 && edge >= target.right - gap * .2f) return true;
+        }
+        return false;
+    }
+
+    /** Number punctuation under an ending bracket is not a performance dot. */
+    private static boolean endingNumberDot(
+            Glyph dot,
+            List<Glyph> glyphs,
+            float gap,
+            byte[] gray,
+            byte[] labels,
+            int width,
+            int height) {
+        for (Glyph digit : glyphs) {
+            float h = digit.bottom - digit.top + 1, w = digit.right - digit.left + 1;
+            if (digit.right >= dot.left
+                    || dot.left - digit.right > gap * .7f
+                    || Math.abs(digit.bottom - dot.bottom) > gap * .25f
+                    || h < gap * .9f
+                    || h > gap * 2.5f
+                    || w < gap * .3f
+                    || w > gap * 1.5f) continue;
+            int notation = 0;
+            for (int p : digit.pixels)
+                if (labels[p] == OmrMeasurePostProcessor.NOTEHEAD
+                        || labels[p] == OmrMeasurePostProcessor.STEM_OR_REST
+                        || labels[p] == OmrMeasurePostProcessor.STAFF) notation++;
+            if (notation > digit.count * .25f) continue;
+            for (int top = Math.max(0, Math.round(digit.top - gap)); top < digit.top; top++) {
+                for (int left = Math.max(0, Math.round(digit.left - gap));
+                        left < digit.left;
+                        left++) {
+                    int right = Math.min(width - 1, Math.round(dot.right + gap * 3)),
+                            bottom = Math.min(height - 1, Math.round(top + gap));
+                    int horizontal = 0, vertical = 0;
+                    for (int x = left; x <= right; x++)
+                        if ((gray[top * width + x] & 255) < 155) horizontal++;
+                    if (horizontal < (right - left + 1) * .95f) continue;
+                    for (int y = top; y <= bottom; y++)
+                        if ((gray[y * width + left] & 255) < 155) vertical++;
+                    if (vertical >= (bottom - top + 1) * .95f) return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static boolean ink(byte[] labels, byte[] gray, int p, boolean raw) {
         return raw ? (gray[p] & 255) < 155 : labels[p] == OmrMeasurePostProcessor.SYMBOL;
     }
@@ -375,6 +505,50 @@ final class NoteArticulationDetector {
         return false;
     }
 
+    /** A long printed stem and attached beam can own a dot beyond the usual head radius. */
+    private static boolean longStemDot(Glyph dot, Anchor note, byte[] gray, int width, int height) {
+        int direction = dot.y() < note.y ? -1 : 1;
+        int from = Math.round(note.y + direction * note.gap * .3f),
+                to = Math.round(dot.y() - direction * note.gap * .65f);
+        if (from < 0 || to < 0 || from >= height || to >= height) return false;
+        for (int side : new int[] {-1, 1})
+            for (int offset = Math.round(note.gap * .3f);
+                    offset <= Math.round(note.gap * .85f);
+                    offset++) {
+                int x = Math.round(note.x) + side * offset;
+                if (x < 1 || x >= width - 1) continue;
+                int hits = 0, total = Math.abs(to - from) + 1;
+                for (int y = Math.min(from, to); y <= Math.max(from, to); y++)
+                    if ((gray[y * width + x] & 255) < 155) hits++;
+                if (hits < total * .95f) continue;
+                for (int y = Math.max(0, to - Math.round(note.gap * .3f));
+                        y <= Math.min(height - 1, to + Math.round(note.gap * .3f));
+                        y++)
+                    for (int beamSide : new int[] {-1, 1}) {
+                        int reach = Math.round(note.gap * 1.7f), end = x + beamSide * reach;
+                        if (end < 0 || end >= width) continue;
+                        int ink = 0;
+                        for (int d = 0; d <= reach; d++)
+                            if ((gray[y * width + x + beamSide * d] & 255) < 155) ink++;
+                        if (ink >= (reach + 1) * .95f) return true;
+                    }
+            }
+        return false;
+    }
+
+    /** A detached dash beyond a dot supplies independent portato evidence. */
+    private static boolean pairedTenuto(Glyph dot, List<Glyph> glyphs, Anchor note, int width) {
+        int direction = dot.y() < note.y ? -1 : 1;
+        for (Glyph glyph : glyphs)
+            if (glyph != dot
+                    && Math.abs(glyph.x() - dot.x()) <= note.gap * .2f
+                    && direction * (glyph.y() - dot.y()) >= note.gap * .35f
+                    && direction * (glyph.y() - dot.y()) <= note.gap * 1.2f
+                    && classify(glyph, width, note.gap, glyph.y() < note.y)
+                            == NoteArticulation.TENUTO) return true;
+        return false;
+    }
+
     /** The dot under a fermata arch is not a staccato instruction. */
     private static boolean shelteredDot(
             Glyph glyph,
@@ -383,7 +557,8 @@ final class NoteArticulationDetector {
             int width,
             int height,
             float gap,
-            float distance) {
+            float distance,
+            boolean independentlyOwned) {
         for (int direction : new int[] {-1, 1}) {
             int occupied = 0;
             for (int bin = -2; bin <= 2; bin++) {
@@ -405,7 +580,10 @@ final class NoteArticulationDetector {
                 if (found) occupied++;
             }
             if (occupied == 5) {
-                if (distance > 2.5f) return true;
+                if (distance > 2.5f
+                        && !independentlyOwned
+                        && !longStraightShelter(glyph, gray, width, height, gap, direction))
+                    return true;
                 int[] tone = new int[glyph.pixels.length];
                 for (int i = 0; i < tone.length; i++) tone[i] = gray[glyph.pixels[i]] & 255;
                 java.util.Arrays.sort(tone);
@@ -476,10 +654,58 @@ final class NoteArticulationDetector {
             if (!clipped
                     && count >= gap
                     && maxX - minX >= gap
-                    && maxY - minY >= gap * .2f
+                    && maxY - minY >= gap * .20f
+                    && count < (maxX - minX + 1) * (maxY - minY + 1) * .55f
                     && Math.abs(l + (minX + maxX) * .5f - dot.x()) <= gap * .35f
                     && l + minX <= dot.x() - gap * .45f
-                    && l + maxX >= dot.x() + gap * .45f) return true;
+                    && l + maxX >= dot.x() + gap * .45f
+                    && curvedRoof(queue, count, w, minX, maxX, gap, direction)) return true;
+        }
+        return false;
+    }
+
+    /** Both ends of an arch turn toward its dot; a ledger stripe or beam does not. */
+    private static boolean curvedRoof(
+            int[] pixels, int count, int width, int left, int right, float gap, int direction) {
+        double[] sums = new double[3];
+        int[] sizes = new int[3];
+        for (int i = 0; i < count; i++) {
+            int x = pixels[i] % width, y = pixels[i] / width;
+            float position = (x - left) / (float) Math.max(1, right - left);
+            int band =
+                    position <= .2f
+                            ? 0
+                            : position >= .8f ? 2 : position >= .4f && position <= .6f ? 1 : -1;
+            if (band >= 0) {
+                sums[band] += y;
+                sizes[band]++;
+            }
+        }
+        if (sizes[0] == 0 || sizes[1] == 0 || sizes[2] == 0) return false;
+        double center = sums[1] / sizes[1];
+        return -direction * (sums[0] / sizes[0] - center) >= gap * .12f
+                && -direction * (sums[2] / sizes[2] - center) >= gap * .12f;
+    }
+
+    /** A long shallow beam/slur is not the compact arch belonging to a fermata dot. */
+    private static boolean longStraightShelter(
+            Glyph dot, byte[] gray, int width, int height, float gap, int direction) {
+        int reach = Math.round(gap * 2), center = Math.round(dot.x());
+        if (center - reach < 0 || center + reach >= width) return false;
+        for (int d = Math.max(1, Math.round(gap * .35f)); d <= Math.round(gap * 1.45f); d++) {
+            int middle = Math.round(dot.y()) + direction * d;
+            for (int rise = -4; rise <= 4; rise++) {
+                int hits = 0, total = 0;
+                for (int x = center - reach; x <= center + reach; x++) {
+                    int y = middle + Math.round((x - center) * rise * .05f);
+                    if (y < 1 || y >= height - 1) continue;
+                    total++;
+                    if ((gray[y * width + x] & 255) < 155
+                            || (gray[(y - 1) * width + x] & 255) < 155
+                            || (gray[(y + 1) * width + x] & 255) < 155) hits++;
+                }
+                if (total >= reach * 2 && hits >= total * .95f) return true;
+            }
         }
         return false;
     }

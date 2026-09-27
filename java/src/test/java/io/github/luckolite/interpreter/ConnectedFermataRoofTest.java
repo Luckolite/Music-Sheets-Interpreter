@@ -118,4 +118,68 @@ public class ConnectedFermataRoofTest {
         for (int y = 498; y <= 502; y++) for (int x = 498; x <= 502; x++) g[y * W + x] = (byte) 145;
         assertEquals(NoteArticulation.STACCATO, marks());
     }
+
+    @Test
+    public void filledRestBlockCannotShelterStaccato() {
+        for (int y = 481; y <= 489; y++) for (int x = 486; x <= 514; x++) g[y * W + x] = 0;
+        assertEquals(NoteArticulation.STACCATO, marks());
+    }
+
+    @Test
+    public void shortLedgerStripeCannotShelterStaccato() {
+        for (int y = 485; y <= 488; y++) for (int x = 486; x <= 514; x++) g[y * W + x] = 0;
+        assertEquals(NoteArticulation.STACCATO, marks());
+    }
+
+    @Test
+    public void separatedLedgerEdgesCannotShelterStaccato() {
+        for (int x = 486; x <= 514; x++) {
+            g[482 * W + x] = 0;
+            g[487 * W + x] = 0;
+        }
+        for (int y = 482; y <= 487; y++) g[y * W + 500] = 0;
+        assertEquals(NoteArticulation.STACCATO, marks());
+    }
+
+    @Test
+    public void distantPortatoKeepsItsDot() {
+        for (int x = 490; x <= 510; x++) for (int y = 488; y <= 490; y++) g[y * W + x] = 0;
+        assertEquals(
+                NoteArticulation.STACCATO | NoteArticulation.TENUTO,
+                NoteArticulationDetector.detect(
+                        labels,
+                        g,
+                        W,
+                        H,
+                        List.of(new NoteArticulationDetector.Anchor(500, 560, 16, 0)))[0]);
+    }
+
+    @Test
+    public void distantCompactFermataDoesNotBecomePortato() {
+        arc(488, 512, 500, 482, 8);
+        assertEquals(
+                0,
+                NoteArticulationDetector.detect(
+                        labels,
+                        g,
+                        W,
+                        H,
+                        List.of(new NoteArticulationDetector.Anchor(500, 560, 16, 0)))[0]);
+    }
+
+    @Test
+    public void longSlantedBeamDoesNotShelterDistantStaccato() {
+        for (int x = 450; x <= 550; x++) {
+            int y = 485 + Math.round((x - 500) * .12f);
+            for (int dy = -2; dy <= 2; dy++) g[(y + dy) * W + x] = 0;
+        }
+        assertEquals(
+                NoteArticulation.STACCATO,
+                NoteArticulationDetector.detect(
+                        labels,
+                        g,
+                        W,
+                        H,
+                        List.of(new NoteArticulationDetector.Anchor(500, 550, 16, 0)))[0]);
+    }
 }
