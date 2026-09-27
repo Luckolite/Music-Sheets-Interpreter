@@ -96,4 +96,19 @@ public class ArticulationTextRunTest {
         dashes();
         assertEquals(0, marks(457));
     }
+
+    @Test
+    public void abbreviatedWordPeriodOwnsSingleFollowingDash() {
+        word();
+        box(353, 520, 356, 523);
+        box(370, 516, 384, 518);
+        assertEquals(0, marks(377));
+    }
+
+    @Test
+    public void wordWithoutPeriodDoesNotOwnSingleSeparatedDash() {
+        word();
+        box(370, 516, 384, 518);
+        assertEquals(NoteArticulation.TENUTO, marks(377));
+    }
 }

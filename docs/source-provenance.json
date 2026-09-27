@@ -176,7 +176,7 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "dfb8dbd445e34f688e73c9cf9fcdc9d20042cd5a2d147a735472bd7088a68fdf",
+      "source_sha256": "5feacfdd6d32f59a0c74790188b2c8dc428158c14021cea7b89bf781c2a46828",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "NoteOrnament.java": {

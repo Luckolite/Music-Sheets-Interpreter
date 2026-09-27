@@ -327,6 +327,9 @@ final class NoteArticulationDetector {
                                 || candidate == NoteArticulation.STACCATO)
                         && directionText(glyph, glyphs, note.gap, labels)) continue;
                 if (raw
+                        && candidate == NoteArticulation.TENUTO
+                        && continuedDashRow(glyph, glyphs, notes, note)) continue;
+                if (raw
                         && candidate == NoteArticulation.STACCATO
                         && endingNumberDot(glyph, glyphs, note.gap, gray, labels, width, height))
                     continue;
@@ -380,7 +383,93 @@ final class NoteArticulationDetector {
                     result[n] |= mark;
             }
         }
+        if (raw)
+            for (int i = 0; i < notes.size(); i++) {
+                Anchor note = notes.get(i);
+                if ((result[i] & NoteArticulation.STACCATO) == 0
+                        && textJoinedDot(note, glyphs, labels, gray, width, height))
+                    for (int j = 0; j < notes.size(); j++)
+                        if (notes.get(j).staff == note.staff
+                                && Math.abs(notes.get(j).x - note.x) < note.gap * .45f)
+                            result[j] |= NoteArticulation.STACCATO;
+            }
         return result;
+    }
+
+    /** Recover a round dot fused into an upright letter above a crowded chord. */
+    private static boolean textJoinedDot(
+            Anchor note, List<Glyph> glyphs, byte[] labels, byte[] gray, int width, int height) {
+        float gap = note.gap;
+        if (gap < 10) return false;
+        // Independent neighboring letters establish text, not a beam or accidental.
+        int letters = 0;
+        for (Glyph g : glyphs) {
+            if (g.right >= note.x - gap * .55f
+                    || g.right < note.x - gap * 6f
+                    || Math.abs(g.bottom - (note.y - gap * .5f)) > gap * .45f
+                    || g.bottom - g.top < gap * .8f
+                    || g.bottom - g.top > gap * 2.8f) continue;
+            int notation = 0;
+            for (int p : g.pixels)
+                if (labels[p] == OmrMeasurePostProcessor.NOTEHEAD
+                        || labels[p] == OmrMeasurePostProcessor.STEM_OR_REST
+                        || labels[p] == OmrMeasurePostProcessor.CLEF_OR_KEY
+                        || labels[p] == OmrMeasurePostProcessor.STAFF) notation++;
+            if (notation < g.count * .25f) letters++;
+        }
+        if (letters < 2) return false;
+        int clear = Math.max(2, Math.round(gap * .1f));
+        for (int top = Math.max(clear, Math.round(note.y - gap * 1.8f));
+                top <= note.y - gap * .8f;
+                top++)
+            for (int h = Math.max(5, Math.round(gap * .3f)); h <= gap * .6f; h++) {
+                if (top + h + clear >= height) continue;
+                for (int left = Math.max(1, Math.round(note.x - gap * .3f));
+                        left <= note.x + gap * .3f;
+                        left++)
+                    for (int w = Math.max(4, Math.round(gap * .2f)); w <= gap * .4f; w++) {
+                        int right = left + w - 1;
+                        if (right + 1 >= width) continue;
+                        if (Math.abs((left + right) * .5f - note.x) > gap * .25f) continue;
+                        boolean blank = true;
+                        for (int y = top - clear; y < top + h + clear && blank; y++)
+                            if (y < top || y >= top + h)
+                                for (int x = left; x <= right; x++)
+                                    if ((gray[y * width + x] & 255) < 155) {
+                                        blank = false;
+                                        break;
+                                    }
+                        if (!blank) continue;
+                        int[] rows = new int[h];
+                        int count = 0;
+                        for (int y = 0; y < h; y++)
+                            for (int x = left; x <= right; x++)
+                                if ((gray[(top + y) * width + x] & 255) < 155) {
+                                    rows[y]++;
+                                    count++;
+                                }
+                        if (rows[0] == 0
+                                || rows[h - 1] == 0
+                                || rows[0] > w * .65f
+                                || rows[h - 1] > w * .65f
+                                || rows[h / 2] < w * .9f
+                                || rows[(h - 1) / 2] < w * .9f
+                                || count < w * h * .65f) continue;
+                        boolean rounded = true;
+                        for (int y = 1; y <= h / 2; y++) if (rows[y] < rows[y - 1]) rounded = false;
+                        for (int y = (h + 1) / 2; y < h; y++)
+                            if (rows[y] > rows[y - 1]) rounded = false;
+                        if (!rounded) continue;
+                        // The intrusion must meet a continuous text upright on one side.
+                        for (int side : new int[] {-1, 1}) {
+                            int x = side < 0 ? left - 1 : right + 1, hits = 0;
+                            for (int y = top - clear; y < top + h + clear; y++)
+                                if ((gray[y * width + x] & 255) < 155) hits++;
+                            if (hits >= h + clear * 2) return true;
+                        }
+                    }
+            }
+        return false;
     }
 
     /** A text word and its spaced extension dashes are not note articulations. */
@@ -419,6 +508,17 @@ final class NoteArticulationDetector {
             }
             if (count < 3) continue;
             if (target.left - last.right < gap * .65f) return true;
+            // Abbreviated directions can end with a period and just one extender.
+            // Require that punctuation rather than treating every dash near text as text.
+            if (target.left - last.right < gap * 2.2f)
+                for (Glyph period : glyphs) {
+                    if (period.left > last.right
+                            && period.right < target.left
+                            && period.left - last.right < gap * .45f
+                            && Math.abs(period.bottom - last.bottom) < gap * .3f
+                            && period.right - period.left + 1 <= gap * .4f
+                            && period.bottom - period.top + 1 <= gap * .4f) return true;
+                }
             // Require a continuous run of thin dashes back to the word. Three
             // isolated tenutos elsewhere on the page do not constitute text.
             List<Glyph> dashes = new ArrayList<>();
@@ -438,6 +538,49 @@ final class NoteArticulationDetector {
                 matched++;
             }
             if (matched >= 3 && edge >= target.right - gap * .2f) return true;
+        }
+        return false;
+    }
+
+    /** A continued text or pedal line has regular spacing independent of note onsets. */
+    private static boolean continuedDashRow(
+            Glyph target, List<Glyph> glyphs, List<Anchor> notes, Anchor owner) {
+        float gap = owner.gap;
+        List<Glyph> row = new ArrayList<>();
+        for (Glyph g : glyphs)
+            if (Math.abs(g.y() - target.y()) <= gap * .15f
+                    && Math.abs(g.x() - target.x()) <= gap * 45f
+                    && g.bottom - g.top + 1 <= gap * .25f
+                    && g.right - g.left + 1 >= gap * .55f
+                    && g.right - g.left + 1 <= gap * 1.8f
+                    && Math.abs((g.right - g.left) - (target.right - target.left)) <= gap * .3f)
+                row.add(g);
+        row.sort(java.util.Comparator.comparingInt(Glyph::left));
+        for (int start = 0; start + 4 < row.size(); start++) {
+            float step = row.get(start + 1).x() - row.get(start).x();
+            if (step < gap * 1.15f || step > gap * 4.5f) continue;
+            int end = start + 1;
+            while (end + 1 < row.size()
+                    && Math.abs(row.get(end + 1).x() - row.get(end).x() - step) <= gap * .2f) end++;
+            if (end - start < 4 || row.get(end).x() - row.get(start).x() < gap * 8f) continue;
+            boolean contains = false;
+            int unowned = 0;
+            for (int i = start; i <= end; i++) {
+                Glyph dash = row.get(i);
+                contains |= dash == target;
+                boolean owned = false;
+                for (Anchor n : notes)
+                    if (n.staff == owner.staff
+                            && Math.abs(n.x - dash.x()) <= gap * .7f
+                            && Math.abs(n.y - dash.y()) <= gap * 5.5f) {
+                        owned = true;
+                        break;
+                    }
+                if (!owned) unowned++;
+            }
+            // Repeated tenutos follow the notes. An extender must have several
+            // independently spaced dashes with no possible note owner.
+            if (contains && unowned >= 3 && unowned * 2 >= end - start + 1) return true;
         }
         return false;
     }
