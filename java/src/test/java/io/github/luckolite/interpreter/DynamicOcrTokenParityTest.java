@@ -62,6 +62,39 @@ public class DynamicOcrTokenParityTest {
     }
 
     @Test
+    public void softLevelSurvivesDolceInstruction() {
+        assertEquals("p", read("p dolce", "p").get(0).text());
+    }
+
+    @Test
+    public void quietLevelSurvivesTranquilloInstruction() {
+        assertEquals("pp", read("pp tranquillo", "pp").get(0).text());
+    }
+
+    @Test
+    public void levelSurvivesExpressiveInstructionAndPunctuation() {
+        assertEquals("mf", read("sempre mf espressivo.", "mf").get(0).text());
+    }
+
+    @Test
+    public void styleWordsDoNotBecomeLevels() {
+        for (String style : List.of("dolce", "tranquillo", "espressivo"))
+            assertTrue(read("p " + style, style).isEmpty());
+    }
+
+    @Test
+    public void styleWordInLyricDoesNotAuthorizeLevel() {
+        assertTrue(read("p dolce my love", "p").isEmpty());
+        assertTrue(read("p dolcemente", "p").isEmpty());
+    }
+
+    @Test
+    public void styleDoesNotBypassInkRequirement() {
+        Arrays.fill(gray, (byte) 255);
+        assertTrue(read("pp tranquillo", "pp").isEmpty());
+    }
+
+    @Test
     public void sustainedTripleForteMustNotSplit() {
         assertEquals(1, read("fff", "fff").size());
         assertEquals("fff", read("fff", "fff").get(0).text());

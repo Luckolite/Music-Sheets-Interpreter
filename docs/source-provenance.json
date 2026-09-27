@@ -210,7 +210,7 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "e7aea8c83c4ff41d6c0a99bcd66e822c34411c859ace7d65c18db12aaab06a45",
+      "source_sha256": "2cc28a4de2439ca88dd0d28a01ba990935fc191ca13c26a29def324818cbbd55",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreKeyChange.java": {
