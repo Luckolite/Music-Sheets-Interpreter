@@ -12,3 +12,14 @@ training/corpus*/
 .DS_Store
 .idea/
 AGENTS.md
+CLAUDE.md
+GEMINI.md
+SKILL.md
+MEMORY.md
+memory_summary.md
+resume-latest.json
+.codex/
+.claude/
+.agents/
+scratch/
+tmp/

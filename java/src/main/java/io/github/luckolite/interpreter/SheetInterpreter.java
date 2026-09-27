@@ -7,128 +7,268 @@ import java.util.Objects;
 
 /** Stateless, platform-independent decoder for six-class masks and their source grayscale pixels. */
 public final class SheetInterpreter {
-    private SheetInterpreter() { }
-    public record NumberToken(int value, float left, float top, float right, float bottom,
-                              float annotationLeft) {
+    private SheetInterpreter() {}
+
+    public record NumberToken(
+            int value, float left, float top, float right, float bottom, float annotationLeft) {
         public NumberToken {
-            checkBox(left,top,right,bottom);
-            if(!Float.isFinite(annotationLeft)||annotationLeft<0||annotationLeft>1)
-                throw new IllegalArgumentException("annotationLeft must be a normalized coordinate");
+            checkBox(left, top, right, bottom);
+            if (!Float.isFinite(annotationLeft) || annotationLeft < 0 || annotationLeft > 1)
+                throw new IllegalArgumentException(
+                        "annotationLeft must be a normalized coordinate");
         }
+
         MeasureNumberReconciler.NumberToken internal() {
-            return new MeasureNumberReconciler.NumberToken(value,left,top,right,bottom,annotationLeft);
+            return new MeasureNumberReconciler.NumberToken(
+                    value, left, top, right, bottom, annotationLeft);
         }
     }
-    public record Word(String text,float left,float top,float right,float bottom) {
-        public Word { Objects.requireNonNull(text); checkBox(left,top,right,bottom); }
+
+    public record Word(String text, float left, float top, float right, float bottom) {
+        public Word {
+            Objects.requireNonNull(text);
+            checkBox(left, top, right, bottom);
+        }
+
         PlayingTechniqueDetector.Word internal() {
-            return new PlayingTechniqueDetector.Word(text,left,top,right,bottom);
+            return new PlayingTechniqueDetector.Word(text, left, top, right, bottom);
         }
     }
+
     /** Optional output from the caller's OCR engine, with normalized 0..1 page boxes.
      * Meter changes are explicit, validated readings at zero-based logical measure indices. */
-    public record Annotations(List<NumberToken> measureNumbers, List<NumberToken> tempoNumbers,
-                              List<NumberToken> restCounts, List<Word> words,
-                              List<ScoreMeterChange> meters, List<Word> tabWords) {
-        public static final Annotations EMPTY=new Annotations(List.of(),List.of(),List.of(),List.of(),List.of(),List.of());
-        public Annotations(List<NumberToken> measureNumbers,List<NumberToken> tempoNumbers,
-                List<NumberToken> restCounts,List<Word> words,List<ScoreMeterChange> meters) {
-            this(measureNumbers,tempoNumbers,restCounts,words,meters,List.of());
+    public record Annotations(
+            List<NumberToken> measureNumbers,
+            List<NumberToken> tempoNumbers,
+            List<NumberToken> restCounts,
+            List<Word> words,
+            List<ScoreMeterChange> meters,
+            List<Word> tabWords) {
+        public static final Annotations EMPTY =
+                new Annotations(List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+
+        public Annotations(
+                List<NumberToken> measureNumbers,
+                List<NumberToken> tempoNumbers,
+                List<NumberToken> restCounts,
+                List<Word> words,
+                List<ScoreMeterChange> meters) {
+            this(measureNumbers, tempoNumbers, restCounts, words, meters, List.of());
         }
+
         public Annotations {
-            measureNumbers=List.copyOf(measureNumbers);tempoNumbers=List.copyOf(tempoNumbers);
-            restCounts=List.copyOf(restCounts);words=List.copyOf(words);meters=List.copyOf(meters);
-            tabWords=List.copyOf(tabWords);
+            measureNumbers = List.copyOf(measureNumbers);
+            tempoNumbers = List.copyOf(tempoNumbers);
+            restCounts = List.copyOf(restCounts);
+            words = List.copyOf(words);
+            meters = List.copyOf(meters);
+            tabWords = List.copyOf(tabWords);
         }
     }
-    private static void checkBox(float left,float top,float right,float bottom) {
-        if(!Float.isFinite(left)||!Float.isFinite(top)||!Float.isFinite(right)||!Float.isFinite(bottom)
-                ||left<0||top<0||right>1||bottom>1||left>=right||top>=bottom)
-            throw new IllegalArgumentException("OCR boxes must be ordered normalized page coordinates");
+
+    private static void checkBox(float left, float top, float right, float bottom) {
+        if (!Float.isFinite(left)
+                || !Float.isFinite(top)
+                || !Float.isFinite(right)
+                || !Float.isFinite(bottom)
+                || left < 0
+                || top < 0
+                || right > 1
+                || bottom > 1
+                || left >= right
+                || top >= bottom)
+            throw new IllegalArgumentException(
+                    "OCR boxes must be ordered normalized page coordinates");
     }
-    public static ScorePageInterpretation analyze(byte[] labels,byte[] gray,int width,int height) {
-        return analyze(labels,gray,width,height,Annotations.EMPTY);
+
+    public static ScorePageInterpretation analyze(
+            byte[] labels, byte[] gray, int width, int height) {
+        return analyze(labels, gray, width, height, Annotations.EMPTY);
     }
-    public static ScorePageInterpretation analyze(byte[] labels,byte[] gray,int width,int height,
-                                                 Annotations annotations) {
-        try{return analyze(labels,gray,width,height,annotations,null);}
-        catch(RuntimeException failure){throw failure;}
-        catch(Exception failure){throw new IllegalStateException("Unexpected optional OCR failure",failure);}
+
+    public static ScorePageInterpretation analyze(
+            byte[] labels, byte[] gray, int width, int height, Annotations annotations) {
+        try {
+            return analyze(labels, gray, width, height, annotations, null);
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Exception failure) {
+            throw new IllegalStateException("Unexpected optional OCR failure", failure);
+        }
     }
+
     /** Optional caller-owned OCR inference; the default overload has no ONNX or model dependency. */
-    public static ScorePageInterpretation analyze(byte[] labels,byte[] gray,int width,int height,
-                                                 Annotations annotations,MusicalOcr ocr) throws Exception {
-        long pixels=(long)width*height;
-        if(width<=0||height<=0||pixels>20_000_000||labels==null||gray==null
-                ||labels.length!=pixels||gray.length!=pixels)
-            throw new IllegalArgumentException("Expected equally sized masks and grayscale, at most 20 million pixels");
-        for(byte label:labels)if(label<0||label>5)throw new IllegalArgumentException("Labels must be in 0..5");
+    public static ScorePageInterpretation analyze(
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            Annotations annotations,
+            MusicalOcr ocr)
+            throws Exception {
+        long pixels = (long) width * height;
+        if (width <= 0
+                || height <= 0
+                || pixels > 20_000_000
+                || labels == null
+                || gray == null
+                || labels.length != pixels
+                || gray.length != pixels)
+            throw new IllegalArgumentException(
+                    "Expected equally sized masks and grayscale, at most 20 million pixels");
+        for (byte label : labels)
+            if (label < 0 || label > 5)
+                throw new IllegalArgumentException("Labels must be in 0..5");
         Objects.requireNonNull(annotations);
-        var tabWords=java.util.stream.Stream.concat(annotations.words.stream(),annotations.tabWords.stream())
-                .map(w->new TablatureDecoder.Word(w.text,w.left,w.top,w.right,w.bottom)).toList();
-        var tabs=TablatureDecoder.withWords(TablatureDecoder.detect(gray,width,height),tabWords,width,height);
-        tabs=TabNotation.rasterRhythm(tabs,gray,width,height,tabWords);
-        labels=TablatureDecoder.withoutTabs(labels,width,height,tabs,false);
-        gray=TablatureDecoder.withoutTabs(gray,width,height,tabs,true);
-        var measures=OmrMeasurePostProcessor.process(labels,gray,width,height);
-        byte[] prepared=OmrScoreInterpreter.normalizeHeaderSymbols(labels,gray,width,height,measures);
+        var tabWords =
+                java.util.stream.Stream.concat(
+                                annotations.words.stream(), annotations.tabWords.stream())
+                        .map(
+                                w ->
+                                        new TablatureDecoder.Word(
+                                                w.text, w.left, w.top, w.right, w.bottom))
+                        .toList();
+        var tabs =
+                TablatureDecoder.withWords(
+                        TablatureDecoder.detect(gray, width, height), tabWords, width, height);
+        tabs = TabNotation.rasterRhythm(tabs, gray, width, height, tabWords);
+        labels = TablatureDecoder.withoutTabs(labels, width, height, tabs, false);
+        gray = TablatureDecoder.withoutTabs(gray, width, height, tabs, true);
+        var measures = OmrMeasurePostProcessor.process(labels, gray, width, height);
+        byte[] prepared =
+                OmrScoreInterpreter.normalizeHeaderSymbols(labels, gray, width, height, measures);
         // Removing a header head can move the playable edge and the rest-count OCR crop.
-        if(prepared!=labels) {
-            byte[] geometry=OmrScoreInterpreter.normalizeTextGeometry(labels,gray,width,height,measures);
-            measures=OmrMeasurePostProcessor.process(geometry,gray,width,height,prepared);
-            labels=prepared;
+        if (prepared != labels) {
+            byte[] geometry =
+                    OmrScoreInterpreter.normalizeTextGeometry(
+                            labels, gray, width, height, measures);
+            measures = OmrMeasurePostProcessor.process(geometry, gray, width, height, prepared);
+            labels = prepared;
         }
-        measures=TablatureDecoder.reconcileMeasures(measures,tabs,width,height);
-        var numbers=annotations.measureNumbers.stream().map(NumberToken::internal).toList();
-        var rests=MultiMeasureRestDetector.detect(labels,gray,width,height,measures,
-                annotations.restCounts.stream().map(NumberToken::internal).toList());
+        measures = TablatureDecoder.reconcileMeasures(measures, tabs, width, height);
+        var numbers = annotations.measureNumbers.stream().map(NumberToken::internal).toList();
+        var rests =
+                MultiMeasureRestDetector.detect(
+                        labels,
+                        gray,
+                        width,
+                        height,
+                        measures,
+                        annotations.restCounts.stream().map(NumberToken::internal).toList());
         var rawMeasures = measures;
-        if(!numbers.isEmpty()||!rests.isEmpty())
-            measures=MeasureNumberReconciler.reconcile(measures,numbers,rests);
-        measures=PrintedMeasureRhythmGuard.reconcile(rawMeasures,measures,labels,gray,width,height);
-        var score=OmrScoreInterpreter.analyze(labels,gray,width,height,measures);
-        var rhythm=TripletRhythmDetector.withRests(score.notes(),score.rests(),measures,gray,width,height);
-        var notes=rhythm.notes();
-        var staffs=ScoreDynamicsDetector.alignStaffs(
-                OmrScoreInterpreter.techniqueStaffs(labels,gray,width,height,measures),notes,height);
-        var words=annotations.words.stream().map(Word::internal).toList();
-        notes=OctaveMarkDetector.apply(words,staffs,measures,notes,gray,width,height);
-        notes=FingeringAnnotationFilter.apply(words,staffs,measures,notes,gray,width,height);
-        if(!notes.isEmpty()&&!staffs.isEmpty()) {
-            var ornamentWords=new java.util.ArrayList<PlayingTechniqueDetector.Word>();
-            for(var word:words) {
-                String token=MusicalOcrEvidence.ornamentToken(word.text());
-                if(!token.isEmpty())ornamentWords.add(new PlayingTechniqueDetector.Word(token,
-                        word.left(),word.top(),word.right(),word.bottom()));
+        if (!numbers.isEmpty() || !rests.isEmpty())
+            measures = MeasureNumberReconciler.reconcile(measures, numbers, rests);
+        measures =
+                PrintedMeasureRhythmGuard.reconcile(
+                        rawMeasures, measures, labels, gray, width, height);
+        var score = OmrScoreInterpreter.analyze(labels, gray, width, height, measures);
+        var rhythm =
+                TripletRhythmDetector.withRests(
+                        score.notes(), score.rests(), measures, gray, width, height);
+        var notes = rhythm.notes();
+        var staffs =
+                ScoreDynamicsDetector.alignStaffs(
+                        OmrScoreInterpreter.techniqueStaffs(labels, gray, width, height, measures),
+                        notes,
+                        height);
+        var words = annotations.words.stream().map(Word::internal).toList();
+        notes = OctaveMarkDetector.apply(words, staffs, measures, notes, gray, width, height);
+        notes =
+                FingeringAnnotationFilter.apply(
+                        words, staffs, measures, notes, gray, width, height);
+        if (!notes.isEmpty() && !staffs.isEmpty()) {
+            var ornamentWords = new java.util.ArrayList<PlayingTechniqueDetector.Word>();
+            for (var word : words) {
+                String token = MusicalOcrEvidence.ornamentToken(word.text());
+                if (!token.isEmpty())
+                    ornamentWords.add(
+                            new PlayingTechniqueDetector.Word(
+                                    token, word.left(), word.top(), word.right(), word.bottom()));
             }
-            if(ocr!=null)ornamentWords.addAll(ocr.ornamentWords(gray,width,height,staffs));
-            notes=PortableNoteOrnaments.apply(GlyphResources.ornaments(),labels,gray,width,height,
-                    measures,notes,ornamentWords);
+            if (ocr != null) ornamentWords.addAll(ocr.ornamentWords(gray, width, height, staffs));
+            notes =
+                    PortableNoteOrnaments.apply(
+                            GlyphResources.ornaments(),
+                            labels,
+                            gray,
+                            width,
+                            height,
+                            measures,
+                            notes,
+                            ornamentWords);
         }
-        notes=ArtificialHarmonics.apply(gray,width,height,measures,notes,staffs);
-        notes=ScoreTiePitchGuard.apply(notes,score.keyChanges());
-        var dynamicEvidence=new java.util.ArrayList<>(words);
-        if(ocr!=null)for(var word:ocr.dynamics(gray,width,height,staffs))
-            if(!dynamicEvidence.contains(word))dynamicEvidence.add(word);
-        var dynamicWords=staffs.isEmpty()?words:GlyphResources.dynamics().recognize(gray,width,height,staffs,dynamicEvidence);
-        var meters=new java.util.ArrayList<>(annotations.meters);
-        if(ocr!=null)for(var meter:ocr.meters(labels,gray,width,height,measures,notes))
-            if(meters.stream().noneMatch(explicit->explicit.measureIndex()==meter.measureIndex()))meters.add(meter);
-        for(var meter:MeterChangeDetector.commonTimeReadings(labels,gray,width,height,measures,notes))
-            if(meters.stream().noneMatch(explicit->explicit.measureIndex()==meter.measureIndex()))meters.add(meter);
+        notes = ArtificialHarmonics.apply(gray, width, height, measures, notes, staffs);
+        notes = ScoreTiePitchGuard.apply(notes, score.keyChanges());
+        var dynamicEvidence = new java.util.ArrayList<>(words);
+        if (ocr != null)
+            for (var word : ocr.dynamics(gray, width, height, staffs))
+                if (!dynamicEvidence.contains(word)) dynamicEvidence.add(word);
+        var dynamicWords =
+                staffs.isEmpty()
+                        ? words
+                        : GlyphResources.dynamics()
+                                .recognize(gray, width, height, staffs, dynamicEvidence);
+        var meters = new java.util.ArrayList<>(annotations.meters);
+        if (ocr != null)
+            for (var meter : ocr.meters(labels, gray, width, height, measures, notes))
+                if (meters.stream()
+                        .noneMatch(explicit -> explicit.measureIndex() == meter.measureIndex()))
+                    meters.add(meter);
+        for (var meter :
+                MeterChangeDetector.commonTimeReadings(
+                        labels, gray, width, height, measures, notes))
+            if (meters.stream()
+                    .noneMatch(explicit -> explicit.measureIndex() == meter.measureIndex()))
+                meters.add(meter);
         meters.sort(java.util.Comparator.comparingInt(ScoreMeterChange::measureIndex));
-        var decoded=TablatureDecoder.apply(new ScorePageInterpretation(measures,notes,
-                MeasureNumberReconciler.firstMeasureNumber(measures,numbers),score.keyChanges(),
-                TempoChangeDetector.detect(annotations.tempoNumbers.stream().map(NumberToken::internal).toList(),
-                        gray,width,height,measures),
-                meters,rhythm.rests(),
-                PlayingTechniqueDetector.detect(words,staffs,measures,notes,width,height),
-                ScoreDynamicsDetector.detect(dynamicWords,staffs,measures,notes,gray,width,height)),tabs,width,height);
-        for(var meter:annotations.meters)if(meter.measureIndex()>=decoded.measures().size())
-            throw new IllegalArgumentException("Meter change is outside the detected measure range");
-        var finalScore=PrintedPageEvidence.rejectStafflessPage(
-                TabMeter.apply(decoded,tabs,tabWords,width,height),gray,width,height,!tabs.isEmpty());
-        return finalScore.withPlaybackDirections(ScoreNavigationDetector.detect(words,
-                NavigationSegnoGlyphs.detect(gray,width,height,staffs),staffs,finalScore.measures(),width,height));
+        var decoded =
+                TablatureDecoder.apply(
+                        new ScorePageInterpretation(
+                                measures,
+                                notes,
+                                MeasureNumberReconciler.firstMeasureNumber(measures, numbers),
+                                score.keyChanges(),
+                                TempoChangeDetector.detect(
+                                        annotations.tempoNumbers.stream()
+                                                .map(NumberToken::internal)
+                                                .toList(),
+                                        gray,
+                                        width,
+                                        height,
+                                        measures),
+                                meters,
+                                rhythm.rests(),
+                                PlayingTechniqueDetector.detect(
+                                        words, staffs, measures, notes, width, height),
+                                ScoreDynamicsDetector.detect(
+                                        dynamicWords,
+                                        staffs,
+                                        measures,
+                                        notes,
+                                        gray,
+                                        width,
+                                        height)),
+                        tabs,
+                        width,
+                        height);
+        for (var meter : annotations.meters)
+            if (meter.measureIndex() >= decoded.measures().size())
+                throw new IllegalArgumentException(
+                        "Meter change is outside the detected measure range");
+        var finalScore =
+                PrintedPageEvidence.rejectStafflessPage(
+                        TabMeter.apply(decoded, tabs, tabWords, width, height),
+                        gray,
+                        width,
+                        height,
+                        !tabs.isEmpty());
+        return finalScore.withPlaybackDirections(
+                ScoreNavigationDetector.detect(
+                        words,
+                        NavigationSegnoGlyphs.detect(gray, width, height, staffs),
+                        staffs,
+                        finalScore.measures(),
+                        width,
+                        height));
     }
 }

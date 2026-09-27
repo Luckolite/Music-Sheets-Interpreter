@@ -4,4 +4,4 @@
 package io.github.luckolite.interpreter;
 
 /** Normalized page geometry for one optically recognized measure. */
-public record MeasureRegion(float left, float right, float top, float bottom) { }
+public record MeasureRegion(float left, float right, float top, float bottom) {}

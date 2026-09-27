@@ -79,7 +79,7 @@ binding remain available for cross-platform evaluation.
 The bundled v4 model comes from our own synthetic training lineage, without pretrained
 HOMR/oemer weights or commercial score scans. Tab and export improvements do not change
 the weights. See the [model card](models/MODEL_CARD.md), [evaluation](models/evaluation.json),
-[training guide](training/README.md) and [source provenance](docs/source-provenance.json).
+[training guide](training/README.md) and [source origins](docs/source-provenance.md).
 
 ## Development
 

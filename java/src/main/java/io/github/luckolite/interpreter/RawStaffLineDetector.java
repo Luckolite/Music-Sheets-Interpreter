@@ -11,15 +11,23 @@ import java.util.List;
 final class RawStaffLineDetector {
     private static final int DARK = 170;
 
-    private RawStaffLineDetector() { }
+    private RawStaffLineDetector() {}
 
     record StaffLines(int[] rows, float gap) {
-        int top() { return rows[0]; }
-        int bottom() { return rows[4]; }
-        float center() { return (rows[0] + rows[4]) * .5f; }
+        int top() {
+            return rows[0];
+        }
+
+        int bottom() {
+            return rows[4];
+        }
+
+        float center() {
+            return (rows[0] + rows[4]) * .5f;
+        }
     }
 
-    private record Candidate(int[] rows, float gap, float score) { }
+    private record Candidate(int[] rows, float gap, float score) {}
 
     static List<StaffLines> detect(byte[] gray, int width, int height) {
         if (gray == null || width <= 0 || height <= 0 || gray.length != width * height)
@@ -28,13 +36,15 @@ final class RawStaffLineDetector {
         int[] rowStrength = new int[height];
         for (int y = 0; y < height; y++) {
             int offset = y * width;
-            for (int x = 0; x < width; x++) if ((gray[offset + x] & 0xff) <= DARK)
-                rowStrength[y]++;
+            for (int x = 0; x < width; x++) if ((gray[offset + x] & 0xff) <= DARK) rowStrength[y]++;
         }
 
         int minimumStrength = Math.max(24, Math.round(width * .25f));
-        List<StaffLines> result=new ArrayList<>(detectFromStrength(rowStrength,minimumStrength,height,false,gray,width));
-        retainDominantStaffScale(result,gray,width,height);
+        List<StaffLines> result =
+                new ArrayList<>(
+                        detectFromStrength(
+                                rowStrength, minimumStrength, height, false, gray, width));
+        retainDominantStaffScale(result, gray, width, height);
         return List.copyOf(result);
     }
 
@@ -42,33 +52,43 @@ final class RawStaffLineDetector {
      * postprocessor so stray staff-labelled notation between lines cannot merge a whole system
      * into one continuous projection band. */
     static List<StaffLines> detectFromStrength(int[] rowStrength, int minimumStrength, int height) {
-        return detectFromStrength(rowStrength,minimumStrength,height,true);
+        return detectFromStrength(rowStrength, minimumStrength, height, true);
     }
 
     /** A few staff-labelled slurs can invent a sixth-to-tenth-rule group in the
      * narrow whitespace between two independently printed staves. */
-    static List<StaffLines> detectFromStrength(int[] strength,int minimum,int height,byte[] gray,int width) {
-        List<StaffLines> original=detectFromStrength(strength,minimum,height);
-        if(gray==null||width<=0||gray.length!=width*height||original.size()<3)return original;
-        List<StaffLines> result=new ArrayList<>(original);
-        for(int i=1;i+1<original.size();i++) {
-            StaffLines a=original.get(i-1),b=original.get(i),c=original.get(i+1);
-            float gap=Math.max(b.gap(),Math.max(a.gap(),c.gap()));
-            int above=b.top()-a.bottom(),below=c.top()-b.bottom();
-            if(above<=0||below<=0||above>gap*1.5f||below>gap*1.5f)continue;
-            if(printedRuleCount(new Candidate(b.rows(),b.gap(),0),gray,width,height,230)<=1
-                    &&printedRuleCount(new Candidate(a.rows(),a.gap(),0),gray,width,height)>=4
-                    &&printedRuleCount(new Candidate(c.rows(),c.gap(),0),gray,width,height)>=4)result.remove(b);
+    static List<StaffLines> detectFromStrength(
+            int[] strength, int minimum, int height, byte[] gray, int width) {
+        List<StaffLines> original = detectFromStrength(strength, minimum, height);
+        if (gray == null || width <= 0 || gray.length != width * height || original.size() < 3)
+            return original;
+        List<StaffLines> result = new ArrayList<>(original);
+        for (int i = 1; i + 1 < original.size(); i++) {
+            StaffLines a = original.get(i - 1), b = original.get(i), c = original.get(i + 1);
+            float gap = Math.max(b.gap(), Math.max(a.gap(), c.gap()));
+            int above = b.top() - a.bottom(), below = c.top() - b.bottom();
+            if (above <= 0 || below <= 0 || above > gap * 1.5f || below > gap * 1.5f) continue;
+            if (printedRuleCount(new Candidate(b.rows(), b.gap(), 0), gray, width, height, 230) <= 1
+                    && printedRuleCount(new Candidate(a.rows(), a.gap(), 0), gray, width, height)
+                            >= 4
+                    && printedRuleCount(new Candidate(c.rows(), c.gap(), 0), gray, width, height)
+                            >= 4) result.remove(b);
         }
         return List.copyOf(result);
     }
 
-    private static List<StaffLines> detectFromStrength(int[] rowStrength,int minimumStrength,int height,boolean filterScale) {
-        return detectFromStrength(rowStrength,minimumStrength,height,filterScale,null,0);
+    private static List<StaffLines> detectFromStrength(
+            int[] rowStrength, int minimumStrength, int height, boolean filterScale) {
+        return detectFromStrength(rowStrength, minimumStrength, height, filterScale, null, 0);
     }
 
-    private static List<StaffLines> detectFromStrength(int[] rowStrength,int minimumStrength,int height,
-                                                      boolean filterScale,byte[] gray,int width) {
+    private static List<StaffLines> detectFromStrength(
+            int[] rowStrength,
+            int minimumStrength,
+            int height,
+            boolean filterScale,
+            byte[] gray,
+            int width) {
         if (rowStrength == null || rowStrength.length != height || minimumStrength <= 0)
             return List.of();
         List<Integer> peaks = localPeaks(rowStrength, minimumStrength);
@@ -80,7 +100,7 @@ final class RawStaffLineDetector {
         candidates.sort(Comparator.comparingDouble(Candidate::score).reversed());
         List<StaffLines> result = new ArrayList<>();
         for (Candidate candidate : candidates) {
-            if(gray!=null&&!hasPrintedRules(candidate,gray,width,height))continue;
+            if (gray != null && !hasPrintedRules(candidate, gray, width, height)) continue;
             boolean overlaps = false;
             for (StaffLines accepted : result) {
                 float margin = Math.min(candidate.gap(), accepted.gap()) * .75f;
@@ -92,7 +112,7 @@ final class RawStaffLineDetector {
             }
             if (!overlaps) result.add(new StaffLines(candidate.rows(), candidate.gap()));
         }
-        if(filterScale)retainDominantStaffScale(result,null,0,0);
+        if (filterScale) retainDominantStaffScale(result, null, 0, 0);
         result.sort(Comparator.comparingInt(StaffLines::top));
         return List.copyOf(result);
     }
@@ -100,32 +120,36 @@ final class RawStaffLineDetector {
     /** Shadows can form periodic dark projection peaks without any thin printed rules.
      * Validate before resolving overlaps so an invalid high-scoring group cannot hide a staff.
      * Partial support is sufficient when a beam obscures the middle rules. */
-    private static boolean hasPrintedRules(Candidate candidate,byte[] gray,int width,int height) {
-        return printedRuleCount(candidate,gray,width,height)==5;
+    private static boolean hasPrintedRules(
+            Candidate candidate, byte[] gray, int width, int height) {
+        return printedRuleCount(candidate, gray, width, height) == 5;
     }
 
-    private static int printedRuleCount(Candidate candidate,byte[] gray,int width,int height) {
-        return printedRuleCount(candidate,gray,width,height,DARK);
+    private static int printedRuleCount(Candidate candidate, byte[] gray, int width, int height) {
+        return printedRuleCount(candidate, gray, width, height, DARK);
     }
 
-    private static int printedRuleCount(Candidate candidate,byte[] gray,int width,int height,int inkLimit) {
-        int supported=0;
-        int probe=Math.max(2,Math.round(candidate.gap()*.32f));
-        int minimum=Math.max(24,Math.round(width*.12f));
-        for(int y:candidate.rows()) {
-            if(y<probe||y>=height-probe)continue;
-            int count=0,run=0,longest=0;
-            for(int x=0;x<width;x++) {
-                int ink=gray[y*width+x]&255;
-                if(ink<=inkLimit&&(gray[(y-probe)*width+x]&255)>=ink+12
-                        &&(gray[(y+probe)*width+x]&255)>=ink+12) {
+    private static int printedRuleCount(
+            Candidate candidate, byte[] gray, int width, int height, int inkLimit) {
+        int supported = 0;
+        int probe = Math.max(2, Math.round(candidate.gap() * .32f));
+        int minimum = Math.max(24, Math.round(width * .12f));
+        for (int y : candidate.rows()) {
+            if (y < probe || y >= height - probe) continue;
+            int count = 0, run = 0, longest = 0;
+            for (int x = 0; x < width; x++) {
+                int ink = gray[y * width + x] & 255;
+                if (ink <= inkLimit
+                        && (gray[(y - probe) * width + x] & 255) >= ink + 12
+                        && (gray[(y + probe) * width + x] & 255) >= ink + 12) {
                     count++;
-                    longest=Math.max(longest,++run);
-                } else run=0;
+                    longest = Math.max(longest, ++run);
+                } else run = 0;
             }
             // Text baselines have plenty of thin ink, but each glyph interrupts the rule.
             // Require a short continuous segment as well as aggregate page-wide support.
-            if(count>=minimum && longest>=Math.max(12,Math.round(candidate.gap()*3)))supported++;
+            if (count >= minimum && longest >= Math.max(12, Math.round(candidate.gap() * 3)))
+                supported++;
         }
         return supported;
     }
@@ -137,52 +161,66 @@ final class RawStaffLineDetector {
      * scale so those beam bands cannot become extra systems while still allowing raw recovery of
      * a staff that the model omitted completely.
      */
-    private static void retainDominantStaffScale(List<StaffLines> staffs,byte[] gray,int width,int height) {
+    private static void retainDominantStaffScale(
+            List<StaffLines> staffs, byte[] gray, int width, int height) {
         if (staffs == null || staffs.size() < 4) return;
         List<Float> gaps = new ArrayList<>();
         for (StaffLines staff : staffs) gaps.add(staff.gap());
         gaps.sort(Float::compare);
         float median = gaps.get(gaps.size() / 2);
         int consistent = 0;
-        for (float gap : gaps) if (gap >= median * .68f && gap <= median * 1.47f)
-            consistent++;
+        for (float gap : gaps) if (gap >= median * .68f && gap <= median * 1.47f) consistent++;
         if (consistent * 2 < staffs.size()) return;
-        List<StaffLines> candidates=List.copyOf(staffs);
-        staffs.removeIf(staff -> (staff.gap() < median * .68f || staff.gap() > median * 1.47f)
-                && !(gray!=null&&staff.gap()>=median*.55f&&staff.gap()<median*.68f
-                    &&connectedToStaff(staff,candidates,gray,width,height)));
+        List<StaffLines> candidates = List.copyOf(staffs);
+        staffs.removeIf(
+                staff ->
+                        (staff.gap() < median * .68f || staff.gap() > median * 1.47f)
+                                && !(gray != null
+                                        && staff.gap() >= median * .55f
+                                        && staff.gap() < median * .68f
+                                        && connectedToStaff(
+                                                staff, candidates, gray, width, height)));
     }
 
     /** A cue-sized part is real when a printed system rule joins it to another five-line staff. */
-    static boolean connectedToStaff(StaffLines staff,List<StaffLines> candidates,byte[] gray,int width,int height) {
-        if(gray==null)return false;
-        for(StaffLines other:candidates) {
-            if(other==staff)continue;
-            StaffLines upper=staff.top()<other.top()?staff:other,lower=upper==staff?other:staff;
-            float gap=Math.max(upper.gap(),lower.gap());
-            int separation=lower.top()-upper.bottom();
-            if(separation<=0||separation>gap*16)continue;
-            int top=Math.max(0,Math.round(upper.bottom()+gap*.12f));
-            int bottom=Math.min(height-1,Math.round(lower.top()-gap*.12f));
-            int radius=Math.max(2,Math.round(gap*2));
-            for(int edge:new int[]{leftEdge(upper,gray,width,height),leftEdge(lower,gray,width,height)}) {
-                if(edge<0)continue;
-                for(int x=Math.max(0,edge-radius);x<=Math.min(width-1,edge+radius);x++)
-                    if(OmrMeasurePostProcessor.verticalRuleAt(gray,width,x,top,bottom,gap))return true;
+    static boolean connectedToStaff(
+            StaffLines staff, List<StaffLines> candidates, byte[] gray, int width, int height) {
+        if (gray == null) return false;
+        for (StaffLines other : candidates) {
+            if (other == staff) continue;
+            StaffLines upper = staff.top() < other.top() ? staff : other,
+                    lower = upper == staff ? other : staff;
+            float gap = Math.max(upper.gap(), lower.gap());
+            int separation = lower.top() - upper.bottom();
+            if (separation <= 0 || separation > gap * 16) continue;
+            int top = Math.max(0, Math.round(upper.bottom() + gap * .12f));
+            int bottom = Math.min(height - 1, Math.round(lower.top() - gap * .12f));
+            int radius = Math.max(2, Math.round(gap * 2));
+            for (int edge :
+                    new int[] {
+                        leftEdge(upper, gray, width, height), leftEdge(lower, gray, width, height)
+                    }) {
+                if (edge < 0) continue;
+                for (int x = Math.max(0, edge - radius);
+                        x <= Math.min(width - 1, edge + radius);
+                        x++)
+                    if (OmrMeasurePostProcessor.verticalRuleAt(gray, width, x, top, bottom, gap))
+                        return true;
             }
         }
         return false;
     }
 
-    private static int leftEdge(StaffLines staff,byte[] gray,int width,int height) {
-        for(int x=0;x<width;x++) {
-            int lines=0;
-            for(int row:staff.rows()) {
-                boolean ink=false;
-                for(int y=Math.max(0,row-1);y<=Math.min(height-1,row+1);y++)if((gray[y*width+x]&255)<=DARK)ink=true;
-                if(ink)lines++;
+    private static int leftEdge(StaffLines staff, byte[] gray, int width, int height) {
+        for (int x = 0; x < width; x++) {
+            int lines = 0;
+            for (int row : staff.rows()) {
+                boolean ink = false;
+                for (int y = Math.max(0, row - 1); y <= Math.min(height - 1, row + 1); y++)
+                    if ((gray[y * width + x] & 255) <= DARK) ink = true;
+                if (ink) lines++;
             }
-            if(lines>=4)return x;
+            if (lines >= 4) return x;
         }
         return -1;
     }
@@ -193,7 +231,8 @@ final class RawStaffLineDetector {
             if (strength[row] < minimumStrength) continue;
             boolean maximum = true, prominent = false;
             for (int check = Math.max(0, row - 2);
-                 check <= Math.min(strength.length - 1, row + 2); check++) {
+                    check <= Math.min(strength.length - 1, row + 2);
+                    check++) {
                 if (strength[check] > strength[row]) maximum = false;
                 if (strength[check] < strength[row]) prominent = true;
             }
@@ -214,8 +253,8 @@ final class RawStaffLineDetector {
         return merged;
     }
 
-    private static List<Candidate> staffCandidates(List<Integer> peaks, int[] strength,
-                                                    int minimumStrength, int height) {
+    private static List<Candidate> staffCandidates(
+            List<Integer> peaks, int[] strength, int minimumStrength, int height) {
         List<Candidate> result = new ArrayList<>();
         float maximumGap = Math.max(40f, height * .035f);
         for (int first = 0; first + 4 < peaks.size(); first++) {
@@ -227,7 +266,7 @@ final class RawStaffLineDetector {
                 if (gap > maximumGap) break;
 
                 float tolerance = Math.max(2f, gap * .24f);
-                int[] rows = new int[]{top, -1, -1, -1, bottom};
+                int[] rows = new int[] {top, -1, -1, -1, bottom};
                 float error = 0f;
                 int previousIndex = first;
                 boolean complete = true;
@@ -240,8 +279,9 @@ final class RawStaffLineDetector {
                         float distance = Math.abs(row - expected);
                         if (distance > tolerance) continue;
                         if (distance < bestDistance
-                                || (distance == bestDistance && bestIndex >= 0
-                                && strength[row] > strength[peaks.get(bestIndex)])) {
+                                || (distance == bestDistance
+                                        && bestIndex >= 0
+                                        && strength[row] > strength[peaks.get(bestIndex)])) {
                             bestIndex = index;
                             bestDistance = distance;
                         }
@@ -262,8 +302,7 @@ final class RawStaffLineDetector {
                 int totalStrength = 0;
                 for (int row : rows) totalStrength += strength[row];
                 float score = totalStrength - error * minimumStrength * .75f;
-                if (score >= minimumStrength * 4.5f)
-                    result.add(new Candidate(rows, gap, score));
+                if (score >= minimumStrength * 4.5f) result.add(new Candidate(rows, gap, score));
             }
         }
         return result;

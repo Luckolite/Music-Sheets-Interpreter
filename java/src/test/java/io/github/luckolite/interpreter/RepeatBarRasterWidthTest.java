@@ -21,8 +21,9 @@ public class RepeatBarRasterWidthTest {
     }
 
     private static Object construct(String name, Object... args) throws Exception {
-        var ctor = Class.forName(OmrScoreInterpreter.class.getName() + "$" + name)
-                .getDeclaredConstructors()[0];
+        var ctor =
+                Class.forName(OmrScoreInterpreter.class.getName() + "$" + name)
+                        .getDeclaredConstructors()[0];
         ctor.setAccessible(true);
         return ctor.newInstance(args);
     }
@@ -54,20 +55,31 @@ public class RepeatBarRasterWidthTest {
         assertEquals(true, call("isFlatGlyph", labels, W, H, candidate, gap));
         var staff = construct("Staff", 80f, 80 + 4 * gap, gap);
         var head = construct("Component", 20, 160, 166, 104, 108, 163f, 106f);
-        return (List<ScoreKeyChange>) call("detectKeyChanges", labels, gray, W, H,
-                List.of(new MeasureRegion(.25f, .90f, .25f, .65f)),
-                List.of(staff), List.of(candidate), List.of(head));
+        return (List<ScoreKeyChange>)
+                call(
+                        "detectKeyChanges",
+                        labels,
+                        gray,
+                        W,
+                        H,
+                        List.of(new MeasureRegion(.25f, .90f, .25f, .65f)),
+                        List.of(staff),
+                        List.of(candidate),
+                        List.of(head));
     }
 
-    @Test public void fractionalStaffGapDoesNotTurnARepeatBarIntoAFlat() throws Exception {
+    @Test
+    public void fractionalStaffGapDoesNotTurnARepeatBarIntoAFlat() throws Exception {
         assertTrue(changes(13.75f, true).isEmpty());
     }
 
-    @Test public void nearbyIntegerGapAlsoRejectsTheBar() throws Exception {
+    @Test
+    public void nearbyIntegerGapAlsoRejectsTheBar() throws Exception {
         assertTrue(changes(14f, true).isEmpty());
     }
 
-    @Test public void aPrintedFlatAfterADoubleBarStillChangesKey() throws Exception {
+    @Test
+    public void aPrintedFlatAfterADoubleBarStillChangesKey() throws Exception {
         assertEquals(List.of(new ScoreKeyChange(0, -1)), changes(13.75f, false));
     }
 }

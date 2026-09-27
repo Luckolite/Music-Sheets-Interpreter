@@ -14,7 +14,8 @@ public final class ScoreMeterMap {
     public ScoreMeterMap(float opening, List<ScoreMeterChange> changes) {
         this.opening = Float.isFinite(opening) ? Math.max(.125f, Math.min(128, opening)) : 4;
         ArrayList<ScoreMeterChange> ordered = new ArrayList<>();
-        if (changes != null) for (ScoreMeterChange change : changes) if (change != null) ordered.add(change);
+        if (changes != null)
+            for (ScoreMeterChange change : changes) if (change != null) ordered.add(change);
         ordered.sort(Comparator.comparingInt(ScoreMeterChange::measureIndex));
         this.changes = List.copyOf(ordered);
     }

@@ -8,11 +8,12 @@ import java.util.List;
 
 /** Uses printed measure-number anchors to correct missed staffs and bad barline guesses. */
 final class MeasureNumberReconciler {
-    private MeasureNumberReconciler() { }
+    private MeasureNumberReconciler() {}
 
-    record NumberToken(int value, float left, float top, float right, float bottom, float annotationLeft) {
-        NumberToken(int value,float left,float top,float right,float bottom) {
-            this(value,left,top,right,bottom,left);
+    record NumberToken(
+            int value, float left, float top, float right, float bottom, float annotationLeft) {
+        NumberToken(int value, float left, float top, float right, float bottom) {
+            this(value, left, top, right, bottom, left);
         }
     }
 
@@ -20,40 +21,65 @@ final class MeasureNumberReconciler {
         return reconcile(detected, tokens, List.of());
     }
 
-    static List<MeasureRegion> reconcile(List<MeasureRegion> detected,List<NumberToken> tokens,
-            List<NumberToken> multiMeasureRests,byte[] labels,int width,int height) {
-        var fitted=reconcile(detected,tokens,multiMeasureRests);
-        var rawRows=rows(detected);var fittedRows=rows(fitted);
-        if(rawRows.isEmpty()||fittedRows.isEmpty()||labels==null||labels.length!=width*height)return fitted;
-        Row raw=rawRows.get(rawRows.size()-1),last=fittedRows.get(fittedRows.size()-1);
-        if(raw.measures.size()!=1||last.measures.size()<=1||Math.abs(raw.top-last.top)>.01f
-                ||!tokensInside(raw,multiMeasureRests).isEmpty())return fitted;
+    static List<MeasureRegion> reconcile(
+            List<MeasureRegion> detected,
+            List<NumberToken> tokens,
+            List<NumberToken> multiMeasureRests,
+            byte[] labels,
+            int width,
+            int height) {
+        var fitted = reconcile(detected, tokens, multiMeasureRests);
+        var rawRows = rows(detected);
+        var fittedRows = rows(fitted);
+        if (rawRows.isEmpty()
+                || fittedRows.isEmpty()
+                || labels == null
+                || labels.length != width * height) return fitted;
+        Row raw = rawRows.get(rawRows.size() - 1), last = fittedRows.get(fittedRows.size() - 1);
+        if (raw.measures.size() != 1
+                || last.measures.size() <= 1
+                || Math.abs(raw.top - last.top) > .01f
+                || !tokensInside(raw, multiMeasureRests).isEmpty()) return fitted;
         // A lone held-note coda with empty space to the closing bar is direct evidence
         // of one measure. Do not subdivide it using the density of earlier systems.
-        int left=Math.max(0,Math.round(raw.left*width)),right=Math.min(width-1,Math.round(raw.right*width));
-        int top=Math.max(0,Math.round(raw.top*height)),bottom=Math.min(height-1,Math.round(raw.bottom*height));
-        int groups=0,lastHead=-9999,firstHead=-1,finalHead=-1;
-        for(int x=left;x<=right;x++) {
-            int heads=0;for(int y=top;y<=bottom;y++)if(labels[y*width+x]==OmrMeasurePostProcessor.NOTEHEAD)heads++;
-            if(heads<2)continue;
-            if(x-lastHead>Math.max(5,width*.008f))groups++;
-            if(firstHead<0)firstHead=x;finalHead=x;lastHead=x;
+        int left = Math.max(0, Math.round(raw.left * width)),
+                right = Math.min(width - 1, Math.round(raw.right * width));
+        int top = Math.max(0, Math.round(raw.top * height)),
+                bottom = Math.min(height - 1, Math.round(raw.bottom * height));
+        int groups = 0, lastHead = -9999, firstHead = -1, finalHead = -1;
+        for (int x = left; x <= right; x++) {
+            int heads = 0;
+            for (int y = top; y <= bottom; y++)
+                if (labels[y * width + x] == OmrMeasurePostProcessor.NOTEHEAD) heads++;
+            if (heads < 2) continue;
+            if (x - lastHead > Math.max(5, width * .008f)) groups++;
+            if (firstHead < 0) firstHead = x;
+            finalHead = x;
+            lastHead = x;
         }
-        if(groups!=1||firstHead<left+(right-left)*.025f||finalHead>left+(right-left)*.25f)return fitted;
-        List<MeasureRegion> result=new ArrayList<>(fitted.subList(0,fitted.size()-last.measures.size()));
-        result.addAll(raw.measures);return List.copyOf(result);
+        if (groups != 1
+                || firstHead < left + (right - left) * .025f
+                || finalHead > left + (right - left) * .25f) return fitted;
+        List<MeasureRegion> result =
+                new ArrayList<>(fitted.subList(0, fitted.size() - last.measures.size()));
+        result.addAll(raw.measures);
+        return List.copyOf(result);
     }
 
-    static List<MeasureRegion> reconcile(List<MeasureRegion> detected, List<NumberToken> tokens,
-                                         List<NumberToken> multiMeasureRests) {
+    static List<MeasureRegion> reconcile(
+            List<MeasureRegion> detected,
+            List<NumberToken> tokens,
+            List<NumberToken> multiMeasureRests) {
         List<MeasureRegion> safeDetected = detected == null ? List.of() : detected;
         if (tokens == null || tokens.isEmpty())
             return stabilizeAndExpandUnanchored(safeDetected, multiMeasureRests);
         List<Row> anchorLayout = rows(safeDetected);
         for (Row row : anchorLayout) {
-            for (NumberToken rest : assignedRestTokens(row, anchorLayout, multiMeasureRests)) row.restExtras += rest.value - 1;
-            List<MeasureRegion> expanded = expandMultiMeasureRests(row.measures,
-                    assignedRestTokens(row, anchorLayout, multiMeasureRests));
+            for (NumberToken rest : assignedRestTokens(row, anchorLayout, multiMeasureRests))
+                row.restExtras += rest.value - 1;
+            List<MeasureRegion> expanded =
+                    expandMultiMeasureRests(
+                            row.measures, assignedRestTokens(row, anchorLayout, multiMeasureRests));
             row.measures.clear();
             row.measures.addAll(expanded);
         }
@@ -66,8 +92,9 @@ final class MeasureNumberReconciler {
         // returning early for an empty detection list made that recovery path unreachable.
         List<Row> rows = augmentedRows(safeDetected, anchors);
         assignAnchors(rows, anchors);
-        for (Row row : rows) for (NumberToken rest : assignedRestTokens(row, rows, multiMeasureRests))
-            row.restExtras += rest.value - 1;
+        for (Row row : rows)
+            for (NumberToken rest : assignedRestTokens(row, rows, multiMeasureRests))
+                row.restExtras += rest.value - 1;
         interpolateMissingAnchors(rows);
         int typicalExpected = typicalExpectedCount(rows);
 
@@ -80,25 +107,35 @@ final class MeasureNumberReconciler {
             boolean expectedFromTypicalFinalRow = false;
             // Consecutive printed numbers establish one-measure systems directly. Preserve that
             // run on the final numbered row instead of replacing it with the page-wide median.
-            if (expected == 0 && index + 1 == rows.size() && row.anchor != null
-                    && row.measures.size() == 1 && previousExpected == 1)
-                expected = 1;
+            if (expected == 0
+                    && index + 1 == rows.size()
+                    && row.anchor != null
+                    && row.measures.size() == 1
+                    && previousExpected == 1) expected = 1;
             // A numbered final system has no following anchor to reveal its count. When a long
             // page supplies several earlier differences and the detector returned one full-width
             // box, use their median instead of treating the entire last system as one measure.
-            if (expected == 0 && index + 1 == rows.size() && row.anchor != null
-                    && row.measures.size() <= 1 && typicalExpected > 1
-                    && knownExpectedCount(rows) >= 4 && matchesEarlierSystemSpan(rows, index)) {
+            if (expected == 0
+                    && index + 1 == rows.size()
+                    && row.anchor != null
+                    && row.measures.size() <= 1
+                    && typicalExpected > 1
+                    && knownExpectedCount(rows) >= 4
+                    && matchesEarlierSystemSpan(rows, index)) {
                 expected = typicalExpected;
                 expectedFromTypicalFinalRow = true;
             }
             // Once consecutive printed numbers establish the page's system count, carry it
             // through a full-width trailing numbered/final system. Previously a noisy final
             // row kept 13-14 stem boxes merely because there was no later number anchor.
-            boolean extremelyNoisyRow = previousExpected > 0 && (row.measures.isEmpty()
-                    || row.measures.size() >= previousExpected * 2);
-            if (expected == 0 && previousExpected > 0
-                    && extremelyNoisyRow && (row.anchor != null || index + 1 == rows.size())
+            boolean extremelyNoisyRow =
+                    previousExpected > 0
+                            && (row.measures.isEmpty()
+                                    || row.measures.size() >= previousExpected * 2);
+            if (expected == 0
+                    && previousExpected > 0
+                    && extremelyNoisyRow
+                    && (row.anchor != null || index + 1 == rows.size())
                     && (row.measures.isEmpty() || matchesEarlierSystemSpan(rows, index)))
                 expected = previousExpected;
             if (expected > 0) previousExpected = expected;
@@ -113,8 +150,10 @@ final class MeasureNumberReconciler {
                         && trailingRestAddsVisualSlot(row, rowRests, typicalExpected)) expected++;
                 for (NumberToken rest : rowRests) expected += rest.value - 1;
             }
-            result.addAll(expected > 0 ? fitRow(row, expected, rowRests)
-                    : expandMultiMeasureRests(row.measures, rowRests));
+            result.addAll(
+                    expected > 0
+                            ? fitRow(row, expected, rowRests)
+                            : expandMultiMeasureRests(row.measures, rowRests));
         }
         // A trusted printed-number difference is stronger than the page's dominant row count.
         // In Legendary Guardian, 72 -> 77 proves that the narrow whole-note system has five bars;
@@ -122,8 +161,8 @@ final class MeasureNumberReconciler {
         return List.copyOf(result);
     }
 
-    private static boolean trailingRestAddsVisualSlot(Row row, List<NumberToken> rests,
-                                                       int typicalVisualCount) {
+    private static boolean trailingRestAddsVisualSlot(
+            Row row, List<NumberToken> rests, int typicalVisualCount) {
         if (rests.size() != 1 || typicalVisualCount < 2 || row.right <= row.left) return false;
         NumberToken rest = rests.get(0);
         float center = ((rest.left + rest.right) * .5f - row.left) / (row.right - row.left);
@@ -159,8 +198,7 @@ final class MeasureNumberReconciler {
         List<Row> layout = rows(reconciled == null ? List.of() : reconciled);
         List<NumberToken> anchors = trustedAnchors(tokens == null ? List.of() : tokens, layout);
         if (anchors.size() < 2)
-            return singleAnchorProvingMeasureOne(layout,
-                    tokens == null ? List.of() : tokens);
+            return singleAnchorProvingMeasureOne(layout, tokens == null ? List.of() : tokens);
         assignAnchors(layout, anchors);
         int precedingMeasures = 0;
         for (Row row : layout) {
@@ -179,22 +217,26 @@ final class MeasureNumberReconciler {
      * reconciled measures plus one. This is common when a PDF contains both the solo part and a
      * later full-score arrangement, as in Sands of Destiny.
      */
-    private static int singleAnchorProvingMeasureOne(List<Row> layout,
-                                                      List<NumberToken> tokens) {
+    private static int singleAnchorProvingMeasureOne(List<Row> layout, List<NumberToken> tokens) {
         if (layout.isEmpty() || tokens.isEmpty()) return 0;
         for (NumberToken token : tokens) {
             float centerX = (token.left + token.right) * .5f;
-            if (token.value < 1 || token.value > 999 || centerX > .22f
+            if (token.value < 1
+                    || token.value > 999
+                    || centerX > .22f
                     || !leftOfMatchingStaff(token, layout)) continue;
             float centerY = (token.top + token.bottom) * .5f;
             Row closest = null;
             float distance = Float.MAX_VALUE;
             for (Row row : layout) {
                 float candidate = Math.abs(centerY - row.top);
-                if (candidate < distance) { distance = candidate; closest = row; }
+                if (candidate < distance) {
+                    distance = candidate;
+                    closest = row;
+                }
             }
-            if (closest == null || distance > Math.max(.045f,
-                    (closest.bottom - closest.top) * .85f)) continue;
+            if (closest == null
+                    || distance > Math.max(.045f, (closest.bottom - closest.top) * .85f)) continue;
             int preceding = 0;
             for (Row row : layout) {
                 if (row == closest) break;
@@ -213,8 +255,8 @@ final class MeasureNumberReconciler {
         if (multiMeasureRests == null || multiMeasureRests.isEmpty()) return stabilized;
         List<MeasureRegion> result = new ArrayList<>();
         for (Row row : rows(stabilized))
-            result.addAll(expandMultiMeasureRests(row.measures,
-                    tokensInside(row, multiMeasureRests)));
+            result.addAll(
+                    expandMultiMeasureRests(row.measures, tokensInside(row, multiMeasureRests)));
         return List.copyOf(result);
     }
 
@@ -225,28 +267,30 @@ final class MeasureNumberReconciler {
      * geometry independently proves that it contains a tiny false measure or one implausibly
      * wide merged measure. Short coda/final systems remain untouched.
      */
-    private static List<MeasureRegion> stabilizeSystemCounts(List<MeasureRegion> source,
-                                                             List<NumberToken> multiMeasureRests) {
+    private static List<MeasureRegion> stabilizeSystemCounts(
+            List<MeasureRegion> source, List<NumberToken> multiMeasureRests) {
         List<Row> layout = rows(source);
         if (layout.size() < 5) return List.copyOf(source);
 
         int[] frequencies = new int[13];
-        for (Row row : layout) if (row.measures.size() >= 2 && row.measures.size() < frequencies.length)
-            frequencies[row.measures.size()]++;
+        for (Row row : layout)
+            if (row.measures.size() >= 2 && row.measures.size() < frequencies.length)
+                frequencies[row.measures.size()]++;
         int dominant = 0;
         for (int count = 2; count < frequencies.length; count++)
             if (frequencies[count] > frequencies[dominant]) dominant = count;
-        if (dominant < 2 || frequencies[dominant] < 3
-                || frequencies[dominant] * 2 < layout.size()) return List.copyOf(source);
+        if (dominant < 2 || frequencies[dominant] < 3 || frequencies[dominant] * 2 < layout.size())
+            return List.copyOf(source);
 
         List<Float> spans = new ArrayList<>();
         List<Float> widths = new ArrayList<>();
-        for (Row row : layout) if (row.measures.size() == dominant) {
-            float span = row.right - row.left;
-            if (span <= 0f) continue;
-            spans.add(span);
-            widths.add(span / dominant);
-        }
+        for (Row row : layout)
+            if (row.measures.size() == dominant) {
+                float span = row.right - row.left;
+                if (span <= 0f) continue;
+                spans.add(span);
+                widths.add(span / dominant);
+            }
         float referenceSpan = median(spans, 0f);
         float referenceWidth = median(widths, 0f);
         if (referenceSpan <= 0f || referenceWidth <= 0f) return List.copyOf(source);
@@ -276,7 +320,8 @@ final class MeasureNumberReconciler {
             // Transcendence 15-20), so never collapse it wholesale without printed anchors.
             boolean falseExtra = count == dominant + 1 && narrowest < referenceWidth * .46f;
             boolean missedBoundary = count + 1 == dominant && widest > referenceWidth * 1.65f;
-            result.addAll(falseExtra || missedBoundary ? fitCount(row.measures, dominant) : row.measures);
+            result.addAll(
+                    falseExtra || missedBoundary ? fitCount(row.measures, dominant) : row.measures);
         }
         return List.copyOf(result);
     }
@@ -302,9 +347,13 @@ final class MeasureNumberReconciler {
         for (int index = 0; index < rows.size(); index++) {
             Row row = rows.get(index);
             if (result.length() > 1) result.append(',');
-            result.append(Math.round(row.top * 100)).append(':').append(row.measures.size())
-                    .append('=').append(row.anchor == null ? "-" : row.anchor.value)
-                    .append('/').append(expectedUntilNextRow(rows, index));
+            result.append(Math.round(row.top * 100))
+                    .append(':')
+                    .append(row.measures.size())
+                    .append('=')
+                    .append(row.anchor == null ? "-" : row.anchor.value)
+                    .append('/')
+                    .append(expectedUntilNextRow(rows, index));
         }
         return result.append(']').toString();
     }
@@ -316,8 +365,9 @@ final class MeasureNumberReconciler {
         for (MeasureRegion measure : sorted) {
             Row row = rows.isEmpty() ? null : rows.get(rows.size() - 1);
             float tolerance = Math.max(0.012f, (measure.bottom() - measure.top()) * 0.22f);
-            if (row == null || Math.abs(row.top - measure.top()) > tolerance
-                    && !curvedRowNeighbor(row.measures,measure)) {
+            if (row == null
+                    || Math.abs(row.top - measure.top()) > tolerance
+                            && !curvedRowNeighbor(row.measures, measure)) {
                 row = new Row(measure.top(), measure.bottom());
                 rows.add(row);
             }
@@ -331,13 +381,23 @@ final class MeasureNumberReconciler {
     }
 
     /** Adjacent measure boxes may climb beyond the first box's fixed top tolerance. */
-    private static boolean curvedRowNeighbor(List<MeasureRegion> row,MeasureRegion measure) {
-        for(MeasureRegion other:row) {
-            float separation=Math.min(Math.abs(other.left()-measure.right()),Math.abs(measure.left()-other.right()));
-            float overlap=Math.min(other.bottom(),measure.bottom())-Math.max(other.top(),measure.top());
-            float shorter=Math.min(other.bottom()-other.top(),measure.bottom()-measure.top());
-            if(separation<=.02f&&Math.min(other.right(),measure.right())-Math.max(other.left(),measure.left())<=.002f
-                    &&shorter>0&&overlap>=shorter*.65f)return true;
+    private static boolean curvedRowNeighbor(List<MeasureRegion> row, MeasureRegion measure) {
+        for (MeasureRegion other : row) {
+            float separation =
+                    Math.min(
+                            Math.abs(other.left() - measure.right()),
+                            Math.abs(measure.left() - other.right()));
+            float overlap =
+                    Math.min(other.bottom(), measure.bottom())
+                            - Math.max(other.top(), measure.top());
+            float shorter =
+                    Math.min(other.bottom() - other.top(), measure.bottom() - measure.top());
+            if (separation <= .02f
+                    && Math.min(other.right(), measure.right())
+                                    - Math.max(other.left(), measure.left())
+                            <= .002f
+                    && shorter > 0
+                    && overlap >= shorter * .65f) return true;
         }
         return false;
     }
@@ -347,18 +407,27 @@ final class MeasureNumberReconciler {
         List<NumberToken> candidates = new ArrayList<>();
         for (NumberToken token : tokens) {
             float centerX = (token.left + token.right) / 2f;
-            if (token.value >= 1 && token.value <= 999 && centerX <= 0.22f
-                    && leftOfMatchingStaff(token, layout))
-                candidates.add(token);
+            if (token.value >= 1
+                    && token.value <= 999
+                    && centerX <= 0.22f
+                    && leftOfMatchingStaff(token, layout)) candidates.add(token);
         }
         // A folio above the first detected system can precede the real measure number
         // in a perfectly increasing OCR sequence. It must not invent an extra system.
         if (!layout.isEmpty()) {
             Row first = layout.get(0);
             List<NumberToken> headers = List.copyOf(candidates);
-            candidates.removeIf(token -> token.top < .065f && token.bottom < first.top - .025f
-                    && headers.stream().anyMatch(header -> header != token && header.value > token.value
-                    && headerRow(header, layout) == 0));
+            candidates.removeIf(
+                    token ->
+                            token.top < .065f
+                                    && token.bottom < first.top - .025f
+                                    && headers.stream()
+                                            .anyMatch(
+                                                    header ->
+                                                            header != token
+                                                                    && header.value > token.value
+                                                                    && headerRow(header, layout)
+                                                                            == 0));
         }
         candidates.sort(Comparator.comparing(NumberToken::top));
         if (candidates.isEmpty()) return List.of();
@@ -367,7 +436,9 @@ final class MeasureNumberReconciler {
         int[] previous = new int[candidates.size()];
         int best = 0;
         for (int index = 0; index < candidates.size(); index++) {
-            length[index] = 1; error[index] = 0; previous[index] = -1;
+            length[index] = 1;
+            error[index] = 0;
+            previous[index] = -1;
             for (int before = 0; before < index; before++) {
                 int difference = candidates.get(index).value - candidates.get(before).value;
                 float vertical = candidates.get(index).top - candidates.get(before).top;
@@ -375,17 +446,27 @@ final class MeasureNumberReconciler {
                 // bridge an implausible number of visually segmented measures. This was the
                 // source of the 9 -> 20 false sequence in Humoresque: it beat the real sequence
                 // by length and expanded one three-measure system into eleven measures.
-                float maximumVertical = Math.max(.16f,
-                        Math.min(.24f, medianStep(layout) * 2.35f));
-                if (difference < 1 || difference > 16 || vertical < 0.035f
-                        || (vertical > maximumVertical && !adjacentDetectedRowsAgree(
-                        candidates.get(before), candidates.get(index), difference, layout))
-                        || !plausiblePrintedDifference(candidates.get(before),
-                        candidates.get(index), difference, layout))
+                float maximumVertical = Math.max(.16f, Math.min(.24f, medianStep(layout) * 2.35f));
+                if (difference < 1
+                        || difference > 16
+                        || vertical < 0.035f
+                        || (vertical > maximumVertical
+                                && !adjacentDetectedRowsAgree(
+                                        candidates.get(before),
+                                        candidates.get(index),
+                                        difference,
+                                        layout))
+                        || !plausiblePrintedDifference(
+                                candidates.get(before), candidates.get(index), difference, layout))
                     continue;
                 int candidateLength = length[before] + 1;
-                float candidateError = error[before] + transitionCountError(
-                        candidates.get(before), candidates.get(index), difference, layout);
+                float candidateError =
+                        error[before]
+                                + transitionCountError(
+                                        candidates.get(before),
+                                        candidates.get(index),
+                                        difference,
+                                        layout);
                 if (candidateLength > length[index]
                         || (candidateLength == length[index] && candidateError < error[index])) {
                     length[index] = candidateLength;
@@ -398,7 +479,7 @@ final class MeasureNumberReconciler {
         }
         if (length[best] < 2) return List.of();
         List<NumberToken> result = new ArrayList<>();
-        for (int at = best;; at = previous[at]) {
+        for (int at = best; ; at = previous[at]) {
             result.add(candidates.get(at));
             if (previous[at] < 0) break;
         }
@@ -406,13 +487,12 @@ final class MeasureNumberReconciler {
         return List.copyOf(result);
     }
 
-    private static boolean adjacentDetectedRowsAgree(NumberToken from, NumberToken to,
-                                                       int difference, List<Row> layout) {
+    private static boolean adjacentDetectedRowsAgree(
+            NumberToken from, NumberToken to, int difference, List<Row> layout) {
         // Grand-staff systems can be farther apart than a quarter page. Their printed
         // numbers still anchor consecutive rows when the visible bars confirm the jump.
         int first = headerRow(from, layout), next = headerRow(to, layout);
-        return first >= 0 && next == first + 1
-                && layout.get(first).measures.size() == difference;
+        return first >= 0 && next == first + 1 && layout.get(first).measures.size() == difference;
     }
 
     private static int headerRow(NumberToken token, List<Row> layout) {
@@ -420,16 +500,15 @@ final class MeasureNumberReconciler {
         float centerY = (token.top + token.bottom) * .5f;
         for (int index = 0; index < layout.size(); index++) {
             Row row = layout.get(index);
-            if (centerY >= row.top - .035f && centerY <= row.top + .012f
-                    && (token.left + token.right) * .5f <= row.left + .012f)
-                return index;
+            if (centerY >= row.top - .035f
+                    && centerY <= row.top + .012f
+                    && (token.left + token.right) * .5f <= row.left + .012f) return index;
         }
         return -1;
     }
 
-    private static boolean plausiblePrintedDifference(NumberToken from, NumberToken to,
-                                                       int printedDifference,
-                                                       List<Row> layout) {
+    private static boolean plausiblePrintedDifference(
+            NumberToken from, NumberToken to, int printedDifference, List<Row> layout) {
         if (layout == null || layout.isEmpty()) return true;
         float fromY = (from.top + from.bottom) * .5f;
         float toY = (to.top + to.bottom) * .5f;
@@ -441,27 +520,24 @@ final class MeasureNumberReconciler {
             if (center < fromY - .025f || center >= toY - .012f) continue;
             visual += row.measures.size();
             restExtras += row.restExtras;
-            if (row.measures.size() <= 2 && row.right - row.left >= .45f)
-                unsplitFullSystem = true;
+            if (row.measures.size() <= 2 && row.right - row.left >= .45f) unsplitFullSystem = true;
         }
         if (visual <= 0 || unsplitFullSystem) return true;
         if (restExtras > 0) return printedDifference == visual;
         // Missing or false semantic barlines can roughly halve/double a count. Beyond that, the
         // OCR transition is weaker evidence than the page geometry and must not become an anchor.
-        return printedDifference <= visual * 2 + 2
-                && printedDifference * 2 + 2 >= visual;
+        return printedDifference <= visual * 2 + 2 && printedDifference * 2 + 2 >= visual;
     }
 
     /** Uses detected row count only to break equal-length OCR sequences. Printed anchors remain
      * authoritative when they form a longer run, even if semantic barlines are badly damaged. */
-    private static float transitionCountError(NumberToken from, NumberToken to,
-                                              int printedDifference, List<Row> layout) {
+    private static float transitionCountError(
+            NumberToken from, NumberToken to, int printedDifference, List<Row> layout) {
         if (layout == null || layout.isEmpty()) return 0;
         int first = headerRow(from, layout), next = headerRow(to, layout);
         if (first < 0 || next <= first) return 0;
         int visual = 0;
-        for (int index = first; index < next; index++)
-            visual += layout.get(index).measures.size();
+        for (int index = first; index < next; index++) visual += layout.get(index).measures.size();
         return Math.abs(printedDifference - visual);
     }
 
@@ -474,13 +550,16 @@ final class MeasureNumberReconciler {
         // such as "Violin 2" and "Violin 3" sit left of later staves inside the same tall box.
         // Treating those digits as system starts fabricates extra rows and shifts every bar.
         for (Row row : layout)
-            if (tokenY > row.top + Math.min(.025f, (row.bottom-row.top)*.25f)
+            if (tokenY > row.top + Math.min(.025f, (row.bottom - row.top) * .25f)
                     && tokenY < row.bottom) return false;
         Row closest = null;
         float best = Float.MAX_VALUE;
         for (Row row : layout) {
             float distance = Math.abs(tokenY - row.top);
-            if (distance < best) { best = distance; closest = row; }
+            if (distance < best) {
+                best = distance;
+                closest = row;
+            }
         }
         float centerX = (token.left + token.right) * .5f;
         if (closest == null || best > Math.max(.045f, (closest.bottom - closest.top) * .85f))
@@ -491,11 +570,15 @@ final class MeasureNumberReconciler {
         return centerX <= closest.left + .012f;
     }
 
-    private static List<Row> augmentedRows(List<MeasureRegion> detected, List<NumberToken> anchors) {
+    private static List<Row> augmentedRows(
+            List<MeasureRegion> detected, List<NumberToken> anchors) {
         List<Row> rows = rows(detected);
         float medianHeight = medianHeight(rows);
         List<Float> lefts = new ArrayList<>(), rights = new ArrayList<>();
-        for (Row row : rows) { lefts.add(row.left); rights.add(row.right); }
+        for (Row row : rows) {
+            lefts.add(row.left);
+            rights.add(row.right);
+        }
         float medianLeft = median(lefts, 0.1f);
         float medianRight = median(rights, 0.9f);
         float rowStep = medianStep(rows);
@@ -505,11 +588,15 @@ final class MeasureNumberReconciler {
             float distance = matchDistance;
             for (Row row : rows) {
                 float next = Math.abs(row.top - anchor.top);
-                if (next < distance) { closest = row; distance = next; }
+                if (next < distance) {
+                    closest = row;
+                    distance = next;
+                }
             }
             if (closest == null) {
                 Row synthetic = new Row(anchor.top, Math.min(1f, anchor.top + medianHeight));
-                synthetic.left = medianLeft; synthetic.right = medianRight;
+                synthetic.left = medianLeft;
+                synthetic.right = medianRight;
                 rows.add(synthetic);
             }
         }
@@ -526,7 +613,10 @@ final class MeasureNumberReconciler {
             for (Row row : rows) {
                 if (row.anchor != null) continue;
                 float next = Math.abs(row.top - anchor.top);
-                if (next < distance) { closest = row; distance = next; }
+                if (next < distance) {
+                    closest = row;
+                    distance = next;
+                }
             }
             if (closest != null) closest.anchor = anchor;
         }
@@ -534,13 +624,20 @@ final class MeasureNumberReconciler {
 
     private static void inferLeadingAnchors(List<Row> rows) {
         int first = -1, second = -1;
-        for (int index = 0; index < rows.size(); index++) if (rows.get(index).anchor != null) {
-            if (first < 0) first = index; else { second = index; break; }
-        }
+        for (int index = 0; index < rows.size(); index++)
+            if (rows.get(index).anchor != null) {
+                if (first < 0) first = index;
+                else {
+                    second = index;
+                    break;
+                }
+            }
         if (first <= 0 || second < 0) return;
         int rowDistance = second - first;
         int valueDistance = rows.get(second).anchor.value - rows.get(first).anchor.value;
-        if (valueDistance < 2 || valueDistance > 12 * rowDistance || valueDistance % rowDistance != 0) return;
+        if (valueDistance < 2
+                || valueDistance > 12 * rowDistance
+                || valueDistance % rowDistance != 0) return;
         int perRow = valueDistance / rowDistance;
         for (int index = first - 1; index >= 0; index--) {
             int value = rows.get(first).anchor.value - perRow * (first - index);
@@ -573,8 +670,7 @@ final class MeasureNumberReconciler {
                     for (int offset = 1; offset < systems; offset++) {
                         value += counts[offset - 1];
                         Row row = rows.get(previousAnchor + offset);
-                        row.anchor = new NumberToken(value, row.left, row.top,
-                                row.left, row.top);
+                        row.anchor = new NumberToken(value, row.left, row.top, row.left, row.top);
                     }
                 }
             }
@@ -589,7 +685,8 @@ final class MeasureNumberReconciler {
         for (int i = 0; i < systems; i++) {
             Row row = rows.get(start + i);
             logical[i] = row.measures.size() + row.restExtras;
-            logicalTotal += logical[i]; restExtras += row.restExtras;
+            logicalTotal += logical[i];
+            restExtras += row.restExtras;
         }
         // Exact barlines plus a verified rest explain the anchor gap without redistributing
         // its silence across the adjacent written bars (even if the rest row's number is missed).
@@ -601,16 +698,22 @@ final class MeasureNumberReconciler {
         for (int[] row : previous) java.util.Arrays.fill(row, -1);
         costs[0][0] = 0;
         for (int system = 0; system < systems; system++) {
-            int detected = Math.max(1, Math.min(16,
-                    rows.get(start + system).measures.size() + rows.get(start + system).restExtras));
+            int detected =
+                    Math.max(
+                            1,
+                            Math.min(
+                                    16,
+                                    rows.get(start + system).measures.size()
+                                            + rows.get(start + system).restExtras));
             for (int used = 0; used <= total; used++) {
                 if (!Float.isFinite(costs[system][used])) continue;
                 for (int count = 1; count <= 16 && used + count <= total; count++) {
                     float detectedError = count - detected;
                     float averageError = count - average;
-                    float next = costs[system][used]
-                            + detectedError * detectedError
-                            + averageError * averageError * .35f;
+                    float next =
+                            costs[system][used]
+                                    + detectedError * detectedError
+                                    + averageError * averageError * .35f;
                     if (next < costs[system + 1][used + count]) {
                         costs[system + 1][used + count] = next;
                         previous[system + 1][used + count] = count;
@@ -632,13 +735,14 @@ final class MeasureNumberReconciler {
 
     private static int expectedUntilNextRow(List<Row> rows, int index) {
         Row row = rows.get(index);
-        if (row.anchor == null || index + 1 >= rows.size() || rows.get(index + 1).anchor == null) return 0;
+        if (row.anchor == null || index + 1 >= rows.size() || rows.get(index + 1).anchor == null)
+            return 0;
         int difference = rows.get(index + 1).anchor.value - row.anchor.value;
         return difference >= 1 && difference <= 16 ? difference : 0;
     }
 
-    private static List<MeasureRegion> fitRow(Row row, int expected,
-                                              List<NumberToken> multiMeasureRests) {
+    private static List<MeasureRegion> fitRow(
+            Row row, int expected, List<NumberToken> multiMeasureRests) {
         int representedExtras = 0;
         for (NumberToken token : multiMeasureRests) representedExtras += token.value - 1;
         int visualExpected = expected - representedExtras;
@@ -650,8 +754,10 @@ final class MeasureNumberReconciler {
         if (!row.measures.isEmpty()) fitted = fitCount(row.measures, visualExpected);
         else {
             if (row.right - row.left < 0.1f) return List.of();
-            fitted = fitCount(List.of(new MeasureRegion(row.left, row.right,
-                    row.top, row.bottom)), visualExpected);
+            fitted =
+                    fitCount(
+                            List.of(new MeasureRegion(row.left, row.right, row.top, row.bottom)),
+                            visualExpected);
         }
         List<MeasureRegion> expanded = expandMultiMeasureRests(fitted, multiMeasureRests);
         // A rest token must map back into exactly one fitted visual measure. If it cannot, keep
@@ -665,14 +771,16 @@ final class MeasureNumberReconciler {
         for (NumberToken token : tokens) {
             float x = (token.left + token.right) * .5f;
             float y = (token.top + token.bottom) * .5f;
-            if (x >= row.left && x <= row.right
-                    && y >= row.top - (row.bottom - row.top) * .95f && y <= row.bottom)
-                result.add(token);
+            if (x >= row.left
+                    && x <= row.right
+                    && y >= row.top - (row.bottom - row.top) * .95f
+                    && y <= row.bottom) result.add(token);
         }
         return List.copyOf(result);
     }
 
-    private static List<NumberToken> assignedRestTokens(Row row, List<Row> layout, List<NumberToken> tokens) {
+    private static List<NumberToken> assignedRestTokens(
+            Row row, List<Row> layout, List<NumberToken> tokens) {
         List<NumberToken> result = new ArrayList<>();
         for (NumberToken token : tokensInside(row, tokens)) {
             float y = (token.top + token.bottom) * .5f;
@@ -688,8 +796,8 @@ final class MeasureNumberReconciler {
 
     /** A multi-measure rest is one printed span but several logical measures. Repeating the same
      * geometry keeps playback on that rest without inventing a barline in adjacent written music. */
-    private static List<MeasureRegion> expandMultiMeasureRests(List<MeasureRegion> source,
-                                                                List<NumberToken> tokens) {
+    private static List<MeasureRegion> expandMultiMeasureRests(
+            List<MeasureRegion> source, List<NumberToken> tokens) {
         if (source == null || source.isEmpty() || tokens == null || tokens.isEmpty())
             return source == null ? List.of() : List.copyOf(source);
         List<MeasureRegion> result = new ArrayList<>();
@@ -770,7 +878,7 @@ final class MeasureNumberReconciler {
         // already equal the printed count and the old early-return preserved the tiny red strip.
         // Repair only extreme interior fragments; genuine pickup/final bars and compact whole-note
         // measures remain far wider than this threshold.
-        for (;;) {
+        for (; ; ) {
             int tiny = -1;
             for (int index = 1; index + 1 < result.size(); index++)
                 if (regionWidth(result.get(index)) < targetWidth * .32f) {
@@ -779,14 +887,19 @@ final class MeasureNumberReconciler {
                 }
             if (tiny < 0) break;
             int before = tiny - 1, after = tiny + 1;
-            float beforeScore = Math.abs(result.get(tiny).right() - result.get(before).left()
-                    - targetWidth);
-            float afterScore = Math.abs(result.get(after).right() - result.get(tiny).left()
-                    - targetWidth);
+            float beforeScore =
+                    Math.abs(result.get(tiny).right() - result.get(before).left() - targetWidth);
+            float afterScore =
+                    Math.abs(result.get(after).right() - result.get(tiny).left() - targetWidth);
             int mergeAt = beforeScore <= afterScore ? before : tiny;
             MeasureRegion first = result.get(mergeAt), second = result.get(mergeAt + 1);
-            result.set(mergeAt, new MeasureRegion(first.left(), second.right(),
-                    Math.min(first.top(), second.top()), Math.max(first.bottom(), second.bottom())));
+            result.set(
+                    mergeAt,
+                    new MeasureRegion(
+                            first.left(),
+                            second.right(),
+                            Math.min(first.top(), second.top()),
+                            Math.max(first.bottom(), second.bottom())));
             result.remove(mergeAt + 1);
         }
 
@@ -806,11 +919,19 @@ final class MeasureNumberReconciler {
                 // A false note-stem boundary normally creates one or two undersized fragments.
                 // Prefer repairing those over merging two already full-sized real measures.
                 score += Math.min(firstWidth, secondWidth) >= targetWidth * .82f ? .75f : 0f;
-                if (score < bestScore) { bestScore = score; best = index; }
+                if (score < bestScore) {
+                    bestScore = score;
+                    best = index;
+                }
             }
             MeasureRegion first = result.get(best), second = result.get(best + 1);
-            result.set(best, new MeasureRegion(first.left(), second.right(),
-                    Math.min(first.top(), second.top()), Math.max(first.bottom(), second.bottom())));
+            result.set(
+                    best,
+                    new MeasureRegion(
+                            first.left(),
+                            second.right(),
+                            Math.min(first.top(), second.top()),
+                            Math.max(first.bottom(), second.bottom())));
             result.remove(best + 1);
         }
 
@@ -819,23 +940,27 @@ final class MeasureNumberReconciler {
         while (result.size() < expected) {
             int widest = 0;
             for (int index = 1; index < result.size(); index++)
-                if (regionWidth(result.get(index)) > regionWidth(result.get(widest))) widest = index;
+                if (regionWidth(result.get(index)) > regionWidth(result.get(widest)))
+                    widest = index;
             MeasureRegion region = result.remove(widest);
             float middle = (region.left() + region.right()) / 2f;
             float gap = Math.min(.004f, regionWidth(region) * .04f);
             if (middle - region.left() <= gap || region.right() - middle <= gap)
                 return List.copyOf(source);
-            result.add(widest, new MeasureRegion(region.left(), middle - gap / 2f,
-                    region.top(), region.bottom()));
-            result.add(widest + 1, new MeasureRegion(middle + gap / 2f, region.right(),
-                    region.top(), region.bottom()));
+            result.add(
+                    widest,
+                    new MeasureRegion(
+                            region.left(), middle - gap / 2f, region.top(), region.bottom()));
+            result.add(
+                    widest + 1,
+                    new MeasureRegion(
+                            middle + gap / 2f, region.right(), region.top(), region.bottom()));
         }
         return List.copyOf(result);
     }
 
-    private static List<MeasureRegion> fitHighlyFragmentedRow(List<MeasureRegion> source,
-                                                               int expected,
-                                                               float left, float right) {
+    private static List<MeasureRegion> fitHighlyFragmentedRow(
+            List<MeasureRegion> source, int expected, float left, float right) {
         int splitCount = expected - 1;
         int gapCount = source.size() - 1;
         float[][] costs = new float[splitCount][gapCount];
@@ -866,10 +991,11 @@ final class MeasureNumberReconciler {
         int lastSplit = splitCount - 1;
         int bestGap = -1;
         float bestCost = Float.POSITIVE_INFINITY;
-        for (int gap = lastSplit; gap < gapCount; gap++) if (costs[lastSplit][gap] < bestCost) {
-            bestCost = costs[lastSplit][gap];
-            bestGap = gap;
-        }
+        for (int gap = lastSplit; gap < gapCount; gap++)
+            if (costs[lastSplit][gap] < bestCost) {
+                bestCost = costs[lastSplit][gap];
+                bestGap = gap;
+            }
         if (bestGap < 0) return List.copyOf(source);
         int[] splitAfter = new int[splitCount];
         for (int split = lastSplit; split >= 0; split--) {
@@ -905,6 +1031,10 @@ final class MeasureNumberReconciler {
         final List<MeasureRegion> measures = new ArrayList<>();
         NumberToken anchor;
         int restExtras;
-        Row(float top, float bottom) { this.top = top; this.bottom = bottom; }
+
+        Row(float top, float bottom) {
+            this.top = top;
+            this.bottom = bottom;
+        }
     }
 }

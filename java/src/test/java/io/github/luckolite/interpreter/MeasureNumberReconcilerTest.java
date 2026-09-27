@@ -11,34 +11,55 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public final class MeasureNumberReconcilerTest {
-    @Test public void pageFolioBeforeARealOpeningAnchorCannotInventMeasures() {
-        List<MeasureRegion> detected=new ArrayList<>();
-        detected.addAll(row(.10f,3));detected.addAll(row(.28f,4));
-        detected.addAll(row(.46f,3));detected.addAll(row(.64f,3));detected.addAll(row(.82f,3));
-        var numbers=List.of(number(2,.04f),number(15,.095f),number(18,.275f),
-                number(22,.455f),number(25,.635f),number(28,.815f));
-        var result=MeasureNumberReconciler.reconcile(detected,numbers);
-        assertEquals(16,result.size());assertEquals(15,MeasureNumberReconciler.firstMeasureNumber(result,numbers));
-        assertEquals(3,result.stream().filter(r->r.top()<.2f).count());
+    @Test
+    public void pageFolioBeforeARealOpeningAnchorCannotInventMeasures() {
+        List<MeasureRegion> detected = new ArrayList<>();
+        detected.addAll(row(.10f, 3));
+        detected.addAll(row(.28f, 4));
+        detected.addAll(row(.46f, 3));
+        detected.addAll(row(.64f, 3));
+        detected.addAll(row(.82f, 3));
+        var numbers =
+                List.of(
+                        number(2, .04f),
+                        number(15, .095f),
+                        number(18, .275f),
+                        number(22, .455f),
+                        number(25, .635f),
+                        number(28, .815f));
+        var result = MeasureNumberReconciler.reconcile(detected, numbers);
+        assertEquals(16, result.size());
+        assertEquals(15, MeasureNumberReconciler.firstMeasureNumber(result, numbers));
+        assertEquals(3, result.stream().filter(r -> r.top() < .2f).count());
     }
-    @Test public void partNumbersInsideConnectedSystemCannotInventExtraRows() {
-        List<MeasureRegion> detected=new ArrayList<>();
-        for(MeasureRegion r:row(.15f,7)) detected.add(new MeasureRegion(r.left(),r.right(),.15f,.34f));
-        detected.addAll(row(.42f,7));
-        detected.addAll(row(.54f,7));
-        List<MeasureNumberReconciler.NumberToken> numbers=List.of(number(1,.17f),
-                number(2,.25f),number(3,.31f),number(8,.42f),number(15,.54f));
-        List<MeasureRegion> result=MeasureNumberReconciler.reconcile(detected,numbers);
-        assertEquals(21,result.size());
-        assertTrue(result.stream().noneMatch(r->r.top()>.16f && r.top()<.40f));
+
+    @Test
+    public void partNumbersInsideConnectedSystemCannotInventExtraRows() {
+        List<MeasureRegion> detected = new ArrayList<>();
+        for (MeasureRegion r : row(.15f, 7))
+            detected.add(new MeasureRegion(r.left(), r.right(), .15f, .34f));
+        detected.addAll(row(.42f, 7));
+        detected.addAll(row(.54f, 7));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(
+                        number(1, .17f),
+                        number(2, .25f),
+                        number(3, .31f),
+                        number(8, .42f),
+                        number(15, .54f));
+        List<MeasureRegion> result = MeasureNumberReconciler.reconcile(detected, numbers);
+        assertEquals(21, result.size());
+        assertTrue(result.stream().noneMatch(r -> r.top() > .16f && r.top() < .40f));
     }
-    @Test public void restoresMissedMeasureFromPrintedSystemNumbers() {
+
+    @Test
+    public void restoresMissedMeasureFromPrintedSystemNumbers() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(0.20f, 4));
         detected.addAll(row(0.30f, 2));
         detected.addAll(row(0.40f, 3));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(
-                number(21, 0.20f), number(25, 0.30f), number(28, 0.40f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(number(21, 0.20f), number(25, 0.30f), number(28, 0.40f));
 
         List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers);
 
@@ -46,19 +67,21 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(3, corrected.stream().filter(item -> item.top() == 0.30f).count());
     }
 
-    @Test public void laterPrintedAnchorRecoversUnprintedMeasureOneAtPageStart() {
+    @Test
+    public void laterPrintedAnchorRecoversUnprintedMeasureOneAtPageStart() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(.10f, 6));
         detected.addAll(row(.20f, 8));
         detected.addAll(row(.30f, 7));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(
-                number(7, .20f), number(15, .30f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(number(7, .20f), number(15, .30f));
         List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers);
 
         assertEquals(1, MeasureNumberReconciler.firstMeasureNumber(corrected, numbers));
     }
 
-    @Test public void loneLaterAnchorCanProveAlternateArrangementRestartsAtOne() {
+    @Test
+    public void loneLaterAnchorCanProveAlternateArrangementRestartsAtOne() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(.10f, 7));
         detected.addAll(row(.20f, 8));
@@ -66,26 +89,31 @@ public final class MeasureNumberReconcilerTest {
         List<MeasureNumberReconciler.NumberToken> numbers = List.of(number(16, .30f));
 
         assertEquals(1, MeasureNumberReconciler.firstMeasureNumber(detected, numbers));
-        assertEquals(0, MeasureNumberReconciler.firstMeasureNumber(detected,
-                List.of(number(17, .30f))));
+        assertEquals(
+                0, MeasureNumberReconciler.firstMeasureNumber(detected, List.of(number(17, .30f))));
     }
 
-    @Test public void continuationPageKeepsItsPrintedStartingMeasure() {
+    @Test
+    public void continuationPageKeepsItsPrintedStartingMeasure() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(.10f, 6));
         detected.addAll(row(.20f, 6));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(
-                number(58, .10f), number(64, .20f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(number(58, .10f), number(64, .20f));
 
-        assertEquals(58, MeasureNumberReconciler.firstMeasureNumber(
-                MeasureNumberReconciler.reconcile(detected, numbers), numbers));
+        assertEquals(
+                58,
+                MeasureNumberReconciler.firstMeasureNumber(
+                        MeasureNumberReconciler.reconcile(detected, numbers), numbers));
     }
 
-    @Test public void removesInventedStemBoundariesFromPrintedSystemNumbers() {
+    @Test
+    public void removesInventedStemBoundariesFromPrintedSystemNumbers() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(0.20f, 6));
         detected.addAll(row(0.30f, 3));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(number(31, 0.20f), number(34, 0.30f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(number(31, 0.20f), number(34, 0.30f));
 
         List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers);
 
@@ -93,13 +121,14 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(3, corrected.stream().filter(item -> item.top() == 0.20f).count());
     }
 
-    @Test public void printedPatternAlsoCorrectsNoisyFinalNumberedSystem() {
+    @Test
+    public void printedPatternAlsoCorrectsNoisyFinalNumberedSystem() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(.20f, 4));
         detected.addAll(row(.30f, 4));
         detected.addAll(row(.40f, 12));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(
-                number(12, .20f), number(16, .30f), number(20, .40f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(number(12, .20f), number(16, .30f), number(20, .40f));
 
         List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers);
 
@@ -107,14 +136,15 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(4, corrected.stream().filter(item -> item.top() == .40f).count());
     }
 
-    @Test public void laterAnchorMayBeginADifferentWidthSystem() {
+    @Test
+    public void laterAnchorMayBeginADifferentWidthSystem() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(.10f, 3));
         detected.addAll(row(.20f, 6));
         detected.addAll(row(.30f, 9));
         detected.addAll(row(.40f, 4));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(
-                number(95, .20f), number(101, .30f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(number(95, .20f), number(101, .30f));
 
         List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers);
 
@@ -122,13 +152,15 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(9, corrected.stream().filter(item -> item.top() == .30f).count());
     }
 
-    @Test public void splitsOneFullSystemBoxIntoItsFourPrintedMeasures() {
+    @Test
+    public void splitsOneFullSystemBoxIntoItsFourPrintedMeasures() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.add(new MeasureRegion(0.1f, 0.9f, 0.20f, 0.28f));
         detected.addAll(row(0.30f, 4));
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected,
-                List.of(number(17, 0.20f), number(21, 0.30f)));
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(
+                        detected, List.of(number(17, 0.20f), number(21, 0.30f)));
 
         assertEquals(8, corrected.size());
         for (int index = 0; index < 4; index++) {
@@ -138,16 +170,18 @@ public final class MeasureNumberReconcilerTest {
         }
     }
 
-    @Test public void oneDetectedRegionSplitsThreeWaysWithoutStrandingHalfTheSystem() {
+    @Test
+    public void oneDetectedRegionSplitsThreeWaysWithoutStrandingHalfTheSystem() {
         float top = .20f;
         List<MeasureRegion> detected = new ArrayList<>();
         detected.add(region(.10f, .91f, top));
         detected.addAll(row(.30f, 3));
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected,
-                List.of(number(27, top), number(30, .30f)));
-        List<MeasureRegion> firstRow = corrected.stream()
-                .filter(item -> item.top() == top).toList();
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(
+                        detected, List.of(number(27, top), number(30, .30f)));
+        List<MeasureRegion> firstRow =
+                corrected.stream().filter(item -> item.top() == top).toList();
 
         assertEquals(3, firstRow.size());
         float firstWidth = firstRow.get(0).right() - firstRow.get(0).left();
@@ -157,9 +191,12 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(.64f, firstRow.get(2).left(), .006f);
     }
 
-    @Test public void printedSystemNumbersRecoverPageWhenStaffSegmentationIsEmpty() {
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(List.of(), List.of(
-                number(17, 0.20f), number(21, 0.30f), number(25, 0.40f)));
+    @Test
+    public void printedSystemNumbersRecoverPageWhenStaffSegmentationIsEmpty() {
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(
+                        List.of(),
+                        List.of(number(17, 0.20f), number(21, 0.30f), number(25, 0.40f)));
 
         assertEquals(12, corrected.size());
         assertEquals(0.195f, corrected.get(0).top(), 0.0001f);
@@ -167,21 +204,25 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(0.395f, corrected.get(8).top(), 0.0001f);
     }
 
-    @Test public void ignoresTimeSignatureAndImplausibleOcrJump() {
+    @Test
+    public void ignoresTimeSignatureAndImplausibleOcrJump() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(0.20f, 4));
         detected.addAll(row(0.30f, 4));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(number(4, 0.20f), number(95, 0.30f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(number(4, 0.20f), number(95, 0.30f));
 
         assertEquals(8, MeasureNumberReconciler.reconcile(detected, numbers).size());
     }
 
-    @Test public void fittedRegionsStayOrderedAndNonEmpty() {
+    @Test
+    public void fittedRegionsStayOrderedAndNonEmpty() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(0.20f, 2));
         detected.addAll(row(0.30f, 4));
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected,
-                List.of(number(25, 0.20f), number(28, 0.30f)));
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(
+                        detected, List.of(number(25, 0.20f), number(28, 0.30f)));
         for (int index = 0; index < 3; index++) {
             MeasureRegion item = corrected.get(index);
             assertTrue(item.left() < item.right());
@@ -189,18 +230,20 @@ public final class MeasureNumberReconcilerTest {
         }
     }
 
-    @Test public void removesFalseStemLocallyWithoutEqualizingUnevenMeasures() {
+    @Test
+    public void removesFalseStemLocallyWithoutEqualizingUnevenMeasures() {
         float top = .20f;
-        List<MeasureRegion> detected = List.of(
-                region(.10f, .196f, top), region(.204f, .336f, top),
-                region(.344f, .446f, top), region(.454f, .576f, top),
-                region(.584f, .716f, top), region(.724f, .90f, top));
+        List<MeasureRegion> detected =
+                List.of(
+                        region(.10f, .196f, top), region(.204f, .336f, top),
+                        region(.344f, .446f, top), region(.454f, .576f, top),
+                        region(.584f, .716f, top), region(.724f, .90f, top));
         List<MeasureRegion> next = unevenRow(.30f);
         List<MeasureRegion> all = new ArrayList<>(detected);
         all.addAll(next);
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(all,
-                List.of(number(72, top), number(77, .30f)));
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(all, List.of(number(72, top), number(77, .30f)));
         List<MeasureRegion> row = corrected.stream().filter(item -> item.top() == top).toList();
 
         assertEquals(5, row.size());
@@ -211,32 +254,40 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(.724f, row.get(4).left(), .0001f);
     }
 
-    @Test public void highlyFragmentedRowDoesNotStrandATinyFinalMeasure() {
+    @Test
+    public void highlyFragmentedRowDoesNotStrandATinyFinalMeasure() {
         float top = .20f;
-        List<MeasureRegion> detected = new ArrayList<>(List.of(
-                region(.10f, .20f, top), region(.205f, .37f, top),
-                region(.378f, .60f, top), region(.605f, .767f, top),
-                region(.775f, .82f, top), region(.825f, .90f, top)));
+        List<MeasureRegion> detected =
+                new ArrayList<>(
+                        List.of(
+                                region(.10f, .20f, top), region(.205f, .37f, top),
+                                region(.378f, .60f, top), region(.605f, .767f, top),
+                                region(.775f, .82f, top), region(.825f, .90f, top)));
         detected.addAll(row(.30f, 3));
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected,
-                List.of(number(21, top), number(24, .30f)));
-        List<MeasureRegion> firstRow = corrected.stream()
-                .filter(item -> item.top() == top).toList();
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(
+                        detected, List.of(number(21, top), number(24, .30f)));
+        List<MeasureRegion> firstRow =
+                corrected.stream().filter(item -> item.top() == top).toList();
 
         assertEquals(3, firstRow.size());
         assertTrue(firstRow.stream().allMatch(item -> item.right() - item.left() > .16f));
     }
 
-    @Test public void insertsMissingBoundaryOnlyInsideWidestMergedMeasure() {
+    @Test
+    public void insertsMissingBoundaryOnlyInsideWidestMergedMeasure() {
         float top = .20f;
-        List<MeasureRegion> detected = new ArrayList<>(List.of(
-                region(.10f, .196f, top), region(.204f, .336f, top),
-                region(.344f, .716f, top), region(.724f, .90f, top)));
+        List<MeasureRegion> detected =
+                new ArrayList<>(
+                        List.of(
+                                region(.10f, .196f, top), region(.204f, .336f, top),
+                                region(.344f, .716f, top), region(.724f, .90f, top)));
         detected.addAll(unevenRow(.30f));
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected,
-                List.of(number(72, top), number(77, .30f)));
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(
+                        detected, List.of(number(72, top), number(77, .30f)));
         List<MeasureRegion> row = corrected.stream().filter(item -> item.top() == top).toList();
 
         assertEquals(5, row.size());
@@ -246,7 +297,8 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(.724f, row.get(4).left(), .0001f);
     }
 
-    @Test public void printedFiveMeasureWholeNoteRowOverridesDominantThreeMeasureRows() {
+    @Test
+    public void printedFiveMeasureWholeNoteRowOverridesDominantThreeMeasureRows() {
         List<MeasureRegion> detected = new ArrayList<>();
         List<MeasureNumberReconciler.NumberToken> numbers = new ArrayList<>();
         for (int index = 0; index < 5; index++) {
@@ -264,25 +316,26 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(5, corrected.stream().filter(item -> item.top() == .60f).count());
     }
 
-    @Test public void fourMeasureRestDoesNotSplitLongWrittenMeasure() {
+    @Test
+    public void fourMeasureRestDoesNotSplitLongWrittenMeasure() {
         float firstTop = .20f;
         MeasureRegion longWrittenMeasure = region(.10f, .39f, firstTop);
         MeasureRegion fourMeasureRest = region(.398f, .548f, firstTop);
         MeasureRegion measure21 = region(.556f, .718f, firstTop);
         MeasureRegion measure22 = region(.726f, .90f, firstTop);
-        List<MeasureRegion> detected = new ArrayList<>(List.of(longWrittenMeasure,
-                fourMeasureRest, measure21, measure22));
+        List<MeasureRegion> detected =
+                new ArrayList<>(List.of(longWrittenMeasure, fourMeasureRest, measure21, measure22));
         detected.addAll(row(.30f, 4));
         detected.addAll(row(.40f, 4));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(
-                number(16, firstTop), number(23, .30f), number(27, .40f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(number(16, firstTop), number(23, .30f), number(27, .40f));
         MeasureNumberReconciler.NumberToken restCount =
                 new MeasureNumberReconciler.NumberToken(4, .46f, .21f, .48f, .23f);
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers,
-                List.of(restCount));
-        List<MeasureRegion> firstRow = corrected.stream()
-                .filter(item -> item.top() == firstTop).toList();
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(detected, numbers, List.of(restCount));
+        List<MeasureRegion> firstRow =
+                corrected.stream().filter(item -> item.top() == firstTop).toList();
 
         assertEquals(7, firstRow.size());
         assertEquals(longWrittenMeasure, firstRow.get(0));
@@ -291,7 +344,8 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(measure22, firstRow.get(6));
     }
 
-    @Test public void loneSystemNumberDoesNotDiscardDetectedMultiMeasureRest() {
+    @Test
+    public void loneSystemNumberDoesNotDiscardDetectedMultiMeasureRest() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(.10f, 6));
         detected.addAll(row(.20f, 5));
@@ -299,8 +353,9 @@ public final class MeasureNumberReconcilerTest {
         MeasureNumberReconciler.NumberToken twoRest =
                 new MeasureNumberReconciler.NumberToken(2, .48f, .21f, .50f, .23f);
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected,
-                List.of(number(13, .30f), twoRest), List.of(twoRest));
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(
+                        detected, List.of(number(13, .30f), twoRest), List.of(twoRest));
 
         assertEquals(17, corrected.size());
         assertEquals(6, corrected.stream().filter(item -> item.top() == .20f).count());
@@ -308,20 +363,27 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(5, corrected.stream().filter(item -> item.top() == .30f).count());
     }
 
-    @Test public void repairsTinyStemFragmentEvenWhenPrintedCountAlreadyMatches() {
+    @Test
+    public void repairsTinyStemFragmentEvenWhenPrintedCountAlreadyMatches() {
         float top = .20f;
-        List<MeasureRegion> detected = new ArrayList<>(List.of(
-                region(.10f, .238f, top), region(.244f, .264f, top),
-                region(.270f, .382f, top), region(.388f, .50f, top),
-                region(.506f, .618f, top), region(.624f, .736f, top),
-                region(.742f, .90f, top)));
+        List<MeasureRegion> detected =
+                new ArrayList<>(
+                        List.of(
+                                region(.10f, .238f, top),
+                                region(.244f, .264f, top),
+                                region(.270f, .382f, top),
+                                region(.388f, .50f, top),
+                                region(.506f, .618f, top),
+                                region(.624f, .736f, top),
+                                region(.742f, .90f, top)));
         detected.addAll(row(.30f, 7));
         detected.addAll(row(.40f, 7));
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, List.of(
-                number(53, top), number(60, .30f), number(67, .40f)));
-        List<MeasureRegion> firstRow = corrected.stream()
-                .filter(item -> item.top() == top).toList();
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(
+                        detected, List.of(number(53, top), number(60, .30f), number(67, .40f)));
+        List<MeasureRegion> firstRow =
+                corrected.stream().filter(item -> item.top() == top).toList();
 
         assertEquals(7, firstRow.size());
         assertTrue(firstRow.stream().noneMatch(item -> item.right() - item.left() < .04f));
@@ -330,7 +392,8 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(.382f, firstRow.get(1).right(), .0001f);
     }
 
-    @Test public void dominantSystemCountRemovesTinyStemMeasuresWithoutPrintedNumbers() {
+    @Test
+    public void dominantSystemCountRemovesTinyStemMeasuresWithoutPrintedNumbers() {
         List<MeasureRegion> detected = regularPage(5, 3);
         float top = .70f;
         detected.add(new MeasureRegion(.10f, .16f, top, top + .06f));
@@ -344,7 +407,8 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(18, corrected.size());
     }
 
-    @Test public void tempoAndRestCountAreNotMistakenForSystemNumberAnchors() {
+    @Test
+    public void tempoAndRestCountAreNotMistakenForSystemNumberAnchors() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(.10f, 11));
         detected.addAll(row(.20f, 8));
@@ -354,11 +418,11 @@ public final class MeasureNumberReconcilerTest {
                 new MeasureNumberReconciler.NumberToken(126, .13f, .09f, .19f, .12f);
         MeasureNumberReconciler.NumberToken restCount =
                 new MeasureNumberReconciler.NumberToken(4, .18f, .11f, .21f, .13f);
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(tempo, restCount,
-                number(15, .20f), number(21, .30f), number(24, .40f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(tempo, restCount, number(15, .20f), number(21, .30f), number(24, .40f));
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers,
-                List.of(restCount));
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(detected, numbers, List.of(restCount));
 
         assertEquals(26, corrected.size());
         assertEquals(14, corrected.stream().filter(item -> item.top() == .10f).count());
@@ -367,20 +431,29 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(1, MeasureNumberReconciler.firstMeasureNumber(corrected, numbers));
     }
 
-    @Test public void dominantCountDoesNotCollapseACompletelyDifferentBusySystem() {
+    @Test
+    public void dominantCountDoesNotCollapseACompletelyDifferentBusySystem() {
         List<MeasureRegion> detected = regularPage(5, 3);
         float top = .70f;
         detected.add(new MeasureRegion(.10f, .13f, top, top + .06f));
-        detected.addAll(row(top, 7).stream()
-                .map(item -> new MeasureRegion(item.left() + .035f, item.right(),
-                        item.top(), item.bottom())).toList());
+        detected.addAll(
+                row(top, 7).stream()
+                        .map(
+                                item ->
+                                        new MeasureRegion(
+                                                item.left() + .035f,
+                                                item.right(),
+                                                item.top(),
+                                                item.bottom()))
+                        .toList());
 
         List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, List.of());
 
         assertEquals(8, corrected.stream().filter(item -> item.top() == top).count());
     }
 
-    @Test public void dominantSystemCountSplitsOneImplausiblyWideMergedMeasure() {
+    @Test
+    public void dominantSystemCountSplitsOneImplausiblyWideMergedMeasure() {
         List<MeasureRegion> detected = regularPage(5, 3);
         float top = .70f;
         detected.add(new MeasureRegion(.10f, .35f, top, top + .06f));
@@ -392,7 +465,8 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(18, corrected.size());
     }
 
-    @Test public void naturallyShortFinalSystemIsNotExpandedToTheDominantCount() {
+    @Test
+    public void naturallyShortFinalSystemIsNotExpandedToTheDominantCount() {
         List<MeasureRegion> detected = regularPage(5, 3);
         float top = .70f;
         detected.add(new MeasureRegion(.10f, .34f, top, top + .06f));
@@ -404,7 +478,8 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(17, corrected.size());
     }
 
-    @Test public void missingHunterRowsAreRecoveredFromTheFullPrintedSequence() {
+    @Test
+    public void missingHunterRowsAreRecoveredFromTheFullPrintedSequence() {
         List<MeasureRegion> detected = new ArrayList<>();
         detected.addAll(row(.10f, 1));
         detected.addAll(row(.19f, 1));
@@ -414,21 +489,33 @@ public final class MeasureNumberReconcilerTest {
         detected.addAll(row(.63f, 3));
         detected.addAll(row(.71f, 2));
         detected.addAll(row(.88f, 1));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(
-                number(2, .05f), number(87, .10f), number(28, .10f), number(31, .19f),
-                number(34, .28f), number(37, .36f), number(39, .45f), number(42, .54f),
-                number(47, .63f), number(49, .71f), number(51, .79f), number(53, .88f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(
+                        number(2, .05f),
+                        number(87, .10f),
+                        number(28, .10f),
+                        number(31, .19f),
+                        number(34, .28f),
+                        number(37, .36f),
+                        number(39, .45f),
+                        number(42, .54f),
+                        number(47, .63f),
+                        number(49, .71f),
+                        number(51, .79f),
+                        number(53, .88f));
 
         List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers);
 
         assertEquals(28, corrected.size());
         assertEquals(28, MeasureNumberReconciler.firstMeasureNumber(corrected, numbers));
         assertEquals(3, corrected.stream().filter(item -> item.top() == .10f).count());
-        assertEquals(3, corrected.stream().filter(item -> Math.abs(item.top() - .275f) < .001f).count());
+        assertEquals(
+                3, corrected.stream().filter(item -> Math.abs(item.top() - .275f) < .001f).count());
         assertEquals(3, corrected.stream().filter(item -> item.top() == .88f).count());
     }
 
-    @Test public void sparseAndDenseAtonementSystemsKeepPrintedCounts() {
+    @Test
+    public void sparseAndDenseAtonementSystemsKeepPrintedCounts() {
         List<MeasureRegion> detected = new ArrayList<>();
         int[] rawCounts = {1, 11, 2, 2, 5, 2, 1, 1, 1, 1};
         int[] printed = {1, 13, 27, 40, 49, 54, 56, 57, 58, 59};
@@ -449,12 +536,17 @@ public final class MeasureNumberReconcilerTest {
         }
     }
 
-    @Test public void ambiguousSameRowOcrUsesDetectedCountAsTieBreaker() {
+    @Test
+    public void ambiguousSameRowOcrUsesDetectedCountAsTieBreaker() {
         List<MeasureRegion> detected = new ArrayList<>();
         for (int index = 0; index < 6; index++) detected.addAll(row(.10f + index * .10f, 4));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(
-                number(6, .30f), number(9, .30f), number(13, .40f),
-                number(16, .50f), number(19, .60f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(
+                        number(6, .30f),
+                        number(9, .30f),
+                        number(13, .40f),
+                        number(16, .50f),
+                        number(19, .60f));
 
         List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers);
 
@@ -462,14 +554,21 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(1, MeasureNumberReconciler.firstMeasureNumber(corrected, numbers));
     }
 
-    @Test public void strayHumoresqueNineCannotExpandThreeMeasuresIntoEleven() {
+    @Test
+    public void strayHumoresqueNineCannotExpandThreeMeasuresIntoEleven() {
         List<MeasureRegion> detected = new ArrayList<>();
         float[] tops = {.07f, .16f, .25f, .34f, .43f, .52f, .61f, .70f, .79f, .88f};
         for (float top : tops) detected.addAll(row(top, 4));
-        List<MeasureNumberReconciler.NumberToken> numbers = List.of(
-                number(4, .16f), number(8, .25f), number(12, .34f),
-                number(9, .43f), number(20, .52f), number(24, .61f),
-                number(28, .70f), number(32, .79f));
+        List<MeasureNumberReconciler.NumberToken> numbers =
+                List.of(
+                        number(4, .16f),
+                        number(8, .25f),
+                        number(12, .34f),
+                        number(9, .43f),
+                        number(20, .52f),
+                        number(24, .61f),
+                        number(28, .70f),
+                        number(32, .79f));
 
         List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers);
 
@@ -477,13 +576,14 @@ public final class MeasureNumberReconcilerTest {
         assertEquals(40, corrected.size());
     }
 
-    @Test public void finalArtemisFourMeasureRestExtendsInferredVisualCount() {
+    @Test
+    public void finalArtemisFourMeasureRestExtendsInferredVisualCount() {
         List<MeasureRegion> detected = new ArrayList<>();
         List<MeasureNumberReconciler.NumberToken> numbers = new ArrayList<>();
         for (int index = 0; index < 6; index++) {
             float top = .10f + index * .10f;
             detected.addAll(row(top, index == 2 ? 6 : index == 4 ? 4 : 3));
-            numbers.add(number(new int[]{44, 47, 50, 58, 61, 65}[index], top));
+            numbers.add(number(new int[] {44, 47, 50, 58, 61, 65}[index], top));
         }
         float finalTop = .70f;
         detected.add(region(.10f, .90f, finalTop));
@@ -491,14 +591,15 @@ public final class MeasureNumberReconcilerTest {
         MeasureNumberReconciler.NumberToken fourRest =
                 new MeasureNumberReconciler.NumberToken(4, .86f, .66f, .87f, .69f);
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers,
-                List.of(fourRest));
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(detected, numbers, List.of(fourRest));
 
         assertEquals(7, corrected.stream().filter(item -> item.top() == finalTop).count());
         assertEquals(31, corrected.size());
     }
 
-    @Test public void finalMultiMeasureRestInOrdinaryLastSlotDoesNotAddAVisualMeasure() {
+    @Test
+    public void finalMultiMeasureRestInOrdinaryLastSlotDoesNotAddAVisualMeasure() {
         List<MeasureRegion> detected = new ArrayList<>();
         List<MeasureNumberReconciler.NumberToken> numbers = new ArrayList<>();
         for (int index = 0; index < 6; index++) {
@@ -512,8 +613,8 @@ public final class MeasureNumberReconcilerTest {
         MeasureNumberReconciler.NumberToken fourRest =
                 new MeasureNumberReconciler.NumberToken(4, .76f, .66f, .78f, .69f);
 
-        List<MeasureRegion> corrected = MeasureNumberReconciler.reconcile(detected, numbers,
-                List.of(fourRest));
+        List<MeasureRegion> corrected =
+                MeasureNumberReconciler.reconcile(detected, numbers, List.of(fourRest));
 
         assertEquals(6, corrected.stream().filter(item -> item.top() == finalTop).count());
     }
@@ -529,14 +630,21 @@ public final class MeasureNumberReconcilerTest {
         List<MeasureRegion> result = new ArrayList<>();
         float width = 0.8f / count;
         for (int index = 0; index < count; index++)
-            result.add(new MeasureRegion(0.1f + width * index, 0.1f + width * (index + 1) - 0.004f,
-                    top, top + 0.08f));
+            result.add(
+                    new MeasureRegion(
+                            0.1f + width * index,
+                            0.1f + width * (index + 1) - 0.004f,
+                            top,
+                            top + 0.08f));
         return result;
     }
 
     private static List<MeasureRegion> unevenRow(float top) {
-        return List.of(region(.10f, .196f, top), region(.204f, .336f, top),
-                region(.344f, .576f, top), region(.584f, .716f, top),
+        return List.of(
+                region(.10f, .196f, top),
+                region(.204f, .336f, top),
+                region(.344f, .576f, top),
+                region(.584f, .716f, top),
                 region(.724f, .90f, top));
     }
 
@@ -545,7 +653,7 @@ public final class MeasureNumberReconcilerTest {
     }
 
     private static MeasureNumberReconciler.NumberToken number(int value, float rowTop) {
-        return new MeasureNumberReconciler.NumberToken(value, 0.09f, rowTop - 0.005f,
-                0.11f, rowTop + 0.012f);
+        return new MeasureNumberReconciler.NumberToken(
+                value, 0.09f, rowTop - 0.005f, 0.11f, rowTop + 0.012f);
     }
 }

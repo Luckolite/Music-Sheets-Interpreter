@@ -7,13 +7,23 @@ import java.util.List;
 
 /** The same pure geometry stage runs locally or on the matching desktop build. */
 public final class NativeDecoderStages {
-    public record Geometry(byte[] labels,List<MeasureRegion> measures) { }
-    private NativeDecoderStages() { }
-    public static Geometry geometry(byte[] labels,byte[] gray,int width,int height) {
-        var raw=OmrMeasurePostProcessor.process(labels,gray,width,height);
-        byte[] prepared=OmrScoreInterpreter.normalizeHeaderSymbols(labels,gray,width,height,raw);
-        if(prepared!=labels)raw=OmrMeasurePostProcessor.process(
-                OmrScoreInterpreter.normalizeTextGeometry(labels,gray,width,height,raw),gray,width,height,prepared);
-        return new Geometry(prepared,raw);
+    public record Geometry(byte[] labels, List<MeasureRegion> measures) {}
+
+    private NativeDecoderStages() {}
+
+    public static Geometry geometry(byte[] labels, byte[] gray, int width, int height) {
+        var raw = OmrMeasurePostProcessor.process(labels, gray, width, height);
+        byte[] prepared =
+                OmrScoreInterpreter.normalizeHeaderSymbols(labels, gray, width, height, raw);
+        if (prepared != labels)
+            raw =
+                    OmrMeasurePostProcessor.process(
+                            OmrScoreInterpreter.normalizeTextGeometry(
+                                    labels, gray, width, height, raw),
+                            gray,
+                            width,
+                            height,
+                            prepared);
+        return new Geometry(prepared, raw);
     }
 }
