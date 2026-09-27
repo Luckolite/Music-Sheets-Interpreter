@@ -29,6 +29,7 @@ final class FingeringAnnotationFilter {
                 }
                 if(owner==null)continue;float gap=owner.gap();
                 if(b-t<gap*1.15f||b-t>gap*5.5f||r-l<gap*.45f||r-l>gap*7)continue;
+                if(word.text().trim().matches("[1-5]")&&printedStemBeyondWord(gray,width,height,x,y,t,b,gap))continue;
                 if(note.staffStep()>=10&&printedLedgerAcrossWord(gray,width,height,l,r,y,gap))continue;
                 annotation=true;break;
             }
@@ -40,6 +41,24 @@ final class FingeringAnnotationFilter {
         if(text==null)return false;
         String compact=text.trim().replaceAll("\\s+","").toUpperCase(Locale.ROOT);
         return compact.matches("[LH]?[1-5]")||compact.matches("[LRH]{2,3}");
+    }
+    /** OCR can call a notehead and its short ledger a digit. An attached shaft
+     * continuing well outside that text box is independent musical evidence. */
+    private static boolean printedStemBeyondWord(byte[] gray,int width,int height,
+            float x,float y,float top,float bottom,float gap) {
+        for(int direction:new int[]{-1,1})for(int offset=Math.round(gap*.35f);offset<=Math.round(gap*.9f);offset++) {
+            int xx=Math.round(x)-direction*offset;
+            if(xx<0||xx>=width)continue;
+            int end=Math.round(direction<0?Math.min(y-gap*2,top-gap*.7f):Math.max(y+gap*2,bottom+gap*.7f));
+            if(end<0||end>=height||Math.abs(end-y)>gap*5)continue;
+            int ink=0,total=0,run=0,longestBlank=0;
+            for(int yy=Math.round(y);direction*(end-yy)>=0;yy+=direction) {
+                total++;
+                if((gray[yy*width+xx]&255)<170){ink++;run=0;}else{run++;longestBlank=Math.max(longestBlank,run);}
+            }
+            if(total>=gap*1.9f&&ink>=total*.9f&&longestBlank<=Math.max(1,Math.round(gap*.15f)))return true;
+        }
+        return false;
     }
     private static boolean printedLedgerAcrossWord(byte[] gray,int width,int height,float left,float right,float y,float gap) {
         for(int yy=Math.max(1,Math.round(y-gap*.3f));yy<=Math.min(height-2,Math.round(y+gap*.3f));yy++) {

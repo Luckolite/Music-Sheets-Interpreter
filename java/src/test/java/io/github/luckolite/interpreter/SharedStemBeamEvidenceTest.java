@@ -38,6 +38,6 @@ public class SharedStemBeamEvidenceTest {
                 chord?List.of(upper,lower):List.of(lower));
     }
     @Test public void commonStemResolvesAnIsolatedExtraBeam()throws Exception {assertEquals(1,count(true,false));}
-    @Test public void singleNoteRetainsItsExistingBeamReading()throws Exception {assertEquals(2,count(false,false));}
+    @Test public void singleNoteAlsoRejectsInkDetachedFromItsStem()throws Exception {assertEquals(1,count(false,false));}
     @Test public void realSecondaryBeamOnBothChordHeadsIsPreserved()throws Exception {assertEquals(2,count(true,true));}
 }

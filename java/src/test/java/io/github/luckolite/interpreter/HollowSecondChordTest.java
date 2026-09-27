@@ -37,7 +37,7 @@ public final class HollowSecondChordTest {
         return (List<?>)method.invoke(null,labels,gray,W,H,List.of(component(115,163,81,144)),List.of(staff()));
     }
     @Test public void fourHollowTonesSurviveFusedMask()throws Exception{assertEquals(4,split().size());}
-    @Test public void solidBlobDoesNotBecomeFourHollowTones()throws Exception{assertTrue(new HollowSecondChordTest(true).split().size()<4);}
+    @Test public void fourFilledOvalsAlsoRemainFourTones()throws Exception{assertEquals(4,new HollowSecondChordTest(true).split().size());}
     @Test public void missingUpperOvalCannotBeInvented()throws Exception{
         for(int y=81;y<=99;y++)for(int x=137;x<=163;x++)gray[y*W+x]=(byte)255;
         assertTrue(split().size()<4);

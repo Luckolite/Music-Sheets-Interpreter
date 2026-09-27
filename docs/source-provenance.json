@@ -334,7 +334,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "d47d50f35ad5470e93193d33b6e985a1063a7429e4818eeb3c867af380e115f9",
+      "source_sha256": "eaa4ae320ab4ae6446597d6de3ec45fd0d634b1bd35f48b59d971fc44f05a9cb",
       "concurrent_braces_review": "After the interpreter commit, the app added explicit braces around the two existing nested clearance loops in hasSystemEndTieArc. Loop bounds, scope, order and body are identical; standalone source retains its equivalent unbraced loops. Current app focused51 tests passed. No recognition behavior or dependency changed.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
@@ -677,7 +677,7 @@
     },
     "FingeringAnnotationFilter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/FingeringAnnotationFilter.java",
-      "source_sha256": "30974a5487b830f680af2911934883fbc30cef0768cc006c3cf6e3e8f8fedc8b",
+      "source_sha256": "f00cc0c5a57f8a98ad57584726ecfafea3c3fdb2e7312d03d79559a025bb6d9d",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
@@ -839,7 +839,7 @@
     },
     "StemOwnedBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StemOwnedBeamTip.java",
-      "source_sha256": "cbd3a0918a16cb120d2a889a6bfe81173032e0b8c8bd4d036f56e80d32a470d4",
+      "source_sha256": "4e3c4e7c0d9a3b137cca1a0da4436e1cdd996f7f3347fab9695e6e9152920b16",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations."
     },
@@ -1016,5 +1016,9 @@
   "faded_ownership_and_rest_boundary_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Selected global working-tree changes recover a single independently thick pale beam, faint-shaft paired and slashed grace ownership, and hollow ledger pitch from enclosed white counters. A tiny inner-beam fragment may use a faint true-owner shaft only with existing independent paired-beam and no-rounded-head proof. Filled-head augmentation rejects unresolved three-pixel specks while preserving prior hollow-head faint-dot evidence. Raw and tracked staff frames must corroborate a missing inner bar; original boundaries remain and every new boundary retains the existing geometric guards. Original procedural regressions accompany each repair. Private matched-input page replay supports only the reviewed deltas, not whole-score completion. No private score, annotation, image, model weight, external dependency or deployment is included."
+  },
+  "polyphonic_chord_and_flag_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected global working-tree repairs preserve independently printed filled displaced-second chords, separate close chord attacks only with two shafts and verified ovals, retain stemmed header dyads and mixed hollow/filled voices, bound compact grace-ledger recovery with raw oblique oval and bilateral line evidence, and preserve a stemmed opening grace before the first measure boundary. Independent straight five-rule evidence guards a one-gap local pitch phase error. Single-shaft chord rhythm requires a strict majority and excludes independently opposing shafts; close separate voices use their own proved outer shafts. Additional beam roots must reach inward rather than borrowing detached ink. Narrow double flags retain separate printed roots; a slur rejection requires a long curved continuation past the free stem end, not merely nearby ink. Long ledger stems retain their real beam endpoint and local rest-adjacent flag probes cannot shorten distant beams. Paired-beam corners need two complete bands between real stems. Single-digit OCR cannot remove a note with an independently attached stem outside its box; explicit hand labels retain existing behavior. Original synthetic tests and negative controls accompany these changes. The standalone isolated-beam test formerly expected an extra detached ink band; its expectation now requires actual stem attachment. Three existing mapped runtime classes changed, with no new runtime class, external dependency or model weights. No score-derived image, coordinate fixture, OCR text, private library, device log or app infrastructure is included. Independent private source comparisons and synthetic tests do not establish complete symbol, tie or expressive playback accuracy; the wider audit remains open. No deployment is claimed."
   }
 }

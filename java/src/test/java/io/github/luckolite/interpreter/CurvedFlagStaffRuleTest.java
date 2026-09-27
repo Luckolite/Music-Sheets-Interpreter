@@ -70,4 +70,17 @@ public class CurvedFlagStaffRuleTest {
     @Test public void anIncomingSlurHasNoDownStemFlagRoot()throws Exception {
         slurEnteringFromOutside(false);assertFalse(flag(false));
     }
+    @Test public void aLateReturningCurveStillNeedsItsStemRoot()throws Exception {
+        Arrays.fill(gray,(byte)255);
+        for(int d=10;d<=34;d++) {
+            int x=100+Math.round(20*(float)Math.sin(Math.PI*d/34));
+            for(int dx=0;dx<3;dx++)gray[(80+d)*w+x+dx]=0;
+        }
+        assertFalse(flag(true));
+    }
+    @Test public void aCurveContinuingPastTheFreeEndIsASlur()throws Exception {
+        hook(false);
+        for(int dx=0;dx<=21;dx++)for(int dy=0;dy<3;dy++)gray[(123+dx/2+dy)*w+100-dx]=0;
+        assertFalse(flag(false));
+    }
 }

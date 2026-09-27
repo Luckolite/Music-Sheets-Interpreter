@@ -24,4 +24,24 @@ public class FingeringAnnotationFilterTest {
     @Test public void ledgerOnlyOnOneSideIsInsufficient(){for(int x=165;x<180;x++)gray[80*W+x]=0;assertTrue(apply("2",55,88,note(10,80)).isEmpty());}
     @Test public void absentWordsPreserveListIdentity(){var notes=List.of(note(10,80));assertSame(notes,FingeringAnnotationFilter.apply(List.of(),staffs,measures,notes,gray,W,H));}
     @Test public void sourcePixelsArePreserved(){var before=gray.clone();apply("2",55,88,note(10,80));assertArrayEquals(before,gray);}
+    @Test public void shortLedgerMistakenForDigitKeepsItsDownStem(){
+        for(int y=80;y<=126;y++)gray[y*W+190]=0;
+        assertEquals(1,apply("2",70,92,note(11,80)).size());
+    }
+    @Test public void upStemBeyondOcrBoxProtectsTopLineNote(){
+        for(int y=42;y<=100;y++)gray[y*W+210]=0;
+        assertEquals(1,apply("3",80,105,note(8,100)).size());
+    }
+    @Test public void NumeralSpineInsideTextBoxIsNotAnIndependentStem(){
+        for(int y=60;y<=87;y++)gray[y*W+190]=0;
+        assertTrue(apply("2",55,88,note(10,80)).isEmpty());
+    }
+    @Test public void disconnectedStrokesDoNotProtectAnAnnotation(){
+        for(int y=80;y<=126;y++)if(y<90||y>98)gray[y*W+190]=0;
+        assertTrue(apply("2",70,92,note(11,80)).isEmpty());
+    }
+    @Test public void explicitHandLabelIsNotASingleMisreadDigit(){
+        for(int y=42;y<=100;y++)gray[y*W+210]=0;
+        assertTrue(apply("L2",80,105,note(8,100)).isEmpty());
+    }
 }

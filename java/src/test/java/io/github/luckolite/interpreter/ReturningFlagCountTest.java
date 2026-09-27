@@ -42,6 +42,13 @@ public class ReturningFlagCountTest {
     @Test public void oneReturningDownStemFlagCountsOnce()throws Exception {setup(true);hook(0);assertEquals(1,beams());}
     @Test public void twoUpStemFlagRootsRemainSixteenths()throws Exception {setup(false);hook(0);hook(17);assertEquals(2,beams());}
     @Test public void twoDownStemFlagRootsRemainSixteenths()throws Exception {setup(true);hook(0);hook(17);assertEquals(2,beams());}
+    @Test public void semanticStaffRowsDoNotShortCircuitDoubleFlagRoots()throws Exception {
+        setup(false);hook(0);hook(17);
+        // A broad staff mask can cover the endpoint window without erasing
+        // the two independently printed flag roots in the source raster.
+        for(int yy=48;yy<=88;yy++)for(int x=40;x<170;x++)if(x<99||x>101)labels[y(yy)*W+x]=4;
+        assertEquals(2,beams());
+    }
     @Test public void anUnflaggedQuarterRemainsUnflagged()throws Exception {setup(false);assertEquals(0,beams());}
     @Test public void twoLongBeamsRemainSixteenths()throws Exception {setup(false);for(int start:new int[]{50,68})for(int yy=start;yy<start+8;yy++)for(int x=100;x<185;x++)pixel(x,yy,(byte)1);assertEquals(2,beams());}
     @Test public void oneLongBeamRemainsAnEighth()throws Exception {setup(false);for(int yy=50;yy<58;yy++)for(int x=100;x<185;x++)pixel(x,yy,(byte)1);assertEquals(1,beams());}
