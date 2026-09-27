@@ -143,6 +143,20 @@ public class ShiftedRectangleRestTest {
     }
 
     @Test
+    public void originalStaffProofWinsEqualHeightShiftedReadingDespiteEarlierX() throws Exception {
+        var full = new ScoreRestEvent(0, .5f, .5f, .03f, 0, 1, .25);
+        var shifted = new ScoreRestEvent(0, .49f, .5f, .03f, 0, 1, 1);
+        var method =
+                SixteenthRestDetector.class.getDeclaredMethod("collected", List.class, List.class);
+        method.setAccessible(true);
+        var result =
+                (SixteenthRestDetector.Detection)
+                        method.invoke(
+                                null, new java.util.ArrayList<>(List.of(full, shifted)), List.of());
+        assertEquals(List.of(full), result.rests());
+    }
+
+    @Test
     public void roundedShortHookKeepsItsFullQuarterZigzag() {
         assertTrue(SixteenthRestDetector.shortQuarterHook(8, 10, 5.5, 7.5, 6.2, 6, 16));
     }

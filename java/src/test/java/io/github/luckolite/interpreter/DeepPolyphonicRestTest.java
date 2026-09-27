@@ -124,4 +124,26 @@ public class DeepPolyphonicRestTest {
         assertEquals(r.toString(), 1, r.size());
         assertEquals(.5, r.get(0).durationBeats(), 0);
     }
+
+    private List<ScoreRestEvent> sixthSpace(boolean heldVoice) {
+        page(true, false);
+        byte[] old = gray.clone();
+        for (int y = 150; y <= 181; y++)
+            for (int x = 165; x <= 190; x++) gray[y * W + x] = (byte) 255;
+        for (int y = 150; y <= 181; y++)
+            for (int x = 165; x <= 190; x++) gray[(y + 28) * W + x] = old[y * W + x];
+        return rests(heldVoice ? List.of(held(0, 0, 4)) : List.of());
+    }
+
+    @Test
+    public void sixthSpaceRestRetainsItsFullTail() {
+        var r = sixthSpace(true);
+        assertEquals(r.toString(), 1, r.size());
+        assertEquals(.5, r.get(0).durationBeats(), 0);
+    }
+
+    @Test
+    public void sixthSpaceStillRequiresIndependentVoice() {
+        assertTrue(sixthSpace(false).isEmpty());
+    }
 }

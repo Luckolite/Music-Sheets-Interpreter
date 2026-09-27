@@ -190,7 +190,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "a19547a57af70c051210d8dfb3dd5b4c70b57e5d4465e37e18ad19b486787908",
+      "source_sha256": "4a085e32c1670bb7bdebe61149824553b7c9df321a48faacf4f0674614fd1ed5",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
     },
@@ -250,7 +250,7 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "b40fc967f7f1145382bf4c777b5f40a31d982e0f70aca1fd64203970621dc39b",
+      "source_sha256": "f0d5aab648ae909b9197a42a15ade456ad439c37bacd6ce189fd87c8b468d34d",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "TempoChangeDetector.java": {
@@ -650,6 +650,11 @@
     "TupletNumeralNeighbors.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TupletNumeralNeighbors.java",
       "source_sha256": "a833692181c9d4f6585b04051b8e59809928161834e4466e01da0942d3451823",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "BeamOccludedNatural.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/BeamOccludedNatural.java",
+      "source_sha256": "2590b2e6268f1a07c8735f34a00e89f935f29b72432b2b323f5adf4b7effffde",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     }
   }

@@ -11176,7 +11176,9 @@ final class OmrScoreInterpreter {
             byte[] gray, int width, int height, Component seed, Component head, float gap) {
         return rawNaturalAtSeed(gray, width, height, seed, head, gap, 0)
                 || rawNaturalAtSeed(
-                        gray, width, height, seed, head, gap, Math.max(1, Math.round(gap * .16f)));
+                        gray, width, height, seed, head, gap, Math.max(1, Math.round(gap * .16f)))
+                || BeamOccludedNatural.matches(
+                        gray, width, height, seed.minX, seed.maxX, head.centerY, gap);
     }
 
     private static boolean rawNaturalAtSeed(
