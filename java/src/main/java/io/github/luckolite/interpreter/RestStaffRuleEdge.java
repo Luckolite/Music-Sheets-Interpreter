@@ -124,4 +124,43 @@ final class RestStaffRuleEdge {
         }
         return false;
     }
+
+    /** Mirror the ownership proof for an upward flag beside a raised voice rest. */
+    static boolean noteStemAbove(
+            byte[] gray,
+            int width,
+            int height,
+            int left,
+            int right,
+            int maxY,
+            float gap,
+            float noteX,
+            float noteY) {
+        if (gray == null
+                || gray.length != (long) width * height
+                || gap < 6
+                || !Float.isFinite(gap)
+                || !Float.isFinite(noteX)
+                || !Float.isFinite(noteY)) return false;
+        int from = Math.max(0, Math.round(maxY - gap * .4f)),
+                to = Math.min(height - 1, Math.round(noteY - gap * .2f));
+        if (noteY - maxY < gap * .9f || noteY - maxY > gap * 4.5f || to - from < gap) return false;
+        int first = Math.max(0, Math.max(left, Math.round(noteX - gap * .65f)));
+        int last =
+                Math.min(
+                        width - 1,
+                        Math.min(right + Math.round(gap * .25f), Math.round(noteX + gap * .8f)));
+        for (int x = first; x <= last; x++) {
+            int dark = 0, blank = 0, longestBlank = 0;
+            for (int y = from; y <= to; y++) {
+                if ((gray[y * width + x] & 255) < 170) {
+                    dark++;
+                    blank = 0;
+                } else longestBlank = Math.max(longestBlank, ++blank);
+            }
+            if (dark >= (to - from + 1) * .85f
+                    && longestBlank <= Math.max(1, Math.round(gap * .15f))) return true;
+        }
+        return false;
+    }
 }

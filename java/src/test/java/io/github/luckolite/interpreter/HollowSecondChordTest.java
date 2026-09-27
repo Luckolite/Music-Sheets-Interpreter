@@ -156,16 +156,20 @@ public final class HollowSecondChordTest {
                         int.class,
                         int.class,
                         List.class,
-                        head.getClass());
+                        head.getClass(),
+                        List.class);
         method.setAccessible(true);
         List<ScoreRestEvent> rests = List.of(new ScoreRestEvent(0, .8f, .5f, .1f, 0, 1));
         List<MeasureRegion> measures = List.of(new MeasureRegion(0, 1, 0, 1));
         assertEquals(
                 1,
                 method.invoke(
-                        null, List.of(), note, rests, measures, gray, W, H, List.of(), anchor));
+                        null, List.of(), note, rests, measures, gray, W, H, List.of(), anchor,
+                        List.of()));
         assertEquals(
                 0,
-                method.invoke(null, List.of(), note, rests, measures, gray, W, H, List.of(), head));
+                method.invoke(
+                        null, List.of(), note, rests, measures, gray, W, H, List.of(), head,
+                        List.of()));
     }
 }

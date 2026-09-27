@@ -28,33 +28,37 @@ final class StemOwnedBeamTip {
                 || area > gap * gap * .36f) return false;
         int[] left = a[0] < b[0] ? a : b, right = a[0] < b[0] ? b : a;
         float dx = right[0] - left[0];
-        if (dx < gap * 2
+        if (dx < gap * 1.2f
                 || dx > gap * 16
                 || Math.min(Math.abs(cx - left[0]), Math.abs(cx - right[0])) > gap * .5f)
             return false;
         float slope = (right[1] - left[1]) / dx;
-        if (Math.abs(slope) > .6f || Math.abs(cy - (left[1] + slope * (cx - left[0]))) > gap * 1.1f)
-            return false;
-        int margin = Math.max(3, Math.round(gap * .3f)), valid = 0, total = 0;
-        for (int x = left[0] + margin; x <= right[0] - margin; x++) {
-            int end = Math.round(left[1] + slope * (x - left[0]));
-            int top = Math.round(end - gap * (a[2] < 0 ? .3f : 1.8f));
-            int bottom = Math.round(end + gap * (a[2] < 0 ? 1.8f : .3f));
-            if (x < 0 || x >= w || top < 0 || bottom >= h) return false;
-            int bands = 0, start = -1;
-            for (int y = top; y <= bottom + 1; y++) {
-                boolean ink = y <= bottom && (gray[y * w + x] & 255) < 165;
-                if (ink && start < 0) start = y;
-                if (!ink && start >= 0) {
-                    int span = y - start;
-                    if (span >= gap * .2f && span <= gap * .8f) bands++;
-                    start = -1;
+        if (Math.abs(slope) > .85f
+                || Math.abs(cy - (left[1] + slope * (cx - left[0]))) > gap * 1.1f) return false;
+        int margin = Math.max(3, Math.round(gap * .3f));
+        for (int threshold : new int[] {165, 70}) {
+            int valid = 0, total = 0;
+            for (int x = left[0] + margin; x <= right[0] - margin; x++) {
+                int end = Math.round(left[1] + slope * (x - left[0]));
+                int top = Math.round(end - gap * (a[2] < 0 ? .3f : 1.8f));
+                int bottom = Math.round(end + gap * (a[2] < 0 ? 1.8f : .3f));
+                if (x < 0 || x >= w || top < 0 || bottom >= h) return false;
+                int bands = 0, start = -1;
+                for (int y = top; y <= bottom + 1; y++) {
+                    boolean ink = y <= bottom && (gray[y * w + x] & 255) < threshold;
+                    if (ink && start < 0) start = y;
+                    if (!ink && start >= 0) {
+                        int span = y - start;
+                        if (span >= gap * .2f && span <= gap * .8f) bands++;
+                        start = -1;
+                    }
                 }
+                total++;
+                if (bands == 2) valid++;
             }
-            total++;
-            if (bands == 2) valid++;
+            if (total >= gap * .65f && valid >= total * .9f) return true;
         }
-        return total >= gap && valid >= total * .9f;
+        return false;
     }
 
     static boolean matches(

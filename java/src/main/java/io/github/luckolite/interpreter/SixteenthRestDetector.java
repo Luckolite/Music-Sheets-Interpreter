@@ -73,7 +73,7 @@ final class SixteenthRestDetector {
         // In polyphonic engraving rests for the upper voice move one space above their
         // usual centre to clear the simultaneously held lower voice.
         for (Staff s : staffs)
-            for (int offset = 1; offset <= 2; offset++)
+            for (int offset = 1; offset <= 6; offset++)
                 placements.add(
                         new Staff(
                                 s.top() - offset * s.gap(),
@@ -107,7 +107,7 @@ final class SixteenthRestDetector {
                                                     && s.count() == staff.count()
                                                     && staff.top() - s.top() > gap * 1.9f
                                                     && staff.top() - s.top() < gap * 4.1f);
-            int top = Math.max(0, Math.round(staff.top() + gap * (deepVoice ? .75f : .25f)));
+            int top = Math.max(0, Math.round(staff.top() + gap * .25f));
             boolean highVoice =
                     staffs.stream()
                             .anyMatch(
@@ -116,14 +116,16 @@ final class SixteenthRestDetector {
                                                     && s.count() == staff.count()
                                                     && Math.abs(s.top() - staff.top() - gap * 2)
                                                             < gap * .1f);
+            boolean farRaised =
+                    staffs.stream()
+                            .anyMatch(
+                                    s ->
+                                            s.index() == staff.index()
+                                                    && s.count() == staff.count()
+                                                    && s.top() - staff.top() > gap * 2.9f
+                                                    && s.top() - staff.top() < gap * 6.1f);
             int bottom =
-                    Math.min(
-                            height - 1,
-                            Math.round(
-                                    staff.bottom()
-                                            + (deepVoice
-                                                    ? -gap * .7f
-                                                    : highVoice ? 0 : gap * .3f)));
+                    Math.min(height - 1, Math.round(staff.bottom() + (highVoice ? 0 : gap * .3f)));
             if (bottom < top) continue;
             boolean[] line = new boolean[bottom - top + 1];
             boolean[] narrowLine = new boolean[line.length];
@@ -167,54 +169,80 @@ final class SixteenthRestDetector {
                 masks = java.util.Arrays.copyOf(masks, masks.length + 1);
                 masks[masks.length - 1] = contrasted;
             }
-            for (boolean[] mask : masks) {
-                int start = -1;
-                for (int x = 0; x <= width; x++) {
-                    int ink = 0;
-                    if (x < width)
-                        for (int y = top; y <= bottom; y++)
-                            if (!mask[y - top] && (gray[y * width + x] & 255) < 170) ink++;
-                    if (ink >= 2) {
-                        if (start < 0) start = x;
-                    } else if (start >= 0) {
-                        boolean lowered =
-                                staffs.stream()
-                                        .anyMatch(
-                                                s ->
-                                                        s.index() == staff.index()
-                                                                && s.count() == staff.count()
-                                                                && staff.top() - s.top() > gap * .9f
-                                                                && staff.top() - s.top()
-                                                                        < gap * 4.1f);
-                        boolean deepLowered =
-                                staffs.stream()
-                                        .anyMatch(
-                                                s ->
-                                                        s.index() == staff.index()
-                                                                && s.count() == staff.count()
-                                                                && staff.top() - s.top()
-                                                                        > gap * 1.9f
-                                                                && staff.top() - s.top()
-                                                                        < gap * 4.1f);
-                        inspect(
-                                gray,
-                                width,
-                                height,
-                                measures,
-                                notes,
-                                staff,
-                                top,
-                                bottom,
-                                mask,
-                                start,
-                                x - 1,
-                                result,
-                                restDots,
-                                ordinary,
-                                lowered,
-                                deepLowered,
-                                mask != line && mask != narrowLine);
-                        start = -1;
+            for (boolean[] baseMask : masks) {
+                // A detached beam above a rest can join unrelated columns in a full-height
+                // projection. A second, bulb-only band excludes that beam without clipping
+                // an eighth or sixteenth rest; it cannot classify cropped quarter rectangles.
+                for (int pass = 0; pass < (ordinary || deepVoice || farRaised ? 2 : 1); pass++) {
+                    boolean quarterOnly = deepVoice && pass > 0;
+                    int scanTop =
+                            deepVoice && pass == 0
+                                    ? Math.max(top, Math.round(staff.top() + gap * .75f))
+                                    : (ordinary || farRaised) && pass > 0
+                                            ? Math.max(top, Math.round(staff.top() + gap * .85f))
+                                            : top;
+                    int scanBottom =
+                            deepVoice && pass == 0 || farRaised && pass > 0
+                                    ? Math.min(bottom, Math.round(staff.bottom() - gap * .7f))
+                                    : bottom;
+                    if (scanTop > scanBottom) continue;
+                    boolean[] mask =
+                            scanTop == top && scanBottom == bottom
+                                    ? baseMask
+                                    : java.util.Arrays.copyOfRange(
+                                            baseMask, scanTop - top, scanBottom - top + 1);
+                    int start = -1;
+                    for (int x = 0; x <= width; x++) {
+                        int ink = 0;
+                        if (x < width)
+                            for (int y = scanTop; y <= scanBottom; y++)
+                                if (!mask[y - scanTop] && (gray[y * width + x] & 255) < 170) ink++;
+                        if (ink >= 2) {
+                            if (start < 0) start = x;
+                        } else if (start >= 0) {
+                            boolean lowered =
+                                    staffs.stream()
+                                            .anyMatch(
+                                                    s ->
+                                                            s.index() == staff.index()
+                                                                    && s.count() == staff.count()
+                                                                    && staff.top() - s.top()
+                                                                            > gap * .9f
+                                                                    && staff.top() - s.top()
+                                                                            < gap * 4.1f);
+                            boolean deepLowered =
+                                    staffs.stream()
+                                            .anyMatch(
+                                                    s ->
+                                                            s.index() == staff.index()
+                                                                    && s.count() == staff.count()
+                                                                    && staff.top() - s.top()
+                                                                            > gap * 1.9f
+                                                                    && staff.top() - s.top()
+                                                                            < gap * 4.1f);
+                            inspect(
+                                    gray,
+                                    width,
+                                    height,
+                                    measures,
+                                    notes,
+                                    staff,
+                                    scanTop,
+                                    scanBottom,
+                                    mask,
+                                    start,
+                                    x - 1,
+                                    result,
+                                    restDots,
+                                    ordinary,
+                                    lowered,
+                                    deepLowered,
+                                    baseMask != line && baseMask != narrowLine,
+                                    (ordinary || farRaised) && pass > 0,
+                                    quarterOnly,
+                                    farRaised);
+                            start = -1;
+                        }
                     }
                 }
             }
@@ -247,17 +275,30 @@ final class SixteenthRestDetector {
                 java.util.Comparator.comparingInt(ScoreRestEvent::measureIndex)
                         .thenComparingDouble(ScoreRestEvent::positionInMeasure));
         List<ScoreRestEvent> unique = new ArrayList<>();
-        for (ScoreRestEvent rest : result)
-            if (unique.stream()
-                    .noneMatch(
-                            r ->
-                                    r.measureIndex() == rest.measureIndex()
-                                            && r.staffIndex() == rest.staffIndex()
-                                            && Math.abs(
-                                                            r.positionInMeasure()
-                                                                    - rest.positionInMeasure())
-                                                    < .018f)) unique.add(rest);
-        return new Detection(List.copyOf(unique), List.copyOf(restDots));
+        for (ScoreRestEvent rest : result) {
+            int duplicate = -1;
+            for (int i = 0; i < unique.size(); i++) {
+                ScoreRestEvent r = unique.get(i);
+                if (r.measureIndex() == rest.measureIndex()
+                        && r.staffIndex() == rest.staffIndex()
+                        && r.staffCount() == rest.staffCount()
+                        && Math.abs(r.positionInMeasure() - rest.positionInMeasure()) < .018f
+                        && Math.abs(r.pageY() - rest.pageY())
+                                < Math.max(
+                                        .001f, Math.max(r.pageHeight(), rest.pageHeight()) * .5f)) {
+                    duplicate = i;
+                    break;
+                }
+            }
+            if (duplicate < 0) unique.add(rest);
+            // A shifted crop may see only the lower bulb of a complete sixteenth rest.
+            // Prefer the taller complete glyph, not the crop with a slightly earlier x.
+            else if (rest.pageHeight() > unique.get(duplicate).pageHeight() * 1.1f)
+                unique.set(duplicate, rest);
+        }
+        List<RestDot> selectedDots = new ArrayList<>();
+        for (RestDot dot : restDots) if (unique.contains(dot.rest())) selectedDots.add(dot);
+        return new Detection(List.copyOf(unique), List.copyOf(selectedDots));
     }
 
     /** Translate columns in a narrow staff band; map results back to the source page.
@@ -270,7 +311,7 @@ final class SixteenthRestDetector {
             List<MeasureRegion> measures,
             Staff staff,
             List<ScoreNoteEvent> notes) {
-        int first = Math.max(0, (int) Math.floor(staff.top() - staff.gap() * 3));
+        int first = Math.max(0, (int) Math.floor(staff.top() - staff.gap() * 6));
         int last = Math.min(height, (int) Math.ceil(staff.bottom() + staff.gap() * 4.4f));
         if (last <= first) return new Detection(List.of(), List.of());
         int bandHeight = last - first;
@@ -409,7 +450,10 @@ final class SixteenthRestDetector {
             boolean ordinary,
             boolean lowered,
             boolean deepLowered,
-            boolean edgeFallback) {
+            boolean edgeFallback,
+            boolean bulbOnly,
+            boolean quarterOnly,
+            boolean farRaised) {
         float gap = staff.gap();
         if (right - left + 1 < gap * .7f || right - left + 1 > gap * 1.6f) return;
         int minY = bottom + 1, maxY = top - 1;
@@ -423,8 +467,14 @@ final class SixteenthRestDetector {
                     maxY = y;
                 }
             }
-        boolean half = ordinary && halfRest(staff, top, line, ink, left, right, minY, maxY);
-        if (!half && ordinary) {
+        // Shifted voices need the complete raw rectangle and supporting rule;
+        // a masked beam fragment can otherwise resemble a half or whole rest.
+        boolean half =
+                !bulbOnly
+                        && !quarterOnly
+                        && ordinary
+                        && halfRest(staff, top, line, ink, left, right, minY, maxY);
+        if (!bulbOnly && !quarterOnly && !half) {
             int[] bounds =
                     HalfRestRuleBody.find(
                             gray, width, height, staff.top(), gap, left, right, top, ink);
@@ -434,8 +484,11 @@ final class SixteenthRestDetector {
                 maxY = bounds[1];
             }
         }
-        int[] wholeBounds = ordinary ? wholeRest(gray, width, staff, top, ink, left, right) : null;
-        if (wholeBounds == null && ordinary)
+        int[] wholeBounds =
+                !bulbOnly && !quarterOnly && ordinary
+                        ? wholeRest(gray, width, staff, top, ink, left, right)
+                        : null;
+        if (!bulbOnly && !quarterOnly && wholeBounds == null)
             wholeBounds =
                     HalfRestRuleBody.hanging(
                             gray, width, height, staff.top(), gap, left, right, top, ink);
@@ -445,8 +498,11 @@ final class SixteenthRestDetector {
             maxY = wholeBounds[1];
         }
         boolean quarter =
-                !deepLowered && quarterRest(gray, width, staff, top, line, left, right, minY, maxY);
-        if (!quarter && !half && !whole && ordinary) {
+                !bulbOnly
+                        && (!deepLowered || quarterOnly)
+                        && quarterRest(gray, width, staff, top, line, left, right, minY, maxY);
+        if (quarterOnly && !quarter) return;
+        if (!bulbOnly && !quarter && !half && !whole && ordinary) {
             int tail = quarterTailWithoutSpeck(ink, top, minY, maxY, gap);
             if (tail < maxY
                     && quarterRest(gray, width, staff, top, line, left, right, minY, tail)) {
@@ -533,14 +589,49 @@ final class SixteenthRestDetector {
                     || centerY > region.bottom()) continue;
             if ((m > 0 && region.equals(measures.get(m - 1)))
                     || (m + 1 < measures.size() && region.equals(measures.get(m + 1)))) return;
-            if (lowered) {
-                boolean heldAbove = false;
+            if (farRaised) {
+                boolean heldBelow = false;
                 for (ScoreNoteEvent note : notes)
                     if (note.measureIndex() == m
                             && note.staffIndex() == staff.index()
                             && note.staffCount() == staff.count()
                             && ScoreNoteTiming.hasIndependentSustain(note)
-                            && note.pageY() * height < minY - gap * .7f) {
+                            && note.pageY() * height > maxY + gap * .65f
+                            && Math.abs(
+                                            (region.left()
+                                                                    + note.positionInMeasure()
+                                                                            * (region.right()
+                                                                                    - region
+                                                                                            .left()))
+                                                            * width
+                                                    - (left + right) * .5f)
+                                    < gap * .9f) {
+                        heldBelow = true;
+                        break;
+                    }
+                if (!heldBelow) continue;
+            }
+            if (lowered && !half && !whole) {
+                boolean heldAbove = false;
+                for (ScoreNoteEvent note : notes)
+                    if (note.measureIndex() == m
+                            && note.staffIndex() == staff.index()
+                            && note.staffCount() == staff.count()
+                            && note.pageY() * height < minY - gap * .7f
+                            && (ScoreNoteTiming.hasIndependentSustain(note)
+                                    || movingVoiceAbove(gray, width, height, region, note, gap)
+                                    || quarter
+                                            && Math.abs(
+                                                            (region.left()
+                                                                                    + note
+                                                                                                    .positionInMeasure()
+                                                                                            * (region
+                                                                                                            .right()
+                                                                                                    - region
+                                                                                                            .left()))
+                                                                            * width
+                                                                    - (left + right) * .5f)
+                                                    > gap * 1.8f)) {
                         heldAbove = true;
                         break;
                     }
@@ -555,8 +646,7 @@ final class SixteenthRestDetector {
                                             + note.positionInMeasure()
                                                     * (region.right() - region.left()))
                                     * width;
-                    if (edgeFallback
-                            && lowered
+                    if (lowered
                             && !ScoreNoteTiming.hasIndependentSustain(note)
                             && RestStaffRuleEdge.noteStem(
                                     gray,
@@ -568,11 +658,29 @@ final class SixteenthRestDetector {
                                     gap,
                                     noteX,
                                     note.pageY() * height)) return;
+                    if (!ordinary
+                            && !lowered
+                            && !ScoreNoteTiming.hasIndependentSustain(note)
+                            && RestStaffRuleEdge.noteStemAbove(
+                                    gray,
+                                    width,
+                                    height,
+                                    left,
+                                    right,
+                                    maxY,
+                                    gap,
+                                    noteX,
+                                    note.pageY() * height)) return;
                     if (noteX >= left - gap * .65f && noteX <= right + gap * .65f) {
                         // A rest may share an attack column with a separate held voice. Keep
                         // rejecting note fragments unless the whole rest is clear of its head.
                         float noteY = note.pageY() * height;
-                        if (!lowered && !ScoreNoteTiming.hasIndependentSustain(note)
+                        boolean independentMovingVoice =
+                                !ordinary
+                                        && (lowered
+                                                || movingVoiceBelow(
+                                                        gray, width, height, region, note, gap));
+                        if (!ScoreNoteTiming.hasIndependentSustain(note) && !independentMovingVoice
                                 || noteY >= minY - gap * .65f && noteY <= maxY + gap * .65f) return;
                     }
                     if (note.writtenAccidental() != ScoreNoteEvent.ACCIDENTAL_FROM_KEY
@@ -609,6 +717,58 @@ final class SixteenthRestDetector {
             for (InkDot dot : dots) restDots.add(new RestDot(dot.x(), dot.y(), rest));
             return;
         }
+    }
+
+    /** A displaced lower rest may accompany a moving, independently up-stemmed voice. */
+    private static boolean movingVoiceAbove(
+            byte[] gray,
+            int width,
+            int height,
+            MeasureRegion region,
+            ScoreNoteEvent note,
+            float gap) {
+        return movingVoiceStem(gray, width, height, region, note, gap, true);
+    }
+
+    private static boolean movingVoiceBelow(
+            byte[] gray,
+            int width,
+            int height,
+            MeasureRegion region,
+            ScoreNoteEvent note,
+            float gap) {
+        return movingVoiceStem(gray, width, height, region, note, gap, false);
+    }
+
+    private static boolean movingVoiceStem(
+            byte[] gray,
+            int width,
+            int height,
+            MeasureRegion region,
+            ScoreNoteEvent note,
+            float gap,
+            boolean upward) {
+        float x =
+                (region.left() + note.positionInMeasure() * (region.right() - region.left()))
+                        * width;
+        float y = note.pageY() * height;
+        int top = Math.max(0, Math.round(y + gap * (upward ? -2 : .4f))),
+                bottom = Math.min(height - 1, Math.round(y + gap * (upward ? -.4f : 2)));
+        if (bottom - top < gap * 1.4f) return false;
+        for (int col = Math.max(0, Math.round(x + gap * (upward ? .4f : -.85f)));
+                col <= Math.min(width - 1, Math.round(x + gap * (upward ? .85f : -.4f)));
+                col++) {
+            int ink = 0, blank = 0, longest = 0;
+            for (int row = top; row <= bottom; row++) {
+                if ((gray[row * width + col] & 255) < 170) {
+                    ink++;
+                    blank = 0;
+                } else longest = Math.max(longest, ++blank);
+            }
+            if (ink >= (bottom - top + 1) * .9f && longest <= Math.max(1, Math.round(gap * .15f)))
+                return true;
+        }
+        return false;
     }
 
     /** Dots belong to a recognized rest only in the adjacent upper staff space. */
@@ -825,7 +985,7 @@ final class SixteenthRestDetector {
                 || h > gap * 3.6f
                 || minY < staff.top() + gap * .2f
                 || minY > staff.top() + gap * .9f
-                || maxY + 1 < staff.bottom() - gap * 1.2f
+                || maxY + 1 < Math.floor(staff.bottom() - gap * 1.2f)
                 || maxY > staff.bottom() - gap * .1f) return false;
         double[] centers = new double[h];
         java.util.Arrays.fill(centers, Double.NaN);
@@ -881,6 +1041,16 @@ final class SixteenthRestDetector {
                         && hookRight - hookLeft > gap * .18
                         && f - hookLeft >= -gap * .06
                         && f - hookLeft < gap * .15
+                || b - a > gap * .14
+                        && b - c > gap * .18
+                        && hookRight - c > gap * .08
+                        && hookRight - hookLeft > gap * .10
+                        && f - hookLeft >= -gap * .06
+                        && f - hookLeft < gap * .15
+                        && CompactQuarterRestContour.hasContrastedInk(
+                                gray, width, left, right, minY, maxY, line, top, gap)
+                        && !CompactQuarterRestContour.parallelSpines(
+                                gray, width, left, right, minY, maxY, line, top, gap)
                 || CompactQuarterRestContour.matches(centers, gap)
                         && CompactQuarterRestContour.hasContrastedInk(
                                 gray, width, left, right, minY, maxY, line, top, gap);

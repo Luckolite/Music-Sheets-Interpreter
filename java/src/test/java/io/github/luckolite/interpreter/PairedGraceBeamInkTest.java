@@ -97,4 +97,46 @@ public final class PairedGraceBeamInkTest {
         count(p);
         assertArrayEquals(before, p);
     }
+
+    private byte[] fullPair(boolean detached) {
+        byte[] p = new byte[W * H];
+        Arrays.fill(p, (byte) 255);
+        for (int x = 80; x <= 120; x++) for (int y = 50; y <= 56; y++) p[y * W + x] = 0;
+        for (int x = 80; x <= (detached ? 115 : 120); x++)
+            for (int y = 64; y <= 70; y++) p[y * W + x] = 0;
+        for (int y = 50; y < 120; y++) {
+            p[y * W + 80] = 0;
+            p[y * W + 120] = 0;
+        }
+        return p;
+    }
+
+    @Test
+    public void fullSizePairRequiresBothBeamEndpoints() {
+        assertEquals(
+                2,
+                PairedGraceBeamInk.countFullSize(
+                        fullPair(false),
+                        W,
+                        H,
+                        new int[] {80, 50, -1},
+                        new int[] {120, 50, -1},
+                        20));
+    }
+
+    @Test
+    public void longPartialHookDoesNotUpgradeItsNeighbour() {
+        assertEquals(
+                0,
+                PairedGraceBeamInk.countFullSize(
+                        fullPair(true), W, H, new int[] {80, 50, -1}, new int[] {120, 50, -1}, 20));
+    }
+
+    @Test
+    public void reversingPartialHookStillRejectsIt() {
+        assertEquals(
+                0,
+                PairedGraceBeamInk.countFullSize(
+                        fullPair(true), W, H, new int[] {120, 50, -1}, new int[] {80, 50, -1}, 20));
+    }
 }

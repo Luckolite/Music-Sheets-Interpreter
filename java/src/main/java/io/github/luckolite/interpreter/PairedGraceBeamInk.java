@@ -23,18 +23,13 @@ final class PairedGraceBeamInk {
         int span = Math.abs(a[0] - b[0]);
         if (span < gap * .95f || span > gap * 3 || Math.abs(a[1] - b[1]) > gap * .75f) return 0;
         int maximum = 0;
+        float edge = Math.min(.2f, 2f / span);
+        float[] probes =
+                inside == 1.5f
+                        ? new float[] {.25f, .5f, .75f}
+                        : new float[] {edge, .25f, .5f, .75f, 1 - edge};
         for (float fraction : new float[] {.5f, .75f, 1f}) {
-            int count =
-                    countAtContrast(
-                            gray,
-                            width,
-                            height,
-                            a,
-                            b,
-                            gap,
-                            fraction,
-                            inside,
-                            new float[] {.25f, .5f, .75f});
+            int count = countAtContrast(gray, width, height, a, b, gap, fraction, inside, probes);
             if (count > 0 && inside == 1.5f) return count;
             maximum = Math.max(maximum, count);
         }

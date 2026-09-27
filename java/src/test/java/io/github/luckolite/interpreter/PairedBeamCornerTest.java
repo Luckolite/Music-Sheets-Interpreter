@@ -83,4 +83,25 @@ public class PairedBeamCornerTest {
         match();
         assertArrayEquals(before, gray);
     }
+
+    private boolean compact(boolean second) {
+        Arrays.fill(gray, (byte) 255);
+        for (int x = 60; x <= 90; x++)
+            for (int beam = 0; beam < (second ? 2 : 1); beam++)
+                for (int dy = 0; dy < 7; dy++)
+                    gray[(100 - Math.round((x - 60) * 2f / 3) + beam * 14 + dy) * W + x] = 0;
+        for (int x = 20; x < 200; x++) gray[101 * W + x] = 100;
+        return StemOwnedBeamTip.pairedCorner(
+                gray, W, H, new int[] {60, 100, -1}, new int[] {90, 80, -1}, 87, 94, 8, 16, 85, 18);
+    }
+
+    @Test
+    public void steepCompactDoubleBeamSurvivesLighterRuleBridge() {
+        assertTrue(compact(true));
+    }
+
+    @Test
+    public void compactSingleBeamPlusRuleDoesNotProvePair() {
+        assertFalse(compact(false));
+    }
 }

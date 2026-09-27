@@ -169,4 +169,64 @@ public class SpacedChordAccidentalOwnershipTest {
         m.setAccessible(true);
         assertFalse((boolean) m.invoke(null, labels, 300, 150, a, b, 20f));
     }
+
+    private int staggeredFlat(boolean chord, boolean intervening) throws Exception {
+        rect(60, 62, 25, 68);
+        rect(62, 70, 49, 52);
+        rect(69, 72, 51, 60);
+        rect(65, 70, 60, 64);
+        rect(62, 66, 64, 67);
+        Object seed =
+                make(
+                        "AccidentalCandidate",
+                        make("Component", 210, 60, 72, 25, 68, 64f, 52f),
+                        (byte) 3);
+        rect(90, 93, 65, 105);
+        rect(104, 107, 85, 125);
+        rect(90, 107, 85, 88);
+        rect(90, 107, 102, 105);
+        Object partner =
+                make(
+                        "AccidentalCandidate",
+                        make("Component", 350, 90, 107, 65, 125, 98.5f, 95f),
+                        (byte) 3);
+        var center =
+                OmrScoreInterpreter.class.getDeclaredMethod(
+                        "flatPitchCenter", byte[].class, int.class, seed.getClass(), float.class);
+        center.setAccessible(true);
+        float pitch = (float) center.invoke(null, labels, 300, seed, 20f);
+        Object target = head(125, Math.round(pitch));
+        List<Object> heads = new ArrayList<>();
+        heads.add(target);
+        if (chord) heads.add(head(125, 95));
+        if (intervening) heads.add(head(96, Math.round(pitch)));
+        var method =
+                OmrScoreInterpreter.class.getDeclaredMethod(
+                        "detectWrittenAccidental",
+                        byte[].class,
+                        int.class,
+                        int.class,
+                        List.class,
+                        target.getClass(),
+                        float.class,
+                        List.class);
+        method.setAccessible(true);
+        return (int)
+                method.invoke(null, labels, 300, 150, List.of(seed, partner), target, 20f, heads);
+    }
+
+    @Test
+    public void staggeredFlatCanReachItsChordTone() throws Exception {
+        assertEquals(-1, staggeredFlat(true, false));
+    }
+
+    @Test
+    public void remoteFlatNeedsAChordPartner() throws Exception {
+        assertEquals(2, staggeredFlat(false, false));
+    }
+
+    @Test
+    public void aSeparateAttackOwnsTheFlatFirst() throws Exception {
+        assertEquals(2, staggeredFlat(true, true));
+    }
 }

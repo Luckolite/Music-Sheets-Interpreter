@@ -28,6 +28,10 @@ public final class CompactNaturalSeedTest {
     }
 
     private boolean recover(int lowerEnd) throws Exception {
+        return recover(lowerEnd, -1);
+    }
+
+    private boolean recover(int lowerEnd, int laterAccidentalEdge) throws Exception {
         rect(25, 18, 2, 29);
         rect(35, 30, 2, lowerEnd - 30);
         rect(25, 30, 12, 4);
@@ -43,7 +47,8 @@ public final class CompactNaturalSeedTest {
                         int.class,
                         List.class,
                         cc,
-                        float.class);
+                        float.class,
+                        int.class);
         method.setAccessible(true);
         return (boolean)
                 method.invoke(
@@ -53,7 +58,8 @@ public final class CompactNaturalSeedTest {
                         H,
                         List.of(make("AccidentalCandidate", seed, (byte) 3)),
                         head,
-                        14f);
+                        14f,
+                        laterAccidentalEdge);
     }
 
     @Test
@@ -69,5 +75,15 @@ public final class CompactNaturalSeedTest {
     @Test
     public void croppedAnnotationCannotExtendFlatIntoNatural() throws Exception {
         assertFalse(recover(80));
+    }
+
+    @Test
+    public void cancellationNaturalCannotOverrideALaterAccidental() throws Exception {
+        assertFalse(recover(59, 42));
+    }
+
+    @Test
+    public void sameGlyphMayStillCorrectItsSemanticClassification() throws Exception {
+        assertTrue(recover(59, 36));
     }
 }

@@ -97,6 +97,11 @@ public class RestStaffRuleEdgeTest {
     }
 
     private static List<ScoreRestEvent> fixture(boolean bulb, boolean tail, boolean edge) {
+        return fixture(bulb, tail, edge, false);
+    }
+
+    private static List<ScoreRestEvent> fixture(
+            boolean bulb, boolean tail, boolean edge, boolean beam) {
         int w = 800, h = 240;
         byte[] ink = new byte[w * h];
         Arrays.fill(ink, (byte) 245);
@@ -116,6 +121,8 @@ public class RestStaffRuleEdgeTest {
                 ink[y * w + x] = 30;
                 ink[y * w + x + 1] = 30;
             }
+        if (beam)
+            for (int y = 83; y <= 87; y++) for (int x = 110; x <= 260; x++) ink[y * w + x] = 30;
         return SixteenthRestDetector.detect(
                 ink,
                 w,
@@ -149,6 +156,23 @@ public class RestStaffRuleEdgeTest {
         assertEquals(.5, r.get(0).durationBeats(), 0);
     }
 
+    @Test
+    public void detachedBeamAboveRestDoesNotMergeItsProjection() {
+        var r = fixture(true, true, false, true);
+        assertEquals(r.toString(), 1, r.size());
+        assertEquals(.5, r.get(0).durationBeats(), 0);
+    }
+
+    @Test
+    public void overheadBeamCannotSupplyMissingRest() {
+        assertTrue(fixture(false, false, false, true).isEmpty());
+    }
+
+    @Test
+    public void overheadBeamCannotCompleteAnIsolatedBulb() {
+        assertTrue(fixture(true, false, false, true).isEmpty());
+    }
+
     private boolean owned() {
         return RestStaffRuleEdge.noteStem(gray, W, H, 82, 94, 62, 10, 90, 40);
     }
@@ -176,5 +200,35 @@ public class RestStaffRuleEdgeTest {
         row(54, 20, 180);
         row(64, 20, 180);
         assertFalse(owned());
+    }
+
+    private boolean ownedAbove() {
+        return RestStaffRuleEdge.noteStemAbove(gray, W, H, 86, 98, 38, 10, 90, 60);
+    }
+
+    @Test
+    public void continuousNoteStemOwnsItsUpperFlag() {
+        for (int y = 34; y <= 60; y++) gray[y * W + 95] = 50;
+        assertTrue(ownedAbove());
+    }
+
+    @Test
+    public void disconnectedUpperGlyphRemainsIndependent() {
+        for (int y = 34; y <= 46; y++) gray[y * W + 95] = 50;
+        assertFalse(ownedAbove());
+    }
+
+    @Test
+    public void neighboringUpStemDoesNotOwnRaisedRest() {
+        for (int y = 34; y <= 60; y++) gray[y * W + 110] = 50;
+        assertFalse(ownedAbove());
+    }
+
+    @Test
+    public void crossingRulesDoNotProveAnUpStem() {
+        row(34, 20, 180);
+        row(44, 20, 180);
+        row(54, 20, 180);
+        assertFalse(ownedAbove());
     }
 }

@@ -78,6 +78,34 @@ public class PolyphonicLeadingRestTest {
     }
 
     @Test
+    public void independentlyDownStemmedVoiceCanContinueBelowRaisedRest() {
+        byte[] ink = rest(58);
+        for (int y = 134; y <= 173; y++) ink[y * 400 + 168] = 0;
+        var found =
+                SixteenthRestDetector.detect(
+                        ink,
+                        400,
+                        240,
+                        List.of(new MeasureRegion(0, 1, .1f, .75f)),
+                        List.of(new SixteenthRestDetector.Staff(80, 144, 16, 0, 1)),
+                        List.of(note(.4425f, .56f, 1, 0, 0, 1)));
+        assertEquals(1, found.size());
+        assertEquals(1, found.get(0).durationBeats(), 0);
+    }
+
+    @Test
+    public void deeplyDisplacedQuarterKeepsItsWholeContour() {
+        var found = detect(122, note(.225f, .42f, 1, 0, 0, 1));
+        assertEquals(1, found.size());
+        assertEquals(1, found.get(0).durationBeats(), 0);
+    }
+
+    @Test
+    public void deepQuarterFragmentCannotBorrowItsOverlappingNote() {
+        assertTrue(detect(122, note(.4425f, .56f, 1, 0, 0, 1)).isEmpty());
+    }
+
+    @Test
     public void extractionAssignsTheRestToTheMovingVoiceOnly() {
         byte[] gray = rest(58), labels = new byte[gray.length];
         for (int y = 80; y <= 144; y += 16)

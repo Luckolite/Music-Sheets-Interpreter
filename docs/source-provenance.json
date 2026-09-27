@@ -24,7 +24,7 @@
     },
     "RestStaffRuleEdge.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestStaffRuleEdge.java",
-      "source_sha256": "047ee7cdda3cd5275771fd40a3a9e095004aa8287253952b72f63df5a7cf58b0",
+      "source_sha256": "555bfaa5fec2d6c1a1b23c3d0162dce420e56db7f61738b3b4674c658d02149d",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "LocalTieStaffAlignment.java": {
@@ -190,7 +190,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "9c12c3a9ba28b69bdeaddb0e1720bdb676421edfba11b14d1eb2fcfa6aba47b0",
+      "source_sha256": "2cab4234deb77894fdad13768492af2883ff00c751de2451fdf126b02f971896",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
     },
@@ -250,7 +250,7 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "ff4abf8230ae6f59c4d64fc135ea10f6090f8917ca1d2773fd9645123a3ea127",
+      "source_sha256": "22f65332f9b2df15fd24c73e7e3c1fb2d3277b3e18c9466656d0a3a14343862c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "TempoChangeDetector.java": {
@@ -536,7 +536,7 @@
     },
     "PairedGraceBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PairedGraceBeamInk.java",
-      "source_sha256": "b9240ef7923ff652cc1108666bcb4f56b66567a9cb7b40fc41d02bd9b2339900",
+      "source_sha256": "1ef3db6dae10e0f7d55a40f7384396bee73d45fcc922f749ae10f194bc8b5981",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "WideTripleBeamInk.java": {
@@ -611,7 +611,7 @@
     },
     "StemOwnedBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StemOwnedBeamTip.java",
-      "source_sha256": "4e3c4e7c0d9a3b137cca1a0da4436e1cdd996f7f3347fab9695e6e9152920b16",
+      "source_sha256": "535fe4f02f69b7851f06f7252e59fa4a611c68e74e27ecca034e9d0eeca54a15",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "TupletNumeralInk.java": {
