@@ -20,7 +20,7 @@ final class GrandStaffDynamics {
         for (int i = 0; i + 1 < staffs.size(); i++) {
             var a = staffs.get(i);
             var b = staffs.get(i + 1);
-            if (a.index() != 0 || b.index() != 1 || a.count() != 2 || b.count() != 2) continue;
+            if (a.count() != b.count() || b.index() != a.index() + 1) continue;
             float left = 1;
             for (var bar : measures)
                 if (bar.top() * height <= a.bottom() && bar.bottom() * height >= b.top())

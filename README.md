@@ -65,6 +65,10 @@ is correct.
 
 Note-equals-number tempo marks are supported. Note-equals-note metric modulations are
 not yet interpreted, so passages using them can play at the wrong relative tempo.
+Relative directions such as rit., rall., riten. and a tempo are not yet represented
+as playback tempo curves. Fermata holds, breath pauses and sforzando attacks also
+remain unsupported. Ornament and dynamic metadata from the Java OCR pipeline does
+not imply that every expressive marking is performed by the Python MIDI exporter.
 
 ## Integration and model
 

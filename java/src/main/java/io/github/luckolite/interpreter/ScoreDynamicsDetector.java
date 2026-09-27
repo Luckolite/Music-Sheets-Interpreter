@@ -147,7 +147,7 @@ final class ScoreDynamicsDetector {
         var matcher =
                 java.util.regex.Pattern.compile(
                                 "^(mf|mp|fff|ff|f|ppp|pp|p)(mf|mp|fff|ff|f|ppp|pp|p)$")
-                        .matcher(text.trim().toLowerCase(Locale.ROOT));
+                        .matcher(text.trim().toLowerCase(Locale.ROOT).replaceAll("[.,:;]$", ""));
         return matcher.matches() ? List.of(matcher.group(1), matcher.group(2)) : List.of();
     }
 
@@ -167,6 +167,34 @@ final class ScoreDynamicsDetector {
             case "dim", "diminuendo", "decresc" -> -1;
             default -> 0;
         };
+    }
+
+    /** Keep identical token splitting and raw-ink checks in desktop and Android OCR. */
+    static List<PlayingTechniqueDetector.Word> ocrWords(
+            String line, PlayingTechniqueDetector.Word word, byte[] gray, int width, int height) {
+        if (!dynamicLine(line) && textDirection(word.text()) == 0) return List.of();
+        var packed = packedLevels(word.text());
+        if (packed.isEmpty()) packed = joinedDirection(word.text());
+        if (!packed.isEmpty()) {
+            float split =
+                    word.left()
+                            + (word.right() - word.left())
+                                    * packed.get(0).length()
+                                    / (packed.get(0).length() + packed.get(1).length());
+            float[] edges = {word.left(), split, word.right()};
+            var result = new ArrayList<PlayingTechniqueDetector.Word>();
+            for (int i = 0; i < 2; i++) {
+                var part =
+                        new PlayingTechniqueDetector.Word(
+                                packed.get(i), edges[i], word.top(), edges[i + 1], word.bottom());
+                if (containsInk(part, gray, width, height)) result.add(part);
+            }
+            return List.copyOf(result);
+        }
+        return (Float.isFinite(level(word.text())) || textDirection(word.text()) != 0)
+                        && containsInk(word, gray, width, height)
+                ? List.of(word)
+                : List.of();
     }
 
     static boolean containsInk(
@@ -301,7 +329,7 @@ final class ScoreDynamicsDetector {
             Slot end = new Slot(measures.size() - 1, 1);
             for (var c : result)
                 if (c.direction() == 0
-                        && (c.sharedStaffs() || c.staffIndex() == owner.index())
+                        && sameDynamicPart(c, owner, common != null)
                         && (c.measureIndex() > a.measure
                                 || c.measureIndex() == a.measure
                                         && c.positionInMeasure() > a.position + .025f)
@@ -328,11 +356,40 @@ final class ScoreDynamicsDetector {
                                 direction,
                                 common != null));
         }
-        result.sort(
+        // A keyboard brace inside an ensemble shares only its two staves, not the
+        // soloist or every other part. Materialize those lanes in the existing wire format.
+        List<ScoreDynamicChange> scoped = new ArrayList<>();
+        for (var c : result) {
+            if (c.sharedStaffs() && c.staffCount() > 2) {
+                for (int staff = c.staffIndex(); staff <= c.staffIndex() + 1; staff++)
+                    scoped.add(
+                            new ScoreDynamicChange(
+                                    c.measureIndex(),
+                                    c.positionInMeasure(),
+                                    staff,
+                                    c.staffCount(),
+                                    c.endMeasureIndex(),
+                                    c.endPosition(),
+                                    c.decibels(),
+                                    c.direction(),
+                                    false,
+                                    c.fixedTarget(),
+                                    false));
+            } else scoped.add(c);
+        }
+        scoped.sort(
                 Comparator.comparingInt(ScoreDynamicChange::measureIndex)
                         .thenComparingDouble(ScoreDynamicChange::positionInMeasure)
                         .thenComparingInt(c -> c.direction() == 0 ? 0 : 1));
-        return List.copyOf(result);
+        return List.copyOf(scoped);
+    }
+
+    private static boolean sameDynamicPart(
+            ScoreDynamicChange change, PlayingTechniqueDetector.Staff owner, boolean pair) {
+        if (change.staffCount() != owner.count()) return false;
+        int changeLast = change.staffIndex() + (change.sharedStaffs() ? 1 : 0),
+                ownerLast = owner.index() + (pair ? 1 : 0);
+        return change.staffIndex() <= ownerLast && owner.index() <= changeLast;
     }
 
     static int hairpinDirection(int[] upper, int[] lower, float gap) {

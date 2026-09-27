@@ -166,8 +166,6 @@ public final class MusicalOcr {
                     for (var line : block.lines())
                         for (var element : line.elements()) {
                             String value = element.text();
-                            if (!ScoreDynamicsDetector.dynamicLine(line.text())
-                                    && ScoreDynamicsDetector.textDirection(value) == 0) continue;
                             var box = element.box();
                             if (box == null) continue;
                             var word =
@@ -177,10 +175,9 @@ public final class MusicalOcr {
                                             (top + box.top / (float) scale) / height,
                                             box.right / (float) (scale * width),
                                             (top + box.bottom / (float) scale) / height);
-                            if ((Float.isFinite(ScoreDynamicsDetector.level(value))
-                                            || ScoreDynamicsDetector.textDirection(value) != 0)
-                                    && ScoreDynamicsDetector.containsInk(word, gray, width, height))
-                                words.add(word);
+                            words.addAll(
+                                    ScoreDynamicsDetector.ocrWords(
+                                            line.text(), word, gray, width, height));
                         }
             }
         if (TRACE) System.err.println("dynamic words=" + words.size());

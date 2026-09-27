@@ -209,6 +209,7 @@ final class PortableNoteOrnaments {
             List<PlayingTechniqueDetector.Word> trills) {
         var boxes = boxes(gray, width, height, staffs);
         List<Found> found = new ArrayList<>();
+        var repeatedTrills = new PageTrillEvidence(recognizer, gray, width, height, boxes, trills);
         Set<Bounds> textTrills = new HashSet<>();
         for (var word : trills)
             if (word.text().equals("tr")
@@ -226,9 +227,11 @@ final class PortableNoteOrnaments {
             }
         for (Bounds box : boxes) {
             var match =
-                    textTrills.contains(box)
+                    textTrills.contains(box) || repeatedTrills.confirmed(box)
                             ? new PortableOrnamentGlyphs.Match(NoteOrnament.TRILL, 1, 1)
                             : recognizer.match(gray, width, box);
+            if (!match.accepted() && repeatedTrills.recognizes(gray, width, box, match))
+                match = new PortableOrnamentGlyphs.Match(NoteOrnament.TRILL, 1, 1);
             if (!match.accepted() && match.kind() == NoteOrnament.TRILL && match.score() > .25f) {
                 // In small italic print the r's terminal and the period can be tiny detached
                 // islands. Recheck the complete word without relaxing the glyph threshold.

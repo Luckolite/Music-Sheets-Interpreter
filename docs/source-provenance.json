@@ -148,7 +148,8 @@
     },
     "GrandStaffDynamics.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/GrandStaffDynamics.java",
-      "source_sha256": "2d1c0c6a7b8ea5b30f2a51d9cde5b18c2ed08528c2b16ca7fb73ece122e07e91"
+      "source_sha256": "9cfd54c464187ea5613674b8a6bc91558f0cc2fea063ee1e6d3508ee93b4a94b",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "MeasureNumberReconciler.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureNumberReconciler.java",
@@ -209,7 +210,7 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "77e3ceecb7c40c99f777a052f88afca79fa59e6e0ad68a6d828a71b60e0ca570",
+      "source_sha256": "e7aea8c83c4ff41d6c0a99bcd66e822c34411c859ace7d65c18db12aaab06a45",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreKeyChange.java": {
@@ -561,7 +562,7 @@
     },
     "PortableNoteOrnaments.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableNoteOrnaments.java",
-      "source_sha256": "119ff232613649622b3b99a45c307192acd40ef6d2119daebdcda21ca3cbf4f0",
+      "source_sha256": "b411e616f3e9953edd3dfe1b71bcc26228b918661a996e6d1c7296028d869405",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "PortableOrnamentGlyphs.java": {
@@ -631,7 +632,7 @@
     },
     "MusicalOcr.java": {
       "source_path": "tools/native-worker/NativeMusicalOcr.java",
-      "source_sha256": "e0ca1ef11b4694f3a9359af448ed915096176de76583c175041e7a3306c39395",
+      "source_sha256": "094a88533e7600f4d870219be815ef6810407b95cfb0064e7ff0cf45a38c82a8",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "NativeDynamicGlyphs.java": {
@@ -665,6 +666,11 @@
     "ScoreBoundaryTies.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreBoundaryTies.java",
       "source_sha256": "11b403bae4d743df324edb9d5bb2fe1850d0d458b9398aa71a16cb0ed8cc0f21",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "PageTrillEvidence.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PageTrillEvidence.java",
+      "source_sha256": "76db58e5ba1eef7b085edc0673562b060f81e890940f283e159421894d4d4124",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     }
   }
