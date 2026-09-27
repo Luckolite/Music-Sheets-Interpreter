@@ -269,12 +269,14 @@ final class TripletRhythmDetector {
                 if(!valid||minimum<.012f||maximum>minimum*1.6f)continue;
                 // A longer uninterrupted run does not become a shorter tuplet merely
                 // because a numeral happens to be nearby.
-                if(i>0&&matching(groups.get(i-1),result,first)!=null
-                        &&firstGroup.position()-groups.get(i-1).position()<minimum*1.5f)continue;
-                if(i+divisor<groups.size()&&matching(groups.get(i+divisor),result,first)!=null
-                        &&groups.get(i+divisor).position()-run.get(divisor-1).position()<minimum*1.5f)continue;
                 MeasureRegion bar=measures.get(first.measureIndex());
                 float gap=Math.max(4,(bar.bottom()-bar.top())*height/(8*first.staffCount()));
+                if(i>0&&matching(groups.get(i-1),result,first)!=null
+                        &&firstGroup.position()-groups.get(i-1).position()<minimum*1.5f
+                        &&!(divisor==6&&adjacentSix(groups,result,i-6,first,bar,gray,width,height,gap)))continue;
+                if(i+divisor<groups.size()&&matching(groups.get(i+divisor),result,first)!=null
+                        &&groups.get(i+divisor).position()-run.get(divisor-1).position()<minimum*1.5f
+                        &&!(divisor==6&&adjacentSix(groups,result,i+6,first,bar,gray,width,height,gap)))continue;
                 float x1=(bar.left()+run.get(0).position()*(bar.right()-bar.left()))*width;
                 float lastX=(bar.left()+run.get(divisor-1).position()*(bar.right()-bar.left()))*width;
                 if(lastX-x1<gap*3||lastX-x1>gap*26)continue;
@@ -305,6 +307,24 @@ final class TripletRhythmDetector {
             }
         }
         return List.copyOf(result);
+    }
+
+    /** Two explicitly labelled six-note groups may be adjacent without a spacing gap. */
+    private static boolean adjacentSix(List<Onset> groups,List<ScoreNoteEvent> notes,int start,
+            ScoreNoteEvent first,MeasureRegion bar,byte[] gray,int width,int height,float gap) {
+        if(start<0||start+6>groups.size())return false;
+        float top=Float.MAX_VALUE,bottom=0,min=Float.MAX_VALUE,max=0;
+        for(int j=0;j<6;j++) {
+            Onset onset=matching(groups.get(start+j),notes,first);if(onset==null)return false;
+            top=Math.min(top,onset.top()*height);bottom=Math.max(bottom,onset.bottom()*height);
+            if(j>0){float d=onset.position()-groups.get(start+j-1).position();min=Math.min(min,d);max=Math.max(max,d);}
+        }
+        if(min<.012f||max>min*1.6f)return false;
+        float x1=(bar.left()+groups.get(start).position()*(bar.right()-bar.left()))*width;
+        float x2=(bar.left()+groups.get(start+5).position()*(bar.right()-bar.left()))*width;
+        if(x2-x1<gap*3||x2-x1>gap*26)return false;
+        Glyph glyph=findContrastedNumeral(gray,width,height,x1,x2,top,bottom,gap,true,Float.NaN,Float.NaN,6);
+        return glyph!=null;
     }
 
     /** Complete printed numeral evidence overrides spurious head/beam predictions on that glyph. */

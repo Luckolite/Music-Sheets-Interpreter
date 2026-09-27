@@ -12,8 +12,8 @@ import java.util.Map;
 final class OmrScoreInterpreter {
     /** Two staves in one grand staff are close; consecutive compact violin systems are not. */
     private static final float MAX_STAFFS_IN_SYSTEM_SEPARATION_GAPS = 6.75f;
-    /** D7/E7 in treble clef reaches roughly six to six-and-a-half staff gaps above the stave. */
-    private static final float MAX_HEAD_LEDGER_GAPS = 6.75f;
+    /** High piano chord tones can extend eight gaps; emission still requires ledger ink. */
+    private static final float MAX_HEAD_LEDGER_GAPS = 8f;
 
     private OmrScoreInterpreter() { }
 
@@ -272,7 +272,11 @@ final class OmrScoreInterpreter {
             if(reducedSharpGrace(labels,gray,width,height,head,heads,staffs,measures,graceSeeds))accidentalGraces.add(head);
         demotedDotHeads.removeAll(accidentalGraces);
         heads.removeAll(demotedDotHeads);
-        heads.removeAll(stemSlashFragments(gray, width, height, heads, staffs));
+        List<Component> stemSlashHeads=stemSlashFragments(gray,width,height,heads,staffs);
+        heads.removeAll(stemSlashHeads);
+        // A returning tie shoulder can share this stem-adjacent shape. Once rejected
+        // as a note, its mask must not obscure the two-ended raw tie proof.
+        rejectedSlurHeads.addAll(stemSlashHeads);
         heads.removeAll(sharpCrossbarHeads(gray,width,height,heads,staffs));
         List<Component> longSlurFragments=new ArrayList<>();
         for(Component candidate:heads) {
@@ -341,7 +345,14 @@ final class OmrScoreInterpreter {
                     ||!hasOpenCenter(labels,gray,width,height,head,staff.gap)
                     ||attachedRawStem(gray,width,height,head,staff.gap)!=null)continue;
             int[] mark=detachedTremolo(gray,width,height,head,staff.gap);
-            if(mark!=null)detachedTremolos.put(head,mark);
+            if(mark!=null) {
+                boolean chord=false;
+                for(Component other:heads)if(other!=head&&other.centerX>=mark[0]&&other.centerX<=mark[1]
+                        &&other.centerY>=mark[2]&&other.centerY<=mark[3]
+                        &&hasOpenCenter(labels,gray,width,height,other,staff.gap)
+                        &&enclosedHollowInk(gray,width,other)){chord=true;break;}
+                if(!chord)detachedTremolos.put(head,mark);
+            }
         }
         heads.removeIf(head->detachedTremolos.entrySet().stream().anyMatch(entry->{
             int[] mark=entry.getValue();return head!=entry.getKey()
@@ -378,7 +389,11 @@ final class OmrScoreInterpreter {
             Staff staff = nearestHeadStaff(staffs, candidate.component.centerY);
             if (staff != null && (isFlatGlyph(labels,width,height,candidate,staff.gap)
                     || isNaturalGlyph(labels,width,height,candidate,staff.gap)
-                    || isSharpGlyph(labels,width,height,candidate,staff.gap)))
+                    || isSharpGlyph(labels,width,height,candidate,staff.gap)
+                    ||DoubleSharpGlyph.matches(labels,width,height,candidate.component.minX,candidate.component.minY,
+                        candidate.component.maxX,candidate.component.maxY,(byte)0,staff.gap)
+                    ||DoubleSharpGlyph.matchesRaw(gray,width,height,candidate.component.minX,candidate.component.minY,
+                        candidate.component.maxX,candidate.component.maxY,staff.gap)))
                 accidentalInk.add(candidate.component);
         }
         List<Component> roundedLedgerGraces=roundedLedgerGraceHeads(labels,gray,width,height,heads,staffs);
@@ -502,7 +517,8 @@ final class OmrScoreInterpreter {
             int writtenAccidental = detectWrittenAccidental(labels, width, height,
                     localAccidentals, head, accidentalGap,heads);
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
-                    &&rawWideDoubleSharp(gray,width,height,localAccidentals,head,accidentalGap))
+                    &&(rawWideDoubleSharp(gray,width,height,localAccidentals,head,accidentalGap)
+                        ||rawCompactDoubleSharp(gray,width,height,localAccidentals,head,accidentalGap)))
                 writtenAccidental=ScoreNoteEvent.ACCIDENTAL_DOUBLE_SHARP;
             if(writtenAccidental==ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                     &&rawSharpFromSeed(gray,width,height,localAccidentals,head,accidentalGap)
@@ -4366,7 +4382,9 @@ final class OmrScoreInterpreter {
     }
 
     private static Staff nearestHeadStaff(List<Staff> staffs, float y) {
-        return nearestStaff(staffs, y, MAX_HEAD_LEDGER_GAPS);
+        Staff staff=nearestStaff(staffs, y, MAX_HEAD_LEDGER_GAPS);
+        // The extended range covers high piano tones, not footer/text islands below a staff.
+        return staff!=null&&y>staff.bottom+staff.gap*6.75f?null:staff;
     }
 
     /**
@@ -4446,7 +4464,7 @@ final class OmrScoreInterpreter {
             return null;
         }
         // Two inner rules can establish ownership; the rule beside/through the head is excluded.
-        if(above>=2&&above>=below+2&&head.centerY-upper.bottom<=upper.gap*MAX_HEAD_LEDGER_GAPS)return upper;
+        if(above>=2&&above>=below+2&&head.centerY-upper.bottom<=upper.gap*6.75f)return upper;
         if(below>=2&&below>=above+2&&lower.top-head.centerY<=lower.gap*MAX_HEAD_LEDGER_GAPS)return lower;
         return null;
     }
@@ -6211,7 +6229,10 @@ final class OmrScoreInterpreter {
         if (samples >= 3 && brightHole >= Math.max(2, Math.round(samples * .34f))) return true;
         // A tiny grace head or a fragmented model component can enclose a few antialiased
         // corner pixels without being a hollow half. Expanded pocket recovery is full-size only.
-        if (headWidth < gap * 1.05f || headHeight < gap * .85f) return false;
+        if (headWidth < gap * 1.05f || headHeight < gap * .7f
+                ||headHeight<gap*.85f&&headWidth<gap*1.15f)
+            return headWidth>=gap*.95f&&headHeight>=gap*.65f
+                    &&centralHeadRule(gray,width,height,head,gap)&&enclosedHollowInk(gray,width,head);
         // Tinted scans and staff lines leave gray, rather than white, enclosed pockets.
         // Adapt only this four-sided pocket test; the simple center test stays conservative.
         int[] shades=new int[256];int shadeCount=0;
@@ -6226,7 +6247,7 @@ final class OmrScoreInterpreter {
         // A thick ledger/staff line can cover the middle of a hollow oval. Look for the
         // remaining enclosed white pockets above/below it, not just an average over its centre.
         // Requiring dark ink on both sides rejects the exterior corners of a filled/slanted head.
-        int enclosed = 0, pocketRows = 0;
+        int enclosed = 0, pocketRows = 0, abovePocket=0,belowPocket=0;
         for (int y = Math.max(head.minY + 1, top - 2);
              y <= Math.min(head.maxY - 1, bottom + 2); y++) {
             int rowHoles = 0;
@@ -6246,13 +6267,48 @@ final class OmrScoreInterpreter {
             }
             enclosed += rowHoles;
             if (rowHoles >= 2) pocketRows++;
+            if(y<head.centerY-1)abovePocket+=rowHoles;
+            if(y>head.centerY+1)belowPocket+=rowHoles;
         }
         // Heavy outlines can leave small pockets above and below a staff rule.
         // Require more enclosed rows before accepting their smaller combined area.
         return pocketRows >= 2 && enclosed >= Math.max(4, Math.round(headWidth * headHeight * .055f))
+                ||headWidth<=gap*1.3f&&headHeight<=gap&&pocketRows>=3&&enclosed>=6
+                ||headWidth<=gap*1.3f&&headHeight<=gap*.95f&&enclosed>=5
+                    &&abovePocket>=2&&belowPocket>=2&&centralHeadRule(gray,width,height,head,gap)
                 || pocketRows >= Math.max(4, Math.round(gap * .22f))
                 && enclosed >= Math.max(8, Math.round(headWidth * headHeight * .04f))
                 || fadedEnclosedHeadPocket(gray,width,head,gap,left,right,top,bottom);
+    }
+
+    private static boolean centralHeadRule(byte[] gray,int width,int height,Component head,float gap) {
+        int left=Math.max(0,head.minX-Math.round(gap*.5f)),right=Math.min(width-1,head.maxX+Math.round(gap*.5f));
+        for(int y=Math.max(0,Math.round(head.centerY)-1);y<=Math.min(height-1,Math.round(head.centerY)+1);y++) {
+            int ink=0;for(int x=left;x<=right;x++)if((gray[y*width+x]&255)<=135)ink++;
+            if(ink>=(right-left+1)*.9f)return true;
+        }
+        return false;
+    }
+
+    /** A closed white pocket, not the exterior beside a diagonal tremolo stroke. */
+    private static boolean enclosedHollowInk(byte[] gray,int width,Component head) {
+        int w=head.maxX-head.minX+1,h=head.maxY-head.minY+1,total=0;
+        boolean[] seen=new boolean[w*h];int[] queue=new int[w*h];
+        for(int seed=0;seed<w*h;seed++) {
+            if(seen[seed]||(gray[(head.minY+seed/w)*width+head.minX+seed%w]&255)<185)continue;
+            int size=1,read=0;boolean edge=false;queue[0]=seed;seen[seed]=true;
+            while(read<size) {
+                int at=queue[read++],x=at%w,y=at/w;
+                edge|=x==0||x==w-1||y==0||y==h-1;
+                for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+                    int xx=x+dx,yy=y+dy;if(xx<0||xx>=w||yy<0||yy>=h)continue;
+                    int next=yy*w+xx;
+                    if(!seen[next]&&(gray[(head.minY+yy)*width+head.minX+xx]&255)>=185){seen[next]=true;queue[size++]=next;}
+                }
+            }
+            if(!edge&&size>=2)total+=size;
+        }
+        return total>=5;
     }
 
     /** Light outlines around a ledger-obscured hollow head can miss the dark
@@ -6294,12 +6350,34 @@ final class OmrScoreInterpreter {
             List<Staff> staffs) {
         List<AccidentalCandidate> sameLabel = joinAccidentalFragments(labels,gray,width,height,candidates,staffs,false);
         List<AccidentalCandidate> result = new ArrayList<>();
+        // Preserve compact crosses before a greedy union can absorb nearby ledger ink.
+        // Only complete four-arm glyphs qualify; partial islands remain ordinary candidates.
+        for (int i=0;i<candidates.size();i++) {
+            Component a=candidates.get(i).component;
+            Staff staff=nearestHeadStaff(staffs,a.centerY);if(staff==null)continue;
+            List<Component> nearby=new ArrayList<>();
+            for(int j=i+1;j<candidates.size();j++) {
+                Component b=candidates.get(j).component;
+                if(Math.max(a.maxX,b.maxX)-Math.min(a.minX,b.minX)+1<=staff.gap*1.4f
+                        &&Math.max(a.maxY,b.maxY)-Math.min(a.minY,b.minY)+1<=staff.gap*1.4f)nearby.add(b);
+            }
+            for(int j=0;j<nearby.size();j++)for(int k=j;k<nearby.size();k++) {
+                Component b=nearby.get(j),c=nearby.get(k);
+                int l=Math.min(a.minX,Math.min(b.minX,c.minX)),r=Math.max(a.maxX,Math.max(b.maxX,c.maxX));
+                int t=Math.min(a.minY,Math.min(b.minY,c.minY)),v=Math.max(a.maxY,Math.max(b.maxY,c.maxY));
+                if(gray!=null?DoubleSharpGlyph.matchesRaw(gray,width,height,l,t,r,v,staff.gap)
+                        :DoubleSharpGlyph.matches(labels,width,height,l,t,r,v,(byte)0,staff.gap))
+                    result.add(new AccidentalCandidate(new Component(a.area+b.area+(j==k?0:c.area),l,r,t,v,(l+r)/2f,(t+v)/2f),(byte)0));
+            }
+        }
         // Joining a stray staff fragment can spoil a complete sharp or natural.
         // Retain the intact reading ahead of repaired alternatives at the same edge.
         for(AccidentalCandidate candidate:candidates) {
             Staff staff=nearestHeadStaff(staffs,candidate.component.centerY);
             if(staff!=null&&(isSharpGlyph(labels,width,height,candidate,staff.pitchGap)
-                    ||isNaturalGlyph(labels,width,height,candidate,staff.pitchGap)))result.add(candidate);
+                    ||isNaturalGlyph(labels,width,height,candidate,staff.pitchGap)
+                    ||DoubleSharpGlyph.matchesRaw(gray,width,height,candidate.component.minX,candidate.component.minY,
+                        candidate.component.maxX,candidate.component.maxY,staff.gap)))result.add(candidate);
         }
         result.addAll(sameLabel);
         // Keep the original glyphs: a cross-label union can also include a
@@ -6906,6 +6984,17 @@ final class OmrScoreInterpreter {
     }
 
 
+    private static boolean rawCompactDoubleSharp(byte[] gray,int width,int height,
+            List<AccidentalCandidate> candidates,Component head,float gap) {
+        for(AccidentalCandidate candidate:candidates) {
+            Component c=candidate.component;
+            if(head.minX-c.maxX<gap*.1f||head.minX-c.maxX>gap*1.35f
+                    ||Math.abs((c.minY+c.maxY)/2f-head.centerY)>gap*.35f)continue;
+            if(DoubleSharpGlyph.matchesRaw(gray,width,height,c.minX,c.minY,c.maxX,c.maxY,gap))return true;
+        }
+        return false;
+    }
+
     /** A wide double-sharp box can also contain a neighboring stem and staff
      * rules. Its two white notches still flank a dark waist. */
     private static boolean rawWideDoubleSharp(byte[] gray,int width,int height,
@@ -6974,7 +7063,7 @@ final class OmrScoreInterpreter {
             if (Math.abs(glyph.centerY - head.centerY) > gap * 1.8f) continue;
             float sharpCenter=sharpPitchCenter(labels,width,height,candidate,gap);
             int offsetSpine=offsetSpineAccidental(labels,width,height,candidate,gap);
-            int accidental = DoubleSharpGlyph.matches(labels,width,height,glyph.minX,glyph.minY,glyph.maxX,glyph.maxY,candidate.label,gap)
+            int accidental = DoubleSharpGlyph.matches(labels,width,height,glyph.minX,glyph.minY,glyph.maxX,glyph.maxY,(byte)0,gap)
                     ? ScoreNoteEvent.ACCIDENTAL_DOUBLE_SHARP
                     : offsetSpine!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY ? offsetSpine
                     : isNaturalGlyph(labels, width, height, candidate, gap)
@@ -9358,7 +9447,10 @@ final class OmrScoreInterpreter {
             // must still connect matching pitches at consecutive voice onsets.
             if (measureDistance == 1 && current.event.positionInMeasure() > .58f) continue;
             float gap = (previous.staffGap + current.staffGap) * .5f;
-            if(samePrintedOnset(previous,previousOnset)&&systemBreakTieCandidate(previous,current,width))return index;
+            if((samePrintedOnset(previous,previousOnset)
+                    ||ScoreNoteTiming.hasIndependentSustain(previous.event)
+                    &&ScoreNoteTiming.hasIndependentSustain(current.event))
+                    &&systemBreakTieCandidate(previous,current,width))return index;
             int horizontal = current.head.minX - previous.head.maxX;
             if (horizontal < gap * 1.3f || horizontal > width * .34f) continue;
             // Quantization alone can occasionally put two heads near a step boundary in the same
@@ -9431,7 +9523,9 @@ final class OmrScoreInterpreter {
         float gap=(previous.staffGap+current.staffGap)*.5f;
         return current.event.measureIndex()==previous.event.measureIndex()+1
                 &&current.event.diatonicPitchIdentity()==previous.event.diatonicPitchIdentity()
-                &&previous.head.centerX>width*.65f&&current.head.centerX<width*.35f
+                &&previous.head.centerX>width*(ScoreNoteTiming.hasIndependentSustain(previous.event)
+                    &&ScoreNoteTiming.hasIndependentSustain(current.event)?.5f:.65f)
+                &&current.head.centerX<width*.35f
                 &&current.head.centerY-previous.head.centerY>gap*6
                 &&current.head.centerY-previous.head.centerY<gap*40
                 &&Math.abs(previous.staffGap-current.staffGap)<gap*.2f;
@@ -9442,17 +9536,19 @@ final class OmrScoreInterpreter {
     private static boolean hasSystemEndTieArc(byte[] labels,byte[] gray,int width,int height,
             DetectedNote note,boolean outgoing,int side) {
         float gap=note.staffGap;int step=Math.max(2,Math.round(gap*.2f));
-        int maximumSpan=outgoing&&ScoreNoteTiming.hasIndependentSustain(note.event)?24:outgoing?14:7;
+        int maximumSpan=outgoing&&ScoreNoteTiming.hasIndependentSustain(note.event)?48:outgoing?14:7;
         // Returning shoulders may start underneath a head, as with in-system ties.
         // Keep the complete two-ended raw-curve proof on both systems.
-        for(int initial:new int[]{step,-Math.round(gap*.65f)})
-        for(int clearance=initial;clearance<=(initial==step?gap*1.8f:0);clearance+=step)
+        for(int initial:new int[]{step,-Math.round(gap*.65f)}) {
+            for(int clearance=initial;clearance<=(initial==step?gap*1.8f:0);clearance+=step) {
             for(int span=Math.round(gap*1.6f);span<=gap*maximumSpan;span+=step) {
                 int left=outgoing?note.head.maxX+clearance:note.head.minX-clearance-span;
                 int right=outgoing?left+span:note.head.minX-clearance;
                 if(left<0||right>=width)continue;
                 if(hasContinuousTieArc(labels,gray,width,height,left,right,note.head.centerY,gap,null,205,side))return true;
             }
+            }
+        }
         return false;
     }
 

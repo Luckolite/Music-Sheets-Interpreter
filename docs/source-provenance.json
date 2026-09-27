@@ -1,6 +1,10 @@
 {
   "source_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
   "source_project": "Music Sheets",
+  "compact_accidentals_held_voices_and_tuplets_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Selected working-tree repairs retain high ledger tones with existing printed-ledger proof while preserving the previous lower range; prove compact double-sharps from complete raw or semantic arms, union accidental labels, reject cropped spines and low-contrast paper, and exclude verified accidental ink from augmentation dots. Independently sustained voices can retain two-ended returning system ties across intervening attacks; rejected false-head shoulder masks no longer obscure the same raw proof. Closed raw hollow pockets distinguish sustained chord tones from detached tremolo strokes, with bounded staff-rule support for tiny interiors. Adjacent sextuplets each require their own complete printed numeral and six matching onsets. Tempo ownership uses independently verified five-line staff tops without changing measure geometry. Thirty-one original procedural regressions include negative controls and immutable input checks; existing tremolo, natural, dotted-chord and source-array tests remain. Private matched-input comparisons and six fresh native pages are separate from synthetic test evidence; no exhaustive source accuracy, device playback or deployment is claimed. Four existing mapped classes changed; the existing BeamInkThreshold helper is reused, with no new runtime dependency or model changes. No private score pixels, coordinates, library, logs or app infrastructure are included."
+  },
   "opening_header_and_ocr_direction_review": {
     "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
     "boundary": "Selected working-tree repairs expand the existing symbol-only opening-header pocket bound from three to four staff gaps, tolerating only one or two isolated note-label pixels while retaining header and zero stem/rest evidence. Eight original synthetic controls protect notes, rests, wider regions and input immutability. The octave text normalizer accepts a terminal OCR line-hook glyph only after an exact octave direction; six original controls retain span endpoints and reject embedded hooks/prose. Python tempo parsing accepts a grammar-bounded adjacent chord label without widening BPM digit boxes or accepting arbitrary prose/fractions; six synthetic tests cover it. Musical OCR and native PDF tablature words are separate channels; four original regressions protect directions from numeric PDF tokens. The app native-worker adapter previously replaced musical words when native numeric text existed; it now uses the same page_annotations helper as the standalone reader, which already supported separate channels. No model, dependency, private score fixture or deployment is included. Seven-page private replay and source-delta review do not establish exhaustive note-by-note accuracy.",
@@ -330,7 +334,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "e5fdacdc15b08e428e6f2c7af17e4e97ad6e8670b0ca443018de7789838ac1dc",
+      "source_sha256": "d47d50f35ad5470e93193d33b6e985a1063a7429e4818eeb3c867af380e115f9",
       "concurrent_braces_review": "After the interpreter commit, the app added explicit braces around the two existing nested clearance loops in hasSystemEndTieArc. Loop bounds, scope, order and body are identical; standalone source retains its equivalent unbraced loops. Current app focused51 tests passed. No recognition behavior or dependency changed.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "notes": "Reviewed selected working-tree recognition or timing source and its transitive JDK-only dependencies. Ported to the standalone package with original synthetic regressions; no private score fixtures, user data, Android services or model changes. See hard_scan_and_navigation_review for integration and remaining limitations.",
@@ -411,7 +415,7 @@
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
-      "source_sha256": "8c6c07d31c9ef9d27bfb0be62a6266dde8ceab36e032dfaa45a88433baa20080",
+      "source_sha256": "305057fe0771c270d0526620242ad1e2975462127b52809d208b77e005ccc4fc",
       "faded_equals_review": "Scoped repair keeps the strong-ink equals pass first, then permits two separated pale strokes only on predominantly white paper. Five original synthetic positive, shadow, connected-letter and single-stroke controls. Private faded tempo verification remains outside this repository. Prior upstream-only dot-fringe behavior is retained; no whole-file semantic parity claim.",
       "pulse_dot_review": "Scoped working-tree port: a second dark-core component pass recovers an augmentation dot connected to the pulse by a pale scan bridge, only when its result is exactly the dotted version of the original unit. Three original generated controls retain undotted and faint isolated-dot readings. Prior upstream-only equals-fringe behavior remains documented below.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
@@ -420,7 +424,7 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "df4be88573b706a50a4528ef0bf78cdf17552dbb3e32832a12b7c42050b78715",
+      "source_sha256": "155777e881f48f14bcfffcc90ca72ea6417073a60eb30e34aabfd7a5871fedee",
       "numeral_review": "See inset_and_crossing_tuplet_numerals_review; original group, contrast and close-neighbor guards remain. All accepted earlier numeral paths take priority.",
       "sextuplet_review": "Retains genuinely distinct compact triplets and adds explicit six-in-four numeral/group proof with separate-beam rejection. Original note state including octaveShift survives all copies. See compact_triplet_sextuplet_review.",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
@@ -484,7 +488,7 @@
     },
     "DoubleSharpGlyph.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DoubleSharpGlyph.java",
-      "source_sha256": "8b3f6c2fb18de6bd77eed15e12e02ae6a6206c803614dbba54cc3a6bf9b2cfc6",
+      "source_sha256": "b3d69bedbc27dc833db1f1ed72a8d0014e703f849629eee3c39a147ef81df1a4",
       "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
     },
     "OctaveClefDigit.java": {

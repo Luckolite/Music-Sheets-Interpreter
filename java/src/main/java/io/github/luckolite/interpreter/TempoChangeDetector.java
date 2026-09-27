@@ -17,6 +17,9 @@ final class TempoChangeDetector {
                 || width <= 0 || height <= 0 || measures == null || measures.isEmpty())
             return List.of();
         List<ScoreTempoChange> result = new ArrayList<>();
+        // Measure boxes include clefs and ledger ink above the actual staff.
+        // Use a verified five-line top for direction ownership, never for score geometry.
+        List<MeasureRegion> directionMeasures = directionMeasures(measures,gray,width,height);
         for (MeasureNumberReconciler.NumberToken token : tokens) {
             if (token.value() < 30 || token.value() > 400) continue;
             int equalsLeft = equalsSignLeft(token, gray, width, height);
@@ -27,14 +30,14 @@ final class TempoChangeDetector {
             // recognition, but attach the change to the start of its OCR direction line.
             var anchor=new MeasureNumberReconciler.NumberToken(token.value(),token.annotationLeft(),
                     token.top(),token.annotationLeft()+(token.right()-token.left()),token.bottom());
-            int measureIndex = nearestFollowingMeasure(anchor, measures,
+            int measureIndex = nearestFollowingMeasure(anchor, directionMeasures,
                     token.annotationLeft() >= token.left()-.001f);
             // OCR may include the tempo note/equal sign in a line starting left of
             // the first bar. The verified digits may still clearly belong to the
             // opening staff. Do not relax ink checks or relocate later directions.
-            if(measureIndex<0&&nearestFollowingMeasure(token,measures,true)==0)measureIndex=0;
+            if(measureIndex<0&&nearestFollowingMeasure(token,directionMeasures,true)==0)measureIndex=0;
             if (measureIndex < 0) continue;
-            MeasureRegion measure = measures.get(measureIndex);
+            MeasureRegion measure = directionMeasures.get(measureIndex);
             float position = (anchor.left() - measure.left())
                     / Math.max(.0001f, measure.right() - measure.left());
             // Engravers place the number to the right of the note/equal sign. Snap a mark printed
@@ -57,6 +60,23 @@ final class TempoChangeDetector {
             deduplicated.add(change);
         }
         return List.copyOf(deduplicated);
+    }
+
+    private static List<MeasureRegion> directionMeasures(List<MeasureRegion> measures,
+            byte[] gray,int width,int height) {
+        var staffs=RawStaffLineDetector.detect(gray,width,height);
+        List<MeasureRegion> result=new ArrayList<>();
+        for(var measure:measures) {
+            float top=measure.top();
+            for(var staff:staffs) {
+                float delta=staff.top()-measure.top()*height;
+                if(delta>=0&&delta<=staff.gap()*3&&staff.bottom()<measure.bottom()*height) {
+                    top=staff.top()/(float)height;break;
+                }
+            }
+            result.add(new MeasureRegion(measure.left(),measure.right(),top,measure.bottom()));
+        }
+        return result;
     }
 
     /** OCR direction padding may cross the staff even though the actual digits do not. */
