@@ -104,4 +104,24 @@ public class DeepPolyphonicRestTest {
                         0, 177 / (float) W, -3, 0, 1, 157 / (float) H, false, 0, 1, 2, 0);
         assertTrue(rests(List.of(held(0, 0, 4), note)).isEmpty());
     }
+
+    @Test
+    public void fifthSpacePlacementRemainsOwnedByPrintedStaffOutsideMeasureBox() {
+        page(true, false);
+        byte[] old = gray.clone();
+        for (int y = 150; y <= 181; y++)
+            for (int x = 165; x <= 190; x++) gray[y * W + x] = (byte) 255;
+        for (int y = 150; y <= 181; y++)
+            for (int x = 165; x <= 190; x++) gray[(y + 14) * W + x] = old[y * W + x];
+        var r =
+                SixteenthRestDetector.detect(
+                        gray,
+                        W,
+                        H,
+                        List.of(new MeasureRegion(0, 1, .1f, .5f)),
+                        List.of(new SixteenthRestDetector.Staff(80, 137, 14.25f, 0, 1)),
+                        List.of(held(0, 0, 4)));
+        assertEquals(r.toString(), 1, r.size());
+        assertEquals(.5, r.get(0).durationBeats(), 0);
+    }
 }

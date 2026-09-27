@@ -21,6 +21,8 @@ final class SixteenthRestDetector {
 
     private record InkDot(float x, float y) {}
 
+    private record Placement(Staff staff, float printedCenter) {}
+
     static List<ScoreRestEvent> detect(
             byte[] gray,
             int width,
@@ -69,28 +71,34 @@ final class SixteenthRestDetector {
         }
         List<ScoreRestEvent> result = new ArrayList<>();
         List<RestDot> restDots = new ArrayList<>();
-        List<Staff> placements = new ArrayList<>(staffs);
+        List<Placement> placements = new ArrayList<>();
+        for (Staff s : staffs) placements.add(new Placement(s, (s.top() + s.bottom()) * .5f));
         // In polyphonic engraving rests for the upper voice move one space above their
         // usual centre to clear the simultaneously held lower voice.
         for (Staff s : staffs)
             for (int offset = 1; offset <= 6; offset++)
                 placements.add(
-                        new Staff(
-                                s.top() - offset * s.gap(),
-                                s.bottom() - offset * s.gap(),
-                                s.gap(),
-                                s.index(),
-                                s.count()));
+                        new Placement(
+                                new Staff(
+                                        s.top() - offset * s.gap(),
+                                        s.bottom() - offset * s.gap(),
+                                        s.gap(),
+                                        s.index(),
+                                        s.count()),
+                                (s.top() + s.bottom()) * .5f));
         for (Staff s : staffs)
-            for (int offset = 1; offset <= 4; offset++)
+            for (int offset = 1; offset <= 5; offset++)
                 placements.add(
-                        new Staff(
-                                s.top() + offset * s.gap(),
-                                s.bottom() + offset * s.gap(),
-                                s.gap(),
-                                s.index(),
-                                s.count()));
-        for (Staff staff : placements) {
+                        new Placement(
+                                new Staff(
+                                        s.top() + offset * s.gap(),
+                                        s.bottom() + offset * s.gap(),
+                                        s.gap(),
+                                        s.index(),
+                                        s.count()),
+                                (s.top() + s.bottom()) * .5f));
+        for (Placement placement : placements) {
+            Staff staff = placement.staff();
             float gap = staff.gap();
             boolean ordinary =
                     staffs.stream()
@@ -106,7 +114,15 @@ final class SixteenthRestDetector {
                                             s.index() == staff.index()
                                                     && s.count() == staff.count()
                                                     && staff.top() - s.top() > gap * 1.9f
-                                                    && staff.top() - s.top() < gap * 4.1f);
+                                                    && staff.top() - s.top() < gap * 5.1f);
+            boolean shallowLowered =
+                    staffs.stream()
+                            .anyMatch(
+                                    s ->
+                                            s.index() == staff.index()
+                                                    && s.count() == staff.count()
+                                                    && Math.abs(staff.top() - s.top() - gap)
+                                                            < gap * .1f);
             int top = Math.max(0, Math.round(staff.top() + gap * .25f));
             boolean highVoice =
                     staffs.stream()
@@ -173,12 +189,14 @@ final class SixteenthRestDetector {
                 // A detached beam above a rest can join unrelated columns in a full-height
                 // projection. A second, bulb-only band excludes that beam without clipping
                 // an eighth or sixteenth rest; it cannot classify cropped quarter rectangles.
-                for (int pass = 0; pass < (ordinary || deepVoice || farRaised ? 2 : 1); pass++) {
+                for (int pass = 0;
+                        pass < (ordinary || shallowLowered || deepVoice || farRaised ? 2 : 1);
+                        pass++) {
                     boolean quarterOnly = deepVoice && pass > 0;
                     int scanTop =
                             deepVoice && pass == 0
                                     ? Math.max(top, Math.round(staff.top() + gap * .75f))
-                                    : (ordinary || farRaised) && pass > 0
+                                    : (ordinary || shallowLowered || farRaised) && pass > 0
                                             ? Math.max(top, Math.round(staff.top() + gap * .85f))
                                             : top;
                     int scanBottom =
@@ -209,7 +227,7 @@ final class SixteenthRestDetector {
                                                                     && staff.top() - s.top()
                                                                             > gap * .9f
                                                                     && staff.top() - s.top()
-                                                                            < gap * 4.1f);
+                                                                            < gap * 5.1f);
                             boolean deepLowered =
                                     staffs.stream()
                                             .anyMatch(
@@ -219,7 +237,7 @@ final class SixteenthRestDetector {
                                                                     && staff.top() - s.top()
                                                                             > gap * 1.9f
                                                                     && staff.top() - s.top()
-                                                                            < gap * 4.1f);
+                                                                            < gap * 5.1f);
                             inspect(
                                     gray,
                                     width,
@@ -238,9 +256,10 @@ final class SixteenthRestDetector {
                                     lowered,
                                     deepLowered,
                                     baseMask != line && baseMask != narrowLine,
-                                    (ordinary || farRaised) && pass > 0,
+                                    (ordinary || shallowLowered || farRaised) && pass > 0,
                                     quarterOnly,
-                                    farRaised);
+                                    farRaised,
+                                    placement.printedCenter() / height);
                             start = -1;
                         }
                     }
@@ -312,7 +331,7 @@ final class SixteenthRestDetector {
             Staff staff,
             List<ScoreNoteEvent> notes) {
         int first = Math.max(0, (int) Math.floor(staff.top() - staff.gap() * 6));
-        int last = Math.min(height, (int) Math.ceil(staff.bottom() + staff.gap() * 4.4f));
+        int last = Math.min(height, (int) Math.ceil(staff.bottom() + staff.gap() * 5.4f));
         if (last <= first) return new Detection(List.of(), List.of());
         int bandHeight = last - first;
         byte[] flat = new byte[width * bandHeight];
@@ -453,7 +472,8 @@ final class SixteenthRestDetector {
             boolean edgeFallback,
             boolean bulbOnly,
             boolean quarterOnly,
-            boolean farRaised) {
+            boolean farRaised,
+            float printedStaffCenter) {
         float gap = staff.gap();
         if (right - left + 1 < gap * .7f || right - left + 1 > gap * 1.6f) return;
         int minY = bottom + 1, maxY = top - 1;
@@ -585,8 +605,8 @@ final class SixteenthRestDetector {
             MeasureRegion region = measures.get(m);
             if (centerX <= region.left()
                     || centerX >= region.right()
-                    || centerY < region.top()
-                    || centerY > region.bottom()) continue;
+                    || printedStaffCenter < region.top()
+                    || printedStaffCenter > region.bottom()) continue;
             if ((m > 0 && region.equals(measures.get(m - 1)))
                     || (m + 1 < measures.size() && region.equals(measures.get(m + 1)))) return;
             if (farRaised) {
@@ -635,7 +655,11 @@ final class SixteenthRestDetector {
                         heldAbove = true;
                         break;
                     }
-                if (!heldAbove) continue;
+                if (!heldAbove
+                        && !(eighth
+                                && beamedVoiceAroundRest(
+                                        gray, width, height, region, notes, m, staff, left, right,
+                                        minY))) continue;
             }
             for (ScoreNoteEvent note : notes)
                 if (note.measureIndex() == m
@@ -717,6 +741,72 @@ final class SixteenthRestDetector {
             for (InkDot dot : dots) restDots.add(new RestDot(dot.x(), dot.y(), rest));
             return;
         }
+    }
+
+    /** A complete rest can interrupt a beam only when both printed shafts support that beam. */
+    private static boolean beamedVoiceAroundRest(
+            byte[] gray,
+            int width,
+            int height,
+            MeasureRegion region,
+            List<ScoreNoteEvent> notes,
+            int measure,
+            Staff staff,
+            int left,
+            int right,
+            int restTop) {
+        float gap = staff.gap();
+        ScoreNoteEvent before = null, after = null;
+        float beforeX = -1, afterX = width;
+        for (ScoreNoteEvent note : notes) {
+            if (note.measureIndex() != measure
+                    || note.staffIndex() != staff.index()
+                    || note.staffCount() != staff.count()
+                    || note.beamCount() < 1
+                    || note.pageY() * height < restTop + gap * .65f) continue;
+            float x =
+                    (region.left() + note.positionInMeasure() * (region.right() - region.left()))
+                            * width;
+            if (x < left - gap && x > beforeX) {
+                before = note;
+                beforeX = x;
+            }
+            if (x > right + gap && x < afterX) {
+                after = note;
+                afterX = x;
+            }
+        }
+        if (before == null || after == null || afterX - beforeX > gap * 18) return false;
+        int a = Math.round(beforeX + gap * .55f), b = Math.round(afterX + gap * .55f);
+        if (a < 0 || b >= width) return false;
+        int thickness = Math.max(3, Math.round(gap * .18f));
+        for (int y = Math.max(0, Math.round(restTop - gap * 2)); y < restTop - gap * .4f; y++) {
+            if (y + thickness >= height) break;
+            int ink = 0;
+            for (int x = a; x <= b; x++) {
+                int rows = 0;
+                for (int dy = 0; dy < thickness; dy++)
+                    if ((gray[(y + dy) * width + x] & 255) < 170) rows++;
+                if (rows == thickness) ink++;
+            }
+            if (ink < (b - a + 1) * .95f) continue;
+            if (beamStemReaches(gray, width, height, a, y, Math.round(before.pageY() * height), gap)
+                    && beamStemReaches(
+                            gray, width, height, b, y, Math.round(after.pageY() * height), gap))
+                return true;
+        }
+        return false;
+    }
+
+    private static boolean beamStemReaches(
+            byte[] gray, int width, int height, int x, int top, int bottom, float gap) {
+        if (bottom >= height || bottom - top < gap * 2) return false;
+        for (int column = Math.max(0, x - 2); column <= Math.min(width - 1, x + 2); column++) {
+            int ink = 0;
+            for (int y = top; y <= bottom; y++) if ((gray[y * width + column] & 255) < 170) ink++;
+            if (ink >= (bottom - top + 1) * .9f) return true;
+        }
+        return false;
     }
 
     /** A displaced lower rest may accompany a moving, independently up-stemmed voice. */
@@ -984,7 +1074,7 @@ final class SixteenthRestDetector {
         if (h < gap * 2.1f
                 || h > gap * 3.6f
                 || minY < staff.top() + gap * .2f
-                || minY > staff.top() + gap * .9f
+                || minY > staff.top() + gap * 1.1f
                 || maxY + 1 < Math.floor(staff.bottom() - gap * 1.2f)
                 || maxY > staff.bottom() - gap * .1f) return false;
         double[] centers = new double[h];
@@ -1041,12 +1131,7 @@ final class SixteenthRestDetector {
                         && hookRight - hookLeft > gap * .18
                         && f - hookLeft >= -gap * .06
                         && f - hookLeft < gap * .15
-                || b - a > gap * .14
-                        && b - c > gap * .18
-                        && hookRight - c > gap * .08
-                        && hookRight - hookLeft > gap * .10
-                        && f - hookLeft >= -gap * .06
-                        && f - hookLeft < gap * .15
+                || shortQuarterHook(a, b, c, hookRight, hookLeft, f, gap)
                         && CompactQuarterRestContour.hasContrastedInk(
                                 gray, width, left, right, minY, maxY, line, top, gap)
                         && !CompactQuarterRestContour.parallelSpines(
@@ -1054,6 +1139,25 @@ final class SixteenthRestDetector {
                 || CompactQuarterRestContour.matches(centers, gap)
                         && CompactQuarterRestContour.hasContrastedInk(
                                 gray, width, left, right, minY, maxY, line, top, gap);
+    }
+
+    /** Full zigzag with a short lower hook; allow half a raster pixel at its rounded turns. */
+    static boolean shortQuarterHook(
+            double start,
+            double peak,
+            double valley,
+            double hookRight,
+            double hookLeft,
+            double foot,
+            float gap) {
+        return Float.isFinite(gap)
+                && gap >= 4
+                && peak - start + .5 > gap * .14
+                && peak - valley > gap * .18
+                && hookRight - valley > gap * .08
+                && hookRight - hookLeft + .5 > gap * .10
+                && foot - hookLeft >= -gap * .06
+                && foot - hookLeft < gap * .15;
     }
 
     private static double bandCenter(double[] rows, double from, double to) {

@@ -16615,9 +16615,10 @@ final class OmrScoreInterpreter {
                 || before.event.followingRestBeats() > 0
                 || after.event.leadingRestBeats() > 0
                 || ScoreNoteTiming.writtenDurationBeats(before.event) < 1) return false;
-        int[] a = attachedRawStem(gray, width, height, before.head, before.staffGap),
-                b = attachedRawStem(gray, width, height, after.head, after.staffGap);
-        if (a == null || b == null || a[2] != b[2]) return false;
+        int directions =
+                tieVoiceStemDirections(gray, width, height, before.head, before.staffGap)
+                        & tieVoiceStemDirections(gray, width, height, after.head, after.staffGap);
+        if (directions == 0) return false;
         boolean opposing = false;
         for (int i = previousIndex + 1; i < currentIndex; i++) {
             DetectedNote between = notes.get(i);
@@ -16626,11 +16627,39 @@ final class OmrScoreInterpreter {
                     || samePrintedOnset(after, between)) continue;
             if (between.event.diatonicPitchIdentity() == before.event.diatonicPitchIdentity())
                 return false;
-            int[] shaft = attachedRawStem(gray, width, height, between.head, between.staffGap);
-            if (shaft == null || shaft[2] == a[2]) return false;
+            int shafts =
+                    tieVoiceStemDirections(gray, width, height, between.head, between.staffGap);
+            if (shafts != 1 && shafts != 2) return false;
+            directions &= ~shafts;
+            if (directions == 0) return false;
             opposing = true;
         }
         return opposing;
+    }
+
+    /** A shared chord column can have two shafts; the longest one does not own both voices. */
+    private static int tieVoiceStemDirections(
+            byte[] gray, int width, int height, Component head, float gap) {
+        int directions = 0, maxBlank = Math.max(1, Math.round(gap * .16f));
+        for (int direction : new int[] {-1, 1}) {
+            int edge = direction < 0 ? head.maxX : head.minX;
+            for (int x = Math.max(1, edge - Math.round(gap * .3f));
+                    x <= Math.min(width - 2, edge + Math.round(gap * .3f));
+                    x++) {
+                int blank = 0, end = Math.round(head.centerY);
+                for (int d = 0; d < Math.round(gap * 4); d++) {
+                    int y = Math.round(head.centerY) + direction * d;
+                    if (y < 0 || y >= height) break;
+                    if ((gray[y * width + x] & 255) < 170) {
+                        end = y;
+                        blank = 0;
+                    } else if (++blank > maxBlank) break;
+                }
+                if (Math.abs(end - Math.round(head.centerY)) >= gap * 2.3f)
+                    directions |= direction < 0 ? 1 : 2;
+            }
+        }
+        return directions;
     }
 
     private static boolean samePrintedOnset(DetectedNote first, DetectedNote second) {
@@ -16691,6 +16720,11 @@ final class OmrScoreInterpreter {
             int arcRight = Math.min(Math.round(current.head.centerX), right + overlap);
             if (hasPrintedTieArc(
                     labels, gray, width, height, arcLeft, arcRight, centerY, gap, false))
+                return true;
+            if (ScoreNoteTiming.hasIndependentSustain(previous.event)
+                    && ScoreNoteTiming.hasIndependentSustain(current.event)
+                    && hasFlattenedTieArc(
+                            labels, gray, width, height, arcLeft, arcRight, centerY, gap))
                 return true;
             // Raw pixels must prove a continuous arc; aggregates of staff/beam
             // fragments cannot establish a tie, even after a sustained note.
@@ -16855,6 +16889,37 @@ final class OmrScoreInterpreter {
     }
 
     /** Follow one returning curve; averaging nearby slurs, stems and ledger lines loses short ties. */
+    private static boolean hasFlattenedTieArc(
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            int left,
+            int right,
+            float centerY,
+            float gap) {
+        if (right - left < gap * 24 || right - left > gap * 48) return false;
+        int step = Math.max(1, Math.round(gap * .2f));
+        for (int first = 0; first <= 5; first++)
+            for (int last = 0; last <= 5; last++)
+                if (hasContinuousTieArc(
+                        labels,
+                        gray,
+                        width,
+                        height,
+                        left + first * step,
+                        right - last * step,
+                        centerY,
+                        gap,
+                        null,
+                        205,
+                        0,
+                        true,
+                        true)) return true;
+        return false;
+    }
+
+    /** Follow one returning curve; averaging nearby slurs, stems and ledger lines loses short ties. */
     private static boolean hasContinuousTieArc(
             byte[] labels,
             byte[] gray,
@@ -16936,6 +17001,36 @@ final class OmrScoreInterpreter {
             int inkLimit,
             int requiredSide,
             boolean strictContrast) {
+        return hasContinuousTieArc(
+                labels,
+                gray,
+                width,
+                height,
+                left,
+                right,
+                centerY,
+                gap,
+                target,
+                inkLimit,
+                requiredSide,
+                strictContrast,
+                false);
+    }
+
+    private static boolean hasContinuousTieArc(
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            int left,
+            int right,
+            float centerY,
+            float gap,
+            Component target,
+            int inkLimit,
+            int requiredSide,
+            boolean strictContrast,
+            boolean flatProfile) {
         {
             int[] paper = new int[63];
             int count = 0;
@@ -16986,7 +17081,17 @@ final class OmrScoreInterpreter {
                         int x = Math.round(left + t * (right - left));
                         int y =
                                 Math.round(
-                                        centerY + side * gap * (offset + bend * 4 * t * (1 - t)));
+                                        centerY
+                                                + side
+                                                        * gap
+                                                        * (offset
+                                                                + bend
+                                                                        * (flatProfile
+                                                                                ? FLAT_TIE_PROFILE[
+                                                                                        sample]
+                                                                                : 4 * t
+                                                                                        * (1
+                                                                                                - t))));
                         boolean ink = false;
                         int obscuredY = -1;
                         for (int search = 0; search <= radius * 2; search++) {
@@ -17096,7 +17201,7 @@ final class OmrScoreInterpreter {
                     // Require every sampled bin to be fully covered, both returning
                     // shoulders and a dark core; unrelated straight fragments cannot qualify.
                     if (right - left >= gap * 8
-                            && right - left <= gap * 24
+                            && right - left <= gap * (flatProfile ? 48 : 24)
                             && hits >= 36
                             && strong >= 36
                             && obscured > 0
@@ -17166,6 +17271,26 @@ final class OmrScoreInterpreter {
         if (count < 34) return false;
         java.util.Arrays.sort(finite, 0, count);
         return finite[count - 1 - count / 10] - finite[count / 10] <= Math.max(1.5f, gap * .13f);
+    }
+
+    private static final float[] FLAT_TIE_PROFILE = flatTieProfile();
+
+    /** Long engraved ties have steep shoulders and a broad crest, rather than a parabola. */
+    private static float[] flatTieProfile() {
+        float[] result = new float[50];
+        for (int i = 0; i < result.length; i++) {
+            double t = (i + .5) / result.length, low = 0, high = 1;
+            for (int step = 0; step < 16; step++) {
+                double u = (low + high) * .5,
+                        v = 1 - u,
+                        x = 3 * .05 * v * v * u + 3 * .95 * v * u * u + u * u * u;
+                if (x < t) low = u;
+                else high = u;
+            }
+            double u = (low + high) * .5;
+            result[i] = (float) (4 * u * (1 - u));
+        }
+        return result;
     }
 
     private static ArcStats arcStats(

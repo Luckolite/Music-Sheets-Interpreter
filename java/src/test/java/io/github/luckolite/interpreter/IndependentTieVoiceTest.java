@@ -92,4 +92,17 @@ public class IndependentTieVoiceTest {
     public void interveningSamePitchConsumesOldEndpoint() throws Exception {
         assertNotEquals(0, previous(true, true, true));
     }
+
+    @Test
+    public void longerOpposingChordShaftDoesNotHideShorterTiedVoice() throws Exception {
+        for (int x : new int[] {107, 108, 307, 308})
+            for (int y = 15; y <= 80; y++) gray[y * W + x] = 0;
+        assertEquals(0, previous(true, true, false));
+    }
+
+    @Test
+    public void ambiguousMiddleChordCannotProveIndependentVoice() throws Exception {
+        for (int x : new int[] {213, 214}) for (int y = 66; y <= 112; y++) gray[y * W + x] = 0;
+        assertEquals(-1, previous(true, true, false));
+    }
 }

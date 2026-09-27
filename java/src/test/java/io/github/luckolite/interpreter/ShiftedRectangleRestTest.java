@@ -141,4 +141,53 @@ public class ShiftedRectangleRestTest {
                                 null, new java.util.ArrayList<>(List.of(upper, lower)), List.of());
         assertEquals(List.of(upper, lower), result.rests());
     }
+
+    @Test
+    public void roundedShortHookKeepsItsFullQuarterZigzag() {
+        assertTrue(SixteenthRestDetector.shortQuarterHook(8, 10, 5.5, 7.5, 6.2, 6, 16));
+    }
+
+    @Test
+    public void roundedHookStillRequiresUpperZigzag() {
+        assertFalse(SixteenthRestDetector.shortQuarterHook(10, 10, 5.5, 7.5, 6.2, 6, 16));
+    }
+
+    @Test
+    public void roundedHookStillRequiresLowerReturn() {
+        assertFalse(SixteenthRestDetector.shortQuarterHook(8, 10, 5.5, 7.5, 7.5, 7.5, 16));
+    }
+
+    @Test
+    public void steepContinuationIsNotShortQuarterFoot() {
+        assertFalse(SixteenthRestDetector.shortQuarterHook(8, 10, 5.5, 7.5, 6.2, 3, 16));
+    }
+
+    @Test
+    public void displacedRestKeepsItsPrintedStaffMeasureWhenOutsideVerticalBox() {
+        box(100, 125, 119, 132);
+        var r =
+                SixteenthRestDetector.detect(
+                        gray,
+                        W,
+                        H,
+                        List.of(new MeasureRegion(0, 1, .2f, .52f)),
+                        List.of(new SixteenthRestDetector.Staff(60, 124, 16, 0, 1)),
+                        List.of());
+        assertEquals(r.toString(), 1, r.size());
+        assertEquals(4, r.get(0).durationBeats(), 0);
+    }
+
+    @Test
+    public void nearbyMeasureWithoutPrintedStaffCannotOwnDisplacedRest() {
+        box(100, 125, 119, 132);
+        var r =
+                SixteenthRestDetector.detect(
+                        gray,
+                        W,
+                        H,
+                        List.of(new MeasureRegion(0, 1, .52f, .8f)),
+                        List.of(new SixteenthRestDetector.Staff(60, 124, 16, 0, 1)),
+                        List.of());
+        assertTrue(r.toString(), r.isEmpty());
+    }
 }

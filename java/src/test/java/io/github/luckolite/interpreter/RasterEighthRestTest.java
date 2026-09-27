@@ -65,7 +65,6 @@ public class RasterEighthRestTest {
     @Test
     public void aThinStaffEdgeCannotMakeTheEighthRestTailTooBroad() {
         setup(false, true, true);
-        // Original synthetic antialias band one row before the verified fourth rule.
         for (int x = 173; x <= 182; x++) gray[122 * W + x] = 0;
         var r = rests();
         assertEquals(r.toString(), 1, r.size());
@@ -92,5 +91,53 @@ public class RasterEighthRestTest {
         var before = gray.clone();
         rests();
         assertArrayEquals(before, gray);
+    }
+
+    private List<ScoreRestEvent> beneathBeam(boolean connected, boolean bothStems) {
+        setup(false, false, true);
+        byte[] original = gray.clone();
+        for (int y = 94; y <= 124; y++)
+            for (int x = 170; x <= 188; x++) gray[y * W + x] = (byte) 255;
+        for (int y = 80; y <= 137; y += 14) for (int x = 170; x <= 188; x++) gray[y * W + x] = 0;
+        for (int y = 94; y <= 124; y++)
+            for (int x = 170; x <= 188; x++)
+                if ((original[y * W + x] & 255) < 170 && y != 109 && y != 123)
+                    gray[(y + 14) * W + x] = original[y * W + x];
+        for (int y = 90; y <= 93; y++)
+            for (int x = 138; x <= 228; x++)
+                if (connected || x < 160 || x > 200) gray[y * W + x] = 0;
+        for (int y = 90; y <= 145; y++) {
+            gray[y * W + 138] = 0;
+            if (bothStems) gray[y * W + 228] = 0;
+        }
+        var a = new ScoreNoteEvent(0, 130 / 800f, 0, 0, 1, 145 / 240f, false, 0, 1, 2, 0);
+        var b = new ScoreNoteEvent(0, 220 / 800f, 0, 0, 1, 145 / 240f, false, 0, 1, 2, 0);
+        return SixteenthRestDetector.detect(
+                        gray,
+                        W,
+                        H,
+                        List.of(new MeasureRegion(0, 1, 0, 1)),
+                        List.of(new SixteenthRestDetector.Staff(80, 137, 14.25f, 0, 1)),
+                        List.of(a, b))
+                .stream()
+                .filter(r -> Math.abs(r.positionInMeasure() - 180 / 800f) < .02f)
+                .toList();
+    }
+
+    @Test
+    public void lowerRestCanInterruptIndependentlyPrintedBeam() {
+        assertTrue(beneathBeam(true, true).stream().anyMatch(r -> r.durationBeats() == .5));
+    }
+
+    @Test
+    public void detachedStrokeCannotAuthorizeLowerRest() {
+        var r = beneathBeam(false, true);
+        assertTrue(r.toString(), r.isEmpty());
+    }
+
+    @Test
+    public void beamWithoutBothStemsCannotAuthorizeLowerRest() {
+        var r = beneathBeam(true, false);
+        assertTrue(r.toString(), r.isEmpty());
     }
 }
