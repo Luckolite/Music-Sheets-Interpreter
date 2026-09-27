@@ -1464,7 +1464,7 @@ final class OmrScoreInterpreter {
             int beams = event.beamCount();
             if (hasSixteenthRest && beams <= 2 && !ScoreNoteTiming.hasIndependentSustain(event)) {
                 int flags = rawDetachedFlags(gray, labels, width, height, note.head, note.staffGap);
-                if (flags > 0) beams = flags;
+                if (flags > beams) beams = flags;
             }
             withRests.add(
                     new ScoreNoteEvent(

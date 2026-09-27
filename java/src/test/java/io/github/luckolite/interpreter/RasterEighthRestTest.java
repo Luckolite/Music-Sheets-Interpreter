@@ -269,8 +269,14 @@ public class RasterEighthRestTest {
     }
 
     private List<ScoreRestEvent> noteDotBelowRest(boolean ownNote) {
+        return noteDotBelowRest(ownNote, false);
+    }
+
+    private List<ScoreRestEvent> noteDotBelowRest(boolean ownNote, boolean wideEdge) {
         setup(false, false, true);
-        ellipse(137, 3, 3);
+        ellipse(wideEdge ? 136 : 137, 3, 3);
+        if (wideEdge)
+            for (int x = 162; x <= 182; x++) for (int y = 121; y <= 122; y++) gray[y * W + x] = 0;
         for (int y = 157; y <= 202; y++) for (int x = 169; x <= 170; x++) gray[y * W + x] = 0;
         var note = new ScoreNoteEvent(0, 177 / 800f, 0, 0, 1, 157 / 240f, false, 0, 1, 2, 0);
         return SixteenthRestDetector.detect(
@@ -287,5 +293,69 @@ public class RasterEighthRestTest {
         var r = noteDotBelowRest(true);
         assertEquals(r.toString(), 1, r.size());
         assertEquals(.5, r.get(0).durationBeats(), 0);
+    }
+
+    @Test
+    public void ownedDotAllowsAFiniteRuleEdgeAtTheRestFoot() {
+        var r = noteDotBelowRest(true, true);
+        assertEquals(r.toString(), 1, r.size());
+        assertEquals(.5, r.get(0).durationBeats(), 0);
+    }
+
+    @Test
+    public void unownedDotCannotAuthorizeAWidenedFoot() {
+        assertTrue(noteDotBelowRest(false, true).isEmpty());
+    }
+
+    @Test
+    public void twoSharpSpinesCannotBecomePairedRestBulbs() {
+        Arrays.fill(gray, (byte) 255);
+        for (int y = 94; y <= 137; y++)
+            for (int x : new int[] {174, 175, 182, 183}) gray[y * W + x] = 0;
+        for (int top : new int[] {100, 114})
+            for (int y = top; y <= top + 3; y++)
+                for (int x = 170; x <= 190; x++) gray[y * W + x] = 0;
+        assertTrue(rests().isEmpty());
+    }
+
+    private boolean maskedSharpShafts(int visibleRows, boolean secondShaft) throws Exception {
+        Arrays.fill(gray, (byte) 255);
+        for (int y = 94; y <= 137; y++) {
+            gray[y * W + 174] = 0;
+            if (secondShaft) gray[y * W + 182] = 0;
+        }
+        boolean[] masked = new boolean[H];
+        Arrays.fill(masked, true);
+        for (int y = 100; y < 100 + visibleRows; y++) masked[y] = false;
+        var method =
+                SixteenthRestDetector.class.getDeclaredMethod(
+                        "straightShafts",
+                        byte[].class,
+                        int.class,
+                        int.class,
+                        int.class,
+                        int.class,
+                        int.class,
+                        boolean[].class,
+                        int.class,
+                        float.class,
+                        boolean.class);
+        method.setAccessible(true);
+        return (boolean) method.invoke(null, gray, W, 170, 190, 94, 137, masked, 0, 14.25f, true);
+    }
+
+    @Test
+    public void broadRuleMasksRetainIndependentSharpShaftEvidence() throws Exception {
+        assertTrue(maskedSharpShafts(10, true));
+    }
+
+    @Test
+    public void aFewVisibleRowsCannotProveSharpShafts() throws Exception {
+        assertFalse(maskedSharpShafts(9, true));
+    }
+
+    @Test
+    public void oneShaftCannotBecomeASharpThroughMasking() throws Exception {
+        assertFalse(maskedSharpShafts(10, false));
     }
 }

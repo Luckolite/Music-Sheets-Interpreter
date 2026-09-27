@@ -190,7 +190,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "4a085e32c1670bb7bdebe61149824553b7c9df321a48faacf4f0674614fd1ed5",
+      "source_sha256": "c9d9eff8d9594969d6d907f0f9f8b16847d9dff976ab652edf5e09fcd0a114f0",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
     },
@@ -250,7 +250,7 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "f0d5aab648ae909b9197a42a15ade456ad439c37bacd6ce189fd87c8b468d34d",
+      "source_sha256": "f114e452e2e738eaf2becf0a851755d798ae1ee8b2d6f07f5e177f1e3228ee1c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "TempoChangeDetector.java": {
@@ -446,7 +446,7 @@
     },
     "CompactQuarterRestContour.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CompactQuarterRestContour.java",
-      "source_sha256": "a9d46610002527e8ae592af275f49a3e5ec8b8260253f73ec43701a1d152b297",
+      "source_sha256": "22a2ae3c99bc2b8ed17d2218885f7133e0ed8d42c7502a05f485a86356f2e3f8",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ConnectedItalicDynamic.java": {
@@ -655,6 +655,11 @@
     "BeamOccludedNatural.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/BeamOccludedNatural.java",
       "source_sha256": "2590b2e6268f1a07c8735f34a00e89f935f29b72432b2b323f5adf4b7effffde",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "RestVerticalWave.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestVerticalWave.java",
+      "source_sha256": "ec888163863f47980672461872910ca2461aff9b3dff19fd8452adc103ed0d99",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     }
   }

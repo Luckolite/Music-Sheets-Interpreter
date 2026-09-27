@@ -477,7 +477,7 @@ final class SixteenthRestDetector {
             boolean farRaised,
             float printedStaffCenter) {
         float gap = staff.gap();
-        if (right - left + 1 < gap * .7f || right - left + 1 > gap * 1.6f) return;
+        if (right - left + 1 < gap * .7f || right - left + 1 > gap * 1.85f) return;
         int minY = bottom + 1, maxY = top - 1;
         int[] ink = new int[bottom - top + 1];
         for (int y = top; y <= bottom; y++)
@@ -489,9 +489,13 @@ final class SixteenthRestDetector {
                     maxY = y;
                 }
             }
+        int fullBottom = maxY;
         maxY =
                 withoutFollowingNoteDot(
-                        width, height, measures, notes, staff, left, right, top, ink, minY, maxY);
+                        width, height, measures, notes, staff, left, right, top, ink, line, minY,
+                        maxY);
+        boolean noteDotRemoved = maxY < fullBottom;
+        if (right - left + 1 > gap * 1.6f && !noteDotRemoved) return;
         // Shifted voices need the complete raw rectangle and supporting rule;
         // a masked beam fragment can otherwise resemble a half or whole rest.
         boolean half =
@@ -538,8 +542,10 @@ final class SixteenthRestDetector {
         if (deepLowered && (minY <= top || maxY >= bottom)) return;
         if (lowered
                 && !half
-                && CompactQuarterRestContour.parallelSpines(
-                        gray, width, left, right, minY, maxY, line, top, gap)) return;
+                && (quarter
+                        ? straightShafts(gray, width, left, right, minY, maxY, line, top, gap, true)
+                        : CompactQuarterRestContour.parallelSpines(
+                                gray, width, left, right, minY, maxY, line, top, gap))) return;
         if (!half
                 && !whole
                 && !CompactQuarterRestContour.hasContrastedInk(
@@ -553,7 +559,29 @@ final class SixteenthRestDetector {
                         && maxY - minY >= gap * 2.35f
                         && maxY - minY <= gap * 3.25f
                         && Math.abs(maxY - staff.bottom()) <= gap * .35f;
+        if (sixteenth
+                && !quarter
+                && !half
+                && !whole
+                && straightShafts(gray, width, left, right, minY, maxY, line, top, gap, true))
+            return;
         if (!quarter && !half && !whole) {
+            if (eighth
+                    && PrintedFlatGlyph.matches(gray, width, height, left, minY, right, maxY, gap))
+                return;
+            if (eighth
+                    && straightShafts(
+                            gray,
+                            width,
+                            left,
+                            right,
+                            Math.max(0, minY - Math.round(gap)),
+                            maxY,
+                            line,
+                            top,
+                            gap,
+                            false)) return;
+            if (RestVerticalWave.crosses(gray, width, height, left, right, minY, maxY, gap)) return;
             if ((!eighth && !sixteenth)
                     || minY < Math.round(staff.top() + gap * (deepLowered ? .8f : .85f))
                     || minY > staff.top() + gap * 1.55f) return;
@@ -595,7 +623,14 @@ final class SixteenthRestDetector {
                     if (ink[y - top] > gap * .50f) {
                         // A thin antialiased edge of the next verified staff rule can join
                         // the tail for one row without widening the printed rest itself.
-                        if (y + 1 <= bottom && line[y + 1 - top]) continue;
+                        boolean ruleEdge = false;
+                        int reach = noteDotRemoved ? Math.max(1, Math.round(gap * .2f)) : 1;
+                        for (int dy = 1; dy <= reach && y + dy <= bottom; dy++)
+                            if (line[y + dy - top]) {
+                                ruleEdge = true;
+                                break;
+                            }
+                        if (ruleEdge) continue;
                         return;
                     }
                     for (int x = left; x <= right; x++)
@@ -717,12 +752,15 @@ final class SixteenthRestDetector {
                         if (!ScoreNoteTiming.hasIndependentSustain(note) && !independentMovingVoice
                                 || noteY >= minY - gap * .65f && noteY <= maxY + gap * .65f) return;
                     }
-                    if (!sixteenth
-                            && note.writtenAccidental() != ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                    if (note.writtenAccidental() != ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                             && noteX > right
                             && noteX < right + gap * 1.8f
                             && note.pageY() * height >= minY
-                            && note.pageY() * height <= maxY) return;
+                            && note.pageY() * height <= maxY
+                            && (!sixteenth
+                                    || CompactQuarterRestContour.parallelSpines(
+                                            gray, width, left, right, minY, maxY, line, top, gap)))
+                        return;
                 }
             List<InkDot> dots =
                     augmentationDots(gray, width, height, staff, right, region, notes, m);
@@ -756,6 +794,41 @@ final class SixteenthRestDetector {
         }
     }
 
+    /** A sharp has two straight shafts; rest tails do not keep two fixed ink columns. */
+    private static boolean straightShafts(
+            byte[] gray,
+            int width,
+            int left,
+            int right,
+            int minY,
+            int maxY,
+            boolean[] line,
+            int top,
+            float gap,
+            boolean pair) {
+        int span = Math.round(gap * 1.65f);
+        List<Integer> shafts = new ArrayList<>();
+        for (int x = left; x <= right; x++)
+            for (int start = minY; start + span <= maxY + 1; start++) {
+                int ink = 0, total = 0;
+                for (int y = start; y < start + span; y++)
+                    if (y < top || y - top >= line.length || !line[y - top]) {
+                        total++;
+                        if ((gray[y * width + x] & 255) < 125) ink++;
+                    }
+                // Broad staff-rule masks can hide over half of a short shaft. Require
+                // a full-space span, but count only the independently visible rows.
+                if (total >= gap * .65f && ink >= total * .9f) {
+                    shafts.add(x);
+                    break;
+                }
+            }
+        if (!pair) return !shafts.isEmpty();
+        for (int a : shafts)
+            for (int b : shafts) if (b - a >= gap * .35f && b - a <= gap * .9f) return true;
+        return false;
+    }
+
     /** A separate staccato above a lower note must not lengthen the rest above it. */
     private static int withoutFollowingNoteDot(
             int width,
@@ -767,12 +840,13 @@ final class SixteenthRestDetector {
             int right,
             int top,
             int[] ink,
+            boolean[] line,
             int minY,
             int maxY) {
         float gap = staff.gap();
         if (maxY - minY < gap * 2) return maxY;
         int start = maxY;
-        while (start > minY && ink[start - 1 - top] > 0) start--;
+        while (start > minY && (ink[start - 1 - top] > 0 || line[start - 1 - top])) start--;
         if (maxY - start + 1 > gap * .6f) return maxY;
         for (int y = start; y <= maxY; y++) if (ink[y - top] > gap * .6f) return maxY;
         int end = start - 1;
@@ -792,7 +866,7 @@ final class SixteenthRestDetector {
             float x =
                     (region.left() + note.positionInMeasure() * (region.right() - region.left()))
                             * width;
-            if (Math.abs(x - (left + right) * .5f) <= gap * .5f) return end;
+            if (Math.abs(x - (left + right) * .5f) <= gap * .65f) return end;
         }
         return maxY;
     }
@@ -1162,6 +1236,9 @@ final class SixteenthRestDetector {
                 || maxY > staff.bottom() - gap * .1f) return false;
         double[] centers = new double[h];
         java.util.Arrays.fill(centers, Double.NaN);
+        double[] leftEdges = new double[h], rightEdges = new double[h];
+        java.util.Arrays.fill(leftEdges, Double.NaN);
+        java.util.Arrays.fill(rightEdges, Double.NaN);
         int widest = 0;
         for (int y = minY; y <= maxY; y++)
             if (!line[y - top]) {
@@ -1169,6 +1246,8 @@ final class SixteenthRestDetector {
                 double sum = 0;
                 for (int x = left; x <= right; x++)
                     if ((gray[y * width + x] & 255) < 170) {
+                        if (n == 0) leftEdges[y - minY] = x - left;
+                        rightEdges[y - minY] = x - left;
                         n++;
                         sum += x - left;
                     }
@@ -1183,6 +1262,8 @@ final class SixteenthRestDetector {
                 while (b < h && !Double.isFinite(centers[b])) b++;
                 if (a < 0 || b >= h) return false;
                 centers[i] = centers[a] + (centers[b] - centers[a]) * (i - a) / (b - a);
+                leftEdges[i] = leftEdges[a] + (leftEdges[b] - leftEdges[a]) * (i - a) / (b - a);
+                rightEdges[i] = rightEdges[a] + (rightEdges[b] - rightEdges[a]) * (i - a) / (b - a);
             }
         double a = bandCenter(centers, 0, .18),
                 b = bandCenter(centers, .22, .38),
@@ -1219,7 +1300,9 @@ final class SixteenthRestDetector {
                                 gray, width, left, right, minY, maxY, line, top, gap)
                         && !CompactQuarterRestContour.parallelSpines(
                                 gray, width, left, right, minY, maxY, line, top, gap)
-                || CompactQuarterRestContour.matches(centers, gap)
+                || (CompactQuarterRestContour.matches(centers, gap)
+                                || CompactQuarterRestContour.leftSilhouette(
+                                        leftEdges, rightEdges, gap))
                         && CompactQuarterRestContour.hasContrastedInk(
                                 gray, width, left, right, minY, maxY, line, top, gap);
     }

@@ -156,6 +156,43 @@ final class CompactQuarterRestContour {
         return false;
     }
 
+    /** Additive overlapping ink can obscure the centre while leaving the full left silhouette. */
+    static boolean leftSilhouette(double[] left, double[] right, float gap) {
+        if (left == null
+                || right == null
+                || left.length != right.length
+                || left.length < gap * 3
+                || left.length > gap * 3.6f) return false;
+        int n = left.length;
+        for (int i = 0; i < n; i++)
+            if (!Double.isFinite(left[i]) || !Double.isFinite(right[i]) || right[i] < left[i])
+                return false;
+        if (right[0] - left[0] > gap * .3f || right[n - 1] - left[n - 1] > gap * .3f) return false;
+        double start = average(left, 0, Math.max(1, n / 12));
+        for (int peak = (int) (n * .15); peak <= n * .32; peak++) {
+            if (left[peak] - start + .5 < gap * .16) continue;
+            for (int valley = (int) (n * .30); valley <= n * .5; valley++) {
+                if (valley <= peak || left[peak] - left[valley] < gap * .35) continue;
+                for (int shoulder = (int) (n * .45); shoulder <= n * .62; shoulder++) {
+                    if (shoulder <= valley || left[shoulder] - left[valley] < gap * .22) continue;
+                    for (int hook = (int) (n * .55); hook <= n * .75; hook++) {
+                        if (hook <= shoulder
+                                || left[shoulder] - left[hook] < gap * .25
+                                || left[n - 1] - left[hook] < gap * .5) continue;
+                        boolean rising = true;
+                        for (int i = hook + 3; i < n; i++)
+                            if (left[i] + 1 < left[i - 3]) {
+                                rising = false;
+                                break;
+                            }
+                        if (rising) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     private static double average(double[] values, int first, int last) {
         double sum = 0;
         for (int i = first; i < last; i++) sum += values[i];
