@@ -725,6 +725,15 @@ final class OmrScoreInterpreter {
                                                         && candidate.component.minY >= header.minY
                                                         && candidate.component.maxY
                                                                 <= header.maxY));
+        localAccidentals.removeIf(
+                candidate -> {
+                    Component c = candidate.component;
+                    Staff owner = nearestHeadStaff(staffs, c.centerY);
+                    return candidate.label == OmrMeasurePostProcessor.SYMBOL
+                            && owner != null
+                            && RestVerticalWave.crosses(
+                                    gray, width, height, c.minX, c.maxX, c.minY, c.maxY, owner.gap);
+                });
         localAccidentals.removeIf(candidate -> joinedGraceTailAccidental(candidate, heads, staffs));
         localAccidentals.removeIf(
                 candidate ->
@@ -1008,7 +1017,14 @@ final class OmrScoreInterpreter {
                     accidentalGraces.contains(head) ? localPitch[1] * .65f : localPitch[1];
             int writtenAccidental =
                     detectWrittenAccidental(
-                            labels, width, height, localAccidentals, head, accidentalGap, heads);
+                            labels,
+                            width,
+                            height,
+                            localAccidentals,
+                            head,
+                            accidentalGap,
+                            heads,
+                            gray);
             if (writtenAccidental == ScoreNoteEvent.ACCIDENTAL_FROM_KEY
                     && (rawWideDoubleSharp(
                                     gray, width, height, localAccidentals, head, accidentalGap)
@@ -4449,8 +4465,10 @@ final class OmrScoreInterpreter {
                             && candidate.label == OmrMeasurePostProcessor.CLEF_OR_KEY
                             && c.maxX < boundary
                             && c.maxX > boundary - staff.gap * (firstInRow ? 16 : 10)
-                            && c.maxY - c.minY > staff.gap * 4.5f
-                            && c.maxX - c.minX > staff.gap * 1.1f
+                            && (c.maxY - c.minY > staff.gap * 4.5f
+                                            && c.maxX - c.minX > staff.gap * 1.1f
+                                    || firstInRow
+                                            && rawBassClef(c, labels, gray, width, height, staff))
                             && c.centerY > staff.top - staff.gap
                             && c.centerY < staff.bottom + staff.gap
                             && (clef == null
@@ -4606,6 +4624,27 @@ final class OmrScoreInterpreter {
                     else if (glyph.accidental == ScoreNoteEvent.ACCIDENTAL_NATURAL) naturals++;
                 }
                 boolean doubleBar = hasDoubleBar(labels, gray, width, height, boundary, staff);
+                boolean cancelledSignature = false;
+                List<SignatureGlyph> completeRun = run;
+                // Cancellation naturals precede, rather than replace, the new signature.
+                // Require boundary evidence and a single ordered sharp/flat suffix.
+                if (naturals > 0 && (flats > 0 || sharps > 0) && doubleBar) {
+                    int split = 0;
+                    while (split < run.size()
+                            && run.get(split).accidental == ScoreNoteEvent.ACCIDENTAL_NATURAL)
+                        split++;
+                    List<SignatureGlyph> suffix = run.subList(split, run.size());
+                    if (split == naturals
+                            && !suffix.isEmpty()
+                            && (flats == 0 || sharps == 0)
+                            && (suffix.size() == 1
+                                    || orderedSignaturePitches(
+                                            labels, width, height, suffix, recognized, staff))) {
+                        run = suffix;
+                        naturals = 0;
+                        cancelledSignature = true;
+                    }
+                }
                 boolean signatureHeader =
                         clef != null
                                 && run.get(0).x < clef.maxX + staff.gap * 2.2f
@@ -4614,7 +4653,7 @@ final class OmrScoreInterpreter {
                 // components that are individually too incomplete for the local-accidental
                 // classifier. Once at least one flat establishes the run's glyph family, count
                 // the repeated tall left spines in the same pre-note slot.
-                if (flats > 0 && sharps == 0 && naturals == 0) {
+                if (flats > 0 && sharps == 0 && naturals == 0 && !cancelledSignature) {
                     int spines =
                             countHeaderFlatSpines(
                                     labels,
@@ -4641,8 +4680,10 @@ final class OmrScoreInterpreter {
                         && !orderedSignaturePitches(labels, width, height, run, recognized, staff))
                     continue;
                 // A lone signature follows its bar closely; a distant clef fragment does not.
-                if (strongest == 1 && clef == null && run.get(0).x - boundary > staff.gap * 3)
-                    continue;
+                if (strongest == 1
+                        && clef == null
+                        && !cancelledSignature
+                        && run.get(0).x - boundary > staff.gap * 3) continue;
                 // Close accidentals on a chord are not a new key. Multiple glyphs
                 // need a boundary or the ordered fourth/fifth signature pattern.
                 if (!signatureHeader
@@ -4665,11 +4706,13 @@ final class OmrScoreInterpreter {
                         && unfinishedSharpTail(
                                 labels, gray, width, height, candidates, run, staff, firstHead))
                     continue;
-                if (signatureHeader
-                        && headerAccidentals != null
-                        && orderedSignaturePitches(labels, width, height, run, recognized, staff))
+                if (headerAccidentals != null
+                        && (cancelledSignature
+                                || signatureHeader
+                                        && orderedSignaturePitches(
+                                                labels, width, height, run, recognized, staff)))
                     for (var entry : recognized.entrySet())
-                        if (run.stream()
+                        if (completeRun.stream()
                                 .anyMatch(
                                         glyph ->
                                                 Math.abs(glyph.x - entry.getValue())
@@ -11879,6 +11922,18 @@ final class OmrScoreInterpreter {
             Component head,
             float gap,
             List<Component> heads) {
+        return detectWrittenAccidental(labels, width, height, candidates, head, gap, heads, null);
+    }
+
+    private static int detectWrittenAccidental(
+            byte[] labels,
+            int width,
+            int height,
+            List<AccidentalCandidate> candidates,
+            Component head,
+            float gap,
+            List<Component> heads,
+            byte[] gray) {
         AccidentalCandidate best = null;
         int bestAccidental = ScoreNoteEvent.ACCIDENTAL_FROM_KEY;
         float bestDistance = Float.MAX_VALUE;
@@ -11919,6 +11974,17 @@ final class OmrScoreInterpreter {
                                                                     : ScoreNoteEvent
                                                                             .ACCIDENTAL_FROM_KEY;
             if (accidental == ScoreNoteEvent.ACCIDENTAL_FROM_KEY) continue;
+            if (accidental == ScoreNoteEvent.ACCIDENTAL_FLAT
+                    && (containsCompleteNatural(labels, width, height, candidate, candidates, gap)
+                            || heads != null
+                                    && containsPrintedNatural(
+                                            gray,
+                                            width,
+                                            height,
+                                            candidate,
+                                            candidates,
+                                            heads,
+                                            gap))) continue;
             if (accidental == ScoreNoteEvent.ACCIDENTAL_FLAT
                     && glyph.maxX > head.minX
                     && glyph.minX > head.minX - gap * .55f
@@ -11994,6 +12060,61 @@ final class OmrScoreInterpreter {
             }
         }
         return best == null ? ScoreNoteEvent.ACCIDENTAL_FROM_KEY : bestAccidental;
+    }
+
+    /** A repaired union cannot turn an intact natural plus stray rule ink into a flat. */
+    private static boolean containsPrintedNatural(
+            byte[] gray,
+            int width,
+            int height,
+            AccidentalCandidate candidate,
+            List<AccidentalCandidate> originals,
+            List<Component> heads,
+            float gap) {
+        if (gray == null || candidate.label != 0) return false;
+        Component union = candidate.component;
+        // A clipped semantic sharp may resemble a flat while its complete printed
+        // crossbars still establish a sharp for another chord tone.
+        for (Component head : heads)
+            if (rawSharpFromSeed(gray, width, height, List.of(candidate), head, gap)) return false;
+        for (AccidentalCandidate original : originals) {
+            Component core = original.component;
+            if (original.label != OmrMeasurePostProcessor.CLEF_OR_KEY
+                    || core.area < union.area * .65f
+                    || core.minX < union.minX
+                    || core.maxX > union.maxX
+                    || core.minY < union.minY
+                    || core.maxY > union.maxY) continue;
+            for (Component head : heads) {
+                if (head.minX - core.maxX < gap * .1f
+                        || head.minX - core.maxX > gap * 1.35f
+                        || Math.abs(head.centerY - core.centerY) > gap * .9f) continue;
+                if (rawNaturalAtSeed(gray, width, height, core, head, gap)) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsCompleteNatural(
+            byte[] labels,
+            int width,
+            int height,
+            AccidentalCandidate candidate,
+            List<AccidentalCandidate> originals,
+            float gap) {
+        if (candidate.label != 0) return false;
+        Component union = candidate.component;
+        for (AccidentalCandidate original : originals) {
+            Component core = original.component;
+            if (original.label != OmrMeasurePostProcessor.CLEF_OR_KEY
+                    || core.area < union.area * .65f
+                    || core.minX < union.minX
+                    || core.maxX > union.maxX
+                    || core.minY < union.minY
+                    || core.maxY > union.maxY) continue;
+            if (isNaturalGlyph(labels, width, height, original, gap)) return true;
+        }
+        return false;
     }
 
     private static boolean sharedAccidentalChordShaft(

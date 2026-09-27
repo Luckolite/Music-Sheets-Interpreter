@@ -161,7 +161,7 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "1e09576609b6f6a1608c5021bc11e9a88bc4a26c733ac1a31361a8d720da266f",
+      "source_sha256": "e2006f54bc4effb4884f4f1aefe9724b96ff524b34784cbc28742bc41aa0d1e7",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "MultiMeasureRestDetector.java": {
@@ -190,7 +190,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "2dc788e4da4c652261ad5cdba64750acb1a7fa27826637d73aa28b6e670f38ea",
+      "source_sha256": "416f19ab556c9b4cf87c3f374c1b2658ce86afcb3b58f8fc4ebd9f682dfdd7c4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
     },

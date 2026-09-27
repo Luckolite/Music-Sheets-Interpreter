@@ -36,7 +36,9 @@ public final class MeterChangeDetector {
                             geometry.slope())) {
                 var crop = reading.crop();
                 int measure = followingMeasure(crop, width, height, measures);
-                if (measure < 0 || !precedesNotes(crop, width, height, measure, measures, notes))
+                if (measure < 0
+                        || !precedesNotes(crop, width, height, measure, measures, notes)
+                        || overlapsRecognizedNote(crop, width, height, measure, measures, notes))
                     continue;
                 readings.computeIfAbsent(measure, ignored -> new java.util.HashSet<>())
                         .add(reading.numerator());
@@ -645,5 +647,27 @@ public final class MeterChangeDetector {
             if (x < crop.left() - crop.gap() * .2f) return false;
         }
         return true;
+    }
+
+    /** A pair of chord heads and their shared stem can resemble an open C. */
+    static boolean overlapsRecognizedNote(
+            Crop crop,
+            int width,
+            int height,
+            int measure,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes) {
+        MeasureRegion region = measures.get(measure);
+        for (var note : notes) {
+            if (note.measureIndex() != measure) continue;
+            float y = note.pageY() * height;
+            if (y < crop.top() - crop.gap() * .2f || y > crop.bottom() + crop.gap() * .2f) continue;
+            float x =
+                    (region.left() + note.positionInMeasure() * (region.right() - region.left()))
+                            * width;
+            if (x >= crop.left() - crop.gap() * .2f && x <= crop.right() + crop.gap() * .2f)
+                return true;
+        }
+        return false;
     }
 }
