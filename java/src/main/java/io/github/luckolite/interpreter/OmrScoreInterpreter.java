@@ -7256,9 +7256,11 @@ final class OmrScoreInterpreter {
             if (horizontal < -gap * .35f || horizontal > gap * (heads==null?1.35f:4.2f)
                     ||head.centerX-glyph.centerX<gap*.65f) continue;
             if (Math.abs(glyph.centerY - head.centerY) > gap * 1.8f) continue;
+            float doubleFlatCenter=doubleFlatPitchCenter(labels,width,height,candidate,gap);
             float sharpCenter=sharpPitchCenter(labels,width,height,candidate,gap);
             int offsetSpine=offsetSpineAccidental(labels,width,height,candidate,gap);
-            int accidental = DoubleSharpGlyph.matches(labels,width,height,glyph.minX,glyph.minY,glyph.maxX,glyph.maxY,(byte)0,gap)
+            int accidental = Float.isFinite(doubleFlatCenter)?ScoreNoteEvent.ACCIDENTAL_DOUBLE_FLAT:
+                    DoubleSharpGlyph.matches(labels,width,height,glyph.minX,glyph.minY,glyph.maxX,glyph.maxY,(byte)0,gap)
                     ? ScoreNoteEvent.ACCIDENTAL_DOUBLE_SHARP
                     : offsetSpine!=ScoreNoteEvent.ACCIDENTAL_FROM_KEY ? offsetSpine
                     : isNaturalGlyph(labels, width, height, candidate, gap)
@@ -7273,7 +7275,8 @@ final class OmrScoreInterpreter {
                     &&glyph.minX>head.minX-gap*.55f&&glyph.maxY<=head.maxY)continue;
             // A sharp belongs at the centre of its crossbars. Extra staff ink can
             // shift its pixel centroid toward another head in the same chord.
-            float pitchCenter=accidental==ScoreNoteEvent.ACCIDENTAL_SHARP&&Float.isFinite(sharpCenter)?sharpCenter:
+            float pitchCenter=accidental==ScoreNoteEvent.ACCIDENTAL_DOUBLE_FLAT?doubleFlatCenter:
+                    accidental==ScoreNoteEvent.ACCIDENTAL_SHARP&&Float.isFinite(sharpCenter)?sharpCenter:
                     accidental==ScoreNoteEvent.ACCIDENTAL_FLAT?flatPitchCenter(labels,width,candidate,gap):glyph.centerY;
             // A sharp's measured crossbar centre must not reach the next staff
             // position. Keep subpixel/font tolerance below the half-gap step.
@@ -7286,7 +7289,8 @@ final class OmrScoreInterpreter {
                     if(other==head)continue;
                     if(Math.abs(other.centerX-head.centerX)<gap*.7f
                             &&Math.abs(other.centerY-pitchCenter)+gap*.12f<Math.abs(head.centerY-pitchCenter))otherOwner=true;
-                    if(horizontal>gap*1.35f&&other.centerX>glyph.maxX+gap*.2f
+                    if(horizontal>gap*1.35f&&!sharedAccidentalChordShaft(labels,width,height,head,other,gap)
+                            &&other.centerX>glyph.maxX+gap*.2f
                             &&other.centerX<head.minX-gap*.3f&&Math.abs(other.centerY-head.centerY)<gap*2)otherOwner=true;
                 }
                 if(otherOwner)continue;
@@ -7295,14 +7299,16 @@ final class OmrScoreInterpreter {
                 if(horizontal>gap*1.35f) {
                     int chordHeads=0;boolean displacedPartner=false,headInsideGlyph=false;
                     for(Component other:heads) {
-                        if(Math.abs(other.centerX-head.centerX)<gap*.7f&&Math.abs(other.centerY-head.centerY)<gap*4)chordHeads++;
+                        if((Math.abs(other.centerX-head.centerX)<gap*.7f
+                                ||sharedAccidentalChordShaft(labels,width,height,head,other,gap))
+                                &&Math.abs(other.centerY-head.centerY)<gap*4)chordHeads++;
                         if(other.centerX>=glyph.minX-gap*.2f&&other.centerX<=glyph.maxX+gap*.2f
                                 &&other.centerY>=glyph.minY&&other.centerY<=glyph.maxY)headInsideGlyph=true;
                     }
                     for(AccidentalCandidate partner:candidates) {
                         Component p=partner.component;
-                        if(p.centerX<=glyph.centerX+gap*.4f||p.centerX>head.minX-gap*.2f
-                                ||p.centerX-glyph.centerX>gap*2.5f||Math.abs(p.centerY-pitchCenter)>gap*2)continue;
+                        if(Math.abs(p.centerX-glyph.centerX)<=gap*.4f||p.centerX>head.minX-gap*.2f
+                                ||Math.abs(p.centerX-glyph.centerX)>gap*2.5f||Math.abs(p.centerY-pitchCenter)>gap*4)continue;
                         if(isNaturalGlyph(labels,width,height,partner,gap)||isSharpGlyph(labels,width,height,partner,gap)
                                 ||isFlatGlyph(labels,width,height,partner,gap))displacedPartner=true;
                     }
@@ -7316,6 +7322,68 @@ final class OmrScoreInterpreter {
             }
         }
         return best == null ? ScoreNoteEvent.ACCIDENTAL_FROM_KEY : bestAccidental;
+    }
+
+    private static boolean sharedAccidentalChordShaft(byte[] labels,int width,int height,
+            Component a,Component b,float gap) {
+        if(a==b||Math.abs(a.centerX-b.centerX)>gap*1.6f
+                ||Math.abs(a.centerY-b.centerY)>gap*3.5f)return false;
+        int top=Math.round(Math.min(a.centerY,b.centerY)),bottom=Math.round(Math.max(a.centerY,b.centerY));
+        for(int x=Math.max(0,Math.max(a.minX,b.minX)-Math.round(gap*.2f));
+                x<=Math.min(width-1,Math.min(a.maxX,b.maxX)+Math.round(gap*.2f));x++) {
+            if(Math.min(Math.abs(x-a.minX),Math.abs(x-a.maxX))>gap*.2f
+                    ||Math.min(Math.abs(x-b.minX),Math.abs(x-b.maxX))>gap*.2f)continue;
+            int ink=0;
+            for(int y=Math.max(0,top);y<=Math.min(height-1,bottom);y++)
+                if(labels[y*width+x]==OmrMeasurePostProcessor.STEM_OR_REST
+                        ||labels[y*width+x]==OmrMeasurePostProcessor.NOTEHEAD)ink++;
+            if(ink<(bottom-top+1)*.75f)continue;
+            for(int direction:new int[]{-1,1}) {
+                int start=direction<0?Math.min(a.minY,b.minY):Math.max(a.maxY,b.maxY),stem=0,total=0;
+                for(int d=1;d<=Math.round(gap*1.8f);d++) {
+                    int y=start+direction*d;if(y<0||y>=height)break;total++;
+                    if(labels[y*width+x]==OmrMeasurePostProcessor.STEM_OR_REST)stem++;
+                }
+                if(total>=gap*1.6f&&stem>=total*.7f)return true;
+            }
+        }
+        return false;
+    }
+
+    /** Two adjacent complete flats must have aligned bowls and independent tall
+     * spines. Splitting a sharp/natural into strips cannot satisfy both bowls. */
+    private static float doubleFlatPitchCenter(byte[] labels,int width,int height,
+            AccidentalCandidate candidate,float gap) {
+        Component g=candidate.component;
+        if(g.maxX-g.minX<gap*.85f||g.maxX-g.minX>gap*2.1f)return Float.NaN;
+        for(int cut=g.minX+Math.round(gap*.35f);cut<=g.maxX-Math.round(gap*.35f);cut++) {
+            AccidentalCandidate[] parts=new AccidentalCandidate[2];
+            for(int side=0;side<2;side++) {
+                int l=side==0?g.minX:cut+1,r=side==0?cut:g.maxX;
+                int minX=r+1,maxX=l-1,minY=g.maxY+1,maxY=g.minY-1,area=0;long sx=0,sy=0;
+                for(int y=Math.max(0,g.minY);y<=Math.min(height-1,g.maxY);y++)
+                    for(int x=Math.max(0,l);x<=Math.min(width-1,r);x++)if(candidate.matches(labels[y*width+x])) {
+                        minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);area++;sx+=x;sy+=y;
+                    }
+                if(area>0)parts[side]=new AccidentalCandidate(new Component(area,minX,maxX,minY,maxY,sx/(float)area,sy/(float)area),candidate.label);
+            }
+            if(parts[0]==null||parts[1]==null||!isFlatGlyph(labels,width,height,parts[0],gap)
+                    ||!isFlatGlyph(labels,width,height,parts[1],gap))continue;
+            Component a=parts[0].component,b=parts[1].component;
+            boolean clearUpperBowls=true;
+            for(AccidentalCandidate part:parts) {
+                Component c=part.component;int upperRight=0;
+                for(int y=c.minY;y<c.minY+(c.maxY-c.minY+1)*.45f;y++)
+                    for(int x=c.minX+Math.max(2,Math.round(gap*.25f));x<=c.maxX;x++)
+                        if(part.matches(labels[y*width+x]))upperRight++;
+                if(upperRight>Math.max(2,c.area*.04f))clearUpperBowls=false;
+            }
+            if(!clearUpperBowls)continue;
+            float ac=flatPitchCenter(labels,width,parts[0],gap),bc=flatPitchCenter(labels,width,parts[1],gap);
+            if(Math.abs(a.minY-b.minY)<=gap*.25f&&Math.abs(a.maxY-b.maxY)<=gap*.25f
+                    &&Math.abs(ac-bc)<=gap*.2f)return (ac+bc)*.5f;
+        }
+        return Float.NaN;
     }
 
     /**
@@ -9856,7 +9924,13 @@ final class OmrScoreInterpreter {
                     &&ScoreNoteTiming.hasIndependentSustain(current.event))
                     &&systemBreakTieCandidate(previous,current,width))return index;
             int horizontal = current.head.minX - previous.head.maxX;
-            if (horizontal < gap * 1.3f || horizontal > width * .34f) continue;
+            // Compact engraved ties can start inside the head shoulders. Keep
+            // those candidates for the raw returning-arc test, but never relax
+            // semantic-only matching or merge overlapping/same-onset heads.
+            boolean compactPrintedCandidate=gray!=null&&labels!=null&&gray.length==labels.length
+                    &&horizontal>2&&current.head.centerX-previous.head.centerX>=gap*1.8f;
+            if (horizontal < gap * 1.3f&&!compactPrintedCandidate
+                    || horizontal > width * .34f) continue;
             // Quantization alone can occasionally put two heads near a step boundary in the same
             // bucket. A real repeated pitch remains within less than half a staff-space vertically.
             if (Math.abs(current.head.centerY - previous.head.centerY) > gap * .45f

@@ -108,6 +108,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
                 tiedFromPrevious, augmentationDots, beamCount, writtenAccidental,
                 unbeamedDurationBeats, tupletDivisor, 0);
     }
+    public static final int ACCIDENTAL_DOUBLE_FLAT = -2;
     public static final int ACCIDENTAL_FLAT = -1;
     public static final int ACCIDENTAL_NATURAL = 0;
     public static final int ACCIDENTAL_SHARP = 1;
@@ -183,7 +184,7 @@ public record ScoreNoteEvent(int measureIndex, float positionInMeasure, int staf
         if (tupletDivisor != 3 && tupletDivisor != 5 && tupletDivisor != 6 && tupletDivisor != 7) tupletDivisor = 1;
         augmentationDots = Math.max(0, Math.min(2, augmentationDots));
         beamCount = Math.max(0, Math.min(4, beamCount));
-        if (writtenAccidental < ACCIDENTAL_FLAT || writtenAccidental > ACCIDENTAL_DOUBLE_SHARP)
+        if (writtenAccidental < ACCIDENTAL_DOUBLE_FLAT || writtenAccidental > ACCIDENTAL_DOUBLE_SHARP)
             writtenAccidental = ACCIDENTAL_FROM_KEY;
         if (!Float.isFinite(unbeamedDurationBeats) || unbeamedDurationBeats < .25f
                 || unbeamedDurationBeats > DURATION_WHOLE) unbeamedDurationBeats = DURATION_UNKNOWN;

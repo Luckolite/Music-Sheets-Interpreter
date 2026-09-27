@@ -23,13 +23,16 @@ public class CompactHeadGapTieTest {
         return constructor.newInstance(event, head, 17*scale);
     }
     private boolean detect(int mode, int side, int step, float scale) throws Exception {
+        return detect(mode,side,step,scale,151,false);
+    }
+    private boolean detect(int mode,int side,int step,float scale,int end,boolean semanticOnly) throws Exception {
         int w=Math.round(500*scale), h=Math.round(170*scale);
         byte[] labels=new byte[w*h],gray=new byte[w*h];Arrays.fill(gray,(byte)255);
         for(int x=0;x<w;x++) for(int y=Math.round((80+side*17)*scale)-1;y<=Math.round((80+side*17)*scale)+1;y++) {
             gray[y*w+x]=0;labels[y*w+x]=4;
         }
-        for(int x=Math.round(106*scale);x<=Math.round(144*scale);x++) {
-            float t=(x/scale-106)/38f;
+        for(int x=Math.round(106*scale);x<=Math.round((end-7)*scale);x++) {
+            float t=(x/scale-106)/(end-113f);
             if(mode==0 || mode==2 && t>.5f)continue;
             float curve=mode==3?7*t:7*4*t*(1-t);
             int yy=Math.round((80+side*(20+curve))*scale);
@@ -38,7 +41,7 @@ public class CompactHeadGapTieTest {
         var mark=OmrScoreInterpreter.class.getDeclaredMethod("markTieContinuations",
                 byte[].class,byte[].class,int.class,int.class,List.class);
         mark.setAccessible(true);
-        var result=(List<?>)mark.invoke(null,labels,gray,w,h,List.of(note(100,0,.2f,scale),note(151,step,.3f,scale)));
+        var result=(List<?>)mark.invoke(null,labels,semanticOnly?null:gray,w,h,List.of(note(100,0,.2f,scale),note(end,step,.3f,scale)));
         var getter=nested("DetectedNote").getDeclaredMethod("event");getter.setAccessible(true);
         return ((ScoreNoteEvent)getter.invoke(result.get(1))).tiedFromPrevious();
     }
@@ -49,4 +52,10 @@ public class CompactHeadGapTieTest {
     @Test public void incompleteCurveDoesNotJoinRepeatedNotes()throws Exception {assertFalse(detect(2,1,0,1));}
     @Test public void slopingStrokeDoesNotJoinRepeatedNotes()throws Exception {assertFalse(detect(3,1,0,1));}
     @Test public void slurToAnotherPitchIsNotATie()throws Exception {assertFalse(detect(1,1,1,1));}
+    @Test public void tightClearanceReachesRawArcProof()throws Exception {assertTrue(detect(1,1,0,1,143,false));}
+    @Test public void tightUpperArcReachesRawProof()throws Exception {assertTrue(detect(1,-1,0,1,143,false));}
+    @Test public void tightClearanceStillNeedsAnArc()throws Exception {assertFalse(detect(0,1,0,1,143,false));}
+    @Test public void tightSlurCannotChangePitch()throws Exception {assertFalse(detect(1,1,1,1,143,false));}
+    @Test public void tightSemanticOnlyEvidenceIsInsufficient()throws Exception {assertFalse(detect(1,1,0,1,143,true));}
+    @Test public void overlappingHeadsCannotBecomeSequentialTies()throws Exception {assertFalse(detect(1,1,0,1,127,false));}
 }
