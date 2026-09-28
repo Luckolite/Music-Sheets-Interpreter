@@ -207,9 +207,15 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "39b6ce9b4853bf48460c618006863769f64e50fdcc30288ebca80055816e7ebd",
+      "source_sha256": "7517582e785d7126deb07359da87bad7406ff38c18ebf09d412336c420f571e4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Retains reviewed distant shaft/beam ownership, finite termination, contiguous junction and independent thin-rule witnesses. New bounded upward-marcato recovery reconnects angular fragments only across those proved thin stripes, reuses the existing mirrored arm fit without relaxing shape thresholds, and retains shaft ownership, letter crossbar and bidirectional existing text-run vetoes. Source pixels and other articulation paths are unchanged. Whole decoder 13618 code/literal tokens match app; seventeen new original controls cover real-rule versus short/thick stripes, words on either side, up-bows, crossbars, incomplete arms, semantic notation, shaft ownership, finite in-page frames and immutability. One new internal helper uses existing collections only; no new dependency, model, private fixture or diagnostic log."
+      "review_note": "Retains prior shaft/beam ownership, finite termination, contiguous junction, thin-rule, letter-crossbar and existing text-run vetoes. Supplementary pale-accent components require dark seeds, bounded extent, complete open-chevron topology and existing semantic/scale/note ownership. Only an accepted complete accent suppresses its own contained dark fragments; independent tenutos and original context glyphs remain. A false tenuto is rejected only with three independently thin aligned ledger strokes at corroborated note phase, allowing a narrow continuous shaft but not broad gray blocks. Whole detector15032 and OpenChevron760 code/literal tokens match app. Twenty-eight original synthetic controls cover topology, false shapes, source immutability, fragment ownership, ledger spacing/phase, short/thick rules and independent tenutos. New helper is pure Java using existing collections only; no new dependency, model, private fixture or diagnostic log."
+    },
+    "OpenChevron.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",
+      "source_sha256": "c2cece6146c6e2d12b3a389b369a931b5c306fbb5f1739587f40e91d352efa35",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original pure-Java topology helper. Requires two open left arms converging to one bounded right tip, consistent direction and column continuity. Caller bounds source components before allocation and retains dark seed/semantic/ownership vetoes. Whole760code/literal tokens match app,10original generated shape/immutability controls; no Android dependency or private score material."
     },
     "NoteOrnament.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",

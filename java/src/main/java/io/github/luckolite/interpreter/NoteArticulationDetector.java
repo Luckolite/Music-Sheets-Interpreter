@@ -286,7 +286,27 @@ final class NoteArticulationDetector {
             glyphs.add(
                     new Glyph(left, top, right, bottom, end, java.util.Arrays.copyOf(queue, end)));
         }
-        for (Glyph glyph : glyphs) {
+        List<Glyph> faintAccents =
+                raw ? faintAccentGlyphs(gray, width, height, seen, queue) : List.of();
+        List<Glyph> candidates = new ArrayList<>(faintAccents), claimedAccents = new ArrayList<>();
+        candidates.addAll(glyphs);
+        for (Glyph glyph : candidates) {
+            // A dark arm belongs to the recovered complete mark, not a separate dash.
+            boolean fragment = false;
+            for (Glyph accent : claimedAccents) {
+                if (accent == glyph
+                        || glyph.left < accent.left
+                        || glyph.right > accent.right
+                        || glyph.top < accent.top
+                        || glyph.bottom > accent.bottom) continue;
+                for (int pixel : accent.pixels)
+                    if (pixel == glyph.pixels[0]) {
+                        fragment = true;
+                        break;
+                    }
+                if (fragment) break;
+            }
+            if (fragment) continue;
             // Semantic notation normally vetoes an articulation. A raw isolated
             // dot may have been mislabeled as a head and rejected by the pitch
             // reader; it can still be staccato if it is not an accepted head.
@@ -306,7 +326,18 @@ final class NoteArticulationDetector {
                 float dx = Math.abs(glyph.x() - note.x) / note.gap,
                         dy = Math.abs(glyph.y() - note.y) / note.gap;
                 if (dx > .7f || dy < .7f || dy > 8f) continue;
-                int candidate = classify(glyph, width, note.gap, glyph.y() < note.y);
+                boolean faint = faintAccents.contains(glyph);
+                float glyphWidth = glyph.right - glyph.left + 1,
+                        glyphHeight = glyph.bottom - glyph.top + 1;
+                if (faint
+                        && (glyphWidth < note.gap * .75f
+                                || glyphWidth > note.gap * 2.1f + 1
+                                || glyphHeight < note.gap * .35f
+                                || glyphHeight > note.gap * 1.25f)) continue;
+                int candidate =
+                        faint
+                                ? NoteArticulation.ACCENT
+                                : classify(glyph, width, note.gap, glyph.y() < note.y);
                 if (candidate == 0)
                     candidate = roundedAngular(glyph, width, note.gap, glyph.y() < note.y);
                 // A faint rounded dash needs nearby note ownership, not a lyric
@@ -345,6 +376,9 @@ final class NoteArticulationDetector {
                 if (candidate == NoteArticulation.TENUTO && nearHead(glyph, notes)) continue;
                 if (raw
                         && candidate == NoteArticulation.TENUTO
+                        && ledgerStackDash(glyph, note, gray, width, height)) continue;
+                if (raw
+                        && candidate == NoteArticulation.TENUTO
                         && glyph.bottom - glyph.top + 1 <= Math.max(2, Math.round(note.gap * .23f))
                         && horizontalRuleInk(
                                 gray,
@@ -380,6 +414,7 @@ final class NoteArticulationDetector {
                 }
             }
             if (best < 0) continue;
+            if (faintAccents.contains(glyph)) claimedAccents.add(glyph);
             Anchor owner = notes.get(best);
             // One mark on a chord affects that chord, never another staff or another onset.
             for (int n = 0; n < notes.size(); n++) {
@@ -1139,6 +1174,73 @@ final class NoteArticulationDetector {
         return horizontalRuleInk(gray, width, height, x, y, gap, 155, .85f);
     }
 
+    /** A short dark dash can be only the surviving core of a faded ledger line. */
+    private static boolean ledgerStackDash(
+            Glyph glyph, Anchor note, byte[] gray, int width, int height) {
+        float gap = note.gap;
+        if (!Float.isFinite(gap)
+                || gap < 6
+                || glyph.bottom - glyph.top + 1 > gap * .25f
+                || Math.abs(glyph.x() - note.x) > gap * .5f) return false;
+        float distance = (glyph.y() - note.y) / gap;
+        if (Math.abs(distance) < .7f
+                || Math.abs(distance) > 3.2f
+                || Math.abs(distance * 2 - Math.round(distance * 2)) > .25f) return false;
+        int direction = distance < 0 ? -1 : 1;
+        int stemTop = Math.round(Math.min(glyph.y(), glyph.y() + direction * 2 * gap) - gap * .5f);
+        int stemBottom =
+                Math.round(Math.max(glyph.y(), glyph.y() + direction * 2 * gap) + gap * .5f);
+        for (int line = 0; line < 3; line++)
+            if (!shortLedgerStroke(
+                    gray,
+                    width,
+                    height,
+                    note.x,
+                    glyph.y() + direction * line * gap,
+                    gap,
+                    stemTop,
+                    stemBottom)) return false;
+        return true;
+    }
+
+    private static boolean shortLedgerStroke(
+            byte[] gray,
+            int width,
+            int height,
+            float cx,
+            float cy,
+            float gap,
+            int stemTop,
+            int stemBottom) {
+        int left = Math.round(cx - gap),
+                right = Math.round(cx + gap),
+                y = Math.round(cy),
+                off = Math.max(2, Math.round(gap * .25f));
+        if (left < 0 || right >= width || y - off - 1 < 0 || y + off + 1 >= height) return false;
+        int hits = 0, thin = 0, shaft = 0;
+        for (int x = left; x <= right; x++) {
+            boolean ink = false;
+            for (int yy = y - 1; yy <= y + 1; yy++)
+                if ((gray[yy * width + x] & 255) < 225) {
+                    ink = true;
+                    break;
+                }
+            if (!ink) continue;
+            hits++;
+            if ((gray[(y - off) * width + x] & 255) >= 225
+                    && (gray[(y + off) * width + x] & 255) >= 225) thin++;
+            else if (stemTop >= 0 && stemBottom < height) {
+                int support = 0;
+                for (int yy = stemTop; yy <= stemBottom; yy++)
+                    if ((gray[yy * width + x] & 255) < 225) support++;
+                if (support >= (stemBottom - stemTop + 1) * .85f) shaft++;
+            }
+        }
+        return hits >= (right - left + 1) * .9f
+                && shaft <= gap * .65f
+                && thin >= (hits - shaft) * .8f;
+    }
+
     private static boolean horizontalRuleInk(
             byte[] gray,
             int width,
@@ -1278,6 +1380,46 @@ final class NoteArticulationDetector {
         int covered = 0;
         for (boolean bin : bins) if (bin) covered++;
         return hits >= g.count * .78 && covered >= 10;
+    }
+
+    /** Recover only complete open chevrons; pale ink never becomes a dot or dash. */
+    private static List<Glyph> faintAccentGlyphs(
+            byte[] gray, int width, int height, boolean[] seen, int[] queue) {
+        java.util.Arrays.fill(seen, false);
+        List<Glyph> result = new ArrayList<>();
+        for (int p = 0; p < gray.length; p++) {
+            if (seen[p] || (gray[p] & 255) >= 185) continue;
+            int start = 0, end = 1;
+            queue[0] = p;
+            seen[p] = true;
+            int left = p % width, right = left, top = p / width, bottom = top, dark = 0;
+            while (start < end) {
+                int point = queue[start++], x = point % width, y = point / width;
+                if ((gray[point] & 255) < 155) dark++;
+                left = Math.min(left, x);
+                right = Math.max(right, x);
+                top = Math.min(top, y);
+                bottom = Math.max(bottom, y);
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++) {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+                        int next = ny * width + nx;
+                        if (!seen[next] && (gray[next] & 255) < 185) {
+                            seen[next] = true;
+                            queue[end++] = next;
+                        }
+                    }
+            }
+            if (end < 8
+                    || dark < Math.max(3, end * .18f)
+                    || right - left > width * .025f
+                    || bottom - top > height * .018f) continue;
+            int[] pixels = java.util.Arrays.copyOf(queue, end);
+            if (OpenChevron.matches(pixels, width, left, top, right, bottom))
+                result.add(new Glyph(left, top, right, bottom, end, pixels));
+        }
+        return result;
     }
 
     private static boolean wedge(Glyph g, int width, boolean above) {
