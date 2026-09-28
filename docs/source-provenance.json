@@ -1,5 +1,9 @@
 {
   "source_project": "Music Sheets",
+  "semantic_only_boundary_tie_review": {
+    "reviewed_app_state": "Music Sheets 1.18.305 worktree based on 650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "boundary": "Ported only the missing or incomplete raw-raster guard in continuous tie-arc evidence. Semantic-only extraction remains available, and absent raw pixels cannot establish a boundary arc. Two original generated regressions cover extraction and the raw-arc path. No helper, dependency, model, private score or device data added. Pre-existing unrelated mapped drift remains visible; full-file hashes were not changed to conceal it."
+  },
   "source_authors": [
     "Luckolite"
   ],

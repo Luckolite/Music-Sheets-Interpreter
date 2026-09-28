@@ -17198,6 +17198,8 @@ final class OmrScoreInterpreter {
             int requiredSide,
             boolean strictContrast,
             boolean flatProfile) {
+        // Boundary arc evidence needs raw pixels; semantic-only decoding remains supported.
+        if (gray == null || gray.length != (long) width * height) return false;
         {
             int[] paper = new int[63];
             int count = 0;
