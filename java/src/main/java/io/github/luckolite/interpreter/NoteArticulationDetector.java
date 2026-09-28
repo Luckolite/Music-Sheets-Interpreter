@@ -318,8 +318,13 @@ final class NoteArticulationDetector {
                                 && candidate == NoteArticulation.STACCATO
                                 && dy > 5.5f
                                 && longStemDot(glyph, note, gray, width, height);
+                boolean stemOwnedMarcato =
+                        raw
+                                && candidate == NoteArticulation.MARCATO
+                                && dy > 6f
+                                && beamOwnedMarcato(glyph, note, gray, width, height);
                 if (candidate == 0
-                        || dy > 6f && !stemOwnedDot
+                        || dy > 6f && !stemOwnedDot && !stemOwnedMarcato
                         || dy > 5.5f && candidate != NoteArticulation.MARCATO && !stemOwnedDot)
                     continue;
                 if (raw
@@ -645,6 +650,127 @@ final class NoteArticulationDetector {
         for (Anchor note : notes)
             if (Math.abs(glyph.x() - note.x) < note.gap * 1.2f
                     && Math.abs(glyph.y() - note.y) < note.gap * .7f) return true;
+        return false;
+    }
+
+    /** A distant marcato needs its head's shaft terminating at a thick attached beam. */
+    private static boolean beamOwnedMarcato(
+            Glyph mark, Anchor note, byte[] gray, int width, int height) {
+        if (interiorCrossbar(mark, width)) return false;
+        int direction = mark.y() < note.y ? -1 : 1;
+        int edge = direction < 0 ? mark.bottom : mark.top;
+        int head = Math.round(note.y + direction * note.gap * .3f);
+        int thickness = Math.max(3, (int) Math.ceil(note.gap * .25f));
+        int reach = Math.max(4, Math.round(note.gap * 1.5f));
+        for (int side : new int[] {-1, 1})
+            for (int offset = Math.round(note.gap * .3f);
+                    offset <= Math.round(note.gap * .85f);
+                    offset++) {
+                int x = Math.round(note.x) + side * offset;
+                if (x < 1 || x >= width - 1) continue;
+                for (int separation = Math.max(1, Math.round(note.gap * .25f));
+                        separation <= Math.round(note.gap * 2.5f);
+                        separation++) {
+                    int endpoint = edge - direction * separation;
+                    if (head < 0
+                            || head >= height
+                            || endpoint < 0
+                            || endpoint + thickness >= height
+                            || direction * (endpoint - head) < note.gap * 3f) continue;
+                    int hits = 0, total = Math.abs(endpoint - head) + 1;
+                    for (int y = Math.min(head, endpoint); y <= Math.max(head, endpoint); y++)
+                        if ((gray[y * width + x] & 255) < 155) hits++;
+                    if (hits < total * .95f) continue;
+                    boolean joined = true;
+                    for (int d = 0; d < 3; d++) {
+                        int row = direction < 0 ? endpoint + thickness + d : endpoint - 1 - d;
+                        if (row < 0 || row >= height || (gray[row * width + x] & 255) >= 155)
+                            joined = false;
+                    }
+                    if (!joined) continue;
+                    // The beam must meet the glyph-facing shaft endpoint, not merely
+                    // cross a longer shaft or staff rule on the way toward the mark.
+                    int firstBeyond = direction < 0 ? 1 : thickness;
+                    int look =
+                            Math.min(
+                                    Math.max(3, Math.round(note.gap * .6f)),
+                                    separation - firstBeyond);
+                    if (look < 3) continue;
+                    int beyondInk = 0;
+                    for (int d = firstBeyond; d < firstBeyond + look; d++) {
+                        int row = endpoint + direction * d;
+                        if (row < 0 || row >= height) {
+                            beyondInk = look;
+                            break;
+                        }
+                        if ((gray[row * width + x] & 255) < 155
+                                && !thinIndependentRule(gray, width, height, x, row, note.gap))
+                            beyondInk++;
+                    }
+                    for (int beamSide : new int[] {-1, 1}) {
+                        int end = x + beamSide * reach;
+                        if (end < 0 || end >= width) continue;
+                        boolean thick = true;
+                        for (int dy = 0; dy < thickness && thick; dy++) {
+                            int row = endpoint + dy;
+                            int ink = 0;
+                            for (int d = 0; d <= reach; d++)
+                                if ((gray[row * width + x + beamSide * d] & 255) < 155) ink++;
+                            if (ink < (reach + 1) * .95f) thick = false;
+                        }
+                        if (thick) {
+                            if (beyondInk > look * .25f) continue;
+                            return true;
+                        }
+                    }
+                }
+            }
+        return false;
+    }
+
+    /** An independently long, thin rule is not a shaft continuing past its beam. */
+    private static boolean thinIndependentRule(
+            byte[] gray, int width, int height, int x, int y, float gap) {
+        if (!horizontalRuleInk(gray, width, height, x, y, gap, 155, .95f)) return false;
+        int limit = Math.max(2, (int) Math.ceil(gap * .25f));
+        for (int side : new int[] {-1, 1}) {
+            int thin = 0;
+            for (int sample = 0; sample < 5; sample++) {
+                int xx = x + side * Math.round(gap * (2f + sample * .5f));
+                if (xx < 0 || xx >= width || (gray[y * width + xx] & 255) >= 155) continue;
+                int top = y, bottom = y;
+                while (top > 0 && (gray[(top - 1) * width + xx] & 255) < 155 && y - top <= limit)
+                    top--;
+                while (bottom + 1 < height
+                        && (gray[(bottom + 1) * width + xx] & 255) < 155
+                        && bottom - y <= limit) bottom++;
+                if (bottom - top + 1 <= limit) thin++;
+            }
+            // Two separated columns on each side establish thinness even when
+            // a sloped beam or text stroke intersects other samples of the rule.
+            if (thin < 2) return false;
+        }
+        return true;
+    }
+
+    /** A letter's interior crossbar is not the two open arms of a distant caret. */
+    private static boolean interiorCrossbar(Glyph mark, int width) {
+        int w = mark.right - mark.left + 1, h = mark.bottom - mark.top + 1, consecutive = 0;
+        for (int y = mark.top + (int) Math.ceil(h * .35f);
+                y <= mark.top + (int) Math.floor(h * .8f);
+                y++) {
+            int left = Integer.MAX_VALUE, right = -1, count = 0;
+            for (int pixel : mark.pixels)
+                if (pixel / width == y) {
+                    left = Math.min(left, pixel % width);
+                    right = Math.max(right, pixel % width);
+                    count++;
+                }
+            int span = right < 0 ? 0 : right - left + 1;
+            if (span >= w * .65f && count >= span * .9f) {
+                if (++consecutive >= 2) return true;
+            } else consecutive = 0;
+        }
         return false;
     }
 

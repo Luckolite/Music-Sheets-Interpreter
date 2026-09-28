@@ -207,8 +207,9 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "5feacfdd6d32f59a0c74790188b2c8dc428158c14021cea7b89bf781c2a46828",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "source_sha256": "11290601a8136262b87b060b8ff993befbdb59ba5713bfdfe7984421a05e2b64",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Distant raw marcato exception requires the owning head's continuous shaft ending at a thick attached beam, explicit finite termination and a contiguous junction. Independently long thin staff rules may cross the termination probe only with separated thin witnesses on both sides. Interior letter crossbars remain excluded; ordinary-distance and long-stem-dot paths unchanged. Whole decoder 12104 code/literal tokens match app, twenty original synthetic controls and legacy regressions; three new internal helpers reviewed, no dependency/model/private fixture or diagnostic log."
     },
     "NoteOrnament.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",
