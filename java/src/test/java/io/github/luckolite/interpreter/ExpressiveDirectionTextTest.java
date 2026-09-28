@@ -66,6 +66,15 @@ public class ExpressiveDirectionTextTest {
     public void pedalReleaseIsNotAlsoPedalDown() {
         one("Ped.", Kind.PEDAL_DOWN);
         one("senza pedale", Kind.PEDAL_UP);
+        one("senza ped.", Kind.PEDAL_UP);
+        one("senza Ped", Kind.PEDAL_UP);
+    }
+
+    @Test
+    public void progressionWithoutLeadingAIsNotAQuietStrengthModifier() {
+        var value = one("poco a poco cresc.", Kind.CRESCENDO);
+        assertEquals(Strength.UNSPECIFIED, value.strength());
+        assertTrue(value.qualifierText().contains("poco a poco"));
     }
 
     @Test

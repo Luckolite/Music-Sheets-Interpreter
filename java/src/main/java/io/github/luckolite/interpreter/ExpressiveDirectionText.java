@@ -18,6 +18,8 @@ public final class ExpressiveDirectionText {
         return new Rule(kind, Pattern.compile("(?<![a-z])(?:" + expression + ")(?![a-z])"));
     }
 
+    private static final Rule PEDAL_RELEASE = rule(Kind.PEDAL_UP, "senza\\s+(?:pedale|ped\\.?)");
+    private static final Pattern PROGRESSION = Pattern.compile("\\b(?:a\\s+)?poco\\s+a\\s+poco\\b");
     private static final List<Rule> RULES =
             List.of(
                     rule(Kind.RITARDANDO, "ritardando|ritard\\.?|rit\\.?"),
@@ -33,7 +35,7 @@ public final class ExpressiveDirectionText {
                     rule(Kind.SFORZATO, "sfz|sforzato"),
                     rule(Kind.SFORZANDO, "sf|sforzando"),
                     rule(Kind.PEDAL_DOWN, "ped\\.?|pedale"),
-                    rule(Kind.PEDAL_UP, "senza\\s+pedale"),
+                    PEDAL_RELEASE,
                     rule(
                             Kind.UNRESOLVED_DIRECTION,
                             "stringendo(?:\\s+sempre)?|(?:molto\\s+)?piu\\s+vivo"));
@@ -51,13 +53,13 @@ public final class ExpressiveDirectionText {
         for (var rule : RULES) {
             var match = rule.pattern().matcher(normalized);
             if (!match.find()) continue;
-            if (rule.kind() == Kind.PEDAL_DOWN && normalized.matches(".*\\bsenza\\s+pedale\\b.*"))
-                continue;
+            if (rule.kind() == Kind.PEDAL_DOWN
+                    && PEDAL_RELEASE.pattern().matcher(normalized).find()) continue;
             String before = normalized.substring(0, match.start()),
                     after = normalized.substring(match.end());
             // a poco a poco describes progression; its raw phrase remains available to policy.
             Strength strength = Strength.UNSPECIFIED;
-            if (!normalized.contains("a poco a poco")) {
+            if (!PROGRESSION.matcher(normalized).find()) {
                 var leading = Pattern.compile("\\b(poco|molto)\\s*$").matcher(before);
                 var trailing = Pattern.compile("^\\s*(poco|molto)\\b").matcher(after);
                 String modifier =

@@ -641,7 +641,7 @@
     },
     "ExpressiveDirectionText.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ExpressiveDirectionText.java",
-      "source_sha256": "ed8d3fc236fd458a49d98cdd2244f62ec3380f519f698223b1e58a5916a76762",
+      "source_sha256": "a365b20c5354d9d42c328b2a3168b28f4fca2cc31471f666f448b52cb8eaa3c0",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScorePerformanceTimeline.java": {
