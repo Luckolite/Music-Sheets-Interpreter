@@ -32,7 +32,67 @@ final class PortableOrnamentGlyphs {
     }
 
     Match match(byte[] gray, int width, PortableNoteOrnaments.Bounds bounds) {
-        return match(gray, width, bounds, ornaments);
+        Match original = match(gray, width, bounds, ornaments);
+        if (original.accepted()
+                || ornaments.isEmpty()
+                || !MordentContour.matches(gray, width, bounds)) return original;
+        int w = bounds.width(), h = bounds.height();
+        int[] tones = new int[256];
+        for (int y = bounds.top; y < bounds.bottom; y++)
+            for (int x = bounds.left; x < bounds.right; x++) tones[gray[y * width + x] & 255]++;
+        int low = percentile(tones, w * h, .1), high = percentile(tones, w * h, .95);
+        if (high - low < 60) return original;
+        byte[] normalized = new byte[w * h];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                normalized[y * w + x] =
+                        (byte)
+                                Math.max(
+                                        0,
+                                        Math.min(
+                                                255,
+                                                Math.round(
+                                                        ((gray[
+                                                                                        (bounds.top
+                                                                                                                + y)
+                                                                                                        * width
+                                                                                                + bounds.left
+                                                                                                + x]
+                                                                                & 255)
+                                                                        - low)
+                                                                * 255f
+                                                                / (high - low))));
+        List<Template> choices = new ArrayList<>(ornaments);
+        choices.add(COMPACT_MORDENT);
+        Match recovered =
+                match(normalized, w, new PortableNoteOrnaments.Bounds(0, 0, w, h), choices);
+        return recovered.kind() == NoteOrnament.MORDENT && recovered.accepted()
+                ? recovered
+                : original;
+    }
+
+    private static int percentile(int[] tones, int count, double fraction) {
+        int total = 0;
+        for (int value = 0; value < tones.length; value++) {
+            total += tones[value];
+            if (total >= count * fraction) return value;
+        }
+        return 255;
+    }
+
+    private static final Template COMPACT_MORDENT = compactMordent();
+
+    /** Original procedural two-cycle stroke for compact, optically heavy printing. */
+    private static Template compactMordent() {
+        int w = 44, h = 24;
+        byte[] gray = new byte[w * h];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++) {
+                double center = 11.5 - 6 * Math.sin(4 * Math.PI * x / (w - 1));
+                double ink = Math.max(0, Math.min(1, 7.5 - Math.abs(y - center)));
+                gray[y * w + x] = (byte) Math.round(255 * (1 - ink));
+            }
+        return new Template(NoteOrnament.MORDENT, w / (float) h, mask(gray, w, 0, 0, w, h));
     }
 
     Match accidental(byte[] gray, int width, PortableNoteOrnaments.Bounds bounds) {

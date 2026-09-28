@@ -606,8 +606,15 @@
     },
     "PortableOrnamentGlyphs.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableOrnamentGlyphs.java",
-      "source_sha256": "57c776887786bb828962fda550c39b90a29fd5b8ebffe0526419b47e5503a3f0",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "source_sha256": "b9a5dd579567fd029db5e7bbe6f824e62fd0cbb2f00cbfca0215e1602e02f313",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Existing accepted template decisions have priority. Only an unaccepted, raw-contour-confirmed compact unslashed two-cycle mark with sufficient local contrast can compare an original procedural heavy-stroke template against existing ornament choices; original confidence and competing-kind margin remain unchanged. Complete app/standalone code-and-literal parity reviewed. Original generated photometric and ownership controls; no private pixels, new dependency or model change."
+    },
+    "MordentContour.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MordentContour.java",
+      "source_sha256": "85fd06aa4087242ccdff5c00b1415429b811bc41eb8d0e516d670ebfed9b9c58",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original bounded raster geometry helper: one connected ink run per column, two phase-correct oscillations, aspect and total variation bounds, and central slash rejection. Read-only input and small per-column storage bounded by the validated crop. Complete app/standalone code-and-literal parity reviewed with original procedural negative controls."
     },
     "RestDiagonalContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestDiagonalContinuation.java",
