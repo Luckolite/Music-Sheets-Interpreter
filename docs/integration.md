@@ -136,8 +136,9 @@ ties join compatible same-pitch events when timing agrees. Simultaneous same-pit
 use separate non-percussion channels. The preview is not an expressive instrument engine.
 
 Measure slots retain their full meter duration, including the first measure; pickup,
-cadenza and unusual engraving timing can need correction. Cross-page ties, repeats,
-ornament realization and exact polyphonic voice separation are not fully handled.
+cadenza and unusual engraving timing can need correction. Navigation uses retained
+decoded directions; missing signs still need recognition or editing. Ornament
+realization and exact polyphonic voice separation are not fully handled.
 Tempo/meter arguments are explicit fallbacks, not claims of automatic recognition.
 Use the retained geometry and raw score events to implement editing and richer playback.
 
@@ -169,9 +170,24 @@ tempo/hold timeline through actual traversal segments, including partial bars an
 curve phase at a return. Hold boundary ownership and sustain-target mapping are
 explicit; it does not choose a textual ritardando's magnitude.
 
-Python MIDI/MusicXML exporters still traverse pages in reading order; recognizing
-navigation or constructing a Java performance clock does not automatically make
-those exporters execute the route.
+`ScoreNavigationNoteProjection.project` maps already-resolved sounding intervals
+through that same route. Ordinary barlines do not reattack a resolved tie; jumps
+and partial endings clip intervals and give each performed instance a distinct
+identity. Entry into a held interval requires an explicit reject, omit or reattack
+policy. Its target mapper supplies the numeric clock with actual performed-note
+ownership. Callers must first resolve source pitches, ties and ornaments; this
+helper does not infer them from destination geometry.
+
+Python MIDI export executes retained directions through the actual Java navigation
+kernel, without re-running inference. The bounded decoded-data bridge joins pages
+using the shared arrangement rules, clips partial-bar endings, restores numeric
+tempo at returns and retains trailing rests. Entering a sustained interval after a
+jump deliberately reattacks it; incoming ties cannot reuse a skipped predecessor,
+while internal ties in the visited source run remain eligible to join. Linear
+scores retain the no-Java fast path. Textual tempo curves, holds, pass-specific voice
+omissions and pedal are not yet realized by this exporter. MusicXML remains in
+source reading order. Neither exporter automatically consumes a resolved Java
+performance clock.
 
 Dynamic records append two backward-compatible flags. Missing `fixedTarget`
 defaults to false; missing `sharedTiming` defaults to `sharedStaffs`.

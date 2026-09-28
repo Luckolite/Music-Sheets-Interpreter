@@ -722,6 +722,11 @@
       "source_sha256": "a2402cb1c9db983d5bfc1f2bea822ddb66866ac1a26965d848bcb89f62b56c8c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
+    "ScoreNavigationNoteProjection.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationNoteProjection.java",
+      "source_sha256": "fa8843b48d4964e799033b108b73c8aded4d8a640354aad8b23464fc61e81355",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
     "PageTrillEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PageTrillEvidence.java",
       "source_sha256": "76db58e5ba1eef7b085edc0673562b060f81e890940f283e159421894d4d4124",

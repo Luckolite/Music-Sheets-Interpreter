@@ -5,6 +5,7 @@ import math
 import struct
 from pathlib import Path
 from .boundary_ties import resolve_boundary_ties
+from .navigation import project_navigation
 
 
 def variable_length(value):
@@ -22,6 +23,7 @@ def write_midi(document, path, bpm=120):
     document = resolve_boundary_ties(document)
     if not math.isfinite(bpm) or not 15 <= bpm <= 400:
         raise ValueError("Initial BPM must be 15..400 quarter notes per minute")
+    document = project_navigation(document, bpm)
     ppq = 480
     tempo = round(60_000_000 / bpm)
     events = [(0, 0, b"\xff\x51\x03" + tempo.to_bytes(3, "big"))]
@@ -115,5 +117,7 @@ def write_midi(document, path, bpm=120):
         track.extend(variable_length(tick - last))
         track.extend(message)
         last = tick
-    track.extend(b"\x00\xff\x2f\x00")
+    # Rests and skipped voices still occupy performed score time.
+    track.extend(variable_length(max(last, round(offset * ppq)) - last))
+    track.extend(b"\xff\x2f\x00")
     Path(path).write_bytes(b"MThd" + struct.pack(">IHHH", 6, 0, 1, ppq) + b"MTrk" + struct.pack(">I", len(track)) + track)

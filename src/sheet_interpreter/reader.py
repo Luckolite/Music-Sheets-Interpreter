@@ -5,7 +5,6 @@ import gzip
 import hashlib
 import json
 import os
-import shutil
 import struct
 import subprocess
 import tempfile
@@ -13,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageOps
+from .runtime import java_executable
 
 MODEL_SHA256 = "92ab7c34c27cb704d95f0cde247b3611d1563fdf1c114b9f9817abb18a7b6a93"
 MODEL_NAME = "music_sheets_v4_float16.tflite"
@@ -85,17 +85,6 @@ def write_page(path, labels, gray, annotations=None):
         for meter in meters:
             stream.write(struct.pack(">iii", meter["measureIndex"], meter["numerator"], meter["denominator"]))
         write_words(annotations.get("tabWords", []))
-
-
-def java_executable():
-    if os.environ.get("JAVA_HOME"):
-        path = Path(os.environ["JAVA_HOME"]) / "bin" / ("java.exe" if os.name == "nt" else "java")
-        if path.is_file():
-            return str(path)
-    found = shutil.which("java")
-    if not found:
-        raise RuntimeError("Install Java 17 or newer and put java on PATH or set JAVA_HOME")
-    return found
 
 
 class Interpreter:

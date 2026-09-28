@@ -37,8 +37,12 @@ New dependencies and adapters require separate review.
 - Glyph loading uses checksum-verified classpath resources. Bravura and Leland
   templates retain their SIL OFL notices; no score pages are bundled with them.
 - Shared navigation records and projection are available to integrators. Python
-  MIDI and MusicXML exports remain linear; they do not automatically execute
-  document-level navigation.
+  MIDI export uses the original standalone decoded-data `NavigationBridge` adapter
+  to execute the actual shared Java traversal and arrangement rules. Its note
+  projection clips partial endings and restores numeric tempo, but does not yet
+  realize expressive curves, holds or pass-specific voice omissions. MusicXML
+  remains in source reading order. The bridge and Python runtime helper add no
+  third-party dependencies or private score fixtures.
 - The bounded navigation traversal retains canonical segment anchors, repeat
   ownership, jump phase and diagnostics. Whole-bar projection deliberately
   rejects actual partial-bar jumps; complete segment playback remains separate.
