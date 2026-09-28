@@ -759,8 +759,11 @@ final class SixteenthRestDetector {
                             && note.pageY() * height <= maxY
                             && (!sixteenth
                                     || CompactQuarterRestContour.parallelSpines(
-                                            gray, width, left, right, minY, maxY, line, top, gap)))
-                        return;
+                                            gray, width, left, right, minY, maxY, line, top, gap)
+                                    || note.writtenAccidental() == ScoreNoteEvent.ACCIDENTAL_SHARP
+                                            && straightShafts(
+                                                    gray, width, left, right, minY, maxY, line, top,
+                                                    gap, true, true))) return;
                 }
             List<InkDot> dots =
                     augmentationDots(gray, width, height, staff, right, region, notes, m);
@@ -806,15 +809,49 @@ final class SixteenthRestDetector {
             int top,
             float gap,
             boolean pair) {
+        return straightShafts(gray, width, left, right, minY, maxY, line, top, gap, pair, false);
+    }
+
+    /** Faded shaft evidence is allowed only beside an independently recognized sharp.
+     * Applying it to unowned rest shapes can erase real paired-bulb rests. */
+    private static boolean straightShafts(
+            byte[] gray,
+            int width,
+            int left,
+            int right,
+            int minY,
+            int maxY,
+            boolean[] line,
+            int top,
+            float gap,
+            boolean pair,
+            boolean faded) {
         int span = Math.round(gap * 1.65f);
         List<Integer> shafts = new ArrayList<>();
+        int flank = Math.max(2, Math.round(gap * .25f));
         for (int x = left; x <= right; x++)
             for (int start = minY; start + span <= maxY + 1; start++) {
                 int ink = 0, total = 0;
                 for (int y = start; y < start + span; y++)
                     if (y < top || y - top >= line.length || !line[y - top]) {
                         total++;
-                        if ((gray[y * width + x] & 255) < 125) ink++;
+                        int shade = gray[y * width + x] & 255;
+                        boolean contrasted =
+                                faded
+                                        && pair
+                                        && shade < 175
+                                        && x >= flank
+                                        && x + flank < width
+                                        && ((gray[y * width + x - flank] & 255)
+                                                                        + (gray[
+                                                                                        y * width
+                                                                                                + x
+                                                                                                + flank]
+                                                                                & 255))
+                                                                * .5f
+                                                        - shade
+                                                >= 30;
+                        if (shade < 125 || contrasted) ink++;
                     }
                 // Broad staff-rule masks can hide over half of a short shaft. Require
                 // a full-space span, but count only the independently visible rows.

@@ -282,9 +282,9 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "632e34799921806116dbe0f5c974a9d5f68d21c94f82f666d9519b94e3d61c3e",
+      "source_sha256": "daea2adfd3b7731ba8154c04ca0775605f651293bc04319e9053c35ee3fb9176",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Restored source differs in formatting only; all 29746 lexical tokens match the standalone class after package normalization, with string and character literals preserved. No behavior change."
+      "review_note": "Faded paired-shaft proof is used only beside an independently recognized sharp; existing unowned rest and single-shaft thresholds retained. Complete source code/literal token parity reviewed after namespace normalization. Ten original positive/negative generated controls; no private score imagery, new dependency or model change."
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
