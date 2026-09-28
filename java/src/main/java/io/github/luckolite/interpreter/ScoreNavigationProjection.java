@@ -284,6 +284,7 @@ public final class ScoreNavigationProjection {
         private final Defaults defaults;
         private final ScoreMeterMap meter;
         private final List<ScoreTempoChange> tempos;
+        private final ScorePerformanceTimeline timeline;
         private final java.util.Map<Lane, List<Curve>> cachedCurves = new HashMap<>();
 
         DynamicSource(
@@ -295,6 +296,7 @@ public final class ScoreNavigationProjection {
                     new ScoreMeterMap(
                             defaults.numerator() * 4f / defaults.denominator(),
                             source.meterChanges());
+            this.timeline = ScorePerformanceTimeline.numeric(defaults.bpm(), this.meter, tempos);
         }
 
         void project(Run run, Lane lane, List<ScoreDynamicChange> out) {
@@ -486,15 +488,7 @@ public final class ScoreNavigationProjection {
         }
 
         private double seconds(double beat) {
-            double previous = 0, time = 0, bpm = defaults.bpm();
-            for (var change : tempos) {
-                double next = meter.beatAt(change.measureIndex(), change.positionInMeasure());
-                if (next > beat) break;
-                time += Math.max(0, next - previous) * 60 / bpm;
-                previous = Math.max(previous, next);
-                bpm = change.bpm();
-            }
-            return time + Math.max(0, beat - previous) * 60 / bpm;
+            return timeline.activeSecondsAtBeat(beat);
         }
     }
 }

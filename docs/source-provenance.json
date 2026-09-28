@@ -626,7 +626,12 @@
     },
     "ScoreNavigationProjection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationProjection.java",
-      "source_sha256": "795af8300c27a3eb1ea8703332dfe9c60ddb609f5e507a691cda9cdd635cf9bc",
+      "source_sha256": "1fecbebc86e4251ffd91314e65470e62e43aa4b12f5636a4b74d755e7005dac2",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "ScorePerformanceTimeline.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePerformanceTimeline.java",
+      "source_sha256": "6c8931b88b4bd2d6f1432047301eb792045dfcb49d848561384ea0cee0deff0f",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreMeterMap.java": {
