@@ -40,7 +40,41 @@ final class SixteenthRestDetector {
             List<MeasureRegion> measures,
             List<Staff> staffs,
             List<ScoreNoteEvent> notes) {
-        return detectWithDots(gray, width, height, measures, staffs, notes, true);
+        Detection original = detectWithDots(gray, width, height, measures, staffs, notes, true);
+        byte[] contrasted = contrastedRestInk(gray, width, height, staffs);
+        if (contrasted == gray) return original;
+        Detection additional =
+                detectWithDots(contrasted, width, height, measures, staffs, notes, true);
+        List<ScoreRestEvent> rests = new ArrayList<>(original.rests());
+        rests.addAll(additional.rests());
+        List<RestDot> dots = new ArrayList<>(original.dots());
+        dots.addAll(additional.dots());
+        return collected(rests, dots);
+    }
+
+    private static byte[] contrastedRestInk(
+            byte[] gray, int width, int height, List<Staff> staffs) {
+        if (gray == null || gray.length != (long) width * height || staffs.isEmpty()) return gray;
+        List<Float> gaps = new ArrayList<>();
+        for (Staff staff : staffs) gaps.add(staff.gap());
+        gaps.sort(Float::compare);
+        int radius = Math.max(3, Math.round(gaps.get(gaps.size() / 2) * .6f));
+        byte[] result = null;
+        for (int y = radius; y < height - radius; y++)
+            for (int x = radius; x < width - radius; x++) {
+                int at = y * width + x, ink = gray[at] & 255;
+                if (ink < 170 || ink >= 185) continue;
+                int bright = 0;
+                if ((gray[at - radius] & 255) >= ink + 40) bright++;
+                if ((gray[at + radius] & 255) >= ink + 40) bright++;
+                if ((gray[at - radius * width] & 255) >= ink + 40) bright++;
+                if ((gray[at + radius * width] & 255) >= ink + 40) bright++;
+                if (bright >= 2) {
+                    if (result == null) result = gray.clone();
+                    result[at] = (byte) 169;
+                }
+            }
+        return result == null ? gray : result;
     }
 
     private static Detection detectWithDots(
@@ -597,12 +631,20 @@ final class SixteenthRestDetector {
                 }
             List<Integer> lobes = new ArrayList<>();
             int run = 0, runStart = 0;
-            // A single eighth-rest bulb can span three raster rows at a
-            // fractional staff scale. Preserve the stricter paired-bulb test.
-            float bulbWidth = eighth ? Math.max(2, Math.round(gap * .58f)) : gap * .58f;
-            float bulbRows = Math.max(2, eighth ? Math.round(gap * .22f) : gap * .22f);
+            // Quantize bulb dimensions to raster pixels for both rest types.
+            // Sixteenths still require two separated bulbs and a diagonal tail.
+            float bulbWidth = Math.max(2, Math.round(gap * .58f));
+            float bulbRows = Math.max(2, Math.round(gap * .22f));
             for (int y = minY; y <= maxY + 1; y++) {
-                if (y <= maxY && ink[y - top] >= bulbWidth) {
+                boolean bulb =
+                        y <= maxY
+                                && (ink[y - top] >= bulbWidth
+                                        || y > minY
+                                                && y < maxY
+                                                && ink[y - top] == bulbWidth - 1
+                                                && ink[y - 1 - top] >= bulbWidth
+                                                && ink[y + 1 - top] >= bulbWidth);
+                if (bulb) {
                     if (run++ == 0) runStart = y;
                 } else {
                     if (run >= bulbRows) lobes.add((runStart + y - 1) / 2);
@@ -638,6 +680,9 @@ final class SixteenthRestDetector {
                 }
             if (footRight < 0 || right - footRight < gap * .15f) return;
             if (RestDiagonalContinuation.crosses(gray, width, left, right, minY, maxY, gap)) return;
+            if (eighth
+                    && deepLowered
+                    && continuedRestTail(gray, width, height, left, right, maxY, gap)) return;
         }
         float centerX = (left + right) * .5f / width;
         float centerY = (minY + maxY) * .5f / height;
@@ -797,6 +842,32 @@ final class SixteenthRestDetector {
         }
     }
 
+    /** A staff mask must not turn a longer connected glyph into an eighth rest. */
+    private static boolean continuedRestTail(
+            byte[] gray, int width, int height, int left, int right, int end, float gap) {
+        int above = Math.max(3, Math.round(gap * .5f)), below = Math.max(4, Math.round(gap * .65f));
+        if (end - above < 0 || end + below >= height) return false;
+        for (int origin = left; origin <= right; origin++)
+            for (int step = 2; step <= 12; step++) {
+                float slope = -step * .1f;
+                int inside = 0, outside = 0;
+                for (int dy = -above; dy <= below; dy++) {
+                    int x = Math.round(origin + slope * dy), y = end + dy;
+                    if (x < 1 || x >= width - 1) continue;
+                    boolean ink =
+                            (gray[y * width + x] & 255) < 170
+                                    && ((gray[y * width + x - 1] & 255) < 170
+                                            || (gray[y * width + x + 1] & 255) < 170);
+                    if (ink) {
+                        if (dy <= 0) inside++;
+                        else outside++;
+                    }
+                }
+                if (inside >= (above + 1) * .85f && outside >= below * .85f) return true;
+            }
+        return false;
+    }
+
     /** A sharp has two straight shafts; rest tails do not keep two fixed ink columns. */
     private static boolean straightShafts(
             byte[] gray,
@@ -839,7 +910,7 @@ final class SixteenthRestDetector {
                         boolean contrasted =
                                 faded
                                         && pair
-                                        && shade < 175
+                                        && shade < 185
                                         && x >= flank
                                         && x + flank < width
                                         && ((gray[y * width + x - flank] & 255)

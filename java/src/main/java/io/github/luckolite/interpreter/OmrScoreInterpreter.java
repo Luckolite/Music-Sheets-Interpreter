@@ -7029,8 +7029,7 @@ final class OmrScoreInterpreter {
                         || staff.pitchGap < raw.gap() * .6f
                         || staff.pitchGap > raw.gap() * 1.2f
                         || Math.abs(staff.pitchBottom - raw.bottom())
-                                > raw.gap() * (compressed ? 1.5f : .45f)
-                        || Math.abs(staff.pitchGap - raw.gap()) < raw.gap() * .035f) continue;
+                                > raw.gap() * (compressed ? 1.5f : .45f)) continue;
                 // A compressed seed must still belong to this complete printed group.
                 if (compressed
                         && (Math.abs(staff.top - raw.top()) > raw.gap() * .5f
@@ -13033,7 +13032,7 @@ final class OmrScoreInterpreter {
                             head.maxX,
                             referenceBottom,
                             gap);
-        if (complete == null)
+        if (complete == null) {
             complete =
                     StaffPitchTrack.localOccludedRules(
                             labels,
@@ -13045,6 +13044,12 @@ final class OmrScoreInterpreter {
                             head.maxX,
                             referenceBottom,
                             gap);
+            if (complete != null
+                    && staff.printedPhase
+                    && !curved
+                    && Math.abs(complete[1] - gap) > gap * .035f)
+                return new float[] {referenceBottom, gap};
+        }
         if (complete == null)
             complete =
                     NeighboringStaffPhase.resolve(
@@ -14417,7 +14422,7 @@ final class OmrScoreInterpreter {
         // A beam or flag must extend far enough away from its stem to establish horizontal
         // topology. Short dark corners left where one thick beam crosses a semantic staff row
         // otherwise look like an extra beam after that staff row is suppressed.
-        int minimumHorizontal = Math.max(4, Math.round(gap * .85f));
+        int minimumHorizontal = Math.max(4, (int) Math.ceil(gap * .85f));
         // HOMR often leaves a narrow background seam where a beam meets its stem. Allow that
         // local seam, but stay well below the roughly 3-4 staff-gap distance to the next stem.
         int stemTolerance = Math.max(2, Math.round(gap * 1.10f));
@@ -14617,38 +14622,17 @@ final class OmrScoreInterpreter {
                     && Math.abs(stemEnd - head.centerY) < gap * 7
                     && hasCurvedFlag(
                             labels, gray, width, height, head, gap, bestX, stemEnd, upward)) {
-                int near = Math.max(0, stemEnd - (upward ? Math.round(gap * .2f) : inside));
-                int far = Math.min(height - 1, stemEnd + (upward ? inside : Math.round(gap * .2f)));
-                int a = bestX + Math.max(2, Math.round(gap * .12f)),
-                        b = bestX + Math.max(3, Math.round(gap * .2f));
-                // Narrow curved flags can return before the usual outer sample.
-                // Two distinct thick roots at both inner columns prove a pair;
-                // one returning flag has only one root next to the shaft.
-                if (a != b
-                        && thickNonHeadBands(
-                                        gray,
-                                        labels,
-                                        width,
-                                        height,
-                                        a,
-                                        near,
-                                        far,
-                                        staff,
-                                        a,
-                                        !smallHead)
-                                == 2
-                        && thickNonHeadBands(
-                                        gray,
-                                        labels,
-                                        width,
-                                        height,
-                                        b,
-                                        near,
-                                        far,
-                                        staff,
-                                        b,
-                                        !smallHead)
-                                == 2) thick = 2;
+                int rootSpan = Math.max(inside, Math.round(gap * 2.1f));
+                int near = Math.max(0, stemEnd - (upward ? Math.round(gap * .2f) : rootSpan));
+                int far =
+                        Math.min(height - 1, stemEnd + (upward ? rootSpan : Math.round(gap * .2f)));
+                if (adjacentFlagRoots(
+                        gray, labels, width, height, bestX, near, far, staff, !smallHead))
+                    thick = 2;
+                else if (!smallHead
+                        && recenteredFlagRoots(
+                                gray, labels, width, height, head, staff, bestX, stemEnd, upward,
+                                near, far)) thick = 2;
             }
             if (thick == 1
                     && ParallelBeamTip.matches(
@@ -14710,6 +14694,59 @@ final class OmrScoreInterpreter {
             return Math.min(3, thick);
         }
         return Math.min(3, beams);
+    }
+
+    private static boolean recenteredFlagRoots(
+            byte[] gray,
+            byte[] labels,
+            int width,
+            int height,
+            Component head,
+            Staff staff,
+            int stemX,
+            int end,
+            boolean upward,
+            int near,
+            int far) {
+        float gap = staff.gap;
+        if (thinShaftRun(gray, width, height, head, stemX, end, upward ? -1 : 1, gap, 170))
+            return false;
+        for (int shift = 1; shift <= Math.max(1, Math.round(gap * .22f)); shift++)
+            for (int side : new int[] {-1, 1}) {
+                int axis = stemX + shift * side, edge = upward ? head.maxX : head.minX;
+                if (Math.abs(axis - edge) > gap * .25f
+                        || !thinShaftRun(
+                                gray, width, height, head, axis, end, upward ? -1 : 1, gap, 170)
+                        || !hasCurvedFlag(
+                                labels, gray, width, height, head, gap, axis, end, upward))
+                    continue;
+                if (adjacentFlagRoots(gray, labels, width, height, axis, near, far, staff, true))
+                    return true;
+            }
+        return false;
+    }
+
+    private static boolean adjacentFlagRoots(
+            byte[] gray,
+            byte[] labels,
+            int width,
+            int height,
+            int stemX,
+            int near,
+            int far,
+            Staff staff,
+            boolean adaptive) {
+        int a = stemX + Math.max(2, Math.round(staff.gap * .12f));
+        int b = stemX + Math.max(3, Math.round(staff.gap * .28f));
+        int consecutive = 0;
+        for (int column = a; column <= b; column++) {
+            if (thickNonHeadBands(
+                            gray, labels, width, height, column, near, far, staff, column, adaptive)
+                    == 2) consecutive++;
+            else consecutive = 0;
+            if (consecutive >= 2) return true;
+        }
+        return false;
     }
 
     // Retain the already-published displaced whole-note and accent safeguards.
@@ -15408,17 +15445,43 @@ final class OmrScoreInterpreter {
             Component head,
             Staff staff,
             boolean allowSinglePale) {
+        int[] original =
+                paleStemToSupportedBeamAtThreshold(
+                        labels, gray, width, height, head, staff, allowSinglePale, 245);
+        return original != null
+                ? original
+                : paleStemToSupportedBeamAtThreshold(
+                        labels, gray, width, height, head, staff, allowSinglePale, 225);
+    }
+
+    private static int[] paleStemToSupportedBeamAtThreshold(
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            Component head,
+            Staff staff,
+            boolean allowSinglePale,
+            int inkThreshold) {
         if (gray == null) return null;
         float gap = staff.gap;
         int[] trace =
                 attachedRawStem(
-                        gray, width, height, head, gap, Math.max(1, Math.round(gap * .16f)), 245);
+                        gray,
+                        width,
+                        height,
+                        head,
+                        gap,
+                        Math.max(1, Math.round(gap * .16f)),
+                        inkThreshold);
         if (trace == null
                 || Math.abs(trace[1] - head.centerY) > gap * (allowSinglePale ? 10f : 7.5f))
             return null;
         int flank = Math.max(3, Math.round(gap * .45f)), direction = trace[2];
         int centerRadius = Math.max(2, Math.round(gap * .3f));
-        for (int offset = -centerRadius; offset <= centerRadius; offset++) {
+        for (int step = -centerRadius; step <= centerRadius; step++) {
+            int ordinal = step + centerRadius;
+            int offset = (ordinal + 1) / 2 * (ordinal % 2 == 1 ? -1 : 1);
             int x = trace[0] + offset;
             int edge = direction < 0 ? head.maxX : head.minX;
             if (x - flank < 0 || x + flank >= width || Math.abs(x - edge) > Math.round(gap * .3f))
@@ -15428,13 +15491,27 @@ final class OmrScoreInterpreter {
             for (int y = Math.round(head.centerY);
                     (trace[1] - y) * direction >= 0;
                     y += direction) {
-                if ((gray[y * width + x] & 255) < 245) blanks = 0;
+                if ((gray[y * width + x] & 255) < inkThreshold) blanks = 0;
                 else if (++blanks > Math.max(1, Math.round(gap * .16f))) {
                     connected = false;
                     break;
                 }
             }
             if (!connected) continue;
+            boolean boundedFlag =
+                    inkThreshold < 245
+                            && Math.abs(trace[1] - head.centerY) <= gap * 5.5f
+                            && rootedPaleFlag(
+                                    labels,
+                                    gray,
+                                    width,
+                                    height,
+                                    head,
+                                    gap,
+                                    x,
+                                    trace[1],
+                                    direction < 0);
+            if (inkThreshold < 245 && !boundedFlag) continue;
             float localGap = staff.pitchGap,
                     localBottom = staff.pitchBottom + staff.pitchSlope * (x - width * .5f);
             if (staff.pitchTrack != null) {
@@ -15447,11 +15524,16 @@ final class OmrScoreInterpreter {
             for (int y = first; (last - y) * direction >= 0; y += direction) {
                 float rule = localBottom + Math.round((y - localBottom) / localGap) * localGap;
                 if (Math.abs(y - rule) <= localGap * .2f) continue;
+                if (boundedFlag
+                        && labels[y * width + x - flank] == OmrMeasurePostProcessor.NOTEHEAD)
+                    continue;
                 int ink = gray[y * width + x] & 255;
                 samples++;
-                if (ink < 245
-                        && (gray[y * width + x - flank] & 255) >= ink + 8
-                        && (gray[y * width + x + flank] & 255) >= ink + 8) support++;
+                int contrast = inkThreshold == 245 ? 8 : 25;
+                if (ink < inkThreshold
+                        && (gray[y * width + x - flank] & 255) >= ink + contrast
+                        && (boundedFlag || (gray[y * width + x + flank] & 255) >= ink + contrast))
+                    support++;
             }
             if (samples < Math.max(8, Math.round(gap * .6f)) || support < samples * .75f) continue;
             if (Math.abs(trace[1] - head.centerY) <= gap * 5.5f

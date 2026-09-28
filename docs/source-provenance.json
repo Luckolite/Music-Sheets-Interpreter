@@ -222,10 +222,10 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "557ec1ee67394e65ff066394143a5473d1f1de22651d29aa9afd87106bedc1f6",
+      "source_sha256": "1839d815140a517e540fc550cd43fe3b72ce7ddb47b524f4155b7276241c9088",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Retains reviewed staff, beam, tie, dot-frame and entrance repairs. A one-beam dark endpoint may reuse an independently proved pale endpoint only on the same shaft and direction, within bounded lateral distance and extension, with curved-flag veto; zero-beam behavior is unchanged. Complete detectBeamCount code/literals match the app. Eleven original synthetic controls cover both directions, nearby unrelated shafts, excessive extension, curved flags, missing beams, disconnected shafts and immutability. No new helper, dependency, model, private fixture or diagnostics."
+      "review_note": "Retains prior staff, beam, tie, dot-frame and entrance safeguards. Complete printed phase is retained against unsupported inferred rescaling; fractional beam extent is raster-bounded. Adjacent flag roots and a recentered axis require independent shaft/curved-hook proof. Center-first pale shaft tracing keeps the original threshold first; its darker fallback requires a bounded rooted flag, companion-head-aware samples and independent contrast. All seven modified/new methods have complete app/standalone code-and-literal parity. Original generated geometry covers phase, beam, root, shaft, occlusion and negative controls. No song-specific rule, new dependency, model change or private fixture."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -283,9 +283,9 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "daea2adfd3b7731ba8154c04ca0775605f651293bc04319e9053c35ee3fb9176",
+      "source_sha256": "b8d847b0816282313dd869c778f7772d7d3bedd32461d6d1520e5abed5f120e1",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Faded paired-shaft proof is used only beside an independently recognized sharp; existing unowned rest and single-shaft thresholds retained. Complete source code/literal token parity reviewed after namespace normalization. Ten original positive/negative generated controls; no private score imagery, new dependency or model change."
+      "review_note": "Retains sharp ownership and existing rest topology. A non-mutating local contrast pass adds only independently contrasted midtone ink. Fractional bulb dimensions are raster-quantized; only a single one-pixel row deficit between complete rows is bridged. Artificial deeply lowered eighth-rest scans reject a substantial independently connected diagonal tail continuing beyond their crop, preserving genuine bounded rests and other placements. Complete 12731-token app/standalone code-and-literal parity after namespace normalization; original end-to-end cropped-glyph and bounded-tail controls accompany prior generated rest/flag/phase regressions. No private pixels, new dependency or model change."
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
