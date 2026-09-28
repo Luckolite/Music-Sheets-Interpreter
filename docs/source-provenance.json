@@ -671,7 +671,7 @@
     },
     "ScoreMeterMap.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreMeterMap.java",
-      "source_sha256": "86d169223e8e3f2ef964d1b739d76057476c62a18acdac7fc577a4f3d3814186",
+      "source_sha256": "3f303a120c548372b08ad47b90c7908f1a1657c0346f318bad0a9aa4db9703cf",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "MusicalOcr.java": {

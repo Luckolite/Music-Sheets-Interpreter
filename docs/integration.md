@@ -178,6 +178,14 @@ policy. Its target mapper supplies the numeric clock with actual performed-note
 ownership. Callers must first resolve source pitches, ties and ornaments; this
 helper does not infer them from destination geometry.
 
+`ScoreMeterMap.fromPerformedDurations` retains exact quarter-beat lengths of
+performed segments, including partial spans that do not correspond to a printed
+time signature. Use `quarterBeatsInMeasure` for double-precision lengths and
+`performedMeasureCount` to distinguish this explicit grid from a printed meter
+map. The legacy meter constructor and its unbounded final-meter continuation
+remain compatible. Invalid lengths and segments lost to floating-point precision
+are rejected rather than rounded or stretched.
+
 Python MIDI export executes retained directions through the actual Java navigation
 kernel, without re-running inference. The bounded decoded-data bridge joins pages
 using the shared arrangement rules, clips partial-bar endings, restores numeric

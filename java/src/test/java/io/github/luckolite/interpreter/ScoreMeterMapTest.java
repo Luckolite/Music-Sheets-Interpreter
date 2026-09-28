@@ -10,6 +10,35 @@ import static org.junit.Assert.*;
 /** Original logical meter sequences; no audio engine or source-score fixture required. */
 public class ScoreMeterMapTest {
     @Test
+    public void performedPartialSegmentsKeepExactNonMeterLengths() {
+        var durations = new java.util.ArrayList<>(List.of(3.0, 2.5, 1.3, .05));
+        var map = ScoreMeterMap.fromPerformedDurations(durations);
+        durations.clear();
+        assertEquals(4, map.performedMeasureCount().orElseThrow());
+        assertEquals(6.8, map.startBeat(3), 1e-12);
+        assertEquals(6.85, map.startBeat(4), 1e-12);
+        assertEquals(.05, map.quarterBeatsInMeasure(3), 1e-12);
+        for (int bar = 0; bar < 4; bar++)
+            for (double fraction : new double[] {0, .125, .5, .875, 1})
+                assertEquals(bar + fraction, map.measurePosition(map.beatAt(bar, fraction)), 1e-12);
+        assertFalse(new ScoreMeterMap(4, List.of()).performedMeasureCount().isPresent());
+    }
+
+    @Test
+    public void performedGridRejectsInvalidOrUnrepresentableSpans() {
+        for (double invalid : new double[] {0, -1, Double.NaN, Double.POSITIVE_INFINITY, 129})
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> ScoreMeterMap.fromPerformedDurations(List.of(invalid)));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> ScoreMeterMap.fromPerformedDurations(List.of(4.0, Double.MIN_VALUE)));
+        var empty = ScoreMeterMap.fromPerformedDurations(List.of());
+        assertEquals(0, empty.performedMeasureCount().orElseThrow());
+        assertEquals(0, empty.startBeat(0), 0);
+    }
+
+    @Test
     public void variableMetersHaveCumulativeBarBoundaries() {
         var map =
                 new ScoreMeterMap(
