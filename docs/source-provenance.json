@@ -641,7 +641,7 @@
     },
     "NativeDynamicGlyphs.java": {
       "source_path": "tools/native-worker/NativeDynamicGlyphs.java",
-      "source_sha256": "18c69bb64795fdf65215f7fd965581345d29858291c0b606ceced4041b34b71c",
+      "source_sha256": "93b9689416859cf12a035147cd2f124102e840567867cd3e4af2199970430ee0",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "NativeOrnamentGlyphs.java": {
@@ -670,6 +670,11 @@
     "ScoreBoundaryTies.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreBoundaryTies.java",
       "source_sha256": "11b403bae4d743df324edb9d5bb2fe1850d0d458b9398aa71a16cb0ed8cc0f21",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "DynamicStemCrop.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/DynamicStemCrop.java",
+      "source_sha256": "db41f9a68015596d1a24f55aa01ccb137d2c5ad48e7f5c3260301370668a1efe",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "DynamicBarlineCrop.java": {

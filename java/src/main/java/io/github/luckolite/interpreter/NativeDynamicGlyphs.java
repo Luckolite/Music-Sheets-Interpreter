@@ -42,29 +42,35 @@ final class NativeDynamicGlyphs {
         var cleanedWords =
                 new ArrayList<>(DynamicOcrBounds.clean(ocrWords, gray, width, height, staffs));
         for (var word : ocrWords) {
-            var candidate = DynamicBarlineCrop.crop(word, gray, width, height, staffs);
-            if (candidate == null) continue;
-            var match =
-                    match(
-                            candidate.gray(),
-                            candidate.width(),
-                            0,
-                            0,
-                            candidate.width(),
-                            candidate.height());
-            if (!match.accepted()
-                    || match.score() < .55f
-                    || match.margin() < .08f
-                    || !match.text().equals(word.text())) continue;
-            var box = candidate.word();
-            cleanedWords.removeIf(
-                    old ->
-                            old.text().equals(box.text())
-                                    && old.left() < box.right()
-                                    && old.right() > box.left()
-                                    && old.top() < box.bottom()
-                                    && old.bottom() > box.top());
-            cleanedWords.add(box);
+            for (var candidate :
+                    new DynamicBarlineCrop.Candidate[] {
+                        DynamicBarlineCrop.crop(word, gray, width, height, staffs),
+                        DynamicStemCrop.crop(word, gray, width, height, staffs)
+                    }) {
+                if (candidate == null) continue;
+                var match =
+                        match(
+                                candidate.gray(),
+                                candidate.width(),
+                                0,
+                                0,
+                                candidate.width(),
+                                candidate.height());
+                if (!match.accepted()
+                        || match.score() < .55f
+                        || match.margin() < .08f
+                        || !match.text().equals(word.text())) continue;
+                var box = candidate.word();
+                cleanedWords.removeIf(
+                        old ->
+                                old.text().equals(box.text())
+                                        && old.left() < box.right()
+                                        && old.right() > box.left()
+                                        && old.top() < box.bottom()
+                                        && old.bottom() > box.top());
+                cleanedWords.add(box);
+                break;
+            }
         }
         var result = new ArrayList<PlayingTechniqueDetector.Word>(cleanedWords);
         var boxes = new ArrayList<>(ScoreDynamicsDetector.symbolBoxes(gray, staffs, width, height));
