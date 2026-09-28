@@ -248,8 +248,15 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "2b389927ace40c7a13c90fc59a4f8818ad21a3401ba485129b6a693953ae85d2",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "source_sha256": "c956531fda24390034f8fec6bd0b82c721729fdb483d88331fde4f25b97e9c0e",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Reviewed global geometric hairpin continuation and bounded isolated-wedge ownership; full app/standalone code and literal parity. Original generated positive and rejection controls; no private score artifacts or new dependencies."
+    },
+    "HairpinContinuation.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
+      "source_sha256": "156ef6f0b108d1e1f5fcc0c4b293dc1a2b5e9505d5fa921c7802d9041b7513ab",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original bounded same-lane adjacent-system stroke pairing, rejecting ambiguous rules and intervening explicit levels. Package-only standalone port with synthetic geometry controls. No source-specific coordinates, private imagery, model or dependency changes."
     },
     "ScoreKeyChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreKeyChange.java",

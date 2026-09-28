@@ -245,6 +245,8 @@ final class ScoreDynamicsDetector {
         if (gray != null && gray.length == width * height) {
             boolean[] seen = new boolean[gray.length];
             int[] queue = new int[gray.length];
+            var strokes = new ArrayList<HairpinContinuation.Stroke>();
+            var wedges = new ArrayList<HairpinContinuation.Wedge>();
             for (int p = 0; p < gray.length; p++) {
                 if (seen[p] || (gray[p] & 255) >= 145) continue;
                 int start = 0, n = 1;
@@ -269,15 +271,12 @@ final class ScoreDynamicsDetector {
                         }
                 }
                 var owner = owner(staffs, top, bottom);
+                if (owner == null) owner = HairpinContinuation.distantOwner(staffs, top, bottom);
                 if (owner == null) continue;
                 float gap = owner.gap();
                 int w = right - left + 1, h = bottom - top + 1;
                 // Short >/< remain accents. Reject staff/beam blocks and vertical/slanted text.
-                if (w < gap * 4
-                        || h < gap * .4
-                        || h > gap * 3
-                        || w < h * 4
-                        || n > w * Math.max(8, gap)) continue;
+                if (w < gap * 4 || h > gap * 3 || w < h * 4 || n > w * Math.max(8, gap)) continue;
                 int[] upper = new int[w], lower = new int[w];
                 Arrays.fill(upper, Integer.MAX_VALUE);
                 Arrays.fill(lower, Integer.MIN_VALUE);
@@ -286,9 +285,12 @@ final class ScoreDynamicsDetector {
                     upper[x] = Math.min(upper[x], y);
                     lower[x] = Math.max(lower[x], y);
                 }
+                var stroke = HairpinContinuation.stroke(owner, left, right, upper, lower);
+                if (stroke != null) strokes.add(stroke);
+                if (h < gap * .4) continue;
                 int direction = hairpinDirection(upper, lower, gap);
                 var common = GrandStaffDynamics.between(shared, top, bottom);
-                if (direction != 0)
+                if (direction != 0) {
                     add(
                             result,
                             common == null ? owner : common,
@@ -301,6 +303,101 @@ final class ScoreDynamicsDetector {
                             width,
                             height,
                             common != null);
+                    if (common == null) {
+                        int a = Math.min(w - 1, Math.max(0, w / 20)),
+                                b = Math.max(0, w - 1 - w / 20);
+                        if (upper[a] != Integer.MAX_VALUE && upper[b] != Integer.MAX_VALUE)
+                            wedges.add(
+                                    new HairpinContinuation.Wedge(
+                                            owner,
+                                            left,
+                                            right,
+                                            lower[a] - upper[a],
+                                            lower[b] - upper[b],
+                                            direction));
+                    }
+                }
+            }
+            for (var link :
+                    HairpinContinuation.links(wedges, strokes, staffs, measures, width, height)) {
+                var from =
+                        slot(
+                                link.from().left() / (float) width,
+                                link.from().staff(),
+                                measures,
+                                notes,
+                                width,
+                                height);
+                var end =
+                        slot(
+                                link.right() / (float) width,
+                                link.staff(),
+                                measures,
+                                notes,
+                                width,
+                                height);
+                if (from == null || end == null) continue;
+                var originalEnd =
+                        slot(
+                                link.from().right() / (float) width,
+                                link.from().staff(),
+                                measures,
+                                notes,
+                                width,
+                                height);
+                boolean interrupted = false;
+                for (var level : result)
+                    if (level.direction() == 0
+                            && sameDynamicPart(level, link.staff(), false)
+                            && originalEnd != null
+                            && (level.measureIndex() > originalEnd.measure
+                                    || level.measureIndex() == originalEnd.measure
+                                            && level.positionInMeasure() > originalEnd.position)
+                            && (level.measureIndex() < end.measure
+                                    || level.measureIndex() == end.measure
+                                            && level.positionInMeasure() < end.position))
+                        interrupted = true;
+                if (interrupted) continue;
+                // A nearby explicit level on this row supplies the arrival anchor.
+                for (var level : result)
+                    if (level.direction() == 0
+                            && sameDynamicPart(level, link.staff(), false)
+                            && level.measureIndex() >= end.measure
+                            && level.measureIndex() <= end.measure + 1) {
+                        var region = measures.get(level.measureIndex());
+                        float y = (link.staff().top() + link.staff().bottom()) * .5f / height;
+                        float x =
+                                (region.left()
+                                                + level.positionInMeasure()
+                                                        * (region.right() - region.left()))
+                                        * width;
+                        if (y >= region.top()
+                                && y <= region.bottom()
+                                && x >= link.right()
+                                && x - link.right() <= link.staff().gap() * 4)
+                            end = new Slot(level.measureIndex(), level.positionInMeasure());
+                    }
+                for (int i = 0; i < result.size(); i++) {
+                    var old = result.get(i);
+                    if (old.direction() == link.from().direction()
+                            && old.measureIndex() == from.measure
+                            && Math.abs(old.positionInMeasure() - from.position) < .001
+                            && sameDynamicPart(old, link.from().staff(), false))
+                        result.set(
+                                i,
+                                new ScoreDynamicChange(
+                                        old.measureIndex(),
+                                        old.positionInMeasure(),
+                                        old.staffIndex(),
+                                        old.staffCount(),
+                                        end.measure,
+                                        end.position,
+                                        old.decibels(),
+                                        old.direction(),
+                                        old.sharedStaffs(),
+                                        old.fixedTarget(),
+                                        old.sharedTiming()));
+                }
             }
         }
         // Written cresc./dim. continues across systems until the next printed level (or
