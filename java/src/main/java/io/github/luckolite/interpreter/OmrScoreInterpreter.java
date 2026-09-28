@@ -11068,6 +11068,28 @@ final class OmrScoreInterpreter {
             if (Float.isFinite(center) && Math.abs(center + top - head.centerY) < gap * .4f)
                 return true;
         }
+        if (checkEdges) {
+            byte[] faint = FaintSharpInk.crop(gray, width, height, left, top, right, bottom, gap);
+            if (faint != null) {
+                for (Component glyph :
+                        findComponents(faint, w, h, OmrMeasurePostProcessor.CLEF_OR_KEY)) {
+                    if (glyph.minX == 0
+                            || glyph.maxX == w - 1
+                            || glyph.minY == 0
+                            || glyph.maxY == h - 1) continue;
+                    float center =
+                            sharpPitchCenter(
+                                    faint,
+                                    w,
+                                    h,
+                                    new AccidentalCandidate(
+                                            glyph, OmrMeasurePostProcessor.CLEF_OR_KEY),
+                                    gap);
+                    if (Float.isFinite(center) && Math.abs(center + top - head.centerY) < gap * .4f)
+                        return true;
+                }
+            }
+        }
         return false;
     }
 

@@ -228,7 +228,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "319f74f36c6336af7d7490186be70e0e8442bcdebff5b7afbc849d780e0efa47",
+      "source_sha256": "654ae8bcb23580e20b2ad31ddb9f55cbb16e272d46af3eb04691af093a654c56",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "review_note": "Retains prior staff, beam, tie, dot-frame and entrance safeguards. Complete printed phase is retained against unsupported inferred rescaling; fractional beam extent is raster-bounded. Adjacent flag roots and a recentered axis require independent shaft/curved-hook proof. Center-first pale shaft tracing keeps the original threshold first; its darker fallback requires a bounded rooted flag, companion-head-aware samples and independent contrast. Faint augmentation dots retain nested-core/shape ownership at intermediate contrast thresholds; double-beam recovery retains full-body and separated-core proof. A corroborated printed frame supersedes a substantially compressed seed only for beam measurement, preserving its slope. Complete modified methods and overloads have app/standalone code-and-literal parity. Original generated geometry covers phase, beam, root, shaft, occlusion, dot contrast, slope and negative controls. No song-specific rule, new dependency, model change or private fixture."
@@ -603,6 +603,12 @@
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableNoteOrnaments.java",
       "source_sha256": "56badd9eedaae9dc30fc853c7b6628b5bbfefed7ed860c23dd4be518d1ec0e0a",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "FaintSharpInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/FaintSharpInk.java",
+      "source_sha256": "9dc447438528bd93ce0959687bae40bc3c9e1f65a7631ee6b6dfa25b2d00be56",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original local-background mask used only after established sharp thresholds fail in edge-checked verification. Both individual-pixel and three-row local contrast are required for faint ink; staff rule pixels require vertical support. A bounded, nonrecursive vertical gap closure uses two original support pixels on each side. Separate non-edge-connected components still require established sharpPitchCenter and head-pitch alignment. Complete helper and caller code-and-literal parity reviewed with original procedural contrast, gap, pitch, one-spine, flat-paper and immutability controls; no private pixels, new dependency or model change."
     },
     "PortableOrnamentGlyphs.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableOrnamentGlyphs.java",
