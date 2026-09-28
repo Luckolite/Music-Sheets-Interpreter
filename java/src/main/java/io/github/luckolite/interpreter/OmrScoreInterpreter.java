@@ -7064,7 +7064,8 @@ final class OmrScoreInterpreter {
                 }
             }
             boolean rule = i >= 0 && i <= 8 && i % 2 == 0;
-            if (samples < 24 || (rule ? supported < samples * .75f : supported >= samples * .4f))
+            if (samples < 24
+                    || (rule ? supported < Math.round(samples * .75f) : supported >= samples * .4f))
                 return false;
         }
         return true;
@@ -15228,6 +15229,11 @@ final class OmrScoreInterpreter {
                     inner = pale[0] + Math.round(Math.copySign(.4f, distance) * gap);
             if (thickNonHeadBands(gray, labels, width, height, x, top, bottom, staff, inner, true)
                     != 1) return false;
+            for (int threshold : new int[] {175, 185})
+                if (thickNonHeadBandsAtThreshold(
+                                gray, labels, width, height, x, top, bottom, staff, threshold,
+                                inner)
+                        > 1) return false;
         }
         return true;
     }
@@ -16716,8 +16722,16 @@ final class OmrScoreInterpreter {
         for (DetectedNote note : source) {
             float gap = note.staffGap;
             Staff staff = staffForHead(labels, gray, width, height, staffs, note.head);
-            if (staff != null && staff.pitchTrack != null) {
-                float[] local = staff.pitchTrack.at(note.head.centerX);
+            if (staff != null
+                    && (staff.pitchTrack != null || staff.printedPhase || staff.printedSlope)) {
+                float[] local =
+                        staff.pitchTrack != null
+                                ? staff.pitchTrack.at(note.head.centerX)
+                                : new float[] {
+                                    staff.pitchBottom
+                                            + staff.pitchSlope * (note.head.centerX - width * .5f),
+                                    staff.pitchGap
+                                };
                 if (Float.isFinite(local[0])
                         && Float.isFinite(local[1])
                         && local[1] >= 5

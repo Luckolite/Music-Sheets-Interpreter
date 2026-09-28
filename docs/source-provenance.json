@@ -221,10 +221,10 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "931b81eb7d6b3dce796a3554e54d1c9d613bd8fbc919b0a9cfc5061da820db54",
+      "source_sha256": "8b72f289346e1ee0746e849728cd9164ce7271bb33bfdb529a5735567d234879",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Retains reviewed finite pale-rule beam witness. Compressed faded staff seeds require the existing complete five-rule and three independent scale witnesses plus matching printed top/center. Established phase/slope/track and moderate-calibration gates remain intact. Exact calibration/support code and literal token parity, twelve original generated positive/negative controls; no new dependency, private score fixture or model change."
+      "review_note": "Retains reviewed finite-beam and corroborated compressed-staff repairs. Complete staff coverage rounds to the nearest whole sample; existing rooted multi-band evidence at thresholds 175/185 vetoes a single-beam downgrade. Tie-only geometry may use independently established printed phase/slope, preserving finite/range/written-pitch agreement guards and emitted geometry. Three complete changed methods match app code/literal tokens; twenty original new controls plus eight inherited beam controls. No new helper, dependency, model or private score fixture."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
