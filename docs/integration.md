@@ -143,20 +143,35 @@ Use the retained geometry and raw score events to implement editing and richer p
 
 ## Bounded navigation and projected dynamics
 
-`ScorePlaybackDirection` uses a zero-based measure boundary and stable kind values:
-`0` segno, `1` to-coda, `2` D.S. al Coda, `3` coda. A boundary can equal the page's
-measure count. Offset boundaries when assembling pages; retain the printed source
-score separately from performance occurrences.
+`ScorePlaybackDirection` retains stable wire values `0` segno, `1` to-coda,
+`2` D.S. al Coda, `3` coda. Values `4..13` add repeat-start, repeat-end, ending,
+plain D.C., plain D.S., D.C. al Fine, D.S. al Fine, D.C. al Coda, Fine and
+measure-repeat shorthand respectively. Rich details retain quarter-beat offsets,
+source/target/repeat identities, pass lists, total plays, endpoints, printed text,
+evidence and return-repeat policy. Offset musical anchors when assembling pages;
+retain printed source separately from performance occurrences.
 
-`ScoreNavigationPlan` follows one complete, unambiguous D.S. al Coda route only.
-Missing, contradictory or unsupported directions leave the route linear. A
-to-coda marker is armed only after the D.S. jump; execution is bounded, not an
-unlimited repeat interpreter. `ScoreNavigationProjection.project` takes explicit
-opening key, quarter-note BPM and meter defaults, restores effective source state
-at jumps, cuts incoming ties across discontinuities, and clips/resumes hairpins.
-The plan maps performance occurrences back to source measures for cursor use.
-The existing Python MIDI/MusicXML exporters still traverse pages in reading order;
-detecting these directions does not make those exporters execute the route.
+`ScoreNavigationPlan.create(count, directions, meter)` supports bounded repeat,
+nested-repeat, ending, D.C./D.S., Fine and Coda traversal with region-owned pass
+counters and explicit diagnostics. To Coda and Fine activate only in their armed
+return phase. Ordinary returns skip repeats unless explicitly overridden.
+Conflicting destinations are quarantined; an unrelated invalid mark does not
+erase valid navigation. Measure-repeat shorthand is diagnosed as unsupported,
+not expanded into invented notes.
+
+`ScoreNavigationProjection.project` takes explicit opening key, quarter-note BPM
+and meter defaults. It restores numeric source state, handles discontinuous ties,
+projects dynamics, and retains occurrence-specific expressive records and terminal
+releases. It currently requires whole-bar coverage and refuses actual partial-bar
+jumps. Note/rest expression targets without a proved ownership map remain unresolved.
+`ScoreNavigationPerformance.project` instead maps an already-resolved numeric
+tempo/hold timeline through actual traversal segments, including partial bars and
+curve phase at a return. Hold boundary ownership and sustain-target mapping are
+explicit; it does not choose a textual ritardando's magnitude.
+
+Python MIDI/MusicXML exporters still traverse pages in reading order; recognizing
+navigation or constructing a Java performance clock does not automatically make
+those exporters execute the route.
 
 Dynamic records append two backward-compatible flags. Missing `fixedTarget`
 defaults to false; missing `sharedTiming` defaults to `sharedStaffs`.

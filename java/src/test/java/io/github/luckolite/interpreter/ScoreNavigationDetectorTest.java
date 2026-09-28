@@ -8,6 +8,52 @@ import static org.junit.Assert.*;
 import static io.github.luckolite.interpreter.ScorePlaybackDirection.Kind.*;
 
 public class ScoreNavigationDetectorTest {
+    @Test
+    public void allCapoSegnoFineVariantsHaveExplicitMeanings() {
+        assertEquals(DA_CAPO, ScoreNavigationDetector.kind("D.C."));
+        assertEquals(DAL_SEGNO, ScoreNavigationDetector.kind("Dal Segno"));
+        assertEquals(DA_CAPO_AL_FINE, ScoreNavigationDetector.kind("Da Capo al Fine"));
+        assertEquals(DAL_SEGNO_AL_FINE, ScoreNavigationDetector.kind("D.S. al Fine"));
+        assertEquals(DA_CAPO_AL_CODA, ScoreNavigationDetector.kind("D.C. al Coda"));
+        assertEquals(FINE, ScoreNavigationDetector.kind("Fine"));
+        assertNull(ScoreNavigationDetector.kind("fine tuning"));
+    }
+
+    @Test
+    public void splitJumpKeepsCompleteInstructionNotConflictingPlainPrefix() {
+        for (var variant : List.of("Fine", "Coda")) {
+            var kind = variant.equals("Fine") ? DA_CAPO_AL_FINE : DA_CAPO_AL_CODA;
+            assertEquals(
+                    List.of(new ScorePlaybackDirection(4, kind)),
+                    detect(
+                            List.of(
+                                    word("D.C.", .72f, .76f),
+                                    word("al", .77f, .8f),
+                                    word(variant, .81f, .9f)),
+                            List.of()));
+        }
+        assertEquals(
+                List.of(new ScorePlaybackDirection(4, DAL_SEGNO_AL_FINE)),
+                detect(
+                        List.of(
+                                word("Dal", .71f, .75f),
+                                word("Segno", .76f, .8f),
+                                word("al", .81f, .83f),
+                                word("Fine", .84f, .9f)),
+                        List.of()));
+    }
+
+    @Test
+    public void nearbyIndependentCodaDestinationIsNotSwallowedByJumpPhrase() {
+        assertEquals(
+                List.of(
+                        new ScorePlaybackDirection(3, CODA),
+                        new ScorePlaybackDirection(4, DA_CAPO_AL_CODA)),
+                detect(
+                        List.of(word("Coda", .715f, .755f), word("D.C. al Coda", .77f, .9f)),
+                        List.of()));
+    }
+
     private final List<PlayingTechniqueDetector.Staff> staffs =
             List.of(new PlayingTechniqueDetector.Staff(100, 140, 10, 0, 1));
     private final List<MeasureRegion> bars =

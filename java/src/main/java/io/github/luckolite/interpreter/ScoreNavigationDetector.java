@@ -11,6 +11,13 @@ import java.util.Locale;
 final class ScoreNavigationDetector {
     record Glyph(ScorePlaybackDirection.Kind kind, float centerX, float top, float bottom) {}
 
+    private record Phrase(
+            ScorePlaybackDirection.Kind kind, float left, float right, float top, float bottom) {
+        Glyph glyph() {
+            return new Glyph(kind, (left + right) * .5f, top, bottom);
+        }
+    }
+
     private ScoreNavigationDetector() {}
 
     static ScorePlaybackDirection.Kind kind(String text) {
@@ -20,6 +27,12 @@ final class ScoreNavigationDetector {
         String clean = text.toLowerCase(Locale.ROOT).replaceAll("[\\s.,:;]", "");
         return switch (clean) {
             case "dsalcoda", "dalsegnoalcoda" -> ScorePlaybackDirection.Kind.DAL_SEGNO_AL_CODA;
+            case "dc", "dacapo" -> ScorePlaybackDirection.Kind.DA_CAPO;
+            case "ds", "dalsegno" -> ScorePlaybackDirection.Kind.DAL_SEGNO;
+            case "dcalfine", "dacapoalfine" -> ScorePlaybackDirection.Kind.DA_CAPO_AL_FINE;
+            case "dsalfine", "dalsegnoalfine" -> ScorePlaybackDirection.Kind.DAL_SEGNO_AL_FINE;
+            case "dcalcoda", "dacapoalcoda" -> ScorePlaybackDirection.Kind.DA_CAPO_AL_CODA;
+            case "fine" -> ScorePlaybackDirection.Kind.FINE;
             case "tocoda" -> ScorePlaybackDirection.Kind.TO_CODA;
             case "coda" -> ScorePlaybackDirection.Kind.CODA;
             case "segno" -> ScorePlaybackDirection.Kind.SEGNO;
@@ -37,6 +50,7 @@ final class ScoreNavigationDetector {
         if (width <= 0 || height <= 0 || staffs == null || measures == null) return List.of();
         var marks = new ArrayList<Glyph>();
         if (glyphs != null) marks.addAll(glyphs);
+        var phrases = new ArrayList<Phrase>();
         var words = new ArrayList<PlayingTechniqueDetector.Word>();
         if (input != null) words.addAll(input);
         words.sort(
@@ -44,14 +58,13 @@ final class ScoreNavigationDetector {
                         .thenComparingDouble(PlayingTechniqueDetector.Word::left));
         for (var word : words) {
             var value = kind(word.text());
-            if (value != null)
-                marks.add(
-                        new Glyph(
-                                value,
-                                (word.left() + word.right()) * .5f,
-                                word.top(),
-                                word.bottom()));
-            // OCR may split D.S., al and Coda. Join only immediate same-line neighbors.
+            Phrase longest =
+                    value == null
+                            ? null
+                            : new Phrase(
+                                    value, word.left(), word.right(), word.top(), word.bottom());
+            // OCR may split D.C./D.S., al, and Fine/Coda. Prefer the complete
+            // phrase over its plain-jump prefix; join immediate same-line words only.
             var line = new ArrayList<PlayingTechniqueDetector.Word>();
             line.add(word);
             for (var next : words)
@@ -72,48 +85,26 @@ final class ScoreNavigationDetector {
                 bottom = Math.max(bottom, next.bottom());
                 value = kind(text);
                 if (value != null)
-                    marks.add(new Glyph(value, (word.left() + right) * .5f, word.top(), bottom));
+                    longest = new Phrase(value, word.left(), right, word.top(), bottom);
             }
+            if (longest != null) phrases.add(longest);
         }
-        // A standalone Coda token within 'To Coda' or 'D.S. al Coda' is not a destination.
-        marks.removeIf(
-                mark ->
-                        mark.kind() == ScorePlaybackDirection.Kind.CODA
-                                && marks.stream()
-                                        .anyMatch(
-                                                other ->
-                                                        other != mark
-                                                                && (other.kind()
-                                                                                == ScorePlaybackDirection
-                                                                                        .Kind
-                                                                                        .TO_CODA
-                                                                        || other.kind()
-                                                                                == ScorePlaybackDirection
-                                                                                        .Kind
-                                                                                        .DAL_SEGNO_AL_CODA)
-                                                                && Math.abs(
-                                                                                        mark
-                                                                                                        .bottom()
-                                                                                                - other
-                                                                                                        .bottom())
-                                                                                * height
-                                                                        < Math.max(
-                                                                                3,
-                                                                                (mark.bottom()
-                                                                                                - mark
-                                                                                                        .top())
-                                                                                        * height)
-                                                                && Math.abs(
-                                                                                        mark
-                                                                                                        .centerX()
-                                                                                                - other
-                                                                                                        .centerX())
-                                                                                * width
-                                                                        < (mark.bottom()
-                                                                                        - mark
-                                                                                                .top())
-                                                                                * height
-                                                                                * 5));
+        // A token proved to be inside a longer instruction is not a second mark.
+        // Do not suppress a neighboring independent sign by a loose distance rule.
+        for (var phrase : phrases)
+            if (phrases.stream()
+                    .noneMatch(
+                            other ->
+                                    other != phrase
+                                            && other.left() <= phrase.left()
+                                            && other.right() >= phrase.right()
+                                            && (other.left() < phrase.left()
+                                                    || other.right() > phrase.right())
+                                            && Math.abs(other.bottom() - phrase.bottom())
+                                                    <= Math.max(
+                                                                    other.bottom() - other.top(),
+                                                                    phrase.bottom() - phrase.top())
+                                                            * .5f)) marks.add(phrase.glyph());
         var result = new ArrayList<ScorePlaybackDirection>();
         for (var mark : marks) {
             PlayingTechniqueDetector.Staff owner = null;
@@ -144,9 +135,7 @@ final class ScoreNavigationDetector {
                     picked = m;
                 }
             }
-            boolean outgoing =
-                    mark.kind() == ScorePlaybackDirection.Kind.TO_CODA
-                            || mark.kind() == ScorePlaybackDirection.Kind.DAL_SEGNO_AL_CODA;
+            boolean outgoing = mark.kind().outgoing();
             // A destination may precede the clef and a full seven-accidental signature.
             float headerAllowance = !outgoing && picked == firstOnStaff ? 16 : 8;
             if (picked < 0 || nearest * width > owner.gap() * headerAllowance) continue;
@@ -160,7 +149,7 @@ final class ScoreNavigationDetector {
         }
         result.sort(
                 Comparator.comparingInt(ScorePlaybackDirection::measureBoundary)
-                        .thenComparing(d -> d.kind().ordinal()));
+                        .thenComparingInt(d -> d.kind().wireId()));
         return List.copyOf(result);
     }
 }

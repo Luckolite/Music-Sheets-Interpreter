@@ -11,6 +11,11 @@
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "documentation": "source-provenance.md",
   "files": {
+    "ScoreNavigationPerformance.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationPerformance.java",
+      "source_sha256": "6d00161f01f8300e275815bc175b0273705c6648b8ad384ec88762ef92157799",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
     "ScoreNavigationTraversal.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationTraversal.java",
       "source_sha256": "af7406c227764d95805873825410862c821a1b27df818ad50fa137193eb4aa13",
@@ -596,7 +601,7 @@
     },
     "ScoreNavigationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationDetector.java",
-      "source_sha256": "eda33e5a63a1ebac8ddd0d51c85d3254dfd8646e57f55c0893fbba18572ff8f1",
+      "source_sha256": "0fc300a9cf9fd8e2ce5f65ac09cf722ae69b34546ea725be6d32ebc3c50f020e",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreNavigationPlan.java": {
@@ -661,7 +666,7 @@
     },
     "ScorePerformanceTimeline.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePerformanceTimeline.java",
-      "source_sha256": "09ee6416f347a1cb3877dac22454e0feba8783b96b98f4660f89dcdf91aa1bad",
+      "source_sha256": "d3f8673f7b3876d95aa6bdd0eee7cd8642b9ca4e2e146be92773ea7c0632557d",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreMeterMap.java": {

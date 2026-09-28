@@ -42,6 +42,11 @@ New dependencies and adapters require separate review.
 - The bounded navigation traversal retains canonical segment anchors, repeat
   ownership, jump phase and diagnostics. Whole-bar projection deliberately
   rejects actual partial-bar jumps; complete segment playback remains separate.
+- `ScoreNavigationPerformance` projects explicitly resolved numeric tempo curves
+  through actual traversal segments, preserving curve phase at return destinations.
+  Holds require explicit boundary ownership and a proved performed-target mapping.
+  It does not infer the magnitude of printed ritardando or automatically wire
+  application audio and Python exports to the resulting performance clock.
 - Java `ScoreSemanticWire` and Python `sheet_interpreter.semantic_wire` encode
   and validate the two framed guide263 semantic sections (not a complete page
   guide). Both use fixed wire IDs and preserve source evidence, targets and

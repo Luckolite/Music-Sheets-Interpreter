@@ -126,6 +126,15 @@ public final class ScorePerformanceTimeline {
         return holds;
     }
 
+    /** Immutable source curves, before navigation creates performed occurrences. */
+    public List<TempoSegment> tempoSegments() {
+        return segments;
+    }
+
+    public double openingBpm() {
+        return openingBpm;
+    }
+
     public double secondsAtBeat(double target, Boundary boundary) {
         beat(target);
         Objects.requireNonNull(boundary);
