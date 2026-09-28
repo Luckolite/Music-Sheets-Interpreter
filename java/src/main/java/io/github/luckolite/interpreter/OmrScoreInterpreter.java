@@ -1010,11 +1010,15 @@ final class OmrScoreInterpreter {
                                     ? halfChordDotAnchor(
                                             labels, gray, width, height, head, heads, staff.gap)
                                     : head;
+            float dotGap =
+                    (staff.printedPhase || staff.printedSlope || staff.pitchTrack != null)
+                            ? localGap
+                            : staff.gap;
             int augmentationDots =
                     countAugmentationDots(
                             dotCandidates,
                             dotAnchor,
-                            staff.gap,
+                            dotGap,
                             gray,
                             width,
                             height,
@@ -1494,6 +1498,13 @@ final class OmrScoreInterpreter {
                 int flags = rawDetachedFlags(gray, labels, width, height, note.head, note.staffGap);
                 if (flags > beams) beams = flags;
             }
+            float dotValidationGap =
+                    event.augmentationDots() > 0
+                                    && (restOwner.printedPhase
+                                            || restOwner.printedSlope
+                                            || restOwner.pitchTrack != null)
+                            ? localStaffPitch(labels, gray, width, height, restOwner, note.head)[1]
+                            : note.staffGap;
             withRests.add(
                     new ScoreNoteEvent(
                                     event.measureIndex(),
@@ -1523,7 +1534,8 @@ final class OmrScoreInterpreter {
                                                             resolvedHeads,
                                                             note.staffGap)
                                                     : note.head,
-                                            resolvedHeads),
+                                            resolvedHeads,
+                                            dotValidationGap),
                                     beams,
                                     event.writtenAccidental(),
                                     beams != event.beamCount() ? 0 : event.unbeamedDurationBeats(),
@@ -9068,7 +9080,10 @@ final class OmrScoreInterpreter {
         for (Component head : heads) {
             Staff staff = nearestHeadStaff(staffs, head.centerY);
             if (staff == null) continue;
-            float gap = staff.gap;
+            float gap =
+                    staff.pitchTrack != null
+                            ? staff.pitchTrack.at(head.centerX)[1]
+                            : staff.printedPhase || staff.printedSlope ? staff.pitchGap : staff.gap;
             if (head.area > gap * gap * .3f
                     || head.maxX - head.minX + 1 > gap * .85f
                     || head.maxY - head.minY + 1 > gap * .9f
@@ -13207,6 +13222,32 @@ final class OmrScoreInterpreter {
             List<Component> accidentalInk,
             Component dotAnchor,
             List<Component> neighboringHeads) {
+        return dotsOutsideRests(
+                candidates,
+                note,
+                rests,
+                measures,
+                gray,
+                width,
+                height,
+                accidentalInk,
+                dotAnchor,
+                neighboringHeads,
+                note.staffGap);
+    }
+
+    private static int dotsOutsideRests(
+            List<Component> candidates,
+            DetectedNote note,
+            List<ScoreRestEvent> rests,
+            List<MeasureRegion> measures,
+            byte[] gray,
+            int width,
+            int height,
+            List<Component> accidentalInk,
+            Component dotAnchor,
+            List<Component> neighboringHeads,
+            float dotGap) {
         if (note.event.augmentationDots() == 0 || rests.isEmpty())
             return note.event.augmentationDots();
         List<Component> excluded = new ArrayList<>(accidentalInk);
@@ -13234,7 +13275,7 @@ final class OmrScoreInterpreter {
                 : countAugmentationDots(
                         candidates,
                         dotAnchor,
-                        note.staffGap,
+                        dotGap,
                         gray,
                         width,
                         height,

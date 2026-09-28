@@ -222,10 +222,10 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "8b72f289346e1ee0746e849728cd9164ce7271bb33bfdb529a5735567d234879",
+      "source_sha256": "4e3210001428accf9ee54eda19004c89d744d09c0a85d574a61ac0bb52ca6734",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Retains reviewed finite-beam and corroborated compressed-staff repairs. Complete staff coverage rounds to the nearest whole sample; existing rooted multi-band evidence at thresholds 175/185 vetoes a single-beam downgrade. Tie-only geometry may use independently established printed phase/slope, preserving finite/range/written-pitch agreement guards and emitted geometry. Three complete changed methods match app code/literal tokens; twenty original new controls plus eight inherited beam controls. No new helper, dependency, model or private score fixture."
+      "review_note": "Retains reviewed staff, beam and tie repairs. Dot detection and rest-exclusion recount share the established frame, retaining legacy overload and exclusion geometry; expensive frame calculation is gated to dotted notes. Entrance-stroke rejection uses established spacing with its existing curve/destination/stem proof, preserving unproved seeds and genuine graces. Complete changed dot blocks/overloads and entrance method match app tokens/literals. Twelve original controls cover dots, rest/accidental ownership, graces, missing destinations, wide curves and immutability. No new dependency, model, private fixture or diagnostics."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
