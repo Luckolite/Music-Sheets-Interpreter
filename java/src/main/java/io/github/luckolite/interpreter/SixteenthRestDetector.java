@@ -42,18 +42,88 @@ final class SixteenthRestDetector {
             List<ScoreNoteEvent> notes) {
         Detection original = detectWithDots(gray, width, height, measures, staffs, notes, true);
         byte[] contrasted = contrastedRestInk(gray, width, height, staffs);
-        if (contrasted == gray) return original;
         Detection additional =
-                detectWithDots(contrasted, width, height, measures, staffs, notes, true);
+                contrasted == gray
+                        ? new Detection(List.of(), List.of())
+                        : detectWithDots(contrasted, width, height, measures, staffs, notes, true);
         List<ScoreRestEvent> rests = new ArrayList<>(original.rests());
         rests.addAll(additional.rests());
         List<RestDot> dots = new ArrayList<>(original.dots());
         dots.addAll(additional.dots());
+        Detection stable = collected(rests, dots);
+        byte[] faint = contrastedRestInk(gray, width, height, staffs, 205);
+        if (faint == gray) return stable;
+        Detection recovered =
+                detectWithDots(faint, width, height, measures, staffs, notes, true, true);
+        rests = new ArrayList<>(stable.rests());
+        dots = new ArrayList<>(stable.dots());
+        for (ScoreRestEvent rest : recovered.rests()) {
+            if (!seededOrdinaryRest(gray, width, height, measures, staffs, rest)) continue;
+            boolean duplicate = false;
+            for (ScoreRestEvent old : rests)
+                if (old.measureIndex() == rest.measureIndex()
+                        && old.staffIndex() == rest.staffIndex()
+                        && old.staffCount() == rest.staffCount()
+                        && Math.abs(old.positionInMeasure() - rest.positionInMeasure()) < .025f
+                        && Math.abs(old.pageY() - rest.pageY())
+                                < Math.max(old.pageHeight(), rest.pageHeight())) {
+                    duplicate = true;
+                    break;
+                }
+            if (duplicate) continue;
+            rests.add(rest);
+            for (RestDot dot : recovered.dots()) if (dot.rest().equals(rest)) dots.add(dot);
+        }
         return collected(rests, dots);
+    }
+
+    private static boolean seededOrdinaryRest(
+            byte[] gray,
+            int width,
+            int height,
+            List<MeasureRegion> measures,
+            List<Staff> staffs,
+            ScoreRestEvent rest) {
+        if (rest.durationBeats() != .25 && rest.durationBeats() != .5) return false;
+        if (rest.measureIndex() < 0 || rest.measureIndex() >= measures.size()) return false;
+        MeasureRegion region = measures.get(rest.measureIndex());
+        float x =
+                (region.left() + rest.positionInMeasure() * (region.right() - region.left()))
+                        * width;
+        float y = rest.pageY() * height;
+        for (Staff staff : staffs) {
+            if (staff.index() != rest.staffIndex() || staff.count() != rest.staffCount()) continue;
+            float[] frame =
+                    staff.pitchTrack() == null
+                            ? new float[] {staff.bottom(), staff.gap()}
+                            : staff.pitchTrack().at(x);
+            float bottom = frame[0], gap = frame[1];
+            if (y < bottom - gap * 2.25f || y > bottom - gap * .6f) continue;
+            int seeds = 0, seedRows = 0;
+            int top = Math.max(0, Math.round(y - rest.pageHeight() * height * .5f));
+            int end = Math.min(height - 1, Math.round(y + rest.pageHeight() * height * .5f));
+            for (int row = top; row <= end; row++) {
+                float rule = bottom + Math.round((row - bottom) / gap) * gap;
+                if (Math.abs(row - rule) <= gap * .25f) continue;
+                int count = 0;
+                for (int col = Math.max(0, Math.round(x - gap * .65f));
+                        col <= Math.min(width - 1, Math.round(x + gap * .65f));
+                        col++) if ((gray[row * width + col] & 255) < 155) count++;
+                seeds += count;
+                if (count >= 2) seedRows++;
+            }
+            if (seeds >= 12 && seedRows >= 3) return true;
+        }
+        return false;
     }
 
     private static byte[] contrastedRestInk(
             byte[] gray, int width, int height, List<Staff> staffs) {
+        return contrastedRestInk(gray, width, height, staffs, 185);
+    }
+
+    private static byte[] contrastedRestInk(
+            byte[] gray, int width, int height, List<Staff> staffs, int ceiling) {
         if (gray == null || gray.length != (long) width * height || staffs.isEmpty()) return gray;
         List<Float> gaps = new ArrayList<>();
         for (Staff staff : staffs) gaps.add(staff.gap());
@@ -63,7 +133,7 @@ final class SixteenthRestDetector {
         for (int y = radius; y < height - radius; y++)
             for (int x = radius; x < width - radius; x++) {
                 int at = y * width + x, ink = gray[at] & 255;
-                if (ink < 170 || ink >= 185) continue;
+                if (ink < 170 || ink >= ceiling) continue;
                 int bright = 0;
                 if ((gray[at - radius] & 255) >= ink + 40) bright++;
                 if ((gray[at + radius] & 255) >= ink + 40) bright++;
@@ -85,19 +155,40 @@ final class SixteenthRestDetector {
             List<Staff> staffs,
             List<ScoreNoteEvent> notes,
             boolean refineSymbols) {
+        return detectWithDots(gray, width, height, measures, staffs, notes, refineSymbols, false);
+    }
+
+    private static Detection detectWithDots(
+            byte[] gray,
+            int width,
+            int height,
+            List<MeasureRegion> measures,
+            List<Staff> staffs,
+            List<ScoreNoteEvent> notes,
+            boolean refineSymbols,
+            boolean faintShapes) {
         if (gray == null || gray.length != width * height)
             return new Detection(List.of(), List.of());
         if (staffs.stream().anyMatch(staff -> staff.pitchTrack() != null)) {
             List<Staff> straight = new ArrayList<>();
             for (Staff staff : staffs) if (staff.pitchTrack() == null) straight.add(staff);
             Detection plain =
-                    detectWithDots(gray, width, height, measures, straight, notes, refineSymbols);
+                    detectWithDots(
+                            gray,
+                            width,
+                            height,
+                            measures,
+                            straight,
+                            notes,
+                            refineSymbols,
+                            faintShapes);
             List<ScoreRestEvent> combined = new ArrayList<>(plain.rests());
             List<RestDot> dots = new ArrayList<>(plain.dots());
             for (Staff staff : staffs)
                 if (staff.pitchTrack() != null) {
                     Detection curved =
-                            detectOnPrintedStaff(gray, width, height, measures, staff, notes);
+                            detectOnPrintedStaff(
+                                    gray, width, height, measures, staff, notes, faintShapes);
                     combined.addAll(curved.rests());
                     dots.addAll(curved.dots());
                 }
@@ -293,7 +384,8 @@ final class SixteenthRestDetector {
                                     (ordinary || shallowLowered || farRaised) && pass > 0,
                                     quarterOnly,
                                     farRaised,
-                                    placement.printedCenter() / height);
+                                    placement.printedCenter() / height,
+                                    faintShapes);
                             start = -1;
                         }
                     }
@@ -316,7 +408,8 @@ final class SixteenthRestDetector {
                                 staff.count(),
                                 track);
                 Detection additional =
-                        detectOnPrintedStaff(gray, width, height, measures, calibrated, notes);
+                        detectOnPrintedStaff(
+                                gray, width, height, measures, calibrated, notes, faintShapes);
                 result.addAll(additional.rests());
                 restDots.addAll(additional.dots());
             }
@@ -365,7 +458,8 @@ final class SixteenthRestDetector {
             int height,
             List<MeasureRegion> measures,
             Staff staff,
-            List<ScoreNoteEvent> notes) {
+            List<ScoreNoteEvent> notes,
+            boolean faintShapes) {
         int first = Math.max(0, (int) Math.floor(staff.top() - staff.gap() * 6));
         int last = Math.min(height, (int) Math.ceil(staff.bottom() + staff.gap() * 6.4f));
         if (last <= first) return new Detection(List.of(), List.of());
@@ -433,7 +527,8 @@ final class SixteenthRestDetector {
                         mappedMeasures,
                         List.of(rectified),
                         mappedNotes,
-                        false);
+                        false,
+                        faintShapes);
         List<ScoreRestEvent> rests = new ArrayList<>();
         List<RestDot> dots = new ArrayList<>();
         for (ScoreRestEvent rest : detected.rests())
@@ -509,7 +604,8 @@ final class SixteenthRestDetector {
             boolean bulbOnly,
             boolean quarterOnly,
             boolean farRaised,
-            float printedStaffCenter) {
+            float printedStaffCenter,
+            boolean faintShapes) {
         float gap = staff.gap();
         if (right - left + 1 < gap * .7f || right - left + 1 > gap * 1.85f) return;
         int minY = bottom + 1, maxY = top - 1;
@@ -590,7 +686,7 @@ final class SixteenthRestDetector {
                         && Math.abs(maxY - (staff.bottom() - gap)) <= gap * .4f;
         boolean sixteenth =
                 !deepLowered
-                        && maxY - minY >= gap * 2.35f
+                        && maxY - minY >= (faintShapes ? Math.round(gap * 2.35f) : gap * 2.35f)
                         && maxY - minY <= gap * 3.25f
                         && Math.abs(maxY - staff.bottom()) <= gap * .35f;
         if (sixteenth
@@ -633,7 +729,7 @@ final class SixteenthRestDetector {
             int run = 0, runStart = 0;
             // Quantize bulb dimensions to raster pixels for both rest types.
             // Sixteenths still require two separated bulbs and a diagonal tail.
-            float bulbWidth = Math.max(2, Math.round(gap * .58f));
+            float bulbWidth = Math.max(2, Math.round(gap * (faintShapes ? .50f : .58f)));
             float bulbRows = Math.max(2, Math.round(gap * .22f));
             for (int y = minY; y <= maxY + 1; y++) {
                 boolean bulb =

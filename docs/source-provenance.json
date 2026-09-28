@@ -289,9 +289,9 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "b8d847b0816282313dd869c778f7772d7d3bedd32461d6d1520e5abed5f120e1",
+      "source_sha256": "e96520bd2e792910f0cb592b3d8e3c32848fa135a3be384818936c286d8a5e53",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Retains sharp ownership and existing rest topology. A non-mutating local contrast pass adds only independently contrasted midtone ink. Fractional bulb dimensions are raster-quantized; only a single one-pixel row deficit between complete rows is bridged. Artificial deeply lowered eighth-rest scans reject a substantial independently connected diagonal tail continuing beyond their crop, preserving genuine bounded rests and other placements. Complete 12731-token app/standalone code-and-literal parity after namespace normalization; original end-to-end cropped-glyph and bounded-tail controls accompany prior generated rest/flag/phase regressions. No private pixels, new dependency or model change."
+      "review_note": "Retains sharp ownership, existing rest topology and established detections. Supplementary locally contrasted faint tails require ordinary staff placement, at least twelve original dark pixels in three non-rule rows, two separated bulbs for sixteenths, and existing shaft/contour guards. Narrow bulb and raster-rounded height allowances apply only to this seeded fallback; duplicate records and their dots remain owned by the established result. Complete 13668-token app/standalone code-and-literal parity after namespace normalization; nine original procedural faint-tail, narrow-bulb and negative controls accompany prior generated regressions. No private pixels, new helper, dependency or model change."
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
