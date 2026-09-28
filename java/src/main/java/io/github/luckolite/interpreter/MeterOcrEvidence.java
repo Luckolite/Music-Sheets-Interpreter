@@ -76,8 +76,11 @@ public final class MeterOcrEvidence {
                     || token.bottom() <= token.top()) continue;
             String text = token.text().trim();
             if (text.matches("[/|.,:]+")) continue;
-            if (!text.matches("[0-9]{1,2}")) return "";
             float center = token.left() * .5f + token.right() * .5f;
+            // OCR may attach the drawn separator to the denominator, e.g. '/8'.
+            if (center > denominatorStart && text.matches("[/|][0-9]{1,2}"))
+                text = text.substring(1);
+            if (!text.matches("[0-9]{1,2}")) return "";
             if (center < numeratorEnd) upper.add(text);
             else if (center > denominatorStart) lower.add(text);
             else return "";

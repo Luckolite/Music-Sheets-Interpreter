@@ -227,11 +227,13 @@ final class ScoreDynamicsDetector {
             if (owner == null || word.bottom() - word.top() > owner.gap() * 3 / height) continue;
             var common =
                     GrandStaffDynamics.between(shared, word.top() * height, word.bottom() * height);
+            var target = common == null ? owner : common;
+            float anchor = literalAnchor(word, target, measures, notes, width, height);
             add(
                     result,
-                    common == null ? owner : common,
-                    word.left(),
-                    word.left(),
+                    target,
+                    anchor,
+                    anchor,
                     db,
                     0,
                     measures,
@@ -434,6 +436,28 @@ final class ScoreDynamicsDetector {
             }
         }
         return best;
+    }
+
+    // Italic dynamic marks can overhang the preceding bar while their body belongs to the next.
+    private static float literalAnchor(
+            PlayingTechniqueDetector.Word word,
+            PlayingTechniqueDetector.Staff staff,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes,
+            int width,
+            int height) {
+        float center = (word.left() + word.right()) * .5f, gap = staff.gap() / width;
+        if (word.right() - word.left() > gap * 4) return word.left();
+        Slot left = slot(word.left(), staff, measures, notes, width, height);
+        Slot middle = slot(center, staff, measures, notes, width, height);
+        if (left == null || middle == null || middle.measure != left.measure + 1)
+            return word.left();
+        var next = measures.get(middle.measure);
+        if (word.left() < next.left()
+                && next.left() - word.left() <= gap * 1.5f
+                && center >= next.left()
+                && center - next.left() <= gap) return center;
+        return word.left();
     }
 
     private record Slot(int measure, float position) {}

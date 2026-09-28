@@ -8,6 +8,38 @@ import static org.junit.Assert.*;
 
 public class MeterOcrEvidenceTest {
     @Test
+    public void reflowedDenominatorMayRetainItsGeneratedSeparator() {
+        for (String denominator : List.of("/8", "|8"))
+            assertEquals(
+                    "12/8",
+                    MeterOcrEvidence.reflowedFraction(
+                            List.of(
+                                    token("12", 20, 10, 40, 30),
+                                    token(denominator, 100, 10, 60, 30)),
+                            80,
+                            110));
+    }
+
+    @Test
+    public void joinedSeparatorCannotSupplyMissingOrMisplacedNumerator() {
+        assertEquals(
+                "",
+                MeterOcrEvidence.reflowedFraction(List.of(token("/8", 120, 10, 40, 30)), 80, 110));
+        assertEquals(
+                "",
+                MeterOcrEvidence.reflowedFraction(
+                        List.of(token("/12", 20, 10, 40, 30), token("8", 130, 10, 20, 30)),
+                        80,
+                        110));
+        assertEquals(
+                "",
+                MeterOcrEvidence.reflowedFraction(
+                        List.of(token("12", 20, 10, 40, 30), token("1/8", 110, 10, 40, 30)),
+                        80,
+                        110));
+    }
+
+    @Test
     public void reflowedSlotsRecoverDigitsWhenOcrOmitsTheGeneratedSlash() {
         assertEquals(
                 "12/8",

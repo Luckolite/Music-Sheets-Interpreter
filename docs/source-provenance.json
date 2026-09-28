@@ -2,7 +2,7 @@
   "source_project": "Music Sheets",
   "semantic_only_boundary_tie_review": {
     "reviewed_app_state": "Music Sheets 1.18.305 worktree based on 650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-    "boundary": "Ported only the missing or incomplete raw-raster guard in continuous tie-arc evidence. Semantic-only extraction remains available, and absent raw pixels cannot establish a boundary arc. Two original generated regressions cover extraction and the raw-arc path. No helper, dependency, model, private score or device data added. Pre-existing unrelated mapped drift remains visible; full-file hashes were not changed to conceal it."
+    "boundary": "The missing or incomplete raw-raster guard is ported and covered by two original generated regressions. Subsequent full-file token review confirmed parity apart from the standalone package and diagnostics adapter; the mapped hash includes that reviewed guard. No private score or device data is included."
   },
   "source_authors": [
     "Luckolite"
@@ -195,7 +195,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "416f19ab556c9b4cf87c3f374c1b2658ce86afcb3b58f8fc4ebd9f682dfdd7c4",
+      "source_sha256": "c302df2ef9a5dc0a93a8097d41e792ec20b6f67c88ce3e3c84cdf128ad1c806c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
     },
@@ -214,7 +214,7 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "2cc28a4de2439ca88dd0d28a01ba990935fc191ca13c26a29def324818cbbd55",
+      "source_sha256": "2b389927ace40c7a13c90fc59a4f8818ad21a3401ba485129b6a693953ae85d2",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreKeyChange.java": {
@@ -316,7 +316,7 @@
     },
     "MeterOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterOcrEvidence.java",
-      "source_sha256": "6461e158e1f141387591ab274511f7aa74a4f2f1b50180aba1c63f9df60421e5",
+      "source_sha256": "a562eed52542fad4154faac5e6f45b17319027c1509aa9dcd3157d1acdc7991f",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "DoubleSharpGlyph.java": {
@@ -641,7 +641,7 @@
     },
     "NativeDynamicGlyphs.java": {
       "source_path": "tools/native-worker/NativeDynamicGlyphs.java",
-      "source_sha256": "da51ad2cea9e9ccb55007fb96d7ac8ba61571e4b0cf111f08542546c3d02a5f2",
+      "source_sha256": "18c69bb64795fdf65215f7fd965581345d29858291c0b606ceced4041b34b71c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "NativeOrnamentGlyphs.java": {
@@ -670,6 +670,11 @@
     "ScoreBoundaryTies.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreBoundaryTies.java",
       "source_sha256": "11b403bae4d743df324edb9d5bb2fe1850d0d458b9398aa71a16cb0ed8cc0f21",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "DynamicBarlineCrop.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/DynamicBarlineCrop.java",
+      "source_sha256": "a2402cb1c9db983d5bfc1f2bea822ddb66866ac1a26965d848bcb89f62b56c8c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "PageTrillEvidence.java": {
