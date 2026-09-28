@@ -11,6 +11,21 @@
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "documentation": "source-provenance.md",
   "files": {
+    "ScoreNavigationTraversal.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationTraversal.java",
+      "source_sha256": "af7406c227764d95805873825410862c821a1b27df818ad50fa137193eb4aa13",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "ScoreSemanticWire.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreSemanticWire.java",
+      "source_sha256": "2cfcb23b0395725c34f7a30efd556c5048eab99293992b51dfcb9059f02d3bca",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "semantic_wire.py": {
+      "source_path": "tools/native-worker/semantic_wire.py",
+      "source_sha256": "0db367180e59ac5a5bfd987f29413f4f9ac52685406d358593901a24804c1088",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
     "HalfRestRuleBody.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HalfRestRuleBody.java",
       "source_sha256": "ab7111670a90f50d5a777163d3ef0cd72e79dde011a9c76d54a0325b458977dc",
@@ -237,7 +252,7 @@
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
-      "source_sha256": "4329777eedac9805f067d15480024e1b09e17c1e5369131fa9e270bb68dfab9c",
+      "source_sha256": "6538add480c9f8b8e441968f89a2cc2ca20bf3c4f27b1109b218a08fe31a3386",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreRestEvent.java": {
@@ -341,7 +356,7 @@
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
-      "source_sha256": "e991c8441453e6199cb4a887104151a9a6d1119f1666d7aa8b161a26ee336831",
+      "source_sha256": "6fc3e859f4b6edd68f4b329563a4bb5d50c1e2660f91a6391d49b76c6f8e3914",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "TabNotation.java": {
@@ -586,12 +601,12 @@
     },
     "ScoreNavigationPlan.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationPlan.java",
-      "source_sha256": "c3264aded7c878a91b55a8d0938108805ca25d3f456982eff12abba94e93fd7b",
+      "source_sha256": "fc1172858280ca4a302d92c1da33e78ab6c133fee1818918f698da23c2524c9a",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScorePlaybackDirection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePlaybackDirection.java",
-      "source_sha256": "a729cca2c7c59cbe32aae26eee6adab109515b3ebc816a64b8117c972802846d",
+      "source_sha256": "4f1ca8bda5c2097d1ad9266356f12fea9285ac0440a071f0deca713b0f91bc02",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "SegnoFragmentInk.java": {
@@ -626,7 +641,7 @@
     },
     "ScoreNavigationProjection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationProjection.java",
-      "source_sha256": "1fecbebc86e4251ffd91314e65470e62e43aa4b12f5636a4b74d755e7005dac2",
+      "source_sha256": "7e22b8123f2cb539282d552c680843509110d0db2b5acb538198f209134604dc",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreAnchor.java": {

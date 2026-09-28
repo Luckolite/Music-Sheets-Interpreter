@@ -107,17 +107,21 @@ public class ScoreNavigationPlanTest {
     }
 
     @Test
-    public void outOfPageBoundaryIsRejectedWithoutPartialRouting() {
+    public void invalidUnrelatedBoundaryIsDiagnosedWithoutErasingValidNavigation() {
         var marks = new ArrayList<>(directions());
         marks.add(d(12, CODA));
-        assertEquals(linear(), ScoreNavigationPlan.create(10, marks).sourceMeasures());
+        var plan = ScoreNavigationPlan.create(10, marks);
+        assertEquals(13, plan.measureCount());
+        assertEquals("INVALID_ANCHOR", plan.traversal().diagnostics().get(0).code());
     }
 
     @Test
-    public void nullEntryDoesNotInventAnAnchor() {
+    public void nullEntryIsDiagnosedWithoutErasingValidNavigation() {
         var marks = new ArrayList<>(directions());
         marks.add(null);
-        assertEquals(linear(), ScoreNavigationPlan.create(10, marks).sourceMeasures());
+        var plan = ScoreNavigationPlan.create(10, marks);
+        assertEquals(13, plan.measureCount());
+        assertEquals("NULL_MARK", plan.traversal().diagnostics().get(0).code());
     }
 
     @Test
@@ -158,6 +162,40 @@ public class ScoreNavigationPlanTest {
     @Test
     public void emptyScoreHasNoInventedBars() {
         assertEquals(List.of(), ScoreNavigationPlan.create(0, List.of()).sourceMeasures());
+    }
+
+    @Test
+    public void inactiveMidbarSignsDoNotInventMeasureVisits() {
+        for (var kind : List.of(FINE, TO_CODA, SEGNO, CODA)) {
+            var mark =
+                    new ScorePlaybackDirection(
+                            0,
+                            kind,
+                            new ScorePlaybackDirection.Details(
+                                    2,
+                                    "inactive-sign",
+                                    "",
+                                    "",
+                                    "",
+                                    2,
+                                    List.of(),
+                                    java.util.Optional.empty(),
+                                    ScorePlaybackDirection.AfterJumpRepeats.DEFAULT,
+                                    "",
+                                    List.of()));
+            var plan = ScoreNavigationPlan.create(2, List.of(mark));
+            assertEquals(List.of(0, 1), plan.sourceMeasures());
+            assertFalse(plan.navigationApplied());
+            assertEquals(8, plan.traversal().performedBeats(), 0);
+            var source =
+                    new ScorePageInterpretation(
+                            List.of(new MeasureRegion(0, 1, 0, 1), new MeasureRegion(1, 2, 0, 1)),
+                            List.of());
+            assertSame(
+                    source,
+                    ScoreNavigationProjection.project(
+                            source, plan, new ScoreNavigationProjection.Defaults(0, 120, 4, 4)));
+        }
     }
 
     @Test

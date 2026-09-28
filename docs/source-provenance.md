@@ -39,6 +39,13 @@ New dependencies and adapters require separate review.
 - Shared navigation records and projection are available to integrators. Python
   MIDI and MusicXML exports remain linear; they do not automatically execute
   document-level navigation.
+- The bounded navigation traversal retains canonical segment anchors, repeat
+  ownership, jump phase and diagnostics. Whole-bar projection deliberately
+  rejects actual partial-bar jumps; complete segment playback remains separate.
+- Java `ScoreSemanticWire` and Python `sheet_interpreter.semantic_wire` encode
+  and validate the two framed guide263 semantic sections (not a complete page
+  guide). Both use fixed wire IDs and preserve source evidence, targets and
+  cross-page endpoints. The Python helper uses only the standard library.
 
 Public regressions use original procedural drawings and shareable examples.
 Commercial scores, user libraries, device logs, internal checkpoints and private

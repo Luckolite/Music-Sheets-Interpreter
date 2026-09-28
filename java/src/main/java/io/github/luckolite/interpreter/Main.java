@@ -268,8 +268,17 @@ public final class Main {
         if (value instanceof Number n)
             return Double.isFinite(n.doubleValue()) ? n.toString() : "null";
         if (value instanceof Boolean) return value.toString();
+        if (value instanceof ScorePlaybackDirection direction
+                && direction.details().equals(ScorePlaybackDirection.Details.legacy()))
+            return "{\"measureBoundary\":"
+                    + direction.measureBoundary()
+                    + ",\"kind\":"
+                    + direction.kind().wireId()
+                    + "}";
         if (value instanceof ScorePlaybackDirection.Kind kind)
-            return Integer.toString(kind.ordinal());
+            return Integer.toString(kind.wireId());
+        if (value instanceof java.util.Optional<?> optional) return json(optional.orElse(null));
+        if (value instanceof Enum<?> enumeration) return json(enumeration.name());
         var items = new ArrayList<String>();
         if (value instanceof Map<?, ?> map) {
             for (var e : map.entrySet())

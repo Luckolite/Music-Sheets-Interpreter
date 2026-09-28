@@ -40,14 +40,23 @@ public final class ScoreNavigationProjection {
         Objects.requireNonNull(source);
         Objects.requireNonNull(plan);
         Objects.requireNonNull(defaults);
-        if (!plan.dalSegnoApplied()) {
+        if (!plan.traversal().complete())
+            throw new IllegalArgumentException("Navigation traversal is incomplete");
+        if (plan.sourceMeasureCount() != source.measures().size())
+            throw new IllegalArgumentException("Plan does not describe this source score");
+        if (!plan.navigationApplied()) {
             if (plan.measureCount() != source.measures().size())
                 throw new IllegalArgumentException("Plan does not describe this source score");
             return source;
         }
-        if (plan.measureCount() == 0
-                || plan.sourceMeasure(plan.measureCount() - 1) != source.measures().size() - 1)
-            throw new IllegalArgumentException("Plan does not describe this source score");
+        // Whole-bar projection must not silently turn a partial-bar prefix into a complete bar.
+        for (var occurrence : plan.traversal().occurrences())
+            if (occurrence.start().quarterBeatOffset() != 0
+                    || !occurrence
+                            .end()
+                            .equals(new ScoreAnchor(occurrence.start().measureIndex() + 1, 0)))
+                throw new IllegalArgumentException(
+                        "Partial-bar navigation needs segment projection");
         var runs = new ArrayList<Run>();
         for (int p = 0; p < plan.measureCount(); ) {
             int start = plan.sourceMeasure(p), length = 1;
@@ -68,6 +77,10 @@ public final class ScoreNavigationProjection {
         var meters = new ArrayList<ScoreMeterChange>();
         var techniques = new ArrayList<ScoreTechniqueChange>();
         var dynamics = new ArrayList<ScoreDynamicChange>();
+        var expressions = new ArrayList<ScoreExpressiveEvent>();
+        var expressionSources = new HashMap<String, String>();
+        for (var event : source.expressiveEvents())
+            if (event.start().isEmpty()) expressions.add(event);
         var lanes = lanes(source);
         var orderedKeys =
                 source.keyChanges().stream()
@@ -93,6 +106,32 @@ public final class ScoreNavigationProjection {
         try (var timing = ScoreNoteTiming.beginTimingSession()) {
             var dynamicSource = new DynamicSource(source, defaults, orderedTempos);
             for (var run : runs) {
+                var end = new ScoreAnchor(run.end(), 0);
+                for (var event : source.expressiveEvents())
+                    if (event.start().isPresent()
+                            && (inside(event.start().get().measureIndex(), run)
+                                    // Terminal printed releases occur on reaching the source
+                                    // endpoint, before any return, and again on the final visit.
+                                    || run.end() == source.measures().size()
+                                            && event.start().get().equals(end))) {
+                        var finish = event.end().map(a -> a.compareTo(end) > 0 ? end : a);
+                        String suffix = "@occurrence:" + run.playback();
+                        expressionSources.put(event.eventId() + suffix, event.eventId());
+                        expressions.add(
+                                new ScoreExpressiveEvent(
+                                        event.eventId() + suffix,
+                                        event.kind(),
+                                        event.start()
+                                                .map(a -> a.offset(run.playback() - run.source())),
+                                        finish.map(a -> a.offset(run.playback() - run.source())),
+                                        event.scope(),
+                                        event.staffIndex(),
+                                        event.staffCount(),
+                                        event.targetEventId().map(id -> id + suffix),
+                                        event.strength(),
+                                        event.qualifierText(),
+                                        event.evidence()));
+                    }
                 for (int m = run.source(); m < run.end(); m++)
                     measures.add(source.measures().get(m));
                 for (var n : source.notes())
@@ -186,6 +225,43 @@ public final class ScoreNavigationProjection {
                                         t.technique()));
             }
         }
+        // An a-tempo checkpoint can refer to a ramp on an earlier source run. Select its
+        // latest preceding performed occurrence, not a nonexistent current-run identity.
+        var sourceExpressions = new HashMap<String, ScoreExpressiveEvent>();
+        for (var event : source.expressiveEvents()) sourceExpressions.put(event.eventId(), event);
+        for (int i = 0; i < expressions.size(); i++) {
+            var event = expressions.get(i);
+            var original = sourceExpressions.get(expressionSources.get(event.eventId()));
+            if (original == null || original.targetEventId().isEmpty()) continue;
+            String target = original.targetEventId().get();
+            ScoreExpressiveEvent best = null;
+            if (sourceExpressions.containsKey(target))
+                for (var candidate : expressions)
+                    if (target.equals(expressionSources.get(candidate.eventId()))
+                            && candidate.start().isPresent()
+                            && event.start().isPresent()
+                            && candidate.start().get().compareTo(event.start().get()) <= 0
+                            && (best == null
+                                    || candidate.start().get().compareTo(best.start().orElseThrow())
+                                            >= 0)) best = candidate;
+            // Note/rest identities need the segment renderer's ownership map. Preserve the
+            // source target but keep realization unresolved until that map has proved it.
+            var scope = best == null ? ScoreExpressiveEvent.Scope.UNRESOLVED : event.scope();
+            expressions.set(
+                    i,
+                    new ScoreExpressiveEvent(
+                            event.eventId(),
+                            event.kind(),
+                            event.start(),
+                            event.end(),
+                            scope,
+                            event.staffIndex(),
+                            event.staffCount(),
+                            java.util.Optional.of(best == null ? target : best.eventId()),
+                            event.strength(),
+                            event.qualifierText(),
+                            event.evidence()));
+        }
         notes.sort(
                 Comparator.comparingInt(ScoreNoteEvent::measureIndex)
                         .thenComparingDouble(ScoreNoteEvent::positionInMeasure));
@@ -211,7 +287,8 @@ public final class ScoreNavigationProjection {
                 rests,
                 techniques,
                 dynamics,
-                List.of());
+                List.of(),
+                expressions);
     }
 
     private static boolean inside(int measure, Run run) {

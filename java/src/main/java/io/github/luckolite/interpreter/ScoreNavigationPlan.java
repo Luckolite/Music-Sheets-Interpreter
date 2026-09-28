@@ -2,20 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 package io.github.luckolite.interpreter;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 
-/** Bounded source-to-performance mapping for one unambiguous D.S. al Coda.
- * It is deliberately linear when any required anchor is absent or ambiguous.
- * Recognition supplies source boundaries; no title, page count or bar-number rules. */
+/** Source-to-performance lookup backed by region-owned, bounded navigation traversal. */
 public final class ScoreNavigationPlan {
     private final List<Integer> sourceMeasures;
-    private final boolean dalSegnoApplied;
+    private final ScoreNavigationTraversal.Result traversal;
+    private final boolean navigationApplied;
+    private final int sourceMeasureCount;
 
-    private ScoreNavigationPlan(List<Integer> sourceMeasures, boolean dalSegnoApplied) {
-        this.sourceMeasures = List.copyOf(sourceMeasures);
-        this.dalSegnoApplied = dalSegnoApplied;
+    private ScoreNavigationPlan(int sourceCount, ScoreNavigationTraversal.Result traversal) {
+        this.traversal = traversal;
+        this.sourceMeasures = traversal.sourceMeasures();
+        this.sourceMeasureCount = sourceCount;
+        boolean changed = sourceMeasures.size() != sourceCount;
+        for (int i = 0; i < sourceMeasures.size(); i++)
+            if (sourceMeasures.get(i) != i) changed = true;
+        this.navigationApplied = changed;
     }
 
     public int measureCount() {
@@ -30,8 +33,21 @@ public final class ScoreNavigationPlan {
         return sourceMeasures;
     }
 
+    /** Compatibility alias; callers should use navigationApplied for all route kinds. */
     public boolean dalSegnoApplied() {
-        return dalSegnoApplied;
+        return navigationApplied;
+    }
+
+    public boolean navigationApplied() {
+        return navigationApplied;
+    }
+
+    public ScoreNavigationTraversal.Result traversal() {
+        return traversal;
+    }
+
+    public int sourceMeasureCount() {
+        return sourceMeasureCount;
     }
 
     /** Source clicks select the nearest occurrence to the active performance cursor. */
@@ -51,45 +67,13 @@ public final class ScoreNavigationPlan {
 
     public static ScoreNavigationPlan create(
             int sourceMeasureCount, List<ScorePlaybackDirection> directions) {
-        if (sourceMeasureCount < 0) throw new IllegalArgumentException("Negative measure count");
-        var anchors =
-                new EnumMap<ScorePlaybackDirection.Kind, Integer>(
-                        ScorePlaybackDirection.Kind.class);
-        boolean valid = directions != null;
-        if (directions != null)
-            for (var direction : directions) {
-                if (direction == null || direction.measureBoundary() > sourceMeasureCount) {
-                    valid = false;
-                    continue;
-                }
-                Integer previous =
-                        anchors.putIfAbsent(direction.kind(), direction.measureBoundary());
-                // Duplicated signs for parallel staves agree. Competing destinations do not.
-                if (previous != null && previous != direction.measureBoundary()) valid = false;
-            }
-        if (valid && anchors.size() == ScorePlaybackDirection.Kind.values().length) {
-            int segno = anchors.get(ScorePlaybackDirection.Kind.SEGNO);
-            int toCoda = anchors.get(ScorePlaybackDirection.Kind.TO_CODA);
-            int dalSegno = anchors.get(ScorePlaybackDirection.Kind.DAL_SEGNO_AL_CODA);
-            int coda = anchors.get(ScorePlaybackDirection.Kind.CODA);
-            if (segno < toCoda
-                    && toCoda <= dalSegno
-                    && dalSegno <= coda
-                    && coda < sourceMeasureCount) {
-                var route = new ArrayList<Integer>();
-                // First pass ignores To Coda. Only reaching D.S. arms the jump.
-                append(route, 0, dalSegno);
-                append(route, segno, toCoda);
-                append(route, coda, sourceMeasureCount);
-                return new ScoreNavigationPlan(route, true);
-            }
-        }
-        var route = new ArrayList<Integer>();
-        append(route, 0, sourceMeasureCount);
-        return new ScoreNavigationPlan(route, false);
+        return create(sourceMeasureCount, directions, new ScoreMeterMap(4, List.of()));
     }
 
-    private static void append(List<Integer> target, int first, int end) {
-        for (int source = first; source < end; source++) target.add(source);
+    public static ScoreNavigationPlan create(
+            int sourceMeasureCount, List<ScorePlaybackDirection> directions, ScoreMeterMap meter) {
+        return new ScoreNavigationPlan(
+                sourceMeasureCount,
+                ScoreNavigationTraversal.traverse(sourceMeasureCount, meter, directions));
     }
 }

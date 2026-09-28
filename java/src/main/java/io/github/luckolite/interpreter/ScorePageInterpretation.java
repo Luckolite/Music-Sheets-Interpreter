@@ -1,5 +1,3 @@
-// Copyright 2026 Luckolite
-// SPDX-License-Identifier: Apache-2.0
 package io.github.luckolite.interpreter;
 
 import java.util.List;
@@ -170,16 +168,51 @@ public record ScorePageInterpretation(
                         change -> {
                             int boundary = change.measureBoundary();
                             boolean outgoing =
-                                    change.kind() == ScorePlaybackDirection.Kind.TO_CODA
-                                            || change.kind()
-                                                    == ScorePlaybackDirection.Kind
-                                                            .DAL_SEGNO_AL_CODA;
+                                    change.kind().outgoing()
+                                            && change.details().quarterBeatOffset() == 0;
                             return outgoing
                                     ? boundary > firstMeasure && boundary <= measureAfterLast
                                     : boundary >= firstMeasure && boundary < measureAfterLast;
                         })
                 .map(change -> change.offset(-firstMeasure))
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    /** Retain each expression once, preserving source identities and full cross-page endpoints. */
+    public static List<ScoreExpressiveEvent> expressionsStartingOnPage(
+            List<ScoreExpressiveEvent> events, int firstMeasure, int measureAfterLast) {
+        return expressionsStartingOnPage(events, firstMeasure, measureAfterLast, false);
+    }
+
+    /** The final output page also owns terminal releases at the score-end anchor. */
+    public static List<ScoreExpressiveEvent> expressionsStartingOnPage(
+            List<ScoreExpressiveEvent> events,
+            int firstMeasure,
+            int measureAfterLast,
+            boolean finalPage) {
+        if (firstMeasure < 0 || measureAfterLast < firstMeasure)
+            throw new IllegalArgumentException("Invalid page measure range");
+        if (events == null || events.isEmpty() || firstMeasure == measureAfterLast)
+            return List.of();
+        // Anchorless evidence remains unresolved and is retained once on the first
+        // output page. Its original physical-page evidence is never reinterpreted.
+        return events.stream()
+                .filter(
+                        event ->
+                                event.start().isEmpty()
+                                        ? firstMeasure == 0
+                                        : event.start().get().measureIndex() >= firstMeasure
+                                                && (event.start().get().measureIndex()
+                                                                < measureAfterLast
+                                                        || finalPage
+                                                                && event.start()
+                                                                        .get()
+                                                                        .equals(
+                                                                                new ScoreAnchor(
+                                                                                        measureAfterLast,
+                                                                                        0))))
+                .map(event -> event.offset(-firstMeasure))
+                .toList();
     }
 
     /** Keep a cross-page hairpin once, with its full endpoint relative to its starting page. */

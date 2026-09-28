@@ -423,6 +423,7 @@ public final class TablatureDecoder {
                 && score.notes().isEmpty()
                 && score.rests().isEmpty()
                 && score.expressiveEvents().isEmpty()
+                && score.playbackDirections().isEmpty()
                 && tabs.stream().allMatch(t -> t.standardTop < 0))
             score =
                     new ScorePageInterpretation(

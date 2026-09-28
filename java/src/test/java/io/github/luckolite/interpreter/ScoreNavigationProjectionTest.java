@@ -10,6 +10,55 @@ import static io.github.luckolite.interpreter.ScorePlaybackDirection.Kind.*;
 
 /** Original logical scores: no private score scans, melodies, or inferred reference labels. */
 public class ScoreNavigationProjectionTest {
+    @Test
+    public void terminalPedalReleasePersistsAtEachReachedSourceEndpoint() {
+        var release =
+                new ScoreExpressiveEvent(
+                        "release",
+                        ScoreExpressiveEvent.Kind.PEDAL_UP,
+                        java.util.Optional.of(new ScoreAnchor(2, 0)),
+                        java.util.Optional.empty(),
+                        ScoreExpressiveEvent.Scope.SCORE,
+                        0,
+                        1,
+                        java.util.Optional.empty(),
+                        ScoreExpressiveEvent.Strength.UNSPECIFIED,
+                        "",
+                        List.of(
+                                new ScoreExpressiveEvent.Evidence(
+                                        "synthetic", 0, .9f, 0, 1, "pedal up")));
+        var source =
+                new ScorePageInterpretation(
+                                List.of(
+                                        new MeasureRegion(0, 1, 0, 1),
+                                        new MeasureRegion(1, 2, 0, 1)),
+                                List.of())
+                        .withExpressiveEvents(List.of(release));
+        var plan =
+                ScoreNavigationPlan.create(
+                        2,
+                        List.of(
+                                new ScorePlaybackDirection(
+                                        0, ScorePlaybackDirection.Kind.REPEAT_START),
+                                new ScorePlaybackDirection(
+                                        2, ScorePlaybackDirection.Kind.REPEAT_END)));
+        var played =
+                ScoreNavigationProjection.project(
+                        source, plan, new ScoreNavigationProjection.Defaults(0, 120, 4, 4));
+        assertEquals(
+                List.of(new ScoreAnchor(2, 0), new ScoreAnchor(4, 0)),
+                played.expressiveEvents().stream()
+                        .map(event -> event.start().orElseThrow())
+                        .toList());
+        assertEquals(
+                2,
+                played.expressiveEvents().stream()
+                        .map(ScoreExpressiveEvent::eventId)
+                        .distinct()
+                        .count());
+        assertEquals(release.evidence(), played.expressiveEvents().get(1).evidence());
+    }
+
     private static final ScoreNavigationProjection.Defaults DEFAULTS =
             new ScoreNavigationProjection.Defaults(0, 60, 4, 4);
 
@@ -79,6 +128,86 @@ public class ScoreNavigationProjectionTest {
                 source,
                 ScoreNavigationProjection.project(
                         source, ScoreNavigationPlan.create(8, List.of()), DEFAULTS));
+    }
+
+    @Test
+    public void fineCanEndBeforeLastPrintedBar() {
+        var route =
+                ScoreNavigationPlan.create(
+                        8,
+                        List.of(
+                                new ScorePlaybackDirection(6, DA_CAPO_AL_FINE),
+                                new ScorePlaybackDirection(3, FINE)));
+        var source = empty();
+        var result = ScoreNavigationProjection.project(source, route, DEFAULTS);
+        assertEquals(9, result.measures().size());
+        assertSame(source.measures().get(2), result.measures().get(8));
+        assertEquals(36, result.notes().size());
+    }
+
+    @Test
+    public void expressionsReceiveOccurrenceIdentitiesAndClipAtJump() {
+        var evidence = new ScoreExpressiveEvent.Evidence("synthetic", 0, .2f, 0, 1, "rall.");
+        var event =
+                new ScoreExpressiveEvent(
+                        "ramp",
+                        ScoreExpressiveEvent.Kind.RALLENTANDO,
+                        java.util.Optional.of(new ScoreAnchor(1, 1)),
+                        java.util.Optional.of(new ScoreAnchor(4, 1)),
+                        ScoreExpressiveEvent.Scope.SCORE,
+                        0,
+                        1,
+                        java.util.Optional.empty(),
+                        ScoreExpressiveEvent.Strength.UNSPECIFIED,
+                        "",
+                        List.of(evidence));
+        var result = project(empty().withExpressiveEvents(List.of(event)));
+        assertEquals(2, result.expressiveEvents().size());
+        assertEquals("ramp@occurrence:0", result.expressiveEvents().get(0).eventId());
+        var repeated = result.expressiveEvents().get(1);
+        assertEquals("ramp@occurrence:5", repeated.eventId());
+        assertEquals(new ScoreAnchor(5, 1), repeated.start().orElseThrow());
+        assertEquals(new ScoreAnchor(7, 0), repeated.end().orElseThrow());
+        assertEquals(List.of(evidence), repeated.evidence());
+    }
+
+    @Test
+    public void tempoRestoreTargetsLatestPrecedingPerformedRampNotCurrentRunSuffix() {
+        var evidence = new ScoreExpressiveEvent.Evidence("synthetic", 0, .2f, 0, 1, "a tempo");
+        var ramp =
+                new ScoreExpressiveEvent(
+                        "ramp",
+                        ScoreExpressiveEvent.Kind.RALLENTANDO,
+                        java.util.Optional.of(new ScoreAnchor(0, 0)),
+                        java.util.Optional.of(new ScoreAnchor(3, 0)),
+                        ScoreExpressiveEvent.Scope.SCORE,
+                        0,
+                        1,
+                        java.util.Optional.empty(),
+                        ScoreExpressiveEvent.Strength.UNSPECIFIED,
+                        "",
+                        List.of(evidence));
+        var restore =
+                new ScoreExpressiveEvent(
+                        "restore",
+                        ScoreExpressiveEvent.Kind.A_TEMPO,
+                        java.util.Optional.of(new ScoreAnchor(6, 0)),
+                        java.util.Optional.empty(),
+                        ScoreExpressiveEvent.Scope.SCORE,
+                        0,
+                        1,
+                        java.util.Optional.of("ramp"),
+                        ScoreExpressiveEvent.Strength.UNSPECIFIED,
+                        "",
+                        List.of(evidence));
+        var result = project(empty().withExpressiveEvents(List.of(restore, ramp)));
+        var mapped =
+                result.expressiveEvents().stream()
+                        .filter(e -> e.kind() == ScoreExpressiveEvent.Kind.A_TEMPO)
+                        .findFirst()
+                        .orElseThrow();
+        assertEquals("ramp@occurrence:0", mapped.targetEventId().orElseThrow());
+        assertEquals(ScoreExpressiveEvent.Scope.SCORE, mapped.scope());
     }
 
     @Test
