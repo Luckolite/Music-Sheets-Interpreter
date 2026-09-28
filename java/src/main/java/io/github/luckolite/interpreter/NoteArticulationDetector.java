@@ -391,6 +391,12 @@ final class NoteArticulationDetector {
         if (raw)
             for (int i = 0; i < notes.size(); i++) {
                 Anchor note = notes.get(i);
+                if ((result[i] & NoteArticulation.MARCATO) == 0
+                        && ruleJoinedMarcato(note, labels, gray, width, height))
+                    for (int j = 0; j < notes.size(); j++)
+                        if (notes.get(j).staff == note.staff
+                                && Math.abs(notes.get(j).x - note.x) < note.gap * .45f)
+                            result[j] |= NoteArticulation.MARCATO;
                 if ((result[i] & NoteArticulation.STACCATO) == 0
                         && textJoinedDot(note, glyphs, labels, gray, width, height))
                     for (int j = 0; j < notes.size(); j++)
@@ -399,6 +405,154 @@ final class NoteArticulationDetector {
                             result[j] |= NoteArticulation.STACCATO;
             }
         return result;
+    }
+
+    /** Recover an upward angular mark joined to independently long, thin staff rules. */
+    private static boolean ruleJoinedMarcato(
+            Anchor note, byte[] labels, byte[] gray, int width, int height) {
+        float gap = note.gap;
+        if (!Float.isFinite(gap)
+                || !Float.isFinite(note.x)
+                || !Float.isFinite(note.y)
+                || gap < 10
+                || gap > Math.min(width, height)
+                || note.x < 0
+                || note.x >= width
+                || note.y < 0
+                || note.y >= height) return false;
+        int left = Math.max(0, Math.round(note.x - gap * 4)),
+                right = Math.min(width - 1, Math.round(note.x + gap * 4));
+        int top = Math.max(0, Math.round(note.y - gap * 8)),
+                bottom = Math.min(height - 1, Math.round(note.y - gap * .7f));
+        int w = right - left + 1, h = bottom - top + 1;
+        if (w < 3 || h < 3) return false;
+        boolean[] rules = new boolean[h];
+        boolean any = false;
+        for (int y = top; y <= bottom; y++) {
+            rules[y - top] = thinIndependentRule(gray, width, height, Math.round(note.x), y, gap);
+            any |= rules[y - top];
+        }
+        if (!any) return false;
+        boolean[] seen = new boolean[w * h];
+        int[] queue = new int[w * h];
+        List<Glyph> fragments = new ArrayList<>(), marks = new ArrayList<>();
+        for (int origin = 0; origin < seen.length; origin++) {
+            int ox = origin % w, oy = origin / w;
+            if (seen[origin] || rules[oy] || (gray[(top + oy) * width + left + ox] & 255) >= 155)
+                continue;
+            int size = 1, take = 0;
+            queue[0] = origin;
+            seen[origin] = true;
+            boolean clipped = false, joined = false;
+            int gx0 = width, gx1 = 0, gy0 = height, gy1 = 0, notation = 0;
+            while (take < size) {
+                int at = queue[take++], x = at % w, y = at / w;
+                if (x == 0 || x == w - 1 || y == 0 || y == h - 1) clipped = true;
+                int pixel = (top + y) * width + left + x;
+                gx0 = Math.min(gx0, left + x);
+                gx1 = Math.max(gx1, left + x);
+                gy0 = Math.min(gy0, top + y);
+                gy1 = Math.max(gy1, top + y);
+                byte label = labels[pixel];
+                if (label == OmrMeasurePostProcessor.NOTEHEAD
+                        || label == OmrMeasurePostProcessor.STEM_OR_REST
+                        || label == OmrMeasurePostProcessor.CLEF_OR_KEY) notation++;
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++) {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || nx >= w || ny < 0 || ny >= h || rules[ny]) continue;
+                        int next = ny * w + nx;
+                        if (!seen[next] && (gray[(top + ny) * width + left + nx] & 255) < 155) {
+                            seen[next] = true;
+                            queue[size++] = next;
+                        }
+                    }
+                for (int direction = -1; direction <= 1; direction += 2) {
+                    int ny = y + direction, distance = 1;
+                    while (ny >= 0
+                            && ny < h
+                            && rules[ny]
+                            && distance <= Math.ceil(gap * .25f) + 1) {
+                        ny += direction;
+                        distance++;
+                    }
+                    if (distance == 1
+                            || distance > Math.ceil(gap * .25f) + 1
+                            || ny < 0
+                            || ny >= h
+                            || rules[ny]) continue;
+                    for (int dx = -distance; dx <= distance; dx++) {
+                        int nx = x + dx;
+                        if (nx < 0 || nx >= w) continue;
+                        int next = ny * w + nx;
+                        if ((gray[(top + ny) * width + left + nx] & 255) >= 155) continue;
+                        joined = true;
+                        if (!seen[next]) {
+                            seen[next] = true;
+                            queue[size++] = next;
+                        }
+                    }
+                }
+            }
+            float gw = gx1 - gx0 + 1, gh = gy1 - gy0 + 1;
+            if (clipped || notation > size * .25f || gw > gap * 3f || gh > gap * 2.2f) continue;
+            int[] pixels = new int[size];
+            for (int i = 0; i < size; i++) {
+                int x = left + queue[i] % w, y = top + queue[i] / w;
+                pixels[i] = y * width + x;
+            }
+            Glyph glyph = new Glyph(gx0, gy0, gx1, gy1, size, pixels);
+            fragments.add(glyph);
+            if (joined
+                    && Math.abs(glyph.x() - note.x) <= gap * .7f
+                    && gw >= gap * .5f
+                    && gw <= gap * 1.3f
+                    && gh >= gap * .6f
+                    && gh <= gap * 1.7f
+                    && gh / gw >= .8f) marks.add(glyph);
+        }
+        // Reflect only geometry for the existing text-run veto. Pixel references still
+        // address the original labels; no source ink or shape classifier is modified.
+        List<Glyph> reflected = new ArrayList<>();
+        for (Glyph glyph : fragments)
+            reflected.add(
+                    new Glyph(
+                            -glyph.right,
+                            glyph.top,
+                            -glyph.left,
+                            glyph.bottom,
+                            glyph.count,
+                            glyph.pixels));
+        for (Glyph glyph : marks) {
+            if (directionText(glyph, fragments, gap, labels)
+                    || directionText(
+                            new Glyph(
+                                    -glyph.right,
+                                    glyph.top,
+                                    -glyph.left,
+                                    glyph.bottom,
+                                    glyph.count,
+                                    glyph.pixels),
+                            reflected,
+                            gap,
+                            labels)) continue;
+            int[] mirrored = new int[glyph.count];
+            for (int i = 0; i < mirrored.length; i++) {
+                int pixel = glyph.pixels[i];
+                mirrored[i] = (glyph.top + glyph.bottom - pixel / width) * width + pixel % width;
+            }
+            if (upBowShape(
+                            new Glyph(
+                                    glyph.left,
+                                    glyph.top,
+                                    glyph.right,
+                                    glyph.bottom,
+                                    glyph.count,
+                                    mirrored),
+                            width)
+                    && beamOwnedMarcato(glyph, note, gray, width, height)) return true;
+        }
+        return false;
     }
 
     /** Recover a round dot fused into an upright letter above a crowded chord. */
