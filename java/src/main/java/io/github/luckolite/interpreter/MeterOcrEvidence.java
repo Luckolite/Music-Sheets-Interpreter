@@ -63,6 +63,30 @@ public final class MeterOcrEvidence {
             choices.add(numerator + "/" + denominator);
     }
 
+    /** Read digits from known numerator/denominator slots in a generated horizontal crop. */
+    public static String reflowedFraction(
+            List<Token> tokens, int numeratorEnd, int denominatorStart) {
+        if (tokens == null || numeratorEnd <= 0 || denominatorStart <= numeratorEnd) return "";
+        var upper = new HashSet<String>();
+        var lower = new HashSet<String>();
+        for (var token : tokens) {
+            if (token == null
+                    || token.text() == null
+                    || token.right() <= token.left()
+                    || token.bottom() <= token.top()) continue;
+            String text = token.text().trim();
+            if (text.matches("[/|.,:]+")) continue;
+            if (!text.matches("[0-9]{1,2}")) return "";
+            float center = token.left() * .5f + token.right() * .5f;
+            if (center < numeratorEnd) upper.add(text);
+            else if (center > denominatorStart) lower.add(text);
+            else return "";
+        }
+        return upper.size() == 1 && lower.size() == 1
+                ? singleReading(List.of(upper.iterator().next() + "/" + lower.iterator().next()))
+                : "";
+    }
+
     /** One scale may be corroborated by another staff, but must still be a valid meter. */
     public static String singleReading(List<String> readings) {
         if (readings == null || readings.size() != 1 || readings.get(0) == null) return "";

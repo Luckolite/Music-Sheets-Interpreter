@@ -8,6 +8,67 @@ import static org.junit.Assert.*;
 
 public class MeterOcrEvidenceTest {
     @Test
+    public void reflowedSlotsRecoverDigitsWhenOcrOmitsTheGeneratedSlash() {
+        assertEquals(
+                "12/8",
+                MeterOcrEvidence.reflowedFraction(
+                        List.of(token("12", 20, 10, 50, 30), token("8", 130, 12, 20, 28)),
+                        80,
+                        110));
+    }
+
+    @Test
+    public void reflowedSlotsRejectInvalidOrCompetingNumerals() {
+        for (String bad : List.of("42", "0", "x"))
+            assertEquals(
+                    "",
+                    MeterOcrEvidence.reflowedFraction(
+                            List.of(token(bad, 20, 10, 40, 30), token("8", 130, 10, 20, 30)),
+                            80,
+                            110));
+        assertEquals(
+                "",
+                MeterOcrEvidence.reflowedFraction(
+                        List.of(
+                                token("12", 20, 10, 40, 30),
+                                token("2", 30, 10, 20, 30),
+                                token("8", 130, 10, 20, 30)),
+                        80,
+                        110));
+    }
+
+    @Test
+    public void reflowedSlotsRejectMissingDenominatorAndDigitsInSeparator() {
+        assertEquals(
+                "",
+                MeterOcrEvidence.reflowedFraction(List.of(token("12", 20, 10, 40, 30)), 80, 110));
+        assertEquals(
+                "",
+                MeterOcrEvidence.reflowedFraction(
+                        List.of(
+                                token("12", 20, 10, 40, 30),
+                                token("1", 90, 10, 10, 30),
+                                token("8", 130, 10, 20, 30)),
+                        80,
+                        110));
+    }
+
+    @Test
+    public void reflowedSlotsTolerateOnlyPunctuationOutsideTheNumbers() {
+        assertEquals(
+                "12/8",
+                MeterOcrEvidence.reflowedFraction(
+                        List.of(
+                                token("12", 20, 10, 40, 30),
+                                token("/", 90, 10, 10, 30),
+                                token("8", 130, 10, 20, 30)),
+                        80,
+                        110));
+        assertEquals("", MeterOcrEvidence.reflowedFraction(null, 80, 110));
+        assertEquals("", MeterOcrEvidence.reflowedFraction(List.of(), 110, 80));
+    }
+
+    @Test
     public void singleScaleRejectsOutOfRangeMeterBeforeStaffCorroboration() {
         for (String text : List.of("0/4", "00/4", "33/4", "99/4", "4/0", "4/3", "4/64"))
             assertEquals(text, "", MeterOcrEvidence.singleReading(List.of(text)));

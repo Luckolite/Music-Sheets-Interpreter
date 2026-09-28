@@ -84,6 +84,7 @@ public final class MusicalOcr {
                 int value = gray[(top + y) * width + left + x] & 255;
                 cleaned[y * cropWidth + x] = 0xff000000 | value << 16 | value << 8 | value;
             }
+        int[] raw = cleaned.clone();
         MeterCropRaster.prepare(
                 cleaned, cropWidth, cropHeight, top, crop.firstLine(), crop.gap(), false);
         var readings = new ArrayList<String>();
@@ -124,7 +125,70 @@ public final class MusicalOcr {
         }
         String single = MeterOcrEvidence.singleReading(readings);
         if (!single.isBlank()) return new MeterReading(single, 1);
+        // Invalid numerals can be a context-dependent text OCR error. Require agreeing
+        // reflowed readings and a separate staff copy before using this fallback.
+        if (readings.size() == 1 && !lowerEvidence.isEmpty()) {
+            MeterCropRaster.prepare(
+                    raw, cropWidth, cropHeight, top, crop.firstLine(), crop.gap(), true);
+            String reflowed = reflowedMeter(raw, cropWidth, cropHeight, middle - top);
+            if (!reflowed.isBlank()) return new MeterReading(reflowed, 1);
+        }
         return new MeterReading("", 0);
+    }
+
+    private String reflowedMeter(int[] pixels, int width, int height, int middle) throws Exception {
+        int partHeight = Math.max(middle, height - middle), margin = 18, slash = 30;
+        int slot = width + 28, outWidth = slot * 2 + slash, outHeight = partHeight + margin * 2;
+        var image =
+                new java.awt.image.BufferedImage(
+                        outWidth, outHeight, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        var graphics = image.createGraphics();
+        try {
+            graphics.setColor(java.awt.Color.WHITE);
+            graphics.fillRect(0, 0, outWidth, outHeight);
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                    image.setRGB(
+                            (y < middle ? 14 : slot + slash + 14) + x,
+                            margin + (y < middle ? y : y - middle),
+                            pixels[y * width + x]);
+            graphics.setColor(java.awt.Color.BLACK);
+            graphics.setStroke(
+                    new java.awt.BasicStroke(
+                            Math.max(3, outHeight * .045f),
+                            java.awt.BasicStroke.CAP_ROUND,
+                            java.awt.BasicStroke.JOIN_ROUND));
+            graphics.drawLine(
+                    Math.round(slot + slash * .82f),
+                    Math.round(outHeight * .18f),
+                    Math.round(slot + slash * .18f),
+                    Math.round(outHeight * .82f));
+        } finally {
+            graphics.dispose();
+        }
+        int[] arranged = image.getRGB(0, 0, outWidth, outHeight, null, 0, outWidth);
+        var readings = new ArrayList<String>();
+        for (int scale : new int[] {2, 3, 4}) {
+            var text = readPixels(arranged, outWidth, outHeight, 0, 0, outWidth, outHeight, scale);
+            var tokens = new ArrayList<MeterOcrEvidence.Token>();
+            for (var block : text.blocks())
+                for (var line : block.lines())
+                    for (var element : line.elements()) {
+                        var box = element.box();
+                        if (box != null)
+                            tokens.add(
+                                    new MeterOcrEvidence.Token(
+                                            element.text(),
+                                            box.left,
+                                            box.top,
+                                            box.right,
+                                            box.bottom));
+                    }
+            readings.add(
+                    MeterOcrEvidence.reflowedFraction(
+                            tokens, slot * scale, (slot + slash) * scale));
+        }
+        return MeterOcrEvidence.consensus(readings);
     }
 
     private String digits(int[] pixels, int width, int height, int top, int bottom, int scale)
