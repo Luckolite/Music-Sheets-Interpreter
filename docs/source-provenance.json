@@ -221,9 +221,10 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "c22aa2837a2ad5a4d162cba665def7a4344aa8142022288a49d78807dceed992",
+      "source_sha256": "cc218b64e19470906c755d30564128c8736d06585799bf6676a1cc6066f06632",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
+      "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "review_note": "Finite pale-rule beam witness admits only the bounded antialiased fringe; both-end, brightness and thin-core guards preserved. Exact method token/literal review and four original generated positive/negative cases; no new dependency or private score fixture."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",

@@ -16105,14 +16105,18 @@ final class OmrScoreInterpreter {
                 // The continuing rule can be lighter than the beam's dark core.
                 // Require a narrow local core, never blank paper, beyond the body.
                 if (ink == 0 && thickColumns >= Math.round(gap * 2)) {
-                    if (first + shift - beamShift < 0 || last + shift - beamShift >= height)
-                        return false;
+                    // A beam's dark core can stop just before the lighter rule's center.
+                    // Include its antialiased fringe, still requiring a narrow local core.
+                    int fringe = Math.max(1, Math.round(gap * .15f));
+                    int ruleFirst = first + shift - beamShift - fringe;
+                    int ruleLast = last + shift - beamShift + fringe;
+                    if (ruleFirst < 0 || ruleLast >= height) return false;
                     int minimum = 255;
-                    for (int y = first + shift - beamShift; y <= last + shift - beamShift; y++)
+                    for (int y = ruleFirst; y <= ruleLast; y++)
                         minimum = Math.min(minimum, gray[y * width + column] & 255);
                     if (minimum < 220) {
                         int cutoff = Math.min(220, minimum + 6);
-                        for (int y = first + shift - beamShift; y <= last + shift - beamShift; y++)
+                        for (int y = ruleFirst; y <= ruleLast; y++)
                             if ((gray[y * width + column] & 255) < cutoff) ink++;
                     }
                 }
