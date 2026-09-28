@@ -222,10 +222,10 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "1839d815140a517e540fc550cd43fe3b72ce7ddb47b524f4155b7276241c9088",
+      "source_sha256": "319f74f36c6336af7d7490186be70e0e8442bcdebff5b7afbc849d780e0efa47",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Retains prior staff, beam, tie, dot-frame and entrance safeguards. Complete printed phase is retained against unsupported inferred rescaling; fractional beam extent is raster-bounded. Adjacent flag roots and a recentered axis require independent shaft/curved-hook proof. Center-first pale shaft tracing keeps the original threshold first; its darker fallback requires a bounded rooted flag, companion-head-aware samples and independent contrast. All seven modified/new methods have complete app/standalone code-and-literal parity. Original generated geometry covers phase, beam, root, shaft, occlusion and negative controls. No song-specific rule, new dependency, model change or private fixture."
+      "review_note": "Retains prior staff, beam, tie, dot-frame and entrance safeguards. Complete printed phase is retained against unsupported inferred rescaling; fractional beam extent is raster-bounded. Adjacent flag roots and a recentered axis require independent shaft/curved-hook proof. Center-first pale shaft tracing keeps the original threshold first; its darker fallback requires a bounded rooted flag, companion-head-aware samples and independent contrast. Faint augmentation dots retain nested-core/shape ownership at intermediate contrast thresholds; double-beam recovery retains full-body and separated-core proof. A corroborated printed frame supersedes a substantially compressed seed only for beam measurement, preserving its slope. Complete modified methods and overloads have app/standalone code-and-literal parity. Original generated geometry covers phase, beam, root, shaft, occlusion, dot contrast, slope and negative controls. No song-specific rule, new dependency, model change or private fixture."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",

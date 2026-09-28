@@ -13444,7 +13444,7 @@ final class OmrScoreInterpreter {
     private static List<Component> fadedAugmentationDots(
             byte[] gray, int width, int height, Component head, float gap) {
         List<Component> result = new ArrayList<>();
-        for (int bodyThreshold : new int[] {180, 205}) {
+        for (int bodyThreshold : new int[] {175, 180, 195, 205}) {
             List<Component> cores =
                     findDarkDotComponents(gray, width, height, head, gap, bodyThreshold - 25);
             for (Component body :
@@ -14021,6 +14021,22 @@ final class OmrScoreInterpreter {
 
     /** Reuse the proved local five-rule frame without changing the stored staff or pitch. */
     private static Staff beamStaffFrame(Staff staff, float[] localPitch, int width) {
+        if (staff.pitchTrack == null
+                && staff.printedPhase
+                && Float.isFinite(localPitch[0])
+                && Float.isFinite(localPitch[1])
+                && Math.abs(localPitch[1] - staff.pitchGap) <= staff.pitchGap * .035f
+                && Math.abs(staff.pitchGap - staff.gap) >= staff.gap * .25f) {
+            Staff printed =
+                    new Staff(
+                            staff.pitchBottom - 4 * staff.pitchGap,
+                            staff.pitchBottom,
+                            staff.pitchGap);
+            printed.pitchTrack =
+                    StaffPitchTrack.linear(
+                            width, staff.pitchBottom, staff.pitchGap, staff.pitchSlope);
+            return printed;
+        }
         if (staff.pitchTrack != null
                 || !Float.isFinite(localPitch[0])
                 || !Float.isFinite(localPitch[1])
@@ -16026,7 +16042,7 @@ final class OmrScoreInterpreter {
         // a single beam crossed by a rule still has only one core.
         int darkest = threshold;
         for (int y = top; y <= bottom; y++) darkest = Math.min(darkest, gray[y * width + x] & 255);
-        for (float fraction : new float[] {.5f, .25f}) {
+        for (float fraction : new float[] {.75f, .5f, .25f}) {
             int coreThreshold = darkest + Math.round((threshold - darkest) * fraction);
             int cores =
                     thickNonHeadBandsAtThreshold(
