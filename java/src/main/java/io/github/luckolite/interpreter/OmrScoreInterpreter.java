@@ -14658,15 +14658,25 @@ final class OmrScoreInterpreter {
                             head.centerX,
                             stemEnd + (upward ? 1 : -1) * gap * .55f,
                             gap)) thick = 2;
-            if (thick == 0 && !smallHead) {
-                int[] pale = fadedStemToDarkBeam(labels, gray, width, height, head, staff);
+            if (thick <= 1 && !smallHead) {
+                int[] pale =
+                        thick == 0
+                                ? fadedStemToDarkBeam(labels, gray, width, height, head, staff)
+                                : null;
                 if (pale == null)
                     pale =
                             paleStemToSupportedBeam(
                                     labels, gray, width, height, head, staff, allowSinglePale);
                 if (pale != null
                         && pale[2] == attached[2]
-                        && (pale[1] - attached[1]) * pale[2] >= -gap * .2f) {
+                        && (pale[1] - attached[1]) * pale[2] >= -gap * .2f
+                        && (thick == 0
+                                || Math.abs(pale[0] - attached[0]) <= gap * .3f
+                                        && (pale[1] - attached[1]) * pale[2] > gap * .2f
+                                        && (pale[1] - attached[1]) * pale[2] <= gap * 1.2f
+                                        && !hasCurvedFlag(
+                                                labels, gray, width, height, head, gap, bestX,
+                                                stemEnd, upward))) {
                     boolean paleUp = pale[2] < 0;
                     int a = Math.max(0, pale[1] - Math.round(gap * (paleUp ? .2f : 1.85f)));
                     int b =

@@ -222,10 +222,10 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "4e3210001428accf9ee54eda19004c89d744d09c0a85d574a61ac0bb52ca6734",
+      "source_sha256": "557ec1ee67394e65ff066394143a5473d1f1de22651d29aa9afd87106bedc1f6",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Retains reviewed staff, beam and tie repairs. Dot detection and rest-exclusion recount share the established frame, retaining legacy overload and exclusion geometry; expensive frame calculation is gated to dotted notes. Entrance-stroke rejection uses established spacing with its existing curve/destination/stem proof, preserving unproved seeds and genuine graces. Complete changed dot blocks/overloads and entrance method match app tokens/literals. Twelve original controls cover dots, rest/accidental ownership, graces, missing destinations, wide curves and immutability. No new dependency, model, private fixture or diagnostics."
+      "review_note": "Retains reviewed staff, beam, tie, dot-frame and entrance repairs. A one-beam dark endpoint may reuse an independently proved pale endpoint only on the same shaft and direction, within bounded lateral distance and extension, with curved-flag veto; zero-beam behavior is unchanged. Complete detectBeamCount code/literals match the app. Eleven original synthetic controls cover both directions, nearby unrelated shafts, excessive extension, curved flags, missing beams, disconnected shafts and immutability. No new helper, dependency, model, private fixture or diagnostics."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
