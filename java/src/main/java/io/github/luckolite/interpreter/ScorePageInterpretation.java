@@ -15,7 +15,33 @@ public record ScorePageInterpretation(
         List<ScoreRestEvent> rests,
         List<ScoreTechniqueChange> techniqueChanges,
         List<ScoreDynamicChange> dynamicChanges,
-        List<ScorePlaybackDirection> playbackDirections) {
+        List<ScorePlaybackDirection> playbackDirections,
+        List<ScoreExpressiveEvent> expressiveEvents) {
+    public ScorePageInterpretation(
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes,
+            int first,
+            List<ScoreKeyChange> keys,
+            List<ScoreTempoChange> tempos,
+            List<ScoreMeterChange> meters,
+            List<ScoreRestEvent> rests,
+            List<ScoreTechniqueChange> techniques,
+            List<ScoreDynamicChange> dynamics,
+            List<ScorePlaybackDirection> directions) {
+        this(
+                measures,
+                notes,
+                first,
+                keys,
+                tempos,
+                meters,
+                rests,
+                techniques,
+                dynamics,
+                directions,
+                List.of());
+    }
+
     public ScorePageInterpretation(
             List<MeasureRegion> measures,
             List<ScoreNoteEvent> notes,
@@ -40,7 +66,23 @@ public record ScorePageInterpretation(
                 rests,
                 techniqueChanges,
                 dynamicChanges,
-                directions);
+                directions,
+                expressiveEvents);
+    }
+
+    public ScorePageInterpretation withExpressiveEvents(List<ScoreExpressiveEvent> events) {
+        return new ScorePageInterpretation(
+                measures,
+                notes,
+                firstMeasureNumber,
+                keyChanges,
+                tempoChanges,
+                meterChanges,
+                rests,
+                techniqueChanges,
+                dynamicChanges,
+                playbackDirections,
+                events);
     }
 
     public ScorePageInterpretation(
@@ -106,6 +148,11 @@ public record ScorePageInterpretation(
         dynamicChanges = dynamicChanges == null ? List.of() : List.copyOf(dynamicChanges);
         playbackDirections =
                 playbackDirections == null ? List.of() : List.copyOf(playbackDirections);
+        expressiveEvents = expressiveEvents == null ? List.of() : List.copyOf(expressiveEvents);
+        var expressiveIds = new java.util.HashSet<String>();
+        for (var event : expressiveEvents)
+            if (!expressiveIds.add(event.eventId()))
+                throw new IllegalArgumentException("Duplicate expressive event identity");
         for (var direction : playbackDirections)
             if (direction.measureBoundary() > measures.size())
                 throw new IllegalArgumentException("Playback direction is outside the page");
@@ -132,7 +179,7 @@ public record ScorePageInterpretation(
                                     : boundary >= firstMeasure && boundary < measureAfterLast;
                         })
                 .map(change -> change.offset(-firstMeasure))
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /** Keep a cross-page hairpin once, with its full endpoint relative to its starting page. */

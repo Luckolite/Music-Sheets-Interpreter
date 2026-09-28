@@ -29,7 +29,7 @@ public final class ScorePerformanceTimeline {
             if (occurrenceId.isBlank() || !Double.isFinite(seconds) || seconds <= 0)
                 throw new IllegalArgumentException("Invalid performance hold");
             sustainedTargets = Set.copyOf(sustainedTargets);
-            if (sustainedTargets.stream().anyMatch(String::isBlank))
+            if (sustainedTargets.stream().anyMatch(target -> target.isBlank()))
                 throw new IllegalArgumentException("Empty sustained target");
         }
     }
@@ -41,7 +41,7 @@ public final class ScorePerformanceTimeline {
             if (!Double.isFinite(holdProgress)
                     || holdProgress < 0
                     || holdProgress >= 1
-                    || holdId.isEmpty() && holdProgress != 0)
+                    || !holdId.isPresent() && holdProgress != 0)
                 throw new IllegalArgumentException("Invalid hold position");
         }
     }
