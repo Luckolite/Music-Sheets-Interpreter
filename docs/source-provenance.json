@@ -11,6 +11,12 @@
   "extraction": "Explicitly selected recognition classes and own training scripts; new repository history. No app history, old model, app services or song fixtures.",
   "documentation": "source-provenance.md",
   "files": {
+    "AccidentalDotInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/AccidentalDotInk.java",
+      "source_sha256": "fca2b908fb31936c55a0e8ca047246c6c75c5259769a6281c5acf28488d0cfa5",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original raw-ink connected-paired-shaft proof with local contrast; package-only standalone port and generated positive/negative regressions. No private source imagery or new dependencies."
+    },
     "ScoreNavigationPerformance.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationPerformance.java",
       "source_sha256": "6d00161f01f8300e275815bc175b0273705c6648b8ad384ec88762ef92157799",
@@ -215,7 +221,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "015f66684c372616fdbb466d83e174217dfe0fa705c3ff7afb9157eb32392c94",
+      "source_sha256": "c22aa2837a2ad5a4d162cba665def7a4344aa8142022288a49d78807dceed992",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
     },

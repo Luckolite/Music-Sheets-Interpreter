@@ -13335,6 +13335,10 @@ final class OmrScoreInterpreter {
                     || dot.area > gap * gap * (hollowHead ? .34f : .26f)) continue;
             if (gray != null && fadedRuleFragment(gray, width, height, dot, gap)) continue;
             if (gray != null && fadedStemFragment(gray, width, height, dot, gap)) continue;
+            if (gray != null
+                    && AccidentalDotInk.matches(
+                            gray, width, height, dot.minX, dot.minY, dot.maxX, dot.maxY, gap))
+                continue;
             float dotFill = dot.area / Math.max(1f, dotWidth * dotHeight);
             if (Math.max(dotWidth, dotHeight) / Math.max(1f, Math.min(dotWidth, dotHeight)) > 1.5f
                     || dotFill < .44f) continue;
@@ -13400,7 +13404,7 @@ final class OmrScoreInterpreter {
                             || core.minY < body.minY
                             || core.maxY > body.maxY
                             || Math.min(cw, ch) < gap * .18f
-                            || Math.max(cw, ch) > Math.min(cw, ch) * 1.5f
+                            || Math.max(cw, ch) > Math.min(cw, ch) * 1.5f + .5f
                             || core.area < gap * gap * .025f
                             || core.area < body.area * .25f
                             || core.area > body.area * .85f
