@@ -70,6 +70,13 @@ def note_intervals(data):
 
 
 class NavigationMidiTest(unittest.TestCase):
+    def test_tied_marker_cannot_bridge_a_whole_silent_source_bar(self):
+        doc=document([4,4,4],[note(0,60,4),note(8,60,4,True)],[])
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'silent-bar.mid';write_midi(doc,path)
+            self.assertEqual([(60,0,1920),(60,3840,5760)],note_intervals(path.read_bytes()))
+            self.assertEqual(5760,final_tick(path.read_bytes()))
+
     def test_partial_fine_emits_exact_pitch_attack_and_release_oracle(self):
         fine=dict(measureBoundary=0,kind=12,details=dict(eventId='fine',quarterBeatOffset=1.5))
         doc=document([4,4,4],[note(0,60),note(1,62),note(2,64),note(3,65),
