@@ -312,8 +312,8 @@
     },
     "MeterOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterOcrEvidence.java",
-      "source_sha256": "f21cf45b77a678497f94044bf0c287bc1ed583ff2be10b1d32863c7d098820c0",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711"
+      "source_sha256": "8369e266f1f94f50bd6107bcc0e4e2e993bf8fbf775c86252e22225725baf262",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "DoubleSharpGlyph.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DoubleSharpGlyph.java",
@@ -632,7 +632,7 @@
     },
     "MusicalOcr.java": {
       "source_path": "tools/native-worker/NativeMusicalOcr.java",
-      "source_sha256": "094a88533e7600f4d870219be815ef6810407b95cfb0064e7ff0cf45a38c82a8",
+      "source_sha256": "486c19f821be4dd03473a505487e29c52c06cdcdc0909451b97e8bfce3f98f16",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "NativeDynamicGlyphs.java": {

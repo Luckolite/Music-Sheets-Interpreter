@@ -7,6 +7,28 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class MeterOcrEvidenceTest {
+    @Test
+    public void singleScaleRejectsOutOfRangeMeterBeforeStaffCorroboration() {
+        for (String text : List.of("0/4", "00/4", "33/4", "99/4", "4/0", "4/3", "4/64"))
+            assertEquals(text, "", MeterOcrEvidence.singleReading(List.of(text)));
+    }
+
+    @Test
+    public void singleScaleRetainsValidBoundaryAndCompoundMeters() {
+        for (String text : List.of("1/1", "4/4", "7/8", "12/8", "32/32"))
+            assertEquals(text, text, MeterOcrEvidence.singleReading(List.of(text)));
+        assertEquals("4/4", MeterOcrEvidence.singleReading(List.of("04/04")));
+    }
+
+    @Test
+    public void singleScaleDoesNotResolveMultipleOrMissingReadings() {
+        assertEquals("", MeterOcrEvidence.singleReading(List.of()));
+        assertEquals("", MeterOcrEvidence.singleReading(List.of("4/4", "3/4")));
+        assertEquals("", MeterOcrEvidence.singleReading(List.of("4/4", "4/4")));
+        assertEquals("", MeterOcrEvidence.singleReading(null));
+        assertEquals("", MeterOcrEvidence.singleReading(java.util.Collections.singletonList(null)));
+    }
+
     private static MeterOcrEvidence.Token token(String text, int x, int y, int width, int height) {
         return new MeterOcrEvidence.Token(text, x, y, x + width, y + height);
     }

@@ -63,6 +63,14 @@ public final class MeterOcrEvidence {
             choices.add(numerator + "/" + denominator);
     }
 
+    /** One scale may be corroborated by another staff, but must still be a valid meter. */
+    public static String singleReading(List<String> readings) {
+        if (readings == null || readings.size() != 1 || readings.get(0) == null) return "";
+        var valid = new HashSet<String>();
+        addFraction(valid, readings.get(0));
+        return valid.size() == 1 ? valid.iterator().next() : "";
+    }
+
     /** Require two agreeing renderings and reject any competing valid reading. */
     public static String consensus(List<String> readings) {
         String result = "";

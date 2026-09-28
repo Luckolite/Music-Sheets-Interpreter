@@ -122,8 +122,8 @@ public final class MusicalOcr {
                             lowerEvidence);
             if (!supported.isBlank()) return new MeterReading(supported, 2);
         }
-        if (readings.size() == 1 && readings.get(0).matches("[0-9]{1,2}/(?:1|2|4|8|16|32)"))
-            return new MeterReading(readings.get(0), 1);
+        String single = MeterOcrEvidence.singleReading(readings);
+        if (!single.isBlank()) return new MeterReading(single, 1);
         return new MeterReading("", 0);
     }
 
