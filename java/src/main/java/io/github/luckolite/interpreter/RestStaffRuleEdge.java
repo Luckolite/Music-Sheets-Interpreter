@@ -107,7 +107,9 @@ final class RestStaffRuleEdge {
                 || !Float.isFinite(noteY)) return false;
         int from = Math.max(0, Math.round(noteY + gap * .2f)),
                 to = Math.min(height - 1, Math.round(minY + gap * .4f));
-        if (minY - noteY < gap * .9f || minY - noteY > gap * 4.5f || to - from < gap) return false;
+        // A flag can start less than one gap from the oval. The separately
+        // required full-gap continuous shaft remains the ownership proof.
+        if (minY - noteY < gap * .65f || minY - noteY > gap * 4.5f || to - from < gap) return false;
         int first =
                 Math.max(0, Math.max(left - Math.round(gap * .25f), Math.round(noteX - gap * .8f)));
         int last = Math.min(width - 1, Math.min(right, Math.round(noteX + gap * .65f)));
@@ -144,7 +146,7 @@ final class RestStaffRuleEdge {
                 || !Float.isFinite(noteY)) return false;
         int from = Math.max(0, Math.round(maxY - gap * .4f)),
                 to = Math.min(height - 1, Math.round(noteY - gap * .2f));
-        if (noteY - maxY < gap * .9f || noteY - maxY > gap * 4.5f || to - from < gap) return false;
+        if (noteY - maxY < gap * .65f || noteY - maxY > gap * 4.5f || to - from < gap) return false;
         int first = Math.max(0, Math.max(left, Math.round(noteX - gap * .65f)));
         int last =
                 Math.min(

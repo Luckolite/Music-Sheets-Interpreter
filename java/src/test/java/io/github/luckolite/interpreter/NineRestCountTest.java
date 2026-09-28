@@ -55,4 +55,60 @@ public class NineRestCountTest {
         for (int y = 61; y < 80; y++) rect(204 - (y - 61) * 14 / 18, y, 3, 1, 5);
         assertEquals(4, count());
     }
+
+    @Test
+    public void provedNineOverridesInvertedSingleDigitOcrOnly() {
+        prepare();
+        rect(194, 61, 14, 4, 5);
+        rect(190, 65, 5, 11, 5);
+        rect(207, 64, 5, 24, 5);
+        rect(190, 75, 22, 5, 5);
+        rect(193, 88, 15, 5, 5);
+        rect(190, 85, 5, 5, 5);
+        var six = new MeasureNumberReconciler.NumberToken(6, 188f / w, 59f / h, 214f / w, 95f / h);
+        var corrected =
+                MultiMeasureRestDetector.detect(labels, gray, w, h, List.of(region), List.of(six));
+        assertEquals(1, corrected.size());
+        assertEquals(9, corrected.get(0).value());
+        var sixteen =
+                new MeasureNumberReconciler.NumberToken(16, 188f / w, 59f / h, 214f / w, 95f / h);
+        assertEquals(
+                16,
+                MultiMeasureRestDetector.detect(
+                                labels, gray, w, h, List.of(region), List.of(sixteen))
+                        .get(0)
+                        .value());
+        var distantSix =
+                new MeasureNumberReconciler.NumberToken(6, 130f / w, 59f / h, 154f / w, 95f / h);
+        assertEquals(
+                6,
+                MultiMeasureRestDetector.detect(
+                                labels, gray, w, h, List.of(region), List.of(distantSix))
+                        .get(0)
+                        .value());
+    }
+
+    @Test
+    public void paddedCountBoxMayTouchRuleOnlyWithDetachedInk() {
+        prepare();
+        // Two original digit-like components, deliberately classified as notehead ink.
+        rect(184, 64, 5, 28, OmrMeasurePostProcessor.NOTEHEAD);
+        rect(198, 64, 14, 5, OmrMeasurePostProcessor.NOTEHEAD);
+        rect(198, 64, 5, 15, OmrMeasurePostProcessor.NOTEHEAD);
+        rect(198, 77, 14, 5, OmrMeasurePostProcessor.NOTEHEAD);
+        rect(207, 77, 5, 15, OmrMeasurePostProcessor.NOTEHEAD);
+        rect(198, 87, 14, 5, OmrMeasurePostProcessor.NOTEHEAD);
+        var token =
+                new MeasureNumberReconciler.NumberToken(15, 181f / w, 60f / h, 215f / w, 103f / h);
+        assertEquals(
+                15,
+                MultiMeasureRestDetector.detect(labels, gray, w, h, List.of(region), List.of(token))
+                        .get(0)
+                        .value());
+        // The same OCR box must not excuse a genuine head overlapping the top rule.
+        rect(199, 98, 8, 5, OmrMeasurePostProcessor.NOTEHEAD);
+        assertTrue(
+                MultiMeasureRestDetector.detect(labels, gray, w, h, List.of(region), List.of(token))
+                        .isEmpty());
+    }
 }

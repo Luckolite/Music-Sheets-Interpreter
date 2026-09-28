@@ -911,10 +911,22 @@ final class OmrScoreInterpreter {
             // its printed position against the nearest physical staff instead.
             Staff physicalStaff = printedLedgerOwner(gray, width, height, staffs, head);
             if (physicalStaff == null) physicalStaff = nearestHeadStaff(staffs, head.centerY);
+            float ledgerClearance = 1.8f;
+            // A detached head-like mark on the first ledger has no shaft to
+            // establish notation ownership. Its printed ledger must do so.
             if (gray != null
                     && physicalStaff != null
-                    && (head.centerY < physicalStaff.top - physicalStaff.gap * 1.8f
-                            || head.centerY > physicalStaff.bottom + physicalStaff.gap * 1.8f)
+                    && !roundedLedgerGraces.contains(head)
+                    && head.maxX - head.minX + 1 <= physicalStaff.pitchGap * .85f
+                    && head.maxY - head.minY + 1 <= physicalStaff.pitchGap * .85f
+                    && head.area <= physicalStaff.pitchGap * physicalStaff.pitchGap * .5f
+                    && attachedRawStem(gray, width, height, head, physicalStaff.pitchGap) == null)
+                ledgerClearance = .95f;
+            if (gray != null
+                    && physicalStaff != null
+                    && (head.centerY < physicalStaff.top - physicalStaff.gap * ledgerClearance
+                            || head.centerY
+                                    > physicalStaff.bottom + physicalStaff.gap * ledgerClearance)
                     && !hasHeadLedgerSupport(
                             labels,
                             gray,
@@ -7983,6 +7995,7 @@ final class OmrScoreInterpreter {
         // Beyond two staff spaces, real notation needs another ledger toward
         // the staff. One instruction arrow or underline is insufficient.
         float gap = staff.pitchGap;
+        boolean stemless = attachedRawStem(gray, width, height, head, gap) == null;
         int[] limits = ledgerInkLimits(gray, width, height, head, staff.pitchGap);
         boolean reduced = roundedGrace || reducedLedgerHead(gray, width, height, head, gap);
         float minimum = ledgerRunMinimum(head, gap, reduced);
@@ -7990,9 +8003,11 @@ final class OmrScoreInterpreter {
         float distance =
                 head.centerY < staff.top ? staff.top - head.centerY : head.centerY - staff.bottom;
         // A remote head needs more than a pair of nearby horizontal strokes.
-        // Keep tolerance for local staff curvature and partly obscured rules;
-        // require a third ledger only beyond three and a half staff spaces.
-        int required = distance > gap * 3.5f ? 2 : 1;
+        // A stemless oval at the third ledger needs both inner ledgers;
+        // a nearby lettering stroke cannot supply that stack. Keep the
+        // wider legacy tolerance when a shaft independently owns the head.
+        int required =
+                distance > gap * (stemless && !roundedGrace && !reduced ? 2.8f : 3.5f) ? 2 : 1;
         int left = Math.max(0, Math.round(head.centerX - gap * 1.2f));
         int right = Math.min(width - 1, Math.round(head.centerX + gap * 1.2f));
         float totalStrongSupport = 0;
@@ -13986,7 +14001,14 @@ final class OmrScoreInterpreter {
             int[] pale = paleStemToDoubleBeam(labels, gray, width, height, head, staff);
             if (pale != null
                     && rootedPaleFlag(
-                            labels, gray, width, height, head, staff.gap, pale[0], pale[1],
+                            labels,
+                            gray,
+                            width,
+                            height,
+                            head,
+                            staff.gap,
+                            pale[0],
+                            pale[1],
                             pale[2] < 0)) count = 1;
         }
         if (count == 2
@@ -17267,7 +17289,8 @@ final class OmrScoreInterpreter {
                                                                         * (flatProfile
                                                                                 ? FLAT_TIE_PROFILE[
                                                                                         sample]
-                                                                                : 4 * t
+                                                                                : 4
+                                                                                        * t
                                                                                         * (1
                                                                                                 - t))));
                         boolean ink = false;

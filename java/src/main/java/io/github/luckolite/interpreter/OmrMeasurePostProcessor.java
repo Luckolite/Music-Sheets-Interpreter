@@ -987,6 +987,7 @@ final class OmrMeasurePostProcessor {
             queue[write++] = origin;
             seen[origin] = true;
             int minX = right, maxX = left, minY = last, maxY = first, area = 0;
+            boolean clipped = false;
             while (read < write) {
                 int at = queue[read++], xx = at % localWidth, yy = at / localWidth;
                 int px = left + xx, py = first + yy;
@@ -998,7 +999,16 @@ final class OmrMeasurePostProcessor {
                 for (int dy = -1; dy <= 1; dy++)
                     for (int dx = -1; dx <= 1; dx++) {
                         int nx = xx + dx, ny = yy + dy;
-                        if (nx < 0 || nx >= localWidth || ny < 0 || ny >= localHeight) continue;
+                        if (nx < 0 || nx >= localWidth || ny < 0 || ny >= localHeight) {
+                            int outsideX = left + nx, outsideY = first + ny;
+                            if (outsideX >= 0
+                                    && outsideX < width
+                                    && outsideY >= 0
+                                    && outsideY < height
+                                    && labels[outsideY * width + outsideX] == SYMBOL)
+                                clipped = true;
+                            continue;
+                        }
                         int next = ny * localWidth + nx;
                         if (!seen[next] && labels[(first + ny) * width + left + nx] == SYMBOL) {
                             seen[next] = true;
@@ -1007,7 +1017,10 @@ final class OmrMeasurePostProcessor {
                     }
             }
             int w = maxX - minX + 1, h = maxY - minY + 1;
-            if (minX <= x + 2
+            // A cropped tie/beam fragment can have head-sized bounds. Only a complete
+            // symbolic component can prove ownership of the nearby vertical stroke.
+            if (!clipped
+                    && minX <= x + 2
                     && maxX >= x - 2
                     && w >= gap * .65f
                     && w <= gap * 1.9f

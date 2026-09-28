@@ -20,7 +20,9 @@ final class NavigationSegnoGlyphs {
         for (var staff : staffs) {
             float gap = staff.gap();
             if (gap < 5 || !Float.isFinite(gap)) continue;
-            int top = Math.max(0, Math.round(staff.top() - gap * 7));
+            // Boundary ownership accepts a sign ending six gaps above the staff.
+            // Its full body can extend another 3.5 gaps upward; do not clip that proof.
+            int top = Math.max(0, Math.round(staff.top() - gap * 10));
             int bottom = Math.min(height - 1, Math.round(staff.top() - gap * .5f));
             if (bottom <= top) continue;
             for (int threshold : new int[] {80, 140}) {
@@ -52,6 +54,7 @@ final class NavigationSegnoGlyphs {
                     float w = r - l + 1, h = b - t + 1;
                     if (t == 0
                             || b == rows - 1
+                            || staff.top() - (top + b) > gap * 6
                             || w < gap
                             || w > gap * 3
                             || h < gap * 1.6f

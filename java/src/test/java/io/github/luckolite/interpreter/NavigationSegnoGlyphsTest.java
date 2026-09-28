@@ -98,4 +98,31 @@ public class NavigationSegnoGlyphsTest {
         NavigationSegnoGlyphs.detect(gray, W, H, staffs);
         assertArrayEquals(original, gray);
     }
+
+    void raisedGlyph() {
+        body();
+        dot(99, 108);
+        dot(128, 102);
+        byte[] source = gray.clone();
+        Arrays.fill(gray, (byte) 255);
+        System.arraycopy(source, 48 * W, gray, 0, (H - 48) * W);
+    }
+
+    @Test
+    public void completeBodyAboveOldBandStillHasStaffOwnership() {
+        raisedGlyph();
+        assertEquals(1, NavigationSegnoGlyphs.detect(gray, W, H, staffs).size());
+    }
+
+    @Test
+    public void expandedProofBandDoesNotExpandBoundaryOwnership() {
+        raisedGlyph();
+        assertEquals(
+                List.of(),
+                NavigationSegnoGlyphs.detect(
+                        gray,
+                        W,
+                        H,
+                        List.of(new PlayingTechniqueDetector.Staff(184, 248, 16, 0, 1))));
+    }
 }

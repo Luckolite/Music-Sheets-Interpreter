@@ -231,4 +231,28 @@ public class RestStaffRuleEdgeTest {
         row(54, 20, 180);
         assertFalse(ownedAbove());
     }
+
+    @Test
+    public void nearbyLowerFlagStillRequiresAndAcceptsFullGapStem() {
+        for (int y = 40; y <= 53; y++) gray[y * W + 85] = 50;
+        assertTrue(RestStaffRuleEdge.noteStem(gray, W, H, 82, 94, 48, 10, 90, 40));
+    }
+
+    @Test
+    public void nearbyDisconnectedLowerBodyDoesNotOwnNote() {
+        for (int y = 47; y <= 53; y++) gray[y * W + 85] = 50;
+        assertFalse(RestStaffRuleEdge.noteStem(gray, W, H, 82, 94, 48, 10, 90, 40));
+    }
+
+    @Test
+    public void nearbyUpperFlagStillRequiresAndAcceptsFullGapStem() {
+        for (int y = 47; y <= 60; y++) gray[y * W + 95] = 50;
+        assertTrue(RestStaffRuleEdge.noteStemAbove(gray, W, H, 86, 98, 52, 10, 90, 60));
+    }
+
+    @Test
+    public void nearbyDisconnectedUpperBodyDoesNotOwnNote() {
+        for (int y = 47; y <= 53; y++) gray[y * W + 95] = 50;
+        assertFalse(RestStaffRuleEdge.noteStemAbove(gray, W, H, 86, 98, 52, 10, 90, 60));
+    }
 }

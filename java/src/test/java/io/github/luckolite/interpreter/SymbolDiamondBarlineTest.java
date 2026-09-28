@@ -11,6 +11,17 @@ import static org.junit.Assert.*;
 /** A symbolic diamond at a long note stem must not split a printed bar. */
 public final class SymbolDiamondBarlineTest {
     @Test
+    public void clippedLongSymbolIsNotACompleteDiamondHead() throws Exception {
+        Page page = new Page();
+        // A broad semantic mask around a thin crossing curve continues beyond the head ROI.
+        for (int x = 240; x < 300; x++)
+            for (int y = 76; y <= 85; y++)
+                page.labels[y * page.width + x] = OmrMeasurePostProcessor.SYMBOL;
+        for (int x = 240; x <= 300; x++) page.gray[81 * page.width + x] = 0;
+        assertEquals(List.of(50, 150, 300, 450), page.boundaries());
+    }
+
+    @Test
     public void diamondOwnedStemDoesNotBecomeAnExtraBar() throws Exception {
         Page page = new Page();
         page.diamond(300);

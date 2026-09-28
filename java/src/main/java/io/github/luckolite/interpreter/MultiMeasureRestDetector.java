@@ -35,8 +35,14 @@ final class MultiMeasureRestDetector {
         List<MeasureNumberReconciler.NumberToken> readings = new ArrayList<>(tokens);
         for (RestBarCandidate candidate : restBars) {
             var count = standaloneCount(gray, width, height, candidate, true);
-            if (count != null && aboveStaff(count, labels, gray, width, height, candidate.region()))
+            if (count != null
+                    && aboveStaff(count, labels, gray, width, height, candidate.region())) {
+                // OCR can invert a nine into six. Only the independently proved upper-bowl
+                // glyph at the same location may replace that single-digit reading.
+                if (count.value() == 9)
+                    readings.removeIf(token -> token.value() == 6 && sameCountGlyph(token, count));
                 readings.add(count);
+            }
         }
         List<MeasureNumberReconciler.NumberToken> result = new ArrayList<>();
         boolean[] claimedMeasures = new boolean[measures.size()];
@@ -52,6 +58,19 @@ final class MultiMeasureRestDetector {
             result.add(token);
         }
         return List.copyOf(result);
+    }
+
+    private static boolean sameCountGlyph(
+            MeasureNumberReconciler.NumberToken ocr, MeasureNumberReconciler.NumberToken shape) {
+        float w = shape.right() - shape.left(), h = shape.bottom() - shape.top();
+        float overlapW = Math.min(ocr.right(), shape.right()) - Math.max(ocr.left(), shape.left());
+        float overlapH = Math.min(ocr.bottom(), shape.bottom()) - Math.max(ocr.top(), shape.top());
+        return w > 0
+                && h > 0
+                && overlapW >= w * .9f
+                && overlapH >= h * .9f
+                && ocr.right() - ocr.left() <= w * 1.8f
+                && ocr.bottom() - ocr.top() <= h * 1.8f;
     }
 
     /** Returns note-free windows containing the heavy bar used for a multi-rest. */
@@ -396,7 +415,8 @@ final class MultiMeasureRestDetector {
             int ink = 0;
             for (int x = left; x <= right; x++)
                 if (labels[y * width + x] == OmrMeasurePostProcessor.STAFF) ink++;
-            if (ink > (right - left) * .55f) return token.bottom() * height < y;
+            if (ink > (right - left) * .55f)
+                return countAboveRule(token, labels, gray, width, height, y);
         }
         // The model can omit every staff rule in a silent measure. Require a
         // complete printed five-line group rather than accepting an isolated bar.
@@ -413,7 +433,44 @@ final class MultiMeasureRestDetector {
                         .mapToInt(RawStaffLineDetector.StaffLines::top)
                         .min()
                         .orElse(-1);
-        return first >= 0 && token.bottom() * height < top + first;
+        return first >= 0 && countAboveRule(token, labels, gray, width, height, top + first);
+    }
+
+    private static boolean countAboveRule(
+            MeasureNumberReconciler.NumberToken token,
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            int ruleY) {
+        if (token.bottom() * height < ruleY) return true;
+        float tokenHeight = (token.bottom() - token.top()) * height;
+        // OCR padding may include the top rule, but the glyph must remain detached above it.
+        if (tokenHeight <= 0 || token.bottom() * height - ruleY > Math.max(1, tokenHeight * .12f))
+            return false;
+        int left = clamp(Math.round(token.left() * width), 0, width - 1);
+        int right = clamp(Math.round(token.right() * width), left, width - 1);
+        int searchTop =
+                clamp((int) Math.ceil(token.top() * height + tokenHeight * .65f), 0, height - 1);
+        int gap = 0;
+        for (int y = searchTop; y < Math.min(height, ruleY); y++) {
+            boolean empty = true;
+            for (int x = left; x <= right; x++)
+                if ((gray[y * width + x] & 255) <= 165) {
+                    empty = false;
+                    break;
+                }
+            gap = empty ? gap + 1 : 0;
+            if (gap < 2) continue;
+            // Never subtract a real notehead lying on the rule as OCR-count contamination.
+            for (int yy = y + 1;
+                    yy <= Math.min(height - 1, Math.round(token.bottom() * height));
+                    yy++)
+                for (int x = left; x <= right; x++)
+                    if (labels[yy * width + x] == OmrMeasurePostProcessor.NOTEHEAD) return false;
+            return true;
+        }
+        return false;
     }
 
     /** An eight has two enclosed white bowls stacked vertically; a notehead has only one. */

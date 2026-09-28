@@ -48,7 +48,7 @@
     },
     "RestStaffRuleEdge.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestStaffRuleEdge.java",
-      "source_sha256": "555bfaa5fec2d6c1a1b23c3d0162dce420e56db7f61738b3b4674c658d02149d",
+      "source_sha256": "c93f075f382a2e724ea0708c2afd2ddd47e42803ba76279a4a1be2d40db4b69d",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "LocalTieStaffAlignment.java": {
@@ -191,8 +191,8 @@
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
-      "source_sha256": "b1be4819e0745ddf5bbb5f4b91338f306bdd6734f577bfb77f68a745c1ebe5e0",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
+      "source_sha256": "d0c5a4a02bfa1d93b8603b40b0c4d60dc0650a34070d7216ff2fdf504f9d5710",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "NoteArticulation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulation.java",
@@ -210,12 +210,12 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "127922ec52237f2f2161718fb47194f2b1f1b008d624f8e0b44adb892771d20b",
+      "source_sha256": "c2650e057f8610fbb884c22633cac8f275e7f3bcb4fe56c20efd3f3ff340933b",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "4f61e70e613918c00a7ce08f50382844dc6162abd9c466dfd8364784895b591c",
+      "source_sha256": "015f66684c372616fdbb466d83e174217dfe0fa705c3ff7afb9157eb32392c94",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
     },
@@ -275,8 +275,9 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "f114e452e2e738eaf2becf0a851755d798ae1ee8b2d6f07f5e177f1e3228ee1c",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "source_sha256": "632e34799921806116dbe0f5c974a9d5f68d21c94f82f666d9519b94e3d61c3e",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Restored source differs in formatting only; all 29746 lexical tokens match the standalone class after package normalization, with string and character literals preserved. No behavior change."
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -536,7 +537,7 @@
     },
     "NavigationSegnoGlyphs.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NavigationSegnoGlyphs.java",
-      "source_sha256": "bb3fc097dad2f8d1b2a2c7b34b5f5a5562d3a9b02ec60cd7164232a36bab7b9f",
+      "source_sha256": "6d8335e2789e491008b1f0a4e3d18ffb8d8b75a1b86004208a433dee208970d9",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "BeamOccludedStaffPhase.java": {
