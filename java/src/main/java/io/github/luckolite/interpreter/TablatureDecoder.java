@@ -422,6 +422,7 @@ public final class TablatureDecoder {
         if (!score.measures().isEmpty()
                 && score.notes().isEmpty()
                 && score.rests().isEmpty()
+                && score.expressiveEvents().isEmpty()
                 && tabs.stream().allMatch(t -> t.standardTop < 0))
             score =
                     new ScorePageInterpretation(
@@ -681,7 +682,8 @@ public final class TablatureDecoder {
                 rests,
                 score.techniqueChanges(),
                 score.dynamicChanges(),
-                score.playbackDirections());
+                score.playbackDirections(),
+                score.expressiveEvents());
     }
 
     private static int[] tabTuning(Staff staff, int[] supplied) {

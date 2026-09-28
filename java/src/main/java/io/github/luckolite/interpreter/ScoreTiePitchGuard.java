@@ -39,7 +39,8 @@ final class ScoreTiePitchGuard {
                 score.rests(),
                 score.techniqueChanges(),
                 score.dynamicChanges(),
-                score.playbackDirections());
+                score.playbackDirections(),
+                score.expressiveEvents());
     }
 
     private static List<ScoreNoteEvent> apply(

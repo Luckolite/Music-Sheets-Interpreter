@@ -1087,12 +1087,23 @@ public final class ScoreNoteTiming {
         if (groups.size() < 3) return result;
         double written = 0;
         for (double value : raw) written += value;
+        // Chord heads share one attack/rest slot. Known silence occupies bar time just as
+        // notes do; omitting it makes otherwise sound short flags look like missing beats.
+        double silence = leadingRest(groups);
+        for (RhythmGroup group : groups) silence += followingRest(group);
+        double noteBudget =
+                Double.isFinite(beatsPerMeasure)
+                                && Double.isFinite(silence)
+                                && silence >= 0
+                                && silence < beatsPerMeasure
+                        ? beatsPerMeasure - silence
+                        : beatsPerMeasure;
         double[] optical = raw.clone();
         // Exact symbol accounting is stronger than a spacing-based repair vote. Otherwise
         // eighth-quarter-eighth figures that already fill the bar become six equal eighths.
         if (Double.isFinite(beatsPerMeasure)
                 && Double.isFinite(written)
-                && Math.abs(written - beatsPerMeasure) < .001) return result;
+                && Math.abs(written - noteBudget) < .001) return result;
         // Repeated equal triplets are sometimes engraved without another numeral.
         // Accept only a complete, uniform beamed lane whose exact 3:2 ratio fills
         // the selected meter; arbitrary overfull or partly missing bars stay optical.
@@ -1103,7 +1114,7 @@ public final class ScoreNoteTiming {
         // A single locally contradicted beam that exactly repairs an overfull bar is stronger
         // evidence than a measure-wide spacing vote. Preserve the opening quarter and mixed
         // eighth/sixteenth groups instead of flattening the entire phrase.
-        if (Double.isFinite(beatsPerMeasure) && written > beatsPerMeasure) {
+        if (Double.isFinite(noteBudget) && written > noteBudget) {
             for (int index = 1; index + 1 < groups.size(); index++) {
                 RhythmGroup current = groups.get(index);
                 int left = groups.get(index - 1).beamCount(),
@@ -1117,7 +1128,7 @@ public final class ScoreNoteTiming {
                         || groups.get(index + 1).hasTuplet()
                         || !denseMissingBeam(groups, index)) continue;
                 double candidate = durationForBeam(left, 0);
-                if (Math.abs(written - raw[index] + candidate - beatsPerMeasure) < .001) {
+                if (Math.abs(written - raw[index] + candidate - noteBudget) < .001) {
                     result[index] = candidate;
                     return result;
                 }
@@ -1155,8 +1166,8 @@ public final class ScoreNoteTiming {
                 && groups.get(groups.size() - 1).position - groups.get(0).position > .65f) {
             double repaired = 0;
             for (double value : result) repaired += value;
-            double rawError = Math.abs(written - beatsPerMeasure);
-            double repairedError = Math.abs(repaired - beatsPerMeasure);
+            double rawError = Math.abs(written - noteBudget);
+            double repairedError = Math.abs(repaired - noteBudget);
             if (Double.isFinite(repaired)
                     && repairedError > .001
                     && repairedError >= rawError - .001) return optical;

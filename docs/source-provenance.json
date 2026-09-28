@@ -232,7 +232,7 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "b1d9422998e34f1abdf9c82fab667ca923c05624328ebcab7211a7c70617f017",
+      "source_sha256": "ccb54817333c5606e76fad742efd929a09a90b0d77b2e966704a0c5e23dcc314",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScorePageInterpretation.java": {
@@ -341,7 +341,7 @@
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
-      "source_sha256": "0b6475036d3ff96138b5c176279801569ba11853ff5ba820504cb1a0c5ef7ae4",
+      "source_sha256": "e991c8441453e6199cb4a887104151a9a6d1119f1666d7aa8b161a26ee336831",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "TabNotation.java": {
@@ -381,12 +381,12 @@
     },
     "TabMeter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabMeter.java",
-      "source_sha256": "95f1286f50467d837fef97cfc49f59658df32fa2175a15e4542ca860037c66da",
+      "source_sha256": "40744fb72ca4df76bca0a7094218449394bccd0e554fe2eac3705204e24d0dd7",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "TabTempo.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabTempo.java",
-      "source_sha256": "a3166617c95ce427dc5e1282cee0cea8618b5b24859268ff035ac40cd924a567",
+      "source_sha256": "d26210b3cc3b68d9c7de4bb5d194b3c23b71444fa194e303df9cb9288f4ba91c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "TabPerformanceMarks.java": {
@@ -411,7 +411,7 @@
     },
     "ScoreTiePitchGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTiePitchGuard.java",
-      "source_sha256": "39ce9a561656d1f4bd5a925e76120bbdc7fc6cc89d08b22b5dc679cec842e2c4",
+      "source_sha256": "03ef71f1b4ffa7b0b611d80cb80d76e1b16f4a6d6b0bfba49d7e561f3c9c4b4f",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ScoreTempoSelection.java": {

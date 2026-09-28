@@ -103,6 +103,7 @@ public final class TabTempo {
                 score.rests(),
                 score.techniqueChanges(),
                 score.dynamicChanges(),
-                score.playbackDirections());
+                score.playbackDirections(),
+                score.expressiveEvents());
     }
 }
