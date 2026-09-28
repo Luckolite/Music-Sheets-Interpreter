@@ -7010,13 +7010,25 @@ final class OmrScoreInterpreter {
                                         ? 1
                                         : 0);
                 if (independent < 3) continue;
+                boolean compressed = staff.pitchGap < raw.gap() * .8f;
                 if (staff.printedPhase
                         || staff.printedSlope
                         || staff.pitchTrack != null
-                        || staff.pitchGap < raw.gap() * .8f
+                        || staff.pitchGap < raw.gap() * .6f
                         || staff.pitchGap > raw.gap() * 1.2f
-                        || Math.abs(staff.pitchBottom - raw.bottom()) > raw.gap() * .45f
+                        || Math.abs(staff.pitchBottom - raw.bottom())
+                                > raw.gap() * (compressed ? 1.5f : .45f)
                         || Math.abs(staff.pitchGap - raw.gap()) < raw.gap() * .035f) continue;
+                // A compressed seed must still belong to this complete printed group.
+                if (compressed
+                        && (Math.abs(staff.top - raw.top()) > raw.gap() * .5f
+                                || Math.abs(
+                                                (staff.top
+                                                                + staff.bottom
+                                                                - raw.top()
+                                                                - raw.bottom())
+                                                        * .5f)
+                                        > raw.gap())) continue;
                 staff.pitchBottom = raw.bottom();
                 staff.pitchGap = raw.gap();
                 staff.pitchSlope = slope;

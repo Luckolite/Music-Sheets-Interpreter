@@ -221,10 +221,10 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "cc218b64e19470906c755d30564128c8736d06585799bf6676a1cc6066f06632",
+      "source_sha256": "931b81eb7d6b3dce796a3554e54d1c9d613bd8fbc919b0a9cfc5061da820db54",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Finite pale-rule beam witness admits only the bounded antialiased fringe; both-end, brightness and thin-core guards preserved. Exact method token/literal review and four original generated positive/negative cases; no new dependency or private score fixture."
+      "review_note": "Retains reviewed finite pale-rule beam witness. Compressed faded staff seeds require the existing complete five-rule and three independent scale witnesses plus matching printed top/center. Established phase/slope/track and moderate-calibration gates remain intact. Exact calibration/support code and literal token parity, twelve original generated positive/negative controls; no new dependency, private score fixture or model change."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
