@@ -195,7 +195,7 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "c302df2ef9a5dc0a93a8097d41e792ec20b6f67c88ce3e3c84cdf128ad1c806c",
+      "source_sha256": "4f61e70e613918c00a7ce08f50382844dc6162abd9c466dfd8364784895b591c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
     },

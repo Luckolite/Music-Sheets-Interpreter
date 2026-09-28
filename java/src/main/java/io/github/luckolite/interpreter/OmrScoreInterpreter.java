@@ -4335,17 +4335,26 @@ final class OmrScoreInterpreter {
                 direction = 1;
             }
         }
-        if (best < gap) return 0;
+        // A staff crossing can fragment the semantic stem below one gap. A continuously
+        // attached raw shaft independently proves its direction and endpoint; do not discard
+        // it and then measure flags from a short semantic island inside that shaft.
+        if (attached == null && best < gap) return 0;
+        if (attached != null) {
+            stemX = attached[0];
+            direction = attached[2];
+        }
         int limit = direction < 0 ? top : belowBottom;
         bottom = direction < 0 ? bottom : belowTop;
         int end =
-                findStemEnd(
-                        labels,
-                        width,
-                        stemX,
-                        direction < 0,
-                        direction < 0 ? top : belowTop,
-                        direction < 0 ? bottom : belowBottom);
+                attached != null
+                        ? attached[1]
+                        : findStemEnd(
+                                labels,
+                                width,
+                                stemX,
+                                direction < 0,
+                                direction < 0 ? top : belowTop,
+                                direction < 0 ? bottom : belowBottom);
         // A staff crossing can hide the first flag's stem segment in the semantic mask.
         // Follow the attached raw stem outward from the head, allowing only tiny ink gaps.
         int blank = 0, rawEnd = Math.round(head.centerY);
