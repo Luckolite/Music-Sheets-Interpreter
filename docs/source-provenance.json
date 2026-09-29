@@ -15,306 +15,367 @@
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/AccidentalDotInk.java",
       "source_sha256": "fca2b908fb31936c55a0e8ca047246c6c75c5259769a6281c5acf28488d0cfa5",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Original raw-ink connected-paired-shaft proof with local contrast; package-only standalone port and generated positive/negative regressions. No private source imagery or new dependencies."
+      "review_note": "Original raw-ink connected-paired-shaft proof with local contrast; package-only standalone port and generated positive/negative regressions. No private source imagery or new dependencies.",
+      "source_normalized_sha256": "fca2b908fb31936c55a0e8ca047246c6c75c5259769a6281c5acf28488d0cfa5"
     },
     "ScoreNavigationPerformance.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationPerformance.java",
       "source_sha256": "6d00161f01f8300e275815bc175b0273705c6648b8ad384ec88762ef92157799",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "6d00161f01f8300e275815bc175b0273705c6648b8ad384ec88762ef92157799"
     },
     "ScoreNavigationTraversal.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationTraversal.java",
       "source_sha256": "af7406c227764d95805873825410862c821a1b27df818ad50fa137193eb4aa13",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "af7406c227764d95805873825410862c821a1b27df818ad50fa137193eb4aa13"
     },
     "ScoreSemanticWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreSemanticWire.java",
       "source_sha256": "2cfcb23b0395725c34f7a30efd556c5048eab99293992b51dfcb9059f02d3bca",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "2cfcb23b0395725c34f7a30efd556c5048eab99293992b51dfcb9059f02d3bca"
     },
     "semantic_wire.py": {
       "source_path": "tools/native-worker/semantic_wire.py",
       "source_sha256": "91b2702fe68a1d21d7db6d8d539f2e27457a7fac6e591ca5d2a440ef4b0f6793",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "91b2702fe68a1d21d7db6d8d539f2e27457a7fac6e591ca5d2a440ef4b0f6793"
     },
     "HalfRestRuleBody.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HalfRestRuleBody.java",
       "source_sha256": "ab7111670a90f50d5a777163d3ef0cd72e79dde011a9c76d54a0325b458977dc",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "ab7111670a90f50d5a777163d3ef0cd72e79dde011a9c76d54a0325b458977dc"
     },
     "TupletSixGlyph.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TupletSixGlyph.java",
       "source_sha256": "213b971939bdc3751fcdd30a4dc8ef196650c27922b4900aad3abbdda429c27b",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "213b971939bdc3751fcdd30a4dc8ef196650c27922b4900aad3abbdda429c27b"
     },
     "ShadedChordHeadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedChordHeadRecovery.java",
       "source_sha256": "05f8246c910660292da6179cedce5835205610b3c271b42999edda2ae66005e7",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "05f8246c910660292da6179cedce5835205610b3c271b42999edda2ae66005e7"
     },
     "RestStaffRuleEdge.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestStaffRuleEdge.java",
       "source_sha256": "c93f075f382a2e724ea0708c2afd2ddd47e42803ba76279a4a1be2d40db4b69d",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "c93f075f382a2e724ea0708c2afd2ddd47e42803ba76279a4a1be2d40db4b69d"
     },
     "LocalTieStaffAlignment.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/LocalTieStaffAlignment.java",
       "source_sha256": "b361c5a499088fd1ee0e075a0a00f37ac0c68db8798e79a81c49ef6164307dca",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "b361c5a499088fd1ee0e075a0a00f37ac0c68db8798e79a81c49ef6164307dca"
     },
     "CreaseBeamAttachment.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CreaseBeamAttachment.java",
       "source_sha256": "c9e717b45648cc7f115dd222fa28edccb924aac717d64662509f8419cc35cf7a",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "c9e717b45648cc7f115dd222fa28edccb924aac717d64662509f8419cc35cf7a"
     },
     "CreaseGracePairRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CreaseGracePairRecovery.java",
       "source_sha256": "7bbf421bf58599458d00ffb3e71a125819670c278acc1720130e6803f7b8ec96",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "7bbf421bf58599458d00ffb3e71a125819670c278acc1720130e6803f7b8ec96"
     },
     "RoundedAngularArticulation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RoundedAngularArticulation.java",
       "source_sha256": "aef1488d606bc4db36c5431c4a62e870ebf45b3c60dfd53f37b514516e36df10",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "aef1488d606bc4db36c5431c4a62e870ebf45b3c60dfd53f37b514516e36df10"
     },
     "SlashedGraceFlagInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SlashedGraceFlagInk.java",
       "source_sha256": "2f455aea365e9635565d253671aed6dd68ad22d4ab0225de1e3ce4944cb66d92",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "2f455aea365e9635565d253671aed6dd68ad22d4ab0225de1e3ce4944cb66d92"
     },
     "CurvedStaffTail.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CurvedStaffTail.java",
       "source_sha256": "75843c7d13861b515212f10eb6ac02d9de4aec4882f00799bf70dd505be9a707",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "source_normalized_sha256": "75843c7d13861b515212f10eb6ac02d9de4aec4882f00799bf70dd505be9a707"
     },
     "FadedNoteheadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/FadedNoteheadRecovery.java",
       "source_sha256": "0da5f723a8881c78b6da29cd7158f4d8f0b937b323e2aba5ea53189a968e50b2",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "source_normalized_sha256": "0da5f723a8881c78b6da29cd7158f4d8f0b937b323e2aba5ea53189a968e50b2"
     },
     "PrintedNoteContrast.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedNoteContrast.java",
       "source_sha256": "912f6a2eefba1f6a67bb7608391ced3c9daf1f5d4ed23d5ae6ef2060d165bad2",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "912f6a2eefba1f6a67bb7608391ced3c9daf1f5d4ed23d5ae6ef2060d165bad2"
     },
     "NativeOcrWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeOcrWire.java",
       "source_sha256": "1f7dfc54463165967b78db342ad33b8700b2fdf1de1d16f83d6e8264397c8e98",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "source_normalized_sha256": "1f7dfc54463165967b78db342ad33b8700b2fdf1de1d16f83d6e8264397c8e98"
     },
     "NativeOcrServer.java": {
       "source_path": "tools/native-worker/NativeOcrServer.java",
       "source_sha256": "c3f26910cf8ca2e1da9bc92509267764ebbec1f0e021a2a66940e87efc077b99",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "source_normalized_sha256": "c3f26910cf8ca2e1da9bc92509267764ebbec1f0e021a2a66940e87efc077b99"
     },
     "NativeOcrRoundTrip.java": {
       "source_path": "tools/native-worker/NativeOcrRoundTrip.java",
       "source_sha256": "6ed2b3aff387e5eea3b063d6e3035a774c49c3de00d2c4311a608307652d13d2",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "source_normalized_sha256": "6ed2b3aff387e5eea3b063d6e3035a774c49c3de00d2c4311a608307652d13d2"
     },
     "OnnxOcrInference.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OnnxOcrInference.java",
       "source_sha256": "0d27a8c9e1b8778dc176cabecba98d940a140412bdf6fcf68b13f7bd02dd83d4",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "source_normalized_sha256": "0d27a8c9e1b8778dc176cabecba98d940a140412bdf6fcf68b13f7bd02dd83d4"
     },
     "PortableOcrProbe.java": {
       "source_path": "tools/native-worker/PortableOcrProbe.java",
       "source_sha256": "50d6a9693b59bb228e509e892c66e128ab7b383f598922cb8015cedc528c660f",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "source_normalized_sha256": "50d6a9693b59bb228e509e892c66e128ab7b383f598922cb8015cedc528c660f"
     },
     "PortableOcr.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableOcr.java",
       "source_sha256": "0b540f3453258c0f62ecf43396c222fa8ceb0dec01f79741256beaf1bd34801f",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "source_normalized_sha256": "0b540f3453258c0f62ecf43396c222fa8ceb0dec01f79741256beaf1bd34801f"
     },
     "OcrText.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OcrText.java",
       "source_sha256": "f8493b749f629e21e151857fa79d636f0b8303a480aa680ec82c1e6a17bdafe2",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "source_normalized_sha256": "f8493b749f629e21e151857fa79d636f0b8303a480aa680ec82c1e6a17bdafe2"
     },
     "OcrCtcDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OcrCtcDecoder.java",
       "source_sha256": "4954924b440560873f5a565ddaef291c8fae39e908d617ac0a9defb2b9e3e107",
-      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c"
+      "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
+      "source_normalized_sha256": "4954924b440560873f5a565ddaef291c8fae39e908d617ac0a9defb2b9e3e107"
     },
     "NativeDecoderWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderWire.java",
       "source_sha256": "ef86cc92c569cb3e6464e395e8007516699f98873396c6cd47aae4ada01a12da",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "ef86cc92c569cb3e6464e395e8007516699f98873396c6cd47aae4ada01a12da"
     },
     "NativeDecoderStages.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderStages.java",
       "source_sha256": "4bec25cf043be8856a59ed76a9ed126f6e2fbc62ed89cc71b502143d6bfd51fe",
-      "reviewed_app_commit": "38007cb"
+      "reviewed_app_commit": "38007cb",
+      "source_normalized_sha256": "4bec25cf043be8856a59ed76a9ed126f6e2fbc62ed89cc71b502143d6bfd51fe"
     },
     "NativeDecoderServer.java": {
       "source_path": "tools/native-worker/NativeDecoderServer.java",
       "source_sha256": "10fdd7ff57beeb6fa43a30a983e636b0db1d60b538d1894355d763c1cda1c8eb",
-      "reviewed_app_commit": "38007cb"
+      "reviewed_app_commit": "38007cb",
+      "source_normalized_sha256": "10fdd7ff57beeb6fa43a30a983e636b0db1d60b538d1894355d763c1cda1c8eb"
     },
     "ColumnInkBounds.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ColumnInkBounds.java",
       "source_sha256": "6a09a512593843de6c2ea8918e79ba2435ee1a75092fdc37e64536be0a8a0760",
-      "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a"
+      "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a",
+      "source_normalized_sha256": "6a09a512593843de6c2ea8918e79ba2435ee1a75092fdc37e64536be0a8a0760"
     },
     "MeterCropRaster.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterCropRaster.java",
       "source_sha256": "9461286742eceb32457392bfbaa8f01772b70563940ed02ac436d70d048db629",
-      "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a"
+      "reviewed_app_commit": "24dc3bc4e3c2e60599d25f263c58123bb90fb59a",
+      "source_normalized_sha256": "9461286742eceb32457392bfbaa8f01772b70563940ed02ac436d70d048db629"
     },
     "ExactRasterMemo.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ExactRasterMemo.java",
       "source_sha256": "6c15b90be51c29c2eb3e163eb029c1d52190fda437c0e125537e7ffa274d6859",
-      "reviewed_app_commit": "9fa8d036b1ec28f743893f0ae7220f2e9cbf0e9b"
+      "reviewed_app_commit": "9fa8d036b1ec28f743893f0ae7220f2e9cbf0e9b",
+      "source_normalized_sha256": "6c15b90be51c29c2eb3e163eb029c1d52190fda437c0e125537e7ffa274d6859"
     },
     "ActiveScoreNotes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ActiveScoreNotes.java",
       "source_sha256": "d2a74f6035309ec7d1219fb027b830c1f209bd80bcb3a98d58b5ff97ff5149c3",
-      "reviewed_app_commit": "6efe21c41310c1782adfc3323370625801c296e5"
+      "reviewed_app_commit": "6efe21c41310c1782adfc3323370625801c296e5",
+      "source_normalized_sha256": "07c6767cb991ba15d4b2e565f941c9466dd89de663cf9d6916745451135a1a9d"
     },
     "CrossStaffBeamDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CrossStaffBeamDetector.java",
-      "source_sha256": "274268e667a42ba2c417d2ba9f5e22cac2d6c9545b21e37d9b10c0fc35d085e9"
+      "source_sha256": "274268e667a42ba2c417d2ba9f5e22cac2d6c9545b21e37d9b10c0fc35d085e9",
+      "source_normalized_sha256": "274268e667a42ba2c417d2ba9f5e22cac2d6c9545b21e37d9b10c0fc35d085e9"
     },
     "GrandStaffDynamics.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/GrandStaffDynamics.java",
       "source_sha256": "9cfd54c464187ea5613674b8a6bc91558f0cc2fea063ee1e6d3508ee93b4a94b",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "9cfd54c464187ea5613674b8a6bc91558f0cc2fea063ee1e6d3508ee93b4a94b"
     },
     "MeasureNumberReconciler.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureNumberReconciler.java",
       "source_sha256": "5d3d93e1c3d86d1967b6b9624ead0dbb12434a759d92c14f28c2aa757acbd5b1",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "5d3d93e1c3d86d1967b6b9624ead0dbb12434a759d92c14f28c2aa757acbd5b1"
     },
     "MeasureRegion.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureRegion.java",
-      "source_sha256": "ae17f8cd3eab964214cf791e5ba136896e7ad5d626713201838fcfcf30028a62"
+      "source_sha256": "ae17f8cd3eab964214cf791e5ba136896e7ad5d626713201838fcfcf30028a62",
+      "source_normalized_sha256": "ae17f8cd3eab964214cf791e5ba136896e7ad5d626713201838fcfcf30028a62"
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
       "source_sha256": "e2006f54bc4effb4884f4f1aefe9724b96ff524b34784cbc28742bc41aa0d1e7",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "06d8dc43aa2e78140ea5693a200b6fa7901d1e6d841fa34f6f9792f6bbc396d1"
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
       "source_sha256": "d0c5a4a02bfa1d93b8603b40b0c4d60dc0650a34070d7216ff2fdf504f9d5710",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "40167bc7b343f7532606e1ca79ba74a4fe9d416d032abcd3ab0738aac7677466"
     },
     "NoteArticulation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulation.java",
       "source_sha256": "2ad76c150d761f1aa0f4ab62a72549099d86b6b5162bd4024d9156d3dead459f",
-      "reviewed_app_commit": "19ba8a8455b517c23c5aa87f54cfff6bcc1dbfff"
+      "reviewed_app_commit": "19ba8a8455b517c23c5aa87f54cfff6bcc1dbfff",
+      "source_normalized_sha256": "c281db5e62d6c0a55bbb82ca5f1375880b54df0ea6537c2e50b33f27af006ab4"
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
       "source_sha256": "7517582e785d7126deb07359da87bad7406ff38c18ebf09d412336c420f571e4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Retains prior shaft/beam ownership, finite termination, contiguous junction, thin-rule, letter-crossbar and existing text-run vetoes. Supplementary pale-accent components require dark seeds, bounded extent, complete open-chevron topology and existing semantic/scale/note ownership. Only an accepted complete accent suppresses its own contained dark fragments; independent tenutos and original context glyphs remain. A false tenuto is rejected only with three independently thin aligned ledger strokes at corroborated note phase, allowing a narrow continuous shaft but not broad gray blocks. Whole detector15032 and OpenChevron760 code/literal tokens match app. Twenty-eight original synthetic controls cover topology, false shapes, source immutability, fragment ownership, ledger spacing/phase, short/thick rules and independent tenutos. New helper is pure Java using existing collections only; no new dependency, model, private fixture or diagnostic log."
+      "review_note": "Retains prior shaft/beam ownership, finite termination, contiguous junction, thin-rule, letter-crossbar and existing text-run vetoes. Supplementary pale-accent components require dark seeds, bounded extent, complete open-chevron topology and existing semantic/scale/note ownership. Only an accepted complete accent suppresses its own contained dark fragments; independent tenutos and original context glyphs remain. A false tenuto is rejected only with three independently thin aligned ledger strokes at corroborated note phase, allowing a narrow continuous shaft but not broad gray blocks. Whole detector15032 and OpenChevron760 code/literal tokens match app. Twenty-eight original synthetic controls cover topology, false shapes, source immutability, fragment ownership, ledger spacing/phase, short/thick rules and independent tenutos. New helper is pure Java using existing collections only; no new dependency, model, private fixture or diagnostic log.",
+      "source_normalized_sha256": "7517582e785d7126deb07359da87bad7406ff38c18ebf09d412336c420f571e4"
     },
     "OpenChevron.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",
       "source_sha256": "c2cece6146c6e2d12b3a389b369a931b5c306fbb5f1739587f40e91d352efa35",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Original pure-Java topology helper. Requires two open left arms converging to one bounded right tip, consistent direction and column continuity. Caller bounds source components before allocation and retains dark seed/semantic/ownership vetoes. Whole760code/literal tokens match app,10original generated shape/immutability controls; no Android dependency or private score material."
+      "review_note": "Original pure-Java topology helper. Requires two open left arms converging to one bounded right tip, consistent direction and column continuity. Caller bounds source components before allocation and retains dark seed/semantic/ownership vetoes. Whole760code/literal tokens match app,10original generated shape/immutability controls; no Android dependency or private score material.",
+      "source_normalized_sha256": "c2cece6146c6e2d12b3a389b369a931b5c306fbb5f1739587f40e91d352efa35"
     },
     "NoteOrnament.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",
-      "source_sha256": "c392a59c02a4271863c944f998888f7ab0113769d6efb710c4f1517b9bf9ce03"
+      "source_sha256": "c392a59c02a4271863c944f998888f7ab0113769d6efb710c4f1517b9bf9ce03",
+      "source_normalized_sha256": "c392a59c02a4271863c944f998888f7ab0113769d6efb710c4f1517b9bf9ce03"
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
       "source_sha256": "f0c0fd884c612fc7527b018a4aa7aff294fc195ca1282ca66ae1e539fc0df32e",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "f0c0fd884c612fc7527b018a4aa7aff294fc195ca1282ca66ae1e539fc0df32e"
     },
     "ShortFinalStaff.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShortFinalStaff.java",
       "source_sha256": "287b6c899a6775977056de69d33661d6d2c5967295ef465897d41af62de4cd87",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Package-only port of bounded five-rule and terminal-double-bar proof for short final staves, with original synthetic positive and negative regressions. No private score pixels, new dependencies or model changes."
+      "review_note": "Package-only port of bounded five-rule and terminal-double-bar proof for short final staves, with original synthetic positive and negative regressions. No private score pixels, new dependencies or model changes.",
+      "source_normalized_sha256": "287b6c899a6775977056de69d33661d6d2c5967295ef465897d41af62de4cd87"
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
       "source_sha256": "654ae8bcb23580e20b2ad31ddb9f55cbb16e272d46af3eb04691af093a654c56",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Retains prior staff, beam, tie, dot-frame and entrance safeguards. Complete printed phase is retained against unsupported inferred rescaling; fractional beam extent is raster-bounded. Adjacent flag roots and a recentered axis require independent shaft/curved-hook proof. Center-first pale shaft tracing keeps the original threshold first; its darker fallback requires a bounded rooted flag, companion-head-aware samples and independent contrast. Faint augmentation dots retain nested-core/shape ownership at intermediate contrast thresholds; double-beam recovery retains full-body and separated-core proof. A corroborated printed frame supersedes a substantially compressed seed only for beam measurement, preserving its slope. Complete modified methods and overloads have app/standalone code-and-literal parity. Original generated geometry covers phase, beam, root, shaft, occlusion, dot contrast, slope and negative controls. No song-specific rule, new dependency, model change or private fixture."
+      "review_note": "Retains prior staff, beam, tie, dot-frame and entrance safeguards. Complete printed phase is retained against unsupported inferred rescaling; fractional beam extent is raster-bounded. Adjacent flag roots and a recentered axis require independent shaft/curved-hook proof. Center-first pale shaft tracing keeps the original threshold first; its darker fallback requires a bounded rooted flag, companion-head-aware samples and independent contrast. Faint augmentation dots retain nested-core/shape ownership at intermediate contrast thresholds; double-beam recovery retains full-body and separated-core proof. A corroborated printed frame supersedes a substantially compressed seed only for beam measurement, preserving its slope. Complete modified methods and overloads have app/standalone code-and-literal parity. Original generated geometry covers phase, beam, root, shaft, occlusion, dot contrast, slope and negative controls. No song-specific rule, new dependency, model change or private fixture.",
+      "source_normalized_sha256": "3962c1496913c218b3e6b4470102d4019cdda454853c28c871089f44711ef025"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
-      "source_sha256": "fc4fb6baffafdfaf7f27520af61f5b28ebeb556e212ffeff84900dd4abe7ac60"
+      "source_sha256": "fc4fb6baffafdfaf7f27520af61f5b28ebeb556e212ffeff84900dd4abe7ac60",
+      "source_normalized_sha256": "fc4fb6baffafdfaf7f27520af61f5b28ebeb556e212ffeff84900dd4abe7ac60"
     },
     "RawStaffLineDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RawStaffLineDetector.java",
-      "source_sha256": "5be77411feee48c869c4a963354f039b7d6fb36cc32e8a7dc1614bcadffb25ee"
+      "source_sha256": "5be77411feee48c869c4a963354f039b7d6fb36cc32e8a7dc1614bcadffb25ee",
+      "source_normalized_sha256": "d86db4139894fea68e57883d6019150928bd152040bd9d715c45fa1d0caf15b9"
     },
     "ScoreDynamicChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicChange.java",
       "source_sha256": "ef3581c38a24ee59e1dce68d760ee7dfdd248a1c4693724688f6d89a28c8343b",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "ef3581c38a24ee59e1dce68d760ee7dfdd248a1c4693724688f6d89a28c8343b"
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
       "source_sha256": "c956531fda24390034f8fec6bd0b82c721729fdb483d88331fde4f25b97e9c0e",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed global geometric hairpin continuation and bounded isolated-wedge ownership; full app/standalone code and literal parity. Original generated positive and rejection controls; no private score artifacts or new dependencies."
+      "review_note": "Reviewed global geometric hairpin continuation and bounded isolated-wedge ownership; full app/standalone code and literal parity. Original generated positive and rejection controls; no private score artifacts or new dependencies.",
+      "source_normalized_sha256": "c956531fda24390034f8fec6bd0b82c721729fdb483d88331fde4f25b97e9c0e"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
       "source_sha256": "156ef6f0b108d1e1f5fcc0c4b293dc1a2b5e9505d5fa921c7802d9041b7513ab",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Original bounded same-lane adjacent-system stroke pairing, rejecting ambiguous rules and intervening explicit levels. Package-only standalone port with synthetic geometry controls. No source-specific coordinates, private imagery, model or dependency changes."
+      "review_note": "Original bounded same-lane adjacent-system stroke pairing, rejecting ambiguous rules and intervening explicit levels. Package-only standalone port with synthetic geometry controls. No source-specific coordinates, private imagery, model or dependency changes.",
+      "source_normalized_sha256": "156ef6f0b108d1e1f5fcc0c4b293dc1a2b5e9505d5fa921c7802d9041b7513ab"
     },
     "ScoreKeyChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreKeyChange.java",
-      "source_sha256": "9c82ba319df0c2c8e7e54a2fe063229f21e7634a4fae467581e4f3edb5a4cd53"
+      "source_sha256": "9c82ba319df0c2c8e7e54a2fe063229f21e7634a4fae467581e4f3edb5a4cd53",
+      "source_normalized_sha256": "9c82ba319df0c2c8e7e54a2fe063229f21e7634a4fae467581e4f3edb5a4cd53"
     },
     "ScoreMeterChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreMeterChange.java",
-      "source_sha256": "b0914e9667a81ea9c791f3f6fd60d5b6cd94dcff8600c5374a2fd8079040a8c8"
+      "source_sha256": "b0914e9667a81ea9c791f3f6fd60d5b6cd94dcff8600c5374a2fd8079040a8c8",
+      "source_normalized_sha256": "b0914e9667a81ea9c791f3f6fd60d5b6cd94dcff8600c5374a2fd8079040a8c8"
     },
     "ScoreNoteEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteEvent.java",
       "source_sha256": "52d5956afd4622c4c6897d8e4fbd7d7ac6228d02e6b550b0f6468e706109a6a4",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "52d5956afd4622c4c6897d8e4fbd7d7ac6228d02e6b550b0f6468e706109a6a4"
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
       "source_sha256": "ccb54817333c5606e76fad742efd929a09a90b0d77b2e966704a0c5e23dcc314",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "2f7d2df4ed29ca75e76c1300281aea6794fee931aea70e5687dcd3ad8cd77630"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
       "source_sha256": "6538add480c9f8b8e441968f89a2cc2ca20bf3c4f27b1109b218a08fe31a3386",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "6538add480c9f8b8e441968f89a2cc2ca20bf3c4f27b1109b218a08fe31a3386"
     },
     "ScoreRestEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreRestEvent.java",
-      "source_sha256": "4bf7595846d9fd609aec35f8ca362e71e427e413ac09cb5e4311090c0e120ee2"
+      "source_sha256": "4bf7595846d9fd609aec35f8ca362e71e427e413ac09cb5e4311090c0e120ee2",
+      "source_normalized_sha256": "4bf7595846d9fd609aec35f8ca362e71e427e413ac09cb5e4311090c0e120ee2"
     },
     "ScoreTechniqueChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTechniqueChange.java",
-      "source_sha256": "9490b2c8d43eb8e98fba1512d56178eb0e041c897c76b5235b998ed8eea3b502"
+      "source_sha256": "9490b2c8d43eb8e98fba1512d56178eb0e041c897c76b5235b998ed8eea3b502",
+      "source_normalized_sha256": "9490b2c8d43eb8e98fba1512d56178eb0e041c897c76b5235b998ed8eea3b502"
     },
     "ScoreTempoChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTempoChange.java",
       "source_sha256": "a8026774482ae0f0f31bee9754b538cb4886838b178ea74a0ae73047149a3f0a",
-      "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5"
+      "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5",
+      "source_normalized_sha256": "a8026774482ae0f0f31bee9754b538cb4886838b178ea74a0ae73047149a3f0a"
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
       "source_sha256": "e96520bd2e792910f0cb592b3d8e3c32848fa135a3be384818936c286d8a5e53",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Retains sharp ownership, existing rest topology and established detections. Supplementary locally contrasted faint tails require ordinary staff placement, at least twelve original dark pixels in three non-rule rows, two separated bulbs for sixteenths, and existing shaft/contour guards. Narrow bulb and raster-rounded height allowances apply only to this seeded fallback; duplicate records and their dots remain owned by the established result. Complete 13668-token app/standalone code-and-literal parity after namespace normalization; nine original procedural faint-tail, narrow-bulb and negative controls accompany prior generated regressions. No private pixels, new helper, dependency or model change."
+      "review_note": "Retains sharp ownership, existing rest topology and established detections. Supplementary locally contrasted faint tails require ordinary staff placement, at least twelve original dark pixels in three non-rule rows, two separated bulbs for sixteenths, and existing shaft/contour guards. Narrow bulb and raster-rounded height allowances apply only to this seeded fallback; duplicate records and their dots remain owned by the established result. Complete 13668-token app/standalone code-and-literal parity after namespace normalization; nine original procedural faint-tail, narrow-bulb and negative controls accompany prior generated regressions. No private pixels, new helper, dependency or model change.",
+      "source_normalized_sha256": "e9616001dfc00a2743cf07e0a098e8a0ff16abd8261cba3e84f3283eb6e247b8"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
       "source_sha256": "305057fe0771c270d0526620242ad1e2975462127b52809d208b77e005ccc4fc",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "305057fe0771c270d0526620242ad1e2975462127b52809d208b77e005ccc4fc"
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
       "source_sha256": "5d51e6f5ec97601b5eaea26ae0837c6f84ccab12359c924f1f041d6bc23965d4",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "37d5ed0e1b39d7fb184718a4e0432128fcf295f5361a6df9052606968373cd61"
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
@@ -337,398 +398,477 @@
     "StaffPitchTrack.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
       "source_sha256": "84ff973ac99a05b96d5204079b0ed5740e346110a8c75ba22326dbce467b3882",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "cef9c375d3b4d40c5a1c084d8625412638d1e41cff06be0b4c967fb499d8c82d"
     },
     "OpeningMeasureLayout.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpeningMeasureLayout.java",
-      "source_sha256": "f373692368e2ff32492927af8ae01bea35203c26a0c693c64862834c7c2d9a5d"
+      "source_sha256": "f373692368e2ff32492927af8ae01bea35203c26a0c693c64862834c7c2d9a5d",
+      "source_normalized_sha256": "f373692368e2ff32492927af8ae01bea35203c26a0c693c64862834c7c2d9a5d"
     },
     "PrintedMeasureRhythmGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedMeasureRhythmGuard.java",
       "source_sha256": "43466c69c267ba1759c10541f8d74e799f76e8b4a90e82c31cb64a79e6261367",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "source_normalized_sha256": "b305e8aae2767ea1b21f03d86b9523dbfef875a3ad2a3a4b8c2278cfcf5adca0"
     },
     "PrintedPageEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedPageEvidence.java",
       "source_sha256": "99291b3bbee48c8cb95c9c54e868a91ca0f24cdbccd66e3577b897f19abe9cbc",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "99291b3bbee48c8cb95c9c54e868a91ca0f24cdbccd66e3577b897f19abe9cbc"
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
       "source_sha256": "5eba59a984f9342aaddee6728fd80769bb1730c6d301ed138b3e30403b38c430",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "source_normalized_sha256": "45b3194c1bbbb72f07a128f1af1e03bad5c6990a49e104280e95d2157bbebf14"
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",
-      "source_sha256": "d5cd7ea44ad51b241855e6d5cda0620485747f3845d3631edec4636b70ec9bb2"
+      "source_sha256": "d5cd7ea44ad51b241855e6d5cda0620485747f3845d3631edec4636b70ec9bb2",
+      "source_normalized_sha256": "d5cd7ea44ad51b241855e6d5cda0620485747f3845d3631edec4636b70ec9bb2"
     },
     "MeterOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterOcrEvidence.java",
       "source_sha256": "a562eed52542fad4154faac5e6f45b17319027c1509aa9dcd3157d1acdc7991f",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "f715830afffb2fb2cdd672ac5393a95cad79e065e3e2766fecb5d18bf18e4c12"
     },
     "DoubleSharpGlyph.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DoubleSharpGlyph.java",
       "source_sha256": "b3d69bedbc27dc833db1f1ed72a8d0014e703f849629eee3c39a147ef81df1a4",
-      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29"
+      "reviewed_app_commit": "edebae3824b8df22a455eabcdaf471192b404d29",
+      "source_normalized_sha256": "28b3e8576af070bda12fc4ed2872a9e08f2d8921501f5d42afb0e8c86eef7070"
     },
     "OctaveClefDigit.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveClefDigit.java",
       "source_sha256": "dd2b6c0e7d0ae03d268ac3d4bda38631e9521f3ebe230badb2e04c5c6949753b",
-      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
+      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c",
+      "source_normalized_sha256": "dd2b6c0e7d0ae03d268ac3d4bda38631e9521f3ebe230badb2e04c5c6949753b"
     },
     "ScorePageTimeline.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageTimeline.java",
       "source_sha256": "0e9dd8aeaff09295dadc81427dfb47ba458e292acfeccd7c4aa38d5783d2d2e7",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353"
+      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
+      "source_normalized_sha256": "0e9dd8aeaff09295dadc81427dfb47ba458e292acfeccd7c4aa38d5783d2d2e7"
     },
     "AccidentalEnclosure.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/AccidentalEnclosure.java",
       "source_sha256": "a078de8aeb1b62c923b6ad4d0d45f7dc05d8e16994cd5db3cbce891f72cc41f5",
-      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c"
+      "reviewed_app_commit": "7c1bf385dc2974fcdf2dd5de6584df9cc3e33a7c",
+      "source_normalized_sha256": "a078de8aeb1b62c923b6ad4d0d45f7dc05d8e16994cd5db3cbce891f72cc41f5"
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
       "source_sha256": "6fc3e859f4b6edd68f4b329563a4bb5d50c1e2660f91a6391d49b76c6f8e3914",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "87db12b3f5ef1d06542cbe40bd32aa421ab186a4b5e1a2361457ce3de974277b"
     },
     "TabNotation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabNotation.java",
       "source_sha256": "73a8a38533e10017df27f981068bb668facd73df79af3d9d1275f01fdbd5c788",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711"
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "source_normalized_sha256": "73a8a38533e10017df27f981068bb668facd73df79af3d9d1275f01fdbd5c788"
     },
     "TabEffect.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabEffect.java",
       "source_sha256": "1e72d4ec50a46052a4e30a0844bcbf64f2bd21d806190dfdf51765ac5d8a75ca",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711"
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "source_normalized_sha256": "1e72d4ec50a46052a4e30a0844bcbf64f2bd21d806190dfdf51765ac5d8a75ca"
     },
     "ArtificialHarmonics.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ArtificialHarmonics.java",
       "source_sha256": "6922873b6e6441ddd5fd5b10857a976c3f1d6c2deba7acf0005aefdbc59f63bf",
-      "reviewed_app_commit": "abdad95ab53c8481049a8f1c7b25442779a46404"
+      "reviewed_app_commit": "abdad95ab53c8481049a8f1c7b25442779a46404",
+      "source_normalized_sha256": "25a6e9831fe5c7e879c36d9d7c1270ed56189456c73c8030488a1fc4071a8b32"
     },
     "ParallelBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ParallelBeamTip.java",
       "source_sha256": "5824ac661c0aadbfb544df53c1b1dc177c9cbcb2bc8a652a518a448cc9268940",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "db606e14ceefd221758719b53274bac31cc57c1320420afcf54997d20ad8c092"
     },
     "PrintedFlatGlyph.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedFlatGlyph.java",
       "source_sha256": "a2193f31adeb3e6893f17373d03277cbd76de5de91a9b5784b0bd36a6fc57cb9",
-      "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6"
+      "reviewed_app_commit": "85ff84983ca51b825afdb86da0791695e2b72be6",
+      "source_normalized_sha256": "c7e7ef8bc924e2a0ca9e2eba8b8b77e6d8cb2a6104f77d83228f185d7b9d46f8"
     },
     "SeparateBeamGroups.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SeparateBeamGroups.java",
       "source_sha256": "a6afd5b853cac8ee18741e977276abff43c7e676a10eaadbfcd319ce62aee37a",
-      "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b"
+      "reviewed_app_commit": "830bc4fc56948b131ec0b46957f1c8c065ac496b",
+      "source_normalized_sha256": "a6afd5b853cac8ee18741e977276abff43c7e676a10eaadbfcd319ce62aee37a"
     },
     "TabFretRaster.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabFretRaster.java",
       "source_sha256": "8ef1cae4a63158665c2be2f8b24fb5417acc0eeb1bd75ff9daceee91d628a076",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711"
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "source_normalized_sha256": "8ef1cae4a63158665c2be2f8b24fb5417acc0eeb1bd75ff9daceee91d628a076"
     },
     "TabMeter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabMeter.java",
       "source_sha256": "40744fb72ca4df76bca0a7094218449394bccd0e554fe2eac3705204e24d0dd7",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "dc7f1f482ed06271bb3efddc619e0e0fa6937e39dc93f2d00da30d9c8b0823e8"
     },
     "TabTempo.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabTempo.java",
       "source_sha256": "d26210b3cc3b68d9c7de4bb5d194b3c23b71444fa194e303df9cb9288f4ba91c",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "4cad85a0a1b41c60154d4dc3b01906b50fafa19902cee69104608cc22db846de"
     },
     "TabPerformanceMarks.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabPerformanceMarks.java",
       "source_sha256": "7b9bdf4d6e4d53fe38faf0520587eb5454972fe9e129ceac4e173d8774af2b7d",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711"
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "source_normalized_sha256": "7b9bdf4d6e4d53fe38faf0520587eb5454972fe9e129ceac4e173d8774af2b7d"
     },
     "TabRhythmContinuations.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabRhythmContinuations.java",
       "source_sha256": "39fa3d7ed48db749f6b90a4a589ce66aae3f640d5fc50cbf8434afd63fe8b9a6",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711"
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "source_normalized_sha256": "39fa3d7ed48db749f6b90a4a589ce66aae3f640d5fc50cbf8434afd63fe8b9a6"
     },
     "TabTextSource.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabTextSource.java",
       "source_sha256": "19b72b02534c7fd3106b40d95bd907add821db4d5e26fb63ba4b2123240ae792",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711"
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "source_normalized_sha256": "19b72b02534c7fd3106b40d95bd907add821db4d5e26fb63ba4b2123240ae792"
     },
     "TabTuning.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabTuning.java",
       "source_sha256": "333eadd12e781b1bc7d404199b1b88882724705ce1569ee87937e97a5a08f899",
-      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711"
+      "reviewed_app_commit": "48390be229c8af4a1ff1afe6adc3753cabbfa711",
+      "source_normalized_sha256": "333eadd12e781b1bc7d404199b1b88882724705ce1569ee87937e97a5a08f899"
     },
     "ScoreTiePitchGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTiePitchGuard.java",
       "source_sha256": "03ef71f1b4ffa7b0b611d80cb80d76e1b16f4a6d6b0bfba49d7e561f3c9c4b4f",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "03ef71f1b4ffa7b0b611d80cb80d76e1b16f4a6d6b0bfba49d7e561f3c9c4b4f"
     },
     "ScoreTempoSelection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/playback/ScoreTempoSelection.java",
       "source_sha256": "e507a82d4313befb20ac377503e49c9ff86ec90c229a7a1684e36315eda54587",
-      "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5"
+      "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5",
+      "source_normalized_sha256": "e507a82d4313befb20ac377503e49c9ff86ec90c229a7a1684e36315eda54587"
     },
     "AttachedTremoloInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/AttachedTremoloInk.java",
       "source_sha256": "eceedd890bad317abd5f48e6d818e6940c7cc903ccc725026a35220432cdad33",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "eceedd890bad317abd5f48e6d818e6940c7cc903ccc725026a35220432cdad33"
     },
     "BeamInkThreshold.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/BeamInkThreshold.java",
       "source_sha256": "f28e9da14a9a264edea80f9a6eefd2080f680e04c46c9e2af57891c852c798d9",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "f28e9da14a9a264edea80f9a6eefd2080f680e04c46c9e2af57891c852c798d9"
     },
     "CappedStemBeam.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CappedStemBeam.java",
       "source_sha256": "504c7037175e6242e10f84e2ef3ae13c5004db35feed3df36b229fb1398f8c4c",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "504c7037175e6242e10f84e2ef3ae13c5004db35feed3df36b229fb1398f8c4c"
     },
     "ClosedHeadBarlineGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ClosedHeadBarlineGuard.java",
       "source_sha256": "d12178085eea58d98e25a8e73428616e5a5d9ac1e2ddabbb752a7830e4c73ab0",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "d12178085eea58d98e25a8e73428616e5a5d9ac1e2ddabbb752a7830e4c73ab0"
     },
     "ClosedHeadFragmentJoiner.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ClosedHeadFragmentJoiner.java",
       "source_sha256": "b9f82e69f3e481f6d425d1523f9fd9001b20e38eb5dc2a418603a1360d05d045",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "b9f82e69f3e481f6d425d1523f9fd9001b20e38eb5dc2a418603a1360d05d045"
     },
     "CommonTimeMeter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CommonTimeMeter.java",
       "source_sha256": "d92fac10e0314831abb21edf1cfc2945f9e806eb2f384602d744d1869d39ed85",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "d92fac10e0314831abb21edf1cfc2945f9e806eb2f384602d744d1869d39ed85"
     },
     "CompactQuarterRestContour.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/CompactQuarterRestContour.java",
       "source_sha256": "22a2ae3c99bc2b8ed17d2218885f7133e0ed8d42c7502a05f485a86356f2e3f8",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "22a2ae3c99bc2b8ed17d2218885f7133e0ed8d42c7502a05f485a86356f2e3f8"
     },
     "ConnectedItalicDynamic.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ConnectedItalicDynamic.java",
       "source_sha256": "b24b468f7f2b4f98d28ef8bd114a73ef03faa11c3ebed3e8a439077815dd796e",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "b24b468f7f2b4f98d28ef8bd114a73ef03faa11c3ebed3e8a439077815dd796e"
     },
     "DetachedAnnotationInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DetachedAnnotationInk.java",
       "source_sha256": "779af20fae0bfbe8ea4706fe45f34f97fe724960d635bc58af6d832f024188b5",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "779af20fae0bfbe8ea4706fe45f34f97fe724960d635bc58af6d832f024188b5"
     },
     "DynamicGlyphEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DynamicGlyphEvidence.java",
       "source_sha256": "6c95a0a3e0786d1186f4096bd93ce8f5e72bd2d9725596eb6f0f99f833d87ea1",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "6c95a0a3e0786d1186f4096bd93ce8f5e72bd2d9725596eb6f0f99f833d87ea1"
     },
     "DynamicOcrBounds.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DynamicOcrBounds.java",
       "source_sha256": "331b7574e4d1509282ffde977149042121fc90464c16086369b1566e8a210855",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "331b7574e4d1509282ffde977149042121fc90464c16086369b1566e8a210855"
     },
     "ExplicitEmptySignature.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ExplicitEmptySignature.java",
       "source_sha256": "4f309c80e0b65e9057cccbbfb152a8740933fd3cebf912a238aa48e6f0c6e408",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "4f309c80e0b65e9057cccbbfb152a8740933fd3cebf912a238aa48e6f0c6e408"
     },
     "FingeringAnnotationFilter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/FingeringAnnotationFilter.java",
       "source_sha256": "f00cc0c5a57f8a98ad57584726ecfafea3c3fdb2e7312d03d79559a025bb6d9d",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "f00cc0c5a57f8a98ad57584726ecfafea3c3fdb2e7312d03d79559a025bb6d9d"
     },
     "GlyphInkContrast.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/GlyphInkContrast.java",
       "source_sha256": "961b5efb557c77554618290318f0e74add649df15a113a0f3c4e4a6d9be5345a",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "961b5efb557c77554618290318f0e74add649df15a113a0f3c4e4a6d9be5345a"
     },
     "GraceConnectorInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/GraceConnectorInk.java",
       "source_sha256": "7a9af24c26f00e382f804d3cc2f9482a23403743be65c53b231d588d6740ba5e",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "7a9af24c26f00e382f804d3cc2f9482a23403743be65c53b231d588d6740ba5e"
     },
     "HandwrittenTwoHeadInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HandwrittenTwoHeadInk.java",
       "source_sha256": "6e834e0ca2614afe0cbf6c987eaf17ddcac1c0e8921231d2f9779c43a6db4623",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "6e834e0ca2614afe0cbf6c987eaf17ddcac1c0e8921231d2f9779c43a6db4623"
     },
     "LedgerSpacePhase.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/LedgerSpacePhase.java",
       "source_sha256": "e468a5cc5796fc6cd4a995141c62c364cfaa40ebdbaa62c946e0f502ba55417d",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "e468a5cc5796fc6cd4a995141c62c364cfaa40ebdbaa62c946e0f502ba55417d"
     },
     "LongSlurFragmentInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/LongSlurFragmentInk.java",
       "source_sha256": "28f8eb283193f2f16cd908a71b248ac6a187120c7579693747c64d1d27854d30",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "28f8eb283193f2f16cd908a71b248ac6a187120c7579693747c64d1d27854d30"
     },
     "MusicalOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MusicalOcrEvidence.java",
       "source_sha256": "353658468e2b7ba4592f0a91ecc69555604b02dd2964e553209b4c55143e6f36",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "353658468e2b7ba4592f0a91ecc69555604b02dd2964e553209b4c55143e6f36"
     },
     "NavigationSegnoGlyphs.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NavigationSegnoGlyphs.java",
       "source_sha256": "6d8335e2789e491008b1f0a4e3d18ffb8d8b75a1b86004208a433dee208970d9",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "6d8335e2789e491008b1f0a4e3d18ffb8d8b75a1b86004208a433dee208970d9"
     },
     "BeamOccludedStaffPhase.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/BeamOccludedStaffPhase.java",
       "source_sha256": "fabb4303d575ac9a39367ec179a31cfc351075d99c2fd25e7a42baf7d387ec0d",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "fabb4303d575ac9a39367ec179a31cfc351075d99c2fd25e7a42baf7d387ec0d"
     },
     "NeighboringStaffPhase.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NeighboringStaffPhase.java",
       "source_sha256": "835375093371efc517e53ed891f7cdc110b395672f97070c1b50c178cf7dae7c",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "835375093371efc517e53ed891f7cdc110b395672f97070c1b50c178cf7dae7c"
     },
     "NoteSlideDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteSlideDetector.java",
       "source_sha256": "0385dd3c1f0d1fd9eaf2e1c02e81feb8b4b4115ced0d7d54dc93895b753b8b2b",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "a4b2aeae62fbb25f602ad8f6bfd55ee0ea50bef652f609a7b8017801d63bb978"
     },
     "OutlinedBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OutlinedBeamInk.java",
       "source_sha256": "00a62caf8d96c42d3e9cdb16849f3da313ec13f5073319121cec803af53705e9",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "00a62caf8d96c42d3e9cdb16849f3da313ec13f5073319121cec803af53705e9"
     },
     "PairedGraceBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PairedGraceBeamInk.java",
       "source_sha256": "1ef3db6dae10e0f7d55a40f7384396bee73d45fcc922f749ae10f194bc8b5981",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "1ef3db6dae10e0f7d55a40f7384396bee73d45fcc922f749ae10f194bc8b5981"
     },
     "WideTripleBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/WideTripleBeamInk.java",
       "source_sha256": "ba9a2e09a9e1a8a0c774f325f3a2a9a607538a57bcc87646e1931e37da126d52",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "ba9a2e09a9e1a8a0c774f325f3a2a9a607538a57bcc87646e1931e37da126d52"
     },
     "PaleSingleBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PaleSingleBeamInk.java",
       "source_sha256": "187d4755c93fae7cb4b51eb2696e4fdcd7ea8797cf0008c2a73fcb58c608fdce",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "187d4755c93fae7cb4b51eb2696e4fdcd7ea8797cf0008c2a73fcb58c608fdce"
     },
     "PaleChordHeadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PaleChordHeadRecovery.java",
       "source_sha256": "dcc94daeca5347fafc270e0bbe31c78ce951dcfca1b378db472e641fff24be6a",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "dcc94daeca5347fafc270e0bbe31c78ce951dcfca1b378db472e641fff24be6a"
     },
     "PaleFilledHeadCore.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PaleFilledHeadCore.java",
       "source_sha256": "eb11fbbb763cf4cc257b8d1951144c39435812f7477877542e9c1122d5c5b034",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "eb11fbbb763cf4cc257b8d1951144c39435812f7477877542e9c1122d5c5b034"
     },
     "PortableNoteOrnaments.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableNoteOrnaments.java",
       "source_sha256": "56badd9eedaae9dc30fc853c7b6628b5bbfefed7ed860c23dd4be518d1ec0e0a",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "56badd9eedaae9dc30fc853c7b6628b5bbfefed7ed860c23dd4be518d1ec0e0a"
     },
     "FaintSharpInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/FaintSharpInk.java",
       "source_sha256": "9dc447438528bd93ce0959687bae40bc3c9e1f65a7631ee6b6dfa25b2d00be56",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Original local-background mask used only after established sharp thresholds fail in edge-checked verification. Both individual-pixel and three-row local contrast are required for faint ink; staff rule pixels require vertical support. A bounded, nonrecursive vertical gap closure uses two original support pixels on each side. Separate non-edge-connected components still require established sharpPitchCenter and head-pitch alignment. Complete helper and caller code-and-literal parity reviewed with original procedural contrast, gap, pitch, one-spine, flat-paper and immutability controls; no private pixels, new dependency or model change."
+      "review_note": "Original local-background mask used only after established sharp thresholds fail in edge-checked verification. Both individual-pixel and three-row local contrast are required for faint ink; staff rule pixels require vertical support. A bounded, nonrecursive vertical gap closure uses two original support pixels on each side. Separate non-edge-connected components still require established sharpPitchCenter and head-pitch alignment. Complete helper and caller code-and-literal parity reviewed with original procedural contrast, gap, pitch, one-spine, flat-paper and immutability controls; no private pixels, new dependency or model change.",
+      "source_normalized_sha256": "9dc447438528bd93ce0959687bae40bc3c9e1f65a7631ee6b6dfa25b2d00be56"
     },
     "PortableOrnamentGlyphs.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableOrnamentGlyphs.java",
       "source_sha256": "b9a5dd579567fd029db5e7bbe6f824e62fd0cbb2f00cbfca0215e1602e02f313",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Existing accepted template decisions have priority. Only an unaccepted, raw-contour-confirmed compact unslashed two-cycle mark with sufficient local contrast can compare an original procedural heavy-stroke template against existing ornament choices; original confidence and competing-kind margin remain unchanged. Complete app/standalone code-and-literal parity reviewed. Original generated photometric and ownership controls; no private pixels, new dependency or model change."
+      "review_note": "Existing accepted template decisions have priority. Only an unaccepted, raw-contour-confirmed compact unslashed two-cycle mark with sufficient local contrast can compare an original procedural heavy-stroke template against existing ornament choices; original confidence and competing-kind margin remain unchanged. Complete app/standalone code-and-literal parity reviewed. Original generated photometric and ownership controls; no private pixels, new dependency or model change.",
+      "source_normalized_sha256": "b9a5dd579567fd029db5e7bbe6f824e62fd0cbb2f00cbfca0215e1602e02f313"
     },
     "MordentContour.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MordentContour.java",
       "source_sha256": "85fd06aa4087242ccdff5c00b1415429b811bc41eb8d0e516d670ebfed9b9c58",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Original bounded raster geometry helper: one connected ink run per column, two phase-correct oscillations, aspect and total variation bounds, and central slash rejection. Read-only input and small per-column storage bounded by the validated crop. Complete app/standalone code-and-literal parity reviewed with original procedural negative controls."
+      "review_note": "Original bounded raster geometry helper: one connected ink run per column, two phase-correct oscillations, aspect and total variation bounds, and central slash rejection. Read-only input and small per-column storage bounded by the validated crop. Complete app/standalone code-and-literal parity reviewed with original procedural negative controls.",
+      "source_normalized_sha256": "85fd06aa4087242ccdff5c00b1415429b811bc41eb8d0e516d670ebfed9b9c58"
     },
     "RestDiagonalContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestDiagonalContinuation.java",
       "source_sha256": "438eafbae880b0e91677b4f8d2d5a50a9b12f349fd9eabf7f4bbb0b3c8a8f98f",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "438eafbae880b0e91677b4f8d2d5a50a9b12f349fd9eabf7f4bbb0b3c8a8f98f"
     },
     "ScoreNavigationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationDetector.java",
       "source_sha256": "0fc300a9cf9fd8e2ce5f65ac09cf722ae69b34546ea725be6d32ebc3c50f020e",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "0fc300a9cf9fd8e2ce5f65ac09cf722ae69b34546ea725be6d32ebc3c50f020e"
     },
     "ScoreNavigationPlan.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationPlan.java",
       "source_sha256": "fc1172858280ca4a302d92c1da33e78ab6c133fee1818918f698da23c2524c9a",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "fc1172858280ca4a302d92c1da33e78ab6c133fee1818918f698da23c2524c9a"
     },
     "ScorePlaybackDirection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePlaybackDirection.java",
       "source_sha256": "4f1ca8bda5c2097d1ad9266356f12fea9285ac0440a071f0deca713b0f91bc02",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "4f1ca8bda5c2097d1ad9266356f12fea9285ac0440a071f0deca713b0f91bc02"
     },
     "SegnoFragmentInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SegnoFragmentInk.java",
       "source_sha256": "8bfb275599ea03830580d56b1a23a052d5e4fe620c8b38d74381ccced59e0452",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "8bfb275599ea03830580d56b1a23a052d5e4fe620c8b38d74381ccced59e0452"
     },
     "ShadedNoteheadRecovery.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShadedNoteheadRecovery.java",
       "source_sha256": "7832bba22212314be22a81120a63b5c5a160919f39822e60ddb59ef5256e7075",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "7832bba22212314be22a81120a63b5c5a160919f39822e60ddb59ef5256e7075"
     },
     "HollowLedgerCenter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HollowLedgerCenter.java",
       "source_sha256": "d01137b8e6b0a917583f1d18a73c2215fae78a02b0eebc8c58f694645af1bb69",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "d01137b8e6b0a917583f1d18a73c2215fae78a02b0eebc8c58f694645af1bb69"
     },
     "OutlinedHookHead.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OutlinedHookHead.java",
       "source_sha256": "a608c4369179bda73ce43ec0fc7b4d33760df71f63aa48761a49557b0f0adf30",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "a608c4369179bda73ce43ec0fc7b4d33760df71f63aa48761a49557b0f0adf30"
     },
     "StemOwnedBeamTip.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StemOwnedBeamTip.java",
       "source_sha256": "535fe4f02f69b7851f06f7252e59fa4a611c68e74e27ecca034e9d0eeca54a15",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "535fe4f02f69b7851f06f7252e59fa4a611c68e74e27ecca034e9d0eeca54a15"
     },
     "TupletNumeralInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TupletNumeralInk.java",
       "source_sha256": "c693059aedaf6fa01814139afabdc9d3727148cd7fc7623ddc773132d7cf5d5e",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "c693059aedaf6fa01814139afabdc9d3727148cd7fc7623ddc773132d7cf5d5e"
     },
     "ScoreNavigationProjection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationProjection.java",
       "source_sha256": "7e22b8123f2cb539282d552c680843509110d0db2b5acb538198f209134604dc",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "7e22b8123f2cb539282d552c680843509110d0db2b5acb538198f209134604dc"
     },
     "ScoreAnchor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreAnchor.java",
       "source_sha256": "8698754b87c73ccbd130f9dc1e91d2fca9a7be83d43f4276ed8ad18540a30612",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "8698754b87c73ccbd130f9dc1e91d2fca9a7be83d43f4276ed8ad18540a30612"
     },
     "ScoreExpressiveEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreExpressiveEvent.java",
       "source_sha256": "15b2aa18e1eac2bdef9c4ca6052c3ef7f21162d74b06e17be3f2d6ee690a1881",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "15b2aa18e1eac2bdef9c4ca6052c3ef7f21162d74b06e17be3f2d6ee690a1881"
     },
     "ExpressiveDirectionText.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ExpressiveDirectionText.java",
       "source_sha256": "a365b20c5354d9d42c328b2a3168b28f4fca2cc31471f666f448b52cb8eaa3c0",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "a365b20c5354d9d42c328b2a3168b28f4fca2cc31471f666f448b52cb8eaa3c0"
     },
     "ScorePerformanceTimeline.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePerformanceTimeline.java",
       "source_sha256": "d3f8673f7b3876d95aa6bdd0eee7cd8642b9ca4e2e146be92773ea7c0632557d",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "cc34d83cb501ea251b19647fa2e287e83eb55bb27886229440d72b5fb7c430bc"
     },
     "ScoreMeterMap.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreMeterMap.java",
       "source_sha256": "3f303a120c548372b08ad47b90c7908f1a1657c0346f318bad0a9aa4db9703cf",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "3f303a120c548372b08ad47b90c7908f1a1657c0346f318bad0a9aa4db9703cf"
     },
     "MusicalOcr.java": {
       "source_path": "tools/native-worker/NativeMusicalOcr.java",
       "source_sha256": "2b54ea5c5b4b8cdcb6e943bbd41a6e08bdd11769a7076a3612e4bd6433a8a3bc",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "2b54ea5c5b4b8cdcb6e943bbd41a6e08bdd11769a7076a3612e4bd6433a8a3bc"
     },
     "NativeDynamicGlyphs.java": {
       "source_path": "tools/native-worker/NativeDynamicGlyphs.java",
       "source_sha256": "93b9689416859cf12a035147cd2f124102e840567867cd3e4af2199970430ee0",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "93b9689416859cf12a035147cd2f124102e840567867cd3e4af2199970430ee0"
     },
     "NativeOrnamentGlyphs.java": {
       "source_path": "tools/native-worker/NativeOrnamentGlyphs.java",
       "source_sha256": "fff72288c5c056ff8ba497180594f3bf63fef312780056ae05d1dc57618d8d83",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "fff72288c5c056ff8ba497180594f3bf63fef312780056ae05d1dc57618d8d83"
     },
     "GlyphResources.java": {
       "origin": "Standalone JDK classpath resource adapter; not extracted from the app."
@@ -736,42 +876,50 @@
     "TupletNumeralNeighbors.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TupletNumeralNeighbors.java",
       "source_sha256": "a833692181c9d4f6585b04051b8e59809928161834e4466e01da0942d3451823",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "a833692181c9d4f6585b04051b8e59809928161834e4466e01da0942d3451823"
     },
     "BeamOccludedNatural.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/BeamOccludedNatural.java",
       "source_sha256": "2590b2e6268f1a07c8735f34a00e89f935f29b72432b2b323f5adf4b7effffde",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "2590b2e6268f1a07c8735f34a00e89f935f29b72432b2b323f5adf4b7effffde"
     },
     "RestVerticalWave.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestVerticalWave.java",
       "source_sha256": "ec888163863f47980672461872910ca2461aff9b3dff19fd8452adc103ed0d99",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "ec888163863f47980672461872910ca2461aff9b3dff19fd8452adc103ed0d99"
     },
     "ScoreBoundaryTies.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreBoundaryTies.java",
       "source_sha256": "11b403bae4d743df324edb9d5bb2fe1850d0d458b9398aa71a16cb0ed8cc0f21",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "11b403bae4d743df324edb9d5bb2fe1850d0d458b9398aa71a16cb0ed8cc0f21"
     },
     "DynamicStemCrop.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DynamicStemCrop.java",
       "source_sha256": "db41f9a68015596d1a24f55aa01ccb137d2c5ad48e7f5c3260301370668a1efe",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "db41f9a68015596d1a24f55aa01ccb137d2c5ad48e7f5c3260301370668a1efe"
     },
     "DynamicBarlineCrop.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DynamicBarlineCrop.java",
       "source_sha256": "a2402cb1c9db983d5bfc1f2bea822ddb66866ac1a26965d848bcb89f62b56c8c",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "a2402cb1c9db983d5bfc1f2bea822ddb66866ac1a26965d848bcb89f62b56c8c"
     },
     "ScoreNavigationNoteProjection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationNoteProjection.java",
       "source_sha256": "fa8843b48d4964e799033b108b73c8aded4d8a640354aad8b23464fc61e81355",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "fa8843b48d4964e799033b108b73c8aded4d8a640354aad8b23464fc61e81355"
     },
     "PageTrillEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PageTrillEvidence.java",
       "source_sha256": "76db58e5ba1eef7b085edc0673562b060f81e890940f283e159421894d4d4124",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "76db58e5ba1eef7b085edc0673562b060f81e890940f283e159421894d4d4124"
     }
   }
 }

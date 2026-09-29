@@ -14,12 +14,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def matches_source(data, expected):
+def matches_source(data, expected, normalized_expected=None):
     # The original extraction recorded a mix of LF and CRLF source files.
     # Accept either checkout convention while preserving every other byte.
     lf = data.replace(b'\r\n', b'\n')
-    return expected in {hashlib.sha256(value).hexdigest()
-                        for value in (data, lf, lf.replace(b'\n', b'\r\n'))}
+    return (expected in {hashlib.sha256(value).hexdigest()
+                         for value in (data, lf, lf.replace(b'\n', b'\r\n'))}
+            or normalized_expected is not None
+            and hashlib.sha256(lf).hexdigest() == normalized_expected)
 
 
 def check(app, provenance):
@@ -33,7 +35,8 @@ def check(app, provenance):
         source = (app / entry['source_path']).resolve()
         if not source.is_relative_to(app):
             raise ValueError('Source mapping escapes the app root: ' + name)
-        if not source.is_file() or not matches_source(source.read_bytes(), entry['source_sha256']):
+        if not source.is_file() or not matches_source(source.read_bytes(), entry['source_sha256'],
+                                                     entry.get('source_normalized_sha256')):
             changed.append(entry['source_path'])
     if not checked:
         raise ValueError('No mapped sources to check')

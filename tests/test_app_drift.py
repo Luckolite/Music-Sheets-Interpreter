@@ -13,6 +13,31 @@ spec.loader.exec_module(drift)
 
 
 class AppDriftTest(unittest.TestCase):
+    def test_mixed_line_endings_require_a_reviewed_normalized_digest(self):
+        original = b'first\r\nsecond\nthird\r\n'
+        expected = hashlib.sha256(original).hexdigest()
+        normalized = hashlib.sha256(original.replace(b'\r\n', b'\n')).hexdigest()
+        for candidate in (original, b'first\nsecond\nthird\n', b'first\r\nsecond\r\nthird\r\n'):
+            self.assertTrue(drift.matches_source(candidate, expected, normalized))
+        self.assertFalse(drift.matches_source(b'first\nchanged\nthird\n', expected, normalized))
+        self.assertFalse(drift.matches_source(b'first\nsecond\nthird\n', expected))
+
+    def test_normalized_mapping_still_rejects_missing_and_modified_code(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'Decoder.java'
+            baseline = b'first\r\nsecond\n'
+            provenance = {'files': {'Decoder.java': {
+                'source_path': 'Decoder.java',
+                'source_sha256': hashlib.sha256(baseline).hexdigest(),
+                'source_normalized_sha256': hashlib.sha256(baseline.replace(b'\r\n', b'\n')).hexdigest()}}}
+            source.write_bytes(b'first\nsecond\n')
+            self.assertEqual((1, []), drift.check(root, provenance))
+            source.write_bytes(b'first\nchanged\n')
+            self.assertEqual((1, ['Decoder.java']), drift.check(root, provenance))
+            source.unlink()
+            self.assertEqual((1, ['Decoder.java']), drift.check(root, provenance))
+
     def test_line_endings_do_not_hide_real_changes(self):
         for baseline in (b'first\nsecond\n', b'first\r\nsecond\r\n'):
             expected = hashlib.sha256(baseline).hexdigest()

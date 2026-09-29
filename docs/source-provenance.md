@@ -18,6 +18,10 @@ the reviewed upstream files, not the formatted standalone copies. A base commit
 can include separately reviewed working-tree changes; the hash identifies the
 exact source bytes. Historical changes and their tests remain in Git history.
 
+An optional `source_normalized_sha256` records those same reviewed bytes with
+CRLF converted to LF. It allows Git checkouts to normalize mixed line endings
+without masking any other source change; the original raw hash is retained.
+
 `scripts/check_app_drift.py --app PATH` checks those mapped source hashes. It does
 not copy files, update hashes, prove semantic equivalence or discover new helpers.
 New dependencies and adapters require separate review.
