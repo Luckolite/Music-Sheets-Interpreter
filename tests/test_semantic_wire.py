@@ -25,6 +25,11 @@ def fixture():
 
 
 class SemanticWireTest(unittest.TestCase):
+    def test_text_bounds_count_utf16_units_and_reject_unpaired_surrogates(self):
+        self.assertEqual('café 🎵', wire.text('café 🎵', 7))
+        with self.assertRaises(ValueError): wire.text('café 🎵', 6)
+        with self.assertRaises(ValueError): wire.text('\ud800', 7)
+
     def test_all_kinds_unicode_targets_and_cross_page_end_roundtrip(self):
         directions, expressions = fixture()
         before = copy.deepcopy((directions, expressions))

@@ -4,6 +4,7 @@
 import io
 import math
 import struct
+from encodings.utf_16_le import encode as utf16_encode
 
 KINDS = ('UNRESOLVED_DIRECTION', 'RITARDANDO', 'RALLENTANDO', 'RITENUTO',
          'ACCELERANDO', 'A_TEMPO', 'TEMPO_PRIMO', 'SAME_TEMPO', 'FERMATA',
@@ -32,7 +33,8 @@ def number(value, minimum, maximum):
 
 
 def text(value, maximum):
-    if not isinstance(value, str) or len(value.encode('utf-16-le')) // 2 > maximum:
+    # Explicit codec import keeps frozen desktop packages complete too.
+    if not isinstance(value, str) or len(utf16_encode(value)[0]) // 2 > maximum:
         raise ValueError('Invalid semantic text')
     value.encode('utf-8', errors='strict')
     return value

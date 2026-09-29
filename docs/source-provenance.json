@@ -34,7 +34,7 @@
     },
     "semantic_wire.py": {
       "source_path": "tools/native-worker/semantic_wire.py",
-      "source_sha256": "0db367180e59ac5a5bfd987f29413f4f9ac52685406d358593901a24804c1088",
+      "source_sha256": "91b2702fe68a1d21d7db6d8d539f2e27457a7fac6e591ca5d2a440ef4b0f6793",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "HalfRestRuleBody.java": {
