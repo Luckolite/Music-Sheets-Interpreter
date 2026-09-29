@@ -127,7 +127,8 @@ final class OmrMeasurePostProcessor {
                 if (clippedClosingHead(labels, width, height, right, curvedRight, rows, gap, slope))
                     right = curvedRight;
             }
-            if (right - left >= Math.max(width / 4, Math.round(gap * 18f))) {
+            if (right - left >= Math.max(width / 4, Math.round(gap * 18f))
+                    || ShortFinalStaff.proved(gray, width, height, rows, gap, left, right, slope)) {
                 List<Integer> boundaries =
                         findBoundaries(
                                 labels, gray, width, height, rows, gap, left, right, slope, track);

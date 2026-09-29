@@ -223,8 +223,14 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "c2650e057f8610fbb884c22633cac8f275e7f3bcb4fe56c20efd3f3ff340933b",
+      "source_sha256": "f0c0fd884c612fc7527b018a4aa7aff294fc195ca1282ca66ae1e539fc0df32e",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+    },
+    "ShortFinalStaff.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShortFinalStaff.java",
+      "source_sha256": "287b6c899a6775977056de69d33661d6d2c5967295ef465897d41af62de4cd87",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Package-only port of bounded five-rule and terminal-double-bar proof for short final staves, with original synthetic positive and negative regressions. No private score pixels, new dependencies or model changes."
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
