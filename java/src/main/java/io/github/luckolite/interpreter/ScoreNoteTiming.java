@@ -493,6 +493,11 @@ public final class ScoreNoteTiming {
                         systemHeaderShift,
                         startsAtBarline,
                         firstSpatial);
+        // The final note may sustain through the barline, but every remaining attack must
+        // begin before it. Reserve the written intervals up to that final attack.
+        double[] timeToLastAttack = new double[groups.size()];
+        for (int index = groups.size() - 2; index >= 0; index--)
+            timeToLastAttack[index] = durations[index] + timeToLastAttack[index + 1];
         double previousOnset = 0, previousDuration = Double.NaN;
         double previousPosition = Double.NaN;
         for (int index = 0; index < groups.size(); index++) {
@@ -519,6 +524,11 @@ public final class ScoreNoteTiming {
                     && spatial - leading <= safeBeats * MAX_ORDINARY_MEASURE_INSET) onset = leading;
             if (index > 0 && Double.isFinite(previousDuration)) {
                 double writtenRest = followingRest(groups.get(index - 1));
+                // A rest between attacks must leave room for the later written notes in this
+                // measure. A misplaced whole-rest glyph cannot move them beyond the barline.
+                if (writtenRest > 0
+                        && previousOnset + previousDuration + writtenRest + timeToLastAttack[index]
+                                >= safeBeats - .001) writtenRest = 0;
                 double predicted = previousOnset + previousDuration + writtenRest;
                 double positionGap =
                         Double.isFinite(previousPosition)

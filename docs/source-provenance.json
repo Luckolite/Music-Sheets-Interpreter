@@ -332,9 +332,10 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "ccb54817333c5606e76fad742efd929a09a90b0d77b2e966704a0c5e23dcc314",
+      "source_sha256": "810c6a5bcf6fc31d40112aae11cdf57df36fb776a2886873facd2a21423b61fa",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "2f7d2df4ed29ca75e76c1300281aea6794fee931aea70e5687dcd3ad8cd77630"
+      "review_note": "Reviewed app worktree rest overflow guard ported with original synthetic regressions; final sustain across the bar remains valid. No new helper or dependency.",
+      "source_normalized_sha256": "810c6a5bcf6fc31d40112aae11cdf57df36fb776a2886873facd2a21423b61fa"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",

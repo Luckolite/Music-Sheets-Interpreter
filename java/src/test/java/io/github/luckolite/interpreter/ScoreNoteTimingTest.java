@@ -206,6 +206,111 @@ public final class ScoreNoteTimingTest {
     }
 
     @Test
+    public void impossibleWholeRestBetweenAttacksDoesNotOverflowMeasure() {
+        // Original synthetic 4/4 rhythm: quarter followed by six eighths.
+        float[] positions = {.055f, .299f, .422f, .544f, .666f, .788f, .910f};
+        List<ScoreNoteEvent> phrase = new java.util.ArrayList<>();
+        for (int index = 0; index < positions.length; index++) {
+            phrase.add(
+                    new ScoreNoteEvent(
+                            0,
+                            positions[index],
+                            index,
+                            0,
+                            1,
+                            .4f,
+                            false,
+                            0,
+                            index == 0 ? 0 : 1,
+                            ScoreNoteEvent.ACCIDENTAL_FROM_KEY,
+                            index == 0
+                                    ? ScoreNoteEvent.DURATION_QUARTER
+                                    : ScoreNoteEvent.DURATION_UNKNOWN,
+                            1,
+                            index == 2 ? 4 : 0));
+        }
+        double[] expected = {0, 1, 1.5, 2, 2.5, 3, 3.5};
+        for (int index = 0; index < phrase.size(); index++)
+            assertEquals(
+                    "attack " + index,
+                    expected[index],
+                    ScoreNoteTiming.beatInMeasure(phrase.get(index), phrase, 4f),
+                    .0001);
+    }
+
+    @Test
+    public void interiorRestThatFitsRemainingNotesKeepsItsSilentBeat() {
+        List<ScoreNoteEvent> phrase =
+                List.of(
+                        new ScoreNoteEvent(
+                                0,
+                                .05f,
+                                0,
+                                0,
+                                1,
+                                .4f,
+                                false,
+                                0,
+                                0,
+                                ScoreNoteEvent.ACCIDENTAL_FROM_KEY,
+                                ScoreNoteEvent.DURATION_QUARTER),
+                        new ScoreNoteEvent(
+                                0,
+                                .30f,
+                                1,
+                                0,
+                                1,
+                                .4f,
+                                false,
+                                0,
+                                1,
+                                ScoreNoteEvent.ACCIDENTAL_FROM_KEY,
+                                ScoreNoteEvent.DURATION_UNKNOWN,
+                                1,
+                                1),
+                        new ScoreNoteEvent(0, .75f, 2, 0, 1, .4f, false, 0, 1));
+
+        assertEquals(0, ScoreNoteTiming.beatInMeasure(phrase.get(0), phrase, 4f), .0001);
+        assertEquals(1, ScoreNoteTiming.beatInMeasure(phrase.get(1), phrase, 4f), .0001);
+        assertEquals(2.5, ScoreNoteTiming.beatInMeasure(phrase.get(2), phrase, 4f), .0001);
+    }
+
+    @Test
+    public void finalSustainedNoteMayExtendPastBarAfterARealRest() {
+        List<ScoreNoteEvent> phrase =
+                List.of(
+                        classifiedQuarter(.05f, 0),
+                        new ScoreNoteEvent(
+                                0,
+                                .35f,
+                                1,
+                                0,
+                                1,
+                                .4f,
+                                false,
+                                0,
+                                0,
+                                ScoreNoteEvent.ACCIDENTAL_FROM_KEY,
+                                ScoreNoteEvent.DURATION_QUARTER,
+                                1,
+                                1),
+                        new ScoreNoteEvent(
+                                0,
+                                .85f,
+                                2,
+                                0,
+                                1,
+                                .4f,
+                                false,
+                                0,
+                                0,
+                                ScoreNoteEvent.ACCIDENTAL_FROM_KEY,
+                                ScoreNoteEvent.DURATION_HALF));
+
+        assertEquals(3, ScoreNoteTiming.beatInMeasure(phrase.get(2), phrase, 4f), .0001);
+    }
+
+    @Test
     public void sixteenthRestCreatesOneSilentSixteenthSlot() {
         List<ScoreNoteEvent> phrase =
                 List.of(
