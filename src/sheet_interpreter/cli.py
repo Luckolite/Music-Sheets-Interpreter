@@ -1,6 +1,6 @@
 # Copyright 2026 Luckolite
 # SPDX-License-Identifier: Apache-2.0
-"""Local image/PDF to JSON, with an optional MIDI and MusicXML exports."""
+"""Local image/PDF to JSON, with optional MIDI, MP3 and MusicXML exports."""
 import argparse
 import json
 from pathlib import Path
@@ -16,6 +16,9 @@ def main():
     parser.add_argument("input", type=Path)
     parser.add_argument("--output", "-o", required=True, type=Path)
     parser.add_argument("--midi", type=Path)
+    parser.add_argument("--mp3", type=Path, help="Optional synthesized audio preview")
+    parser.add_argument("--ffmpeg", type=Path, help="FFmpeg executable for MP3 export")
+    parser.add_argument("--mp3-bitrate", type=int, default=192, choices=(64, 96, 128, 160, 192, 256, 320))
     parser.add_argument("--musicxml", type=Path, help="Optional concert-pitch MusicXML export")
     parser.add_argument("--meter", default="4/4", help="Initial meter; read by the caller (default: 4/4)")
     parser.add_argument("--bpm", type=float, default=120, help="Initial quarter-note BPM for exports")
@@ -35,15 +38,20 @@ def main():
         annotations = json.loads(args.annotations.read_text(encoding="utf-8")) if args.annotations else None
         if annotations is not None and not isinstance(annotations, list):
             raise ValueError("Annotations must be a JSON list, one object per selected page")
-        outputs = [p for p in (args.output, args.midi, args.musicxml) if p]
+        outputs = [p for p in (args.output, args.midi, args.mp3, args.musicxml) if p]
         if len({p.resolve() for p in outputs}) != len(outputs):
-            raise ValueError("JSON, MIDI and MusicXML outputs must be different files")
+            raise ValueError("JSON, MIDI, MP3 and MusicXML outputs must be different files")
         initial_meter = meter
         for output in outputs:
             if output and output.resolve() == args.input.resolve():
                 raise ValueError("Output must not overwrite the input score")
         if args.midi and args.midi.resolve() == args.output.resolve():
             raise ValueError("JSON and MIDI outputs must be different files")
+        if args.ffmpeg and not args.mp3:
+            raise ValueError("--ffmpeg requires --mp3")
+        if args.mp3:
+            from .audio import find_ffmpeg
+            find_ffmpeg(args.ffmpeg)  # Fail before expensive recognition if unavailable.
         engine = Interpreter(args.model, args.threads)
         results = []
         key = args.key_fifths
@@ -110,6 +118,9 @@ def main():
         if args.musicxml:
             args.musicxml.parent.mkdir(parents=True, exist_ok=True)
             write_musicxml(document, args.musicxml)
+        if args.mp3:
+            from .audio import write_mp3
+            write_mp3(document, args.mp3, args.bpm, ffmpeg=args.ffmpeg, bitrate=args.mp3_bitrate)
         print(f"Wrote {len(results)} page(s), {sum(len(p['events']) for p in results)} detected notes to {args.output}", file=sys.stderr)
     except (ValueError, RuntimeError, OSError, KeyError, TypeError) as error:
         parser.exit(1, str(error) + "\n")

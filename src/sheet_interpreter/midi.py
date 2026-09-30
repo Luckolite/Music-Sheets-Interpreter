@@ -19,7 +19,8 @@ def variable_length(value):
     return bytes(out)
 
 
-def write_midi(document, path, bpm=120):
+def performance_events(document, bpm=120):
+    """Shared MIDI-performance clock/messages for notation and audio previews."""
     document = resolve_boundary_ties(document)
     if not math.isfinite(bpm) or not 15 <= bpm <= 400:
         raise ValueError("Initial BPM must be 15..400 quarter notes per minute")
@@ -100,24 +101,30 @@ def write_midi(document, path, bpm=120):
             for i in range(count+1):
                 t = i/count
                 smooth = lambda x: x*x*(3-2*x)
-                offset = delta*(1-smooth(min(1, t/.3))) if kind == "slide" else delta*smooth(min(1,t/.4)) if kind == "bend" else delta*(smooth(t/.5) if t<.5 else 1-smooth((t-.5)/.5)) if kind == "bend_release" else 0
+                pitch_offset = delta*(1-smooth(min(1, t/.3))) if kind == "slide" else delta*smooth(min(1,t/.4)) if kind == "bend" else delta*(smooth(t/.5) if t<.5 else 1-smooth((t-.5)/.5)) if kind == "bend_release" else 0
                 if effect.get("vibrato"):
                     age = t*(end-start)/ppq*60/bpm
-                    offset += .18*math.sin(age*math.pi*10)*min(1,t*8)
-                bend = max(0,min(16383,round(8192+offset/24*8192)))
+                    pitch_offset += .18*math.sin(age*math.pi*10)*min(1,t*8)
+                bend = max(0,min(16383,round(8192+pitch_offset/24*8192)))
                 tick = start+round((end-start)*t)
                 if tick < sounding_end:
                     events.append((tick, 2, bytes([0xE0 | channel, bend & 127, bend >> 7])))
             events.append((end, 1, bytes([0xE0 | channel, 0, 64])))
         events.extend([(start, 3, bytes([0x90 | channel, pitch, velocity])),
                        (sounding_end, 0, bytes([0x80 | channel, pitch, 0]))])
+    ordered = sorted(events, key=lambda x: (x[0], x[1]))
+    return ppq, ordered, max(ordered[-1][0], round(offset * ppq))
+
+
+def write_midi(document, path, bpm=120):
+    ppq, events, end_tick = performance_events(document, bpm)
     track = bytearray()
     last = 0
-    for tick, _, message in sorted(events, key=lambda x: (x[0], x[1])):
+    for tick, _, message in events:
         track.extend(variable_length(tick - last))
         track.extend(message)
         last = tick
     # Rests and skipped voices still occupy performed score time.
-    track.extend(variable_length(max(last, round(offset * ppq)) - last))
+    track.extend(variable_length(end_tick - last))
     track.extend(b"\xff\x2f\x00")
     Path(path).write_bytes(b"MThd" + struct.pack(">IHHH", 6, 0, 1, ppq) + b"MTrk" + struct.pack(">I", len(track)) + track)

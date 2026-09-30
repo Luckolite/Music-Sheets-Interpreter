@@ -50,6 +50,23 @@ beats or one quarter of the principal's duration, whichever is smaller. The
 principal chord moves together; accompaniment and later beats keep their timing.
 This is a preview convention, not a claim that every ornament style is recognized.
 
+## MP3 export from decoded JSON
+
+```python
+import json
+from sheet_interpreter import write_mp3
+
+with open("score.json", encoding="utf-8") as source:
+    document = json.load(source)
+write_mp3(document, "preview.mp3", bpm=document.get("initialBpm", 120))
+```
+
+`write_mp3` uses MIDI's shared performance clock, with a basic synthesized tone.
+It accepts optional `ffmpeg=` (executable path) and `bitrate=` (kbps, default 192).
+Install the `[audio]` extra or provide local FFmpeg with `libmp3lame`. The existing
+output is replaced only after encoding succeeds. This is an audio preview, not a
+promise of realistic instrumentation or additional expressive-mark interpretation.
+
 ## OCR and optional annotations
 
 The normal `.[inference,pdf]` install includes offline OCR models. The Python reader

@@ -1,7 +1,7 @@
 # Music Sheets Interpreter
 
 Offline sheet-music recognition for images and PDFs, with downloadable model weights,
-a Java decoder and a Python interface. Exports JSON, MIDI and MusicXML.
+a Java decoder and a Python interface. Exports JSON, MIDI, MP3 and MusicXML.
 
 **Code and weights are Apache-2.0 licensed, including commercial and closed-source use.**
 You do not need to publish your own code. Follow the [license and notice requirements](docs/licensing.md).
@@ -37,6 +37,26 @@ and `beatUnit` as the printed pulse length in quarter notes. For example, eighth
 reports `bpm: 81.5, beatUnit: 0.5`. MIDI and MusicXML use the quarter-note tempo directly.
 Everything runs locally after installation; no account or server is required.
 
+### MP3 audio previews
+
+MIDI contains note/performance instructions, not recorded audio. MP3 is playable
+audio. To export it, install FFmpeg on PATH or the optional bundled encoder:
+
+```sh
+python -m pip install ".[audio]"
+sheet-interpreter score.pdf --output score.json --mp3 preview.mp3
+```
+
+You can export MIDI and MP3 together. `--mp3-bitrate 192` sets the MP3 bitrate in
+kbps (default 192); `--ffmpeg /path/to/ffmpeg` selects an encoder explicitly.
+MP3 uses a basic built-in synthesized tone, not a realistic instrument soundfont.
+It shares MIDI's tempo changes, ties, tremolo, supported guitar effects and repeat
+navigation, including MIDI's current expressive limitations. Rendering is streamed
+in bounded blocks and limited to one hour. No soundfont, inference rerun or network
+is needed to export an already decoded document through the Python API.
+FFmpeg is a separate optional dependency with its own license; it is not committed
+or bundled in this repository's Apache-2.0 source/model artifacts.
+
 ## What it supports
 
 - Standard notation: pitches, accidentals, chords, rests, ties and written timing.
@@ -46,7 +66,7 @@ Everything runs locally after installation; no account or server is required.
 - Printed tuning headers, including alternate tunings carried across PDF pages.
 - Detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations.
 - Explicit hammer-on, pull-off, tapping, slide, bend, vibrato and harmonic symbols.
-- JSON for integration, MIDI for preview, and MusicXML for editing in notation software.
+- JSON for integration, MIDI/MP3 for preview, and MusicXML for editing in notation software.
 
 MusicXML reconstructs a concert-pitch score, not the original layout or tab placement.
 Guitar effects are text annotations in MusicXML. Recognition can miss symbols, and
