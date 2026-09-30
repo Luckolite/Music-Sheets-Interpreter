@@ -695,6 +695,16 @@ final class OmrScoreInterpreter {
                 head ->
                         isHeaderMeterDigit(
                                 labels, gray, width, height, head, staffs, headerGlyphs));
+        List<PlayingTechniqueDetector.Staff> directionStaffs = new ArrayList<>();
+        for (Staff staff : staffs)
+            directionStaffs.add(
+                    new PlayingTechniqueDetector.Staff(
+                            staff.top, staff.bottom, staff.gap, staff.index, staff.count));
+        var printedOctaves = OctaveMarkDetector.printedWords(gray, width, height, directionStaffs);
+        heads.removeIf(
+                head ->
+                        OctaveMarkDetector.containsPrintedMark(
+                                printedOctaves, head.centerX, head.centerY, width, height));
         List<Component> dotCandidates = new ArrayList<>(symbolComponents);
         for (Component component : headComponents)
             if (!heads.contains(component)) dotCandidates.add(component);
@@ -14672,6 +14682,19 @@ final class OmrScoreInterpreter {
                                 gray, labels, width, height, head, staff, bestX, stemEnd, upward,
                                 near, far)) thick = 2;
             }
+            // Three curved flags extend beyond the two-root window. Require thick
+            // roots in adjacent columns, not a returning flag or detached curve.
+            if (thick <= 2
+                    && Math.abs(stemEnd - head.centerY) < gap * 7
+                    && hasCurvedFlag(
+                            labels, gray, width, height, head, gap, bestX, stemEnd, upward)) {
+                int span = Math.round(gap * 3.2f);
+                int near = Math.max(0, stemEnd - (upward ? Math.round(gap * .2f) : span));
+                int far = Math.min(height - 1, stemEnd + (upward ? span : Math.round(gap * .2f)));
+                if (adjacentTripleFlagRoots(
+                        gray, labels, width, height, bestX, near, far, staff, !smallHead))
+                    thick = 3;
+            }
             if (thick == 1
                     && ParallelBeamTip.matches(
                             gray,
@@ -14781,6 +14804,29 @@ final class OmrScoreInterpreter {
             if (thickNonHeadBands(
                             gray, labels, width, height, column, near, far, staff, column, adaptive)
                     == 2) consecutive++;
+            else consecutive = 0;
+            if (consecutive >= 2) return true;
+        }
+        return false;
+    }
+
+    private static boolean adjacentTripleFlagRoots(
+            byte[] gray,
+            byte[] labels,
+            int width,
+            int height,
+            int stemX,
+            int near,
+            int far,
+            Staff staff,
+            boolean adaptive) {
+        int a = stemX + Math.max(2, Math.round(staff.gap * .12f));
+        int b = stemX + Math.max(3, Math.round(staff.gap * .28f));
+        int consecutive = 0;
+        for (int column = a; column <= b; column++) {
+            if (thickNonHeadBands(
+                            gray, labels, width, height, column, near, far, staff, column, adaptive)
+                    == 3) consecutive++;
             else consecutive = 0;
             if (consecutive >= 2) return true;
         }

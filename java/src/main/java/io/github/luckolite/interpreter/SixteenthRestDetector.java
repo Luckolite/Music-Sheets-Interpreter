@@ -656,12 +656,23 @@ final class SixteenthRestDetector {
             minY = wholeBounds[0];
             maxY = wholeBounds[1];
         }
+        // Three regularly spaced bulbs prove a flagged rest, even when its zigzag
+        // silhouette also resembles a quarter rest. Read the complete glyph first.
+        boolean thirtySecond =
+                !quarterOnly
+                        && !half
+                        && !whole
+                        && maxY - minY >= gap * 2.9f
+                        && maxY - minY <= gap * 4.25f
+                        && Math.abs(maxY - staff.bottom()) <= gap * .55f
+                        && restBulbs(ink, line, top, minY, maxY, gap, faintShapes).size() == 3;
         boolean quarter =
-                !bulbOnly
+                !thirtySecond
+                        && !bulbOnly
                         && (!deepLowered || quarterOnly)
                         && quarterRest(gray, width, staff, top, line, left, right, minY, maxY);
         if (quarterOnly && !quarter) return;
-        if (!bulbOnly && !quarter && !half && !whole && ordinary) {
+        if (!bulbOnly && !quarter && !half && !whole && !thirtySecond && ordinary) {
             int tail = quarterTailWithoutSpeck(ink, top, minY, maxY, gap);
             if (tail < maxY
                     && quarterRest(gray, width, staff, top, line, left, right, minY, tail)) {
@@ -711,9 +722,20 @@ final class SixteenthRestDetector {
                             top,
                             gap,
                             false)) return;
-            if (RestVerticalWave.crosses(gray, width, height, left, right, minY, maxY, gap)) return;
-            if ((!eighth && !sixteenth)
-                    || minY < Math.round(staff.top() + gap * (deepLowered ? .8f : .85f))
+            // Three rest bulbs also reverse their row centres five times. The
+            // complete bulb count, spacing and diagonal foot below adjudicate
+            // those glyphs; a wave silhouette alone must not erase them.
+            if (!thirtySecond
+                    && RestVerticalWave.crosses(gray, width, height, left, right, minY, maxY, gap))
+                return;
+            if ((!eighth && !sixteenth && !thirtySecond)
+                    || minY
+                            < Math.round(
+                                    staff.top()
+                                            + gap
+                                                    * (thirtySecond
+                                                            ? .15f
+                                                            : deepLowered ? .8f : .85f))
                     || minY > staff.top() + gap * 1.55f) return;
             // Interpolate removed staff rows before counting bulb lobes, so staff crossings do not
             // split a single bulb into several flags.
@@ -747,12 +769,19 @@ final class SixteenthRestDetector {
                     run = 0;
                 }
             }
-            if (eighth
-                    ? lobes.size() != 1 || maxY - lobes.get(0) < gap * .8f
-                    : lobes.size() != 2
+            if (thirtySecond
+                    ? lobes.size() != 3
                             || lobes.get(1) - lobes.get(0) < gap * .7f
                             || lobes.get(1) - lobes.get(0) > gap * 1.3f
-                            || maxY - lobes.get(1) < gap * .8f) return;
+                            || lobes.get(2) - lobes.get(1) < gap * .7f
+                            || lobes.get(2) - lobes.get(1) > gap * 1.3f
+                            || maxY - lobes.get(2) < gap * .8f
+                    : eighth
+                            ? lobes.size() != 1 || maxY - lobes.get(0) < gap * .8f
+                            : lobes.size() != 2
+                                    || lobes.get(1) - lobes.get(0) < gap * .7f
+                                    || lobes.get(1) - lobes.get(0) > gap * 1.3f
+                                    || maxY - lobes.get(1) < gap * .8f) return;
             // Below the second bulb only a narrow tail remains. Its foot slopes left of the tip;
             // accidentals, paired dots and isolated note flags do not have this geometry.
             int footRight = -1;
@@ -909,7 +938,7 @@ final class SixteenthRestDetector {
             List<InkDot> dots =
                     augmentationDots(gray, width, height, staff, right, region, notes, m);
             double duration =
-                    (whole ? 4 : half ? 2 : quarter ? 1 : eighth ? .5 : .25)
+                    (whole ? 4 : half ? 2 : quarter ? 1 : thirtySecond ? .125 : eighth ? .5 : .25)
                             * (dots.size() == 2 ? 1.75 : dots.size() == 1 ? 1.5 : 1);
             ScoreRestEvent rest =
                     new ScoreRestEvent(
@@ -936,6 +965,47 @@ final class SixteenthRestDetector {
             for (InkDot dot : dots) restDots.add(new RestDot(dot.x(), dot.y(), rest));
             return;
         }
+    }
+
+    /** Count rounded flag bulbs without letting suppressed staff rows split them. */
+    private static List<Integer> restBulbs(
+            int[] source,
+            boolean[] line,
+            int top,
+            int minY,
+            int maxY,
+            float gap,
+            boolean faintShapes) {
+        int[] ink = source.clone();
+        for (int y = minY; y <= maxY; y++)
+            if (line[y - top]) {
+                int before = y - 1, after = y + 1;
+                while (before >= minY && line[before - top]) before--;
+                while (after <= maxY && line[after - top]) after++;
+                if (before >= minY && after <= maxY)
+                    ink[y - top] = Math.round((ink[before - top] + ink[after - top]) * .5f);
+            }
+        var lobes = new ArrayList<Integer>();
+        int run = 0, start = 0;
+        int bulbWidth = Math.max(2, Math.round(gap * (faintShapes ? .50f : .58f)));
+        int bulbRows = Math.max(2, Math.round(gap * .22f));
+        for (int y = minY; y <= maxY + 1; y++) {
+            boolean bulb =
+                    y <= maxY
+                            && (ink[y - top] >= bulbWidth
+                                    || y > minY
+                                            && y < maxY
+                                            && ink[y - top] == bulbWidth - 1
+                                            && ink[y - 1 - top] >= bulbWidth
+                                            && ink[y + 1 - top] >= bulbWidth);
+            if (bulb) {
+                if (run++ == 0) start = y;
+            } else {
+                if (run >= bulbRows) lobes.add((start + y - 1) / 2);
+                run = 0;
+            }
+        }
+        return lobes;
     }
 
     /** A staff mask must not turn a longer connected glyph into an eighth rest. */

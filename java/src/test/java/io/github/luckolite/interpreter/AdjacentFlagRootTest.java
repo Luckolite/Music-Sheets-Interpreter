@@ -45,6 +45,40 @@ public class AdjacentFlagRootTest {
         return (boolean) method.invoke(null, gray, labels, W, H, 100, 35, 70, staff, true);
     }
 
+    private boolean tripleRoots() throws Exception {
+        var staff = staff();
+        var method =
+                OmrScoreInterpreter.class.getDeclaredMethod(
+                        "adjacentTripleFlagRoots",
+                        byte[].class,
+                        byte[].class,
+                        int.class,
+                        int.class,
+                        int.class,
+                        int.class,
+                        int.class,
+                        staff.getClass(),
+                        boolean.class);
+        method.setAccessible(true);
+        return (boolean) method.invoke(null, gray, labels, W, H, 100, 35, 85, staff, true);
+    }
+
+    @Test
+    public void threeThickRootsRetainThirtySecondFlagCount() throws Exception {
+        band(102, 105, 40, 45);
+        band(102, 105, 55, 60);
+        band(102, 105, 70, 75);
+        assertTrue(tripleRoots());
+    }
+
+    @Test
+    public void twoRootsAndAThinStaffRuleDoNotBecomeThreeFlags() throws Exception {
+        band(102, 105, 40, 45);
+        band(102, 105, 55, 60);
+        band(20, 220, 70, 70);
+        assertFalse(tripleRoots());
+    }
+
     @Test
     public void onePixelShiftStillHasTwoAdjacentRootColumns() throws Exception {
         band(102, 105, 40, 45);

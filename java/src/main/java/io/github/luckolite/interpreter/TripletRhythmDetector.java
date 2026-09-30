@@ -276,7 +276,9 @@ final class TripletRhythmDetector {
                                 first.beamCount() > 0,
                                 Float.NaN,
                                 Float.NaN);
-                if (numeral == null || insideOtherSystem(numeral, region, measures, width, height))
+                if (numeral == null
+                        || insideOtherSystem(numeral, region, measures, width, height)
+                        || !ownsNumeral(numeral, first, result, region, gap, width, height))
                     continue;
                 // A finger number must not regroup attacks across two separate beams.
                 // A real tuplet bracket remains authoritative across beam breaks.
@@ -396,6 +398,8 @@ final class TripletRhythmDetector {
             if (marked) i += 2;
         }
         result = mixedBracketPairs(result, measures, gray, width, height);
+        result = mixedBeamedTuplets(result, measures, gray, width, height, 5);
+        result = mixedBeamedTuplets(result, measures, gray, width, height, 7);
         return beamedTuplets(
                 beamedTuplets(
                         beamedTuplets(result, measures, gray, width, height, 7),
@@ -591,8 +595,9 @@ final class TripletRhythmDetector {
                                 : findPrintedNumeral(
                                         gray, width, height, x1, lastX, y1, y2, gap, true,
                                         Float.NaN, Float.NaN, divisor);
-                if (numeral == null || insideOtherSystem(numeral, bar, measures, width, height))
-                    continue;
+                if (numeral == null
+                        || insideOtherSystem(numeral, bar, measures, width, height)
+                        || !ownsNumeral(numeral, first, result, bar, gap, width, height)) continue;
                 for (Onset onset : run)
                     for (int at : onset.indices()) {
                         ScoreNoteEvent n = result.get(at);
@@ -623,6 +628,155 @@ final class TripletRhythmDetector {
             }
         }
         return List.copyOf(result);
+    }
+
+    /** Subdividing a tuplet slot changes its attack count, not its printed ratio. */
+    private static List<ScoreNoteEvent> mixedBeamedTuplets(
+            List<ScoreNoteEvent> notes,
+            List<MeasureRegion> measures,
+            byte[] gray,
+            int width,
+            int height,
+            int divisor) {
+        List<ScoreNoteEvent> result = new ArrayList<>(notes);
+        List<Onset> groups = onsets(notes);
+        for (int i = 0; i < groups.size(); i++) {
+            ScoreNoteEvent first = result.get(groups.get(i).indices().get(0));
+            if (first.measureIndex() < 0
+                    || first.measureIndex() >= measures.size()
+                    || first.beamCount() < 1
+                    || first.beamCount() > 3
+                    || first.tupletDivisor() != 1
+                    || first.augmentationDots() != 0) continue;
+            double unit = ScoreNoteTiming.writtenDurationBeats(first), total = 0;
+            if (i + 1 < groups.size())
+                for (int next : groups.get(i + 1).indices()) {
+                    ScoreNoteEvent n = result.get(next);
+                    double value = ScoreNoteTiming.writtenDurationBeats(n);
+                    if (sameVoice(first, n)
+                            && n.beamCount() > 0
+                            && n.tupletDivisor() == 1
+                            && n.augmentationDots() == 0
+                            && Math.abs(value - unit * 2) < .001) {
+                        unit = value;
+                        break;
+                    }
+                }
+            if (unit <= 0 || unit > .5) continue;
+            MeasureRegion bar = measures.get(first.measureIndex());
+            float gap = Math.max(4, (bar.bottom() - bar.top()) * height / (8 * first.staffCount()));
+            List<Onset> run = new ArrayList<>();
+            boolean subdivided = false;
+            for (int j = i; j < groups.size() && j < i + divisor * 2; j++) {
+                Onset raw = groups.get(j);
+                List<Integer> members = new ArrayList<>();
+                float top = Float.POSITIVE_INFINITY, bottom = Float.NEGATIVE_INFINITY;
+                double value = -1;
+                for (int index : raw.indices()) {
+                    ScoreNoteEvent n = result.get(index);
+                    double duration = ScoreNoteTiming.writtenDurationBeats(n);
+                    if (!sameVoice(first, n)
+                            || n.tupletDivisor() != 1
+                            || n.augmentationDots() != 0
+                            || n.beamCount() < 1
+                            || (n.articulations() & NoteOrnament.GRACE) != 0
+                            || Math.abs(duration - unit) > .001
+                                    && Math.abs(duration - unit * .5) > .001) continue;
+                    if (value >= 0 && Math.abs(value - duration) > .001) continue;
+                    value = duration;
+                    members.add(index);
+                    top = Math.min(top, n.pageY());
+                    bottom = Math.max(bottom, n.pageY());
+                }
+                if (members.isEmpty()) break;
+                Onset onset = new Onset(List.copyOf(members), raw.position(), top, bottom);
+                if (!run.isEmpty()) {
+                    Onset previous = run.get(run.size() - 1);
+                    // Engravers compress the subdivided slots; beam-group tests
+                    // based on uniform head spacing can split that continuous beam.
+                    if (onset.position() - previous.position() < .012f) break;
+                }
+                run.add(onset);
+                total += value;
+                subdivided |= value < unit - .001;
+                if (total > unit * divisor + .001) break;
+                if (!subdivided || run.size() <= divisor || Math.abs(total - unit * divisor) > .001)
+                    continue;
+                float x1 =
+                        (bar.left() + run.get(0).position() * (bar.right() - bar.left())) * width;
+                float x2 = (bar.left() + onset.position() * (bar.right() - bar.left())) * width;
+                if (x2 - x1 < gap * 3 || x2 - x1 > gap * 26) break;
+                float y1 = Float.POSITIVE_INFINITY, y2 = Float.NEGATIVE_INFINITY;
+                for (Onset slot : run) {
+                    y1 = Math.min(y1, slot.top() * height);
+                    y2 = Math.max(y2, slot.bottom() * height);
+                }
+                Glyph numeral =
+                        findContrastedNumeral(
+                                gray, width, height, x1, x2, y1, y2, gap, true, Float.NaN,
+                                Float.NaN, divisor);
+                if (numeral == null
+                        || insideOtherSystem(numeral, bar, measures, width, height)
+                        || !ownsNumeral(numeral, first, result, bar, gap, width, height)) break;
+                for (Onset slot : run)
+                    for (int index : slot.indices()) {
+                        ScoreNoteEvent n = result.get(index);
+                        result.set(
+                                index,
+                                new ScoreNoteEvent(
+                                        n.measureIndex(),
+                                        n.positionInMeasure(),
+                                        n.staffStep(),
+                                        n.staffIndex(),
+                                        n.staffCount(),
+                                        n.pageY(),
+                                        n.tiedFromPrevious(),
+                                        n.augmentationDots(),
+                                        n.beamCount(),
+                                        n.writtenAccidental(),
+                                        n.unbeamedDurationBeats(),
+                                        divisor,
+                                        n.followingRestBeats(),
+                                        n.articulations(),
+                                        n.clefBottomDiatonic(),
+                                        n.crossStaffBeam(),
+                                        n.leadingRestBeats(),
+                                        n.compactOpening(),
+                                        n.octaveShift(),
+                                        n.boundaryTies()));
+                    }
+                break;
+            }
+        }
+        return result;
+    }
+
+    /** Between piano staves a single numeral belongs to the nearer staff.
+     * Explicit cross-staff beams keep their existing grouping authority. */
+    private static boolean ownsNumeral(
+            Glyph glyph,
+            ScoreNoteEvent first,
+            List<ScoreNoteEvent> notes,
+            MeasureRegion bar,
+            float gap,
+            int width,
+            int height) {
+        if (first.staffCount() < 2 || first.crossStaffBeam()) return true;
+        float center = (glyph.top() + glyph.bottom()) * .5f;
+        float x = (glyph.left() + glyph.right()) * .5f / width;
+        float position = (x - bar.left()) / (bar.right() - bar.left());
+        double own = Double.POSITIVE_INFINITY, other = Double.POSITIVE_INFINITY;
+        for (ScoreNoteEvent note : notes) {
+            if (note.measureIndex() != first.measureIndex()
+                    || note.staffCount() != first.staffCount()
+                    || Math.abs(note.positionInMeasure() - position) > .3f) continue;
+            if (note.crossStaffBeam() && note.staffIndex() == first.staffIndex()) return true;
+            float bottom = note.pageY() * height + note.staffStep() * gap * .5f;
+            double distance = Math.max(0, Math.max(bottom - 4 * gap - center, center - bottom));
+            if (note.staffIndex() == first.staffIndex()) own = Math.min(own, distance);
+            else other = Math.min(other, distance);
+        }
+        return own <= other + gap * .35;
     }
 
     /** Two explicitly labelled six-note groups may be adjacent without a spacing gap. */
@@ -1185,7 +1339,8 @@ final class TripletRhythmDetector {
                     min = Math.min(min, x);
                     max = Math.max(max, x);
                 }
-            if (y < h * .28f && max - min >= w * .6f) bars++;
+            // Italic fives can have a narrower cap than their lower bowl.
+            if (y < h * .28f && max - min >= w * .5f) bars++;
             if (y >= h * .18f && y < h * .42f && min <= w * .35f && max <= w * .55f && max >= min)
                 leftStem++;
             if (y >= h * .48f && y < h * .82f) {

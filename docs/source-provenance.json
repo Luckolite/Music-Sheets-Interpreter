@@ -265,9 +265,9 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "f0c0fd884c612fc7527b018a4aa7aff294fc195ca1282ca66ae1e539fc0df32e",
+      "source_sha256": "911b00958c85b730460b3436f66e4027df3a90dae5827a13b35aa8bc895d485a",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "f0c0fd884c612fc7527b018a4aa7aff294fc195ca1282ca66ae1e539fc0df32e"
+      "source_normalized_sha256": "911b00958c85b730460b3436f66e4027df3a90dae5827a13b35aa8bc895d485a"
     },
     "ShortFinalStaff.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShortFinalStaff.java",
@@ -278,11 +278,11 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "654ae8bcb23580e20b2ad31ddb9f55cbb16e272d46af3eb04691af093a654c56",
+      "source_sha256": "092863d2ac11b6e26c412608f9804a9facb3b076ea73b2c597110045b07fd928",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "review_note": "Retains prior staff, beam, tie, dot-frame and entrance safeguards. Complete printed phase is retained against unsupported inferred rescaling; fractional beam extent is raster-bounded. Adjacent flag roots and a recentered axis require independent shaft/curved-hook proof. Center-first pale shaft tracing keeps the original threshold first; its darker fallback requires a bounded rooted flag, companion-head-aware samples and independent contrast. Faint augmentation dots retain nested-core/shape ownership at intermediate contrast thresholds; double-beam recovery retains full-body and separated-core proof. A corroborated printed frame supersedes a substantially compressed seed only for beam measurement, preserving its slope. Complete modified methods and overloads have app/standalone code-and-literal parity. Original generated geometry covers phase, beam, root, shaft, occlusion, dot contrast, slope and negative controls. No song-specific rule, new dependency, model change or private fixture.",
-      "source_normalized_sha256": "3962c1496913c218b3e6b4470102d4019cdda454853c28c871089f44711ef025"
+      "source_normalized_sha256": "7a0d10f8ac44f8ea87a747413bd5eb57b27b051be209c3ff134def80c2532e65"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -361,10 +361,10 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "e96520bd2e792910f0cb592b3d8e3c32848fa135a3be384818936c286d8a5e53",
+      "source_sha256": "dbfecc2ab88b491467426a0179566d7c7aa4e7b2575c3fbd3c27725537fbff39",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Retains sharp ownership, existing rest topology and established detections. Supplementary locally contrasted faint tails require ordinary staff placement, at least twelve original dark pixels in three non-rule rows, two separated bulbs for sixteenths, and existing shaft/contour guards. Narrow bulb and raster-rounded height allowances apply only to this seeded fallback; duplicate records and their dots remain owned by the established result. Complete 13668-token app/standalone code-and-literal parity after namespace normalization; nine original procedural faint-tail, narrow-bulb and negative controls accompany prior generated regressions. No private pixels, new helper, dependency or model change.",
-      "source_normalized_sha256": "e9616001dfc00a2743cf07e0a098e8a0ff16abd8261cba3e84f3283eb6e247b8"
+      "source_normalized_sha256": "5a09d390231783cd7331c2fd63d4a286a34322df9ee88cc2371d9e64e3a5aca3"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -374,9 +374,9 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "5d51e6f5ec97601b5eaea26ae0837c6f84ccab12359c924f1f041d6bc23965d4",
+      "source_sha256": "60bdb0c316b3e3f67164f6bbd78a9e4cb97abed86657ba5c279dfe766663e112",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "37d5ed0e1b39d7fb184718a4e0432128fcf295f5361a6df9052606968373cd61"
+      "source_normalized_sha256": "e5357b2b04c25b227d0f4380937b451623461fe047eac3bfd974c7515b89a3ec"
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
@@ -421,9 +421,9 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "5eba59a984f9342aaddee6728fd80769bb1730c6d301ed138b3e30403b38c430",
-      "reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "source_normalized_sha256": "45b3194c1bbbb72f07a128f1af1e03bad5c6990a49e104280e95d2157bbebf14"
+      "source_sha256": "53943fbac5b539f5d677e6bc60662df226b629f8a5fe1eab1c51c85ab63bf44d",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "ee6a879dd6aaa902fc7adf62379583aebdac2c23a99813face926f028895fc49"
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",

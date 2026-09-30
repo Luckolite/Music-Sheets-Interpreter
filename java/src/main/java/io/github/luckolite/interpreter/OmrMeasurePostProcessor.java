@@ -59,7 +59,7 @@ final class OmrMeasurePostProcessor {
             if (i > 0) headTop = Math.max(headTop, (systems.get(i - 1).bottom + system.top) / 2f);
             if (i + 1 < systems.size())
                 headBottom = Math.min(headBottom, (system.bottom + systems.get(i + 1).top) / 2f);
-            addMeasures(headerLabels, width, height, system, result, headTop, headBottom);
+            addMeasures(headerLabels, gray, width, height, system, result, headTop, headBottom);
         }
         // Systems already run top to bottom and their boundaries left to right.
         // Sorting tilted measure boxes by their top edge reverses an uphill row.
@@ -1716,6 +1716,7 @@ final class OmrMeasurePostProcessor {
 
     private static void addMeasures(
             byte[] labels,
+            byte[] gray,
             int width,
             int height,
             SystemRun system,
@@ -1796,6 +1797,20 @@ final class OmrMeasurePostProcessor {
                                     firstHead - Math.max(2, Math.round(system.gap * .12f)));
             }
             int playableRight = rawRight - inset;
+            if (index + 2 == boundaries.size()
+                    && index > 0
+                    && courtesySignatureTail(
+                            labels,
+                            gray,
+                            width,
+                            height,
+                            rawLeft,
+                            rawRight,
+                            system.firstStaff.top,
+                            system.firstStaff.bottom,
+                            system.gap,
+                            Math.round(headTop),
+                            Math.round(headBottom))) continue;
             // A complete key/meter header can contain a vertical numeral that the model
             // classifies as a barline. It may enclose a tiny symbol-only pocket before the
             // first printed note. That pocket has no musical time and must not add a bar.
@@ -1840,6 +1855,44 @@ final class OmrMeasurePostProcessor {
                                 top,
                                 bottom));
         }
+    }
+
+    /** A short key-only tail beyond a printed double bar is a courtesy header, not musical time. */
+    static boolean courtesySignatureTail(
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            int left,
+            int right,
+            int staffTop,
+            int staffBottom,
+            float gap,
+            int headTop,
+            int headBottom) {
+        if (gray == null
+                || right - left > gap * 6
+                || right - left < gap
+                || countLabel(labels, width, height, NOTEHEAD, left, right, headTop, headBottom) > 0
+                || countLabel(labels, width, height, CLEF_OR_KEY, left, right, headTop, headBottom)
+                        < gap * gap * 2) return false;
+        int bands = 0, first = -1, last = -1;
+        boolean inBand = false;
+        for (int x = Math.max(0, Math.round(left - gap * 1.3f));
+                x <= Math.min(width - 1, Math.round(left + gap * .9f));
+                x++) {
+            int ink = 0;
+            for (int y = Math.max(0, staffTop); y <= Math.min(height - 1, staffBottom); y++)
+                if ((gray[y * width + x] & 255) < 165) ink++;
+            boolean bar = ink >= (staffBottom - staffTop + 1) * .9f;
+            if (bar && !inBand) {
+                bands++;
+                if (first < 0) first = x;
+                last = x;
+            }
+            inBand = bar;
+        }
+        return bands == 2 && last - first >= gap * .2f && last - first <= gap * 1.3f;
     }
 
     private static int rightmostLabel(

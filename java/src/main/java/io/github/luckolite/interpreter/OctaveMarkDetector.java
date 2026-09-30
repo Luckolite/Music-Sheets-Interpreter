@@ -117,6 +117,22 @@ final class OctaveMarkDetector {
 
     private record InkBox(int left, int top, int right, int bottom, int area) {}
 
+    /** Confirmed printed direction text cannot also be a sounding notehead. */
+    static boolean containsPrintedMark(
+            List<PlayingTechniqueDetector.Word> printedMarks,
+            float centerX,
+            float centerY,
+            int width,
+            int height) {
+        for (var word : printedMarks)
+            if (shift(word.text()) != 0
+                    && centerX >= word.left() * width
+                    && centerX < word.right() * width
+                    && centerY >= word.top() * height
+                    && centerY < word.bottom() * height) return true;
+        return false;
+    }
+
     /** OCR may join a system number to its parenthesized continuation mark.
      * Keep the direction's own horizontal anchor, not the preceding bar number. */
     private static PlayingTechniqueDetector.Word directionAfterMeasureNumber(
