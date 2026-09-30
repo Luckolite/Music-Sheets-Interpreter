@@ -1007,6 +1007,8 @@ final class TripletRhythmDetector {
                         normal.right(),
                         normal.bottom(),
                         gap)) return normal;
+        Glyph candidate = null;
+        int candidateLevel = -1;
         for (int pass = 0; pass < 2; pass++)
             for (int level : new int[] {165, 140, 120, 190, 210}) {
                 var local =
@@ -1041,12 +1043,22 @@ final class TripletRhythmDetector {
                                 retry.top() + local.top(),
                                 retry.right() + local.left(),
                                 retry.bottom() + local.top(),
-                                gap))
-                    return new Glyph(
+                                gap)) {
+                    Glyph found = new Glyph(
                             retry.left() + local.left(),
                             retry.top() + local.top(),
                             retry.right() + local.left(),
                             retry.bottom() + local.top());
+                    // A single threshold can turn antialiased rest ink into two apparent
+                    // bowls. A recovered numeral needs the same outline at another level;
+                    // two masking passes at one threshold are not independent evidence.
+                    if (candidate != null && candidateLevel != level
+                            && Math.abs(candidate.left() - found.left()) <= gap * .25f
+                            && Math.abs(candidate.right() - found.right()) <= gap * .25f
+                            && Math.abs(candidate.top() - found.top()) <= gap * .25f
+                            && Math.abs(candidate.bottom() - found.bottom()) <= gap * .25f) return found;
+                    if (candidate == null) { candidate = found; candidateLevel = level; }
+                }
             }
         return null;
     }
@@ -1371,6 +1383,9 @@ final class TripletRhythmDetector {
         int upperOpen = 0, lowerOpen = 0, upperPocket = 0, lowerPocket = 0;
         int upperLobe = -1, lowerLobe = -1, waist = w, waistLeft = w, lowerOpenLeft = w;
         for (int y = 0; y < h; y++) {
+            // Staff-rule removal can leave a blank scanline through a rest hook.
+            // No ink is not an opening or an indented waist of a printed 3.
+            if (max[y] < 0) continue;
             float fraction = y / (float) h;
             // A row occupies a whole pixel band; include a short opening that
             // crosses a lobe boundary instead of discarding it at small sizes.

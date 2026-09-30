@@ -375,9 +375,10 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "60bdb0c316b3e3f67164f6bbd78a9e4cb97abed86657ba5c279dfe766663e112",
+      "source_sha256": "d5e9b22b8292129c55a298eab5a41d6982850d97612da132dbfe80ba6ff80832",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "e5357b2b04c25b227d0f4380937b451623461fe047eac3bfd974c7515b89a3ec"
+      "source_normalized_sha256": "17fa14463efcbecfcc10ef516ba6054f41ce7224043491c1bfe580c71062d46f",
+      "review_note": "Reviewed patch against app base 650d1b3a: blank rows cannot supply numeral openings/waist, and contrast recovery requires matching outlines at two distinct thresholds. Port has only package/formatting differences; original procedural regressions, unchanged dependencies and weights."
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
