@@ -1006,7 +1006,7 @@ final class TripletRhythmDetector {
                         normal.top(),
                         normal.right(),
                         normal.bottom(),
-                        gap)) return normal;
+                        gap) && validNumeralContext(gray,width,height,normal,firstX,lastX,gap,number)) return normal;
         Glyph candidate = null;
         int candidateLevel = -1;
         for (int pass = 0; pass < 2; pass++)
@@ -1049,6 +1049,7 @@ final class TripletRhythmDetector {
                             retry.top() + local.top(),
                             retry.right() + local.left(),
                             retry.bottom() + local.top());
+                    if (!validNumeralContext(gray,width,height,found,firstX,lastX,gap,number)) continue;
                     // A single threshold can turn antialiased rest ink into two apparent
                     // bowls. A recovered numeral needs the same outline at another level;
                     // two masking passes at one threshold are not independent evidence.
@@ -1142,8 +1143,7 @@ final class TripletRhythmDetector {
                 continue;
             // Quarter-note tuplets need the two bracket arms. For beamed/flagged short notes,
             // publishers routinely print only the numeral, so its shape/group alignment suffices.
-            if (shortNotes
-                    || bracketArm(
+            boolean bracket = bracketArm(
                                     gray,
                                     width,
                                     height,
@@ -1160,9 +1160,60 @@ final class TripletRhythmDetector {
                                     Math.round(lastX + gap * .3f),
                                     minY,
                                     maxY,
-                                    gap)) return new Glyph(minX, minY, maxX, maxY);
+                                    gap);
+            // An unbracketed two-bowl shape inside five actual staff rules can be
+            // a rest, not a numeral below an elevated beamed melody. Explicit
+            // brackets still prove in-staff tuplets; isolated beam rules do not.
+            if (number == 3 && !bracket && insideFiveLineStaff(gray,width,height,minX,minY,maxX,maxY,gap)) continue;
+            if (shortNotes || bracket) return new Glyph(minX, minY, maxX, maxY);
         }
         return null;
+    }
+
+    /** Validate against the untouched raster, not a retry with its staff rules erased. */
+    private static boolean validNumeralContext(byte[] gray,int width,int height,Glyph glyph,
+            float firstX,float lastX,float gap,int number) {
+        if(number!=3||!insideFiveLineStaff(gray,width,height,glyph.left(),glyph.top(),glyph.right(),glyph.bottom(),gap))return true;
+        return bracketHook(gray,width,height,firstX,glyph.top(),glyph.bottom(),gap)
+                &&bracketHook(gray,width,height,lastX,glyph.top(),glyph.bottom(),gap);
+    }
+
+    private static boolean bracketHook(byte[] gray,int width,int height,float x,int top,int bottom,float gap) {
+        for(int xx=Math.max(0,Math.round(x-gap*.4f));xx<=Math.min(width-1,Math.round(x+gap*.4f));xx++) {
+            int run=0;
+            for(int y=Math.max(0,Math.round(top-gap*.5f));y<=Math.min(height-1,Math.round(bottom+gap*.5f));y++) {
+                run=dark(gray,width,xx,y)?run+1:0;
+                if(run>=Math.max(3,Math.round(gap*.65f)))return true;
+            }
+        }
+        return false;
+    }
+
+
+    private static boolean insideFiveLineStaff(byte[] gray,int width,int height,
+            int left,int top,int right,int bottom,float gap) {
+        float center=(top+bottom)*.5f;
+        int x0=Math.max(0,Math.round(left-gap*5)),x1=Math.min(width-1,Math.round(right+gap*5));
+        if(x1-x0<gap*6)return false;
+        var rules=new ArrayList<Integer>();
+        boolean previous=false;
+        for(int y=Math.max(0,Math.round(center-gap*6));y<=Math.min(height-1,Math.round(center+gap*6));y++) {
+            int count=0,total=0;
+            for(int x=x0;x<=x1;x++)if(x<left-1||x>right+1) {
+                total++;if(dark(gray,width,x,y))count++;
+            }
+            boolean rule=total>0&&count>=total*.8f;
+            if(rule&&!previous)rules.add(y);
+            previous=rule;
+        }
+        for(int i=0;i+4<rules.size();i++) {
+            float spacing=(rules.get(i+4)-rules.get(i))/4f;
+            if(spacing<3||spacing<gap*.4f||spacing>gap*2||center<rules.get(i)||center>rules.get(i+4))continue;
+            boolean regular=true;
+            for(int j=1;j<=4;j++)if(Math.abs(rules.get(i+j)-rules.get(i)-j*spacing)>spacing*.2f)regular=false;
+            if(regular)return true;
+        }
+        return false;
     }
 
     /** Look for a separate, similarly sized upright glyph stacked over or under

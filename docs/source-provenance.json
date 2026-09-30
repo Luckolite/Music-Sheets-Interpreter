@@ -375,10 +375,10 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "d5e9b22b8292129c55a298eab5a41d6982850d97612da132dbfe80ba6ff80832",
+      "source_sha256": "9985884fecca5608a87a19df207104993cf47574525688faed9c6612a0d08063",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "17fa14463efcbecfcc10ef516ba6054f41ce7224043491c1bfe580c71062d46f",
-      "review_note": "Reviewed patch against app base 650d1b3a: blank rows cannot supply numeral openings/waist, and contrast recovery requires matching outlines at two distinct thresholds. Port has only package/formatting differences; original procedural regressions, unchanged dependencies and weights."
+      "source_normalized_sha256": "4a07f3192a7d6e223b25da023364aa96db9751bbbbf74618921fd86059b16925",
+      "review_note": "Reviewed patch against app base 650d1b3a: blank-row and multi-threshold guards plus original-raster five-staff-rule context. In-staff recovery requires real bracket hooks; erased retry rules cannot hide rest context. Package/formatting-only port differences, original synthetic controls, no new dependencies or weights."
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"

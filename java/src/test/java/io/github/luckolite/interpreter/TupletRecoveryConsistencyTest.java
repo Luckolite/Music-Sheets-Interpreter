@@ -36,4 +36,28 @@ public class TupletRecoveryConsistencyTest {
     @Test public void stableRecoveredNumeralStillWorks() throws Exception {
         assertNotNull(detect(scene(false)));
     }
+    private static byte[] staffScene(boolean bracket) {
+        byte[] gray=scene(false);
+        for(int y=140;y<=180;y+=10)for(int x=60;x<=190;x++)gray[y*400+x]=0;
+        if(bracket) {
+            for(int y=143;y<=149;y++)for(int x:new int[]{100,150})gray[y*400+x]=0;
+            for(int x=100;x<=150;x++)if(x<=115||x>=134)gray[143*400+x]=0;
+        }
+        return gray;
+    }
+    @Test public void erasedStaffRulesCannotHideTheRestContext() throws Exception {
+        assertNull(detect(staffScene(false)));
+    }
+    @Test public void explicitBracketHooksProvideStaffContextProof() throws Exception {
+        Class<?> glyphClass=Arrays.stream(TripletRhythmDetector.class.getDeclaredClasses())
+                .filter(type->type.getSimpleName().equals("Glyph")).findFirst().orElseThrow();
+        var constructor=glyphClass.getDeclaredConstructor(int.class,int.class,int.class,int.class);
+        constructor.setAccessible(true);
+        Object glyph=constructor.newInstance(119,145,130,166);
+        var method=TripletRhythmDetector.class.getDeclaredMethod("validNumeralContext",
+                byte[].class,int.class,int.class,glyphClass,float.class,float.class,float.class,int.class);
+        method.setAccessible(true);
+        assertFalse((boolean)method.invoke(null,staffScene(false),400,240,glyph,100f,150f,12f,3));
+        assertTrue((boolean)method.invoke(null,staffScene(true),400,240,glyph,100f,150f,12f,3));
+    }
 }
