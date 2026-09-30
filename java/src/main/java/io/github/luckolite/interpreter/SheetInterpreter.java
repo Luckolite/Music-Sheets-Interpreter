@@ -229,9 +229,14 @@ public final class SheetInterpreter {
                                 MeasureNumberReconciler.firstMeasureNumber(measures, numbers),
                                 score.keyChanges(),
                                 TempoChangeDetector.detect(
-                                        annotations.tempoNumbers.stream()
-                                                .map(NumberToken::internal)
-                                                .toList(),
+                                        TempoChangeDetector.withIsolatedDigits(
+                                                annotations.tempoNumbers.stream()
+                                                        .map(NumberToken::internal)
+                                                        .toList(),
+                                                words,
+                                                gray,
+                                                width,
+                                                height),
                                         gray,
                                         width,
                                         height,

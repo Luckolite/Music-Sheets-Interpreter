@@ -50,6 +50,43 @@ public final class ScoreMeterMap {
                 : java.util.OptionalInt.of(performedStarts.length - 1);
     }
 
+    /** Replace a proved partial opening span; printed meter changes remain caller-owned. */
+    public ScoreMeterMap withOpeningQuarterBeats(double duration, int measureCount) {
+        if (measureCount < 1
+                || measureCount > 1000000
+                || !Double.isFinite(duration)
+                || duration <= 0
+                || duration > quarterBeatsInMeasure(0))
+            throw new IllegalArgumentException("Invalid opening span");
+        return withBoundaryQuarterBeats(duration, 0, measureCount);
+    }
+
+    /** Zero means unproved: retain the nominal boundary span. */
+    public ScoreMeterMap withBoundaryQuarterBeats(
+            double openingSpan, double closingSpan, int measureCount) {
+        if (measureCount < 1
+                || measureCount > 1000000
+                || !Double.isFinite(openingSpan)
+                || !Double.isFinite(closingSpan)
+                || openingSpan < 0
+                || closingSpan < 0
+                || openingSpan > quarterBeatsInMeasure(0)
+                || closingSpan > quarterBeatsInMeasure(measureCount - 1)
+                || (measureCount == 1
+                        && openingSpan > 0
+                        && closingSpan > 0
+                        && Math.abs(openingSpan - closingSpan) > .001))
+            throw new IllegalArgumentException("Invalid boundary span");
+        List<Double> spans = new ArrayList<>(measureCount);
+        for (int i = 0; i < measureCount; i++) {
+            double span = quarterBeatsInMeasure(i);
+            if (i == 0 && openingSpan > 0) span = openingSpan;
+            if (i == measureCount - 1 && closingSpan > 0) span = closingSpan;
+            spans.add(span);
+        }
+        return fromPerformedDurations(spans);
+    }
+
     public double quarterBeatsInMeasure(int measure) {
         if (performedStarts == null) return beatsInMeasure(measure);
         if (performedStarts.length == 1) return 4;

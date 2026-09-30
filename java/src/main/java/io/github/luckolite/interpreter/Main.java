@@ -135,6 +135,20 @@ public final class Main {
                         .sorted(Comparator.comparingInt(ScoreMeterChange::measureIndex))
                         .toList())
             Arrays.fill(beats, change.measureIndex(), beats.length, change.quarterBeats());
+        if (beats.length > 0) {
+            double pickup =
+                    ScoreOpeningDuration.provedQuarterBeats(
+                            score.notes(),
+                            score.rests(),
+                            score.measures(),
+                            beats[0],
+                            score.firstMeasureNumber());
+            if (Double.isFinite(pickup)) beats[0] = (float) pickup;
+            double closing =
+                    ScoreOpeningDuration.provedClosingQuarterBeats(
+                            score.notes(), score.rests(), beats.length, beats[beats.length - 1]);
+            if (Double.isFinite(closing)) beats[beats.length - 1] = (float) closing;
+        }
         double[] starts = new double[beats.length + 1];
         for (int i = 0; i < beats.length; i++) starts[i + 1] = starts[i] + beats[i];
         var events = new ArrayList<Map<String, Object>>();

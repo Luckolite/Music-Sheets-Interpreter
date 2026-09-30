@@ -10,6 +10,41 @@ import java.util.List;
 final class TempoChangeDetector {
     private TempoChangeDetector() {}
 
+    /** OCR may drop the note and equals sign while retaining a separate BPM numeral. */
+    static List<MeasureNumberReconciler.NumberToken> withIsolatedDigits(
+            List<MeasureNumberReconciler.NumberToken> tokens,
+            List<PlayingTechniqueDetector.Word> words,
+            byte[] gray,
+            int width,
+            int height) {
+        var result = new ArrayList<>(tokens);
+        if (gray == null || gray.length != width * height) return List.copyOf(result);
+        for (var word : words) {
+            String text = word.text().trim();
+            if (!text.matches("[0-9]{2,3}")) continue;
+            int value = Integer.parseInt(text);
+            if (value < 30 || value > 400) continue;
+            var token =
+                    new MeasureNumberReconciler.NumberToken(
+                            value, word.left(), word.top(), word.right(), word.bottom());
+            int equals = equalsSignLeft(token, gray, width, height);
+            if (equals < 0) continue;
+            var bounded = printedDigitBounds(token, gray, width, height);
+            if (!Double.isFinite(printedBeatUnit(bounded, gray, width, height, equals, 200))
+                    && !Double.isFinite(printedBeatUnit(bounded, gray, width, height, equals, 165)))
+                continue;
+            if (result.stream()
+                    .noneMatch(
+                            old ->
+                                    old.value() == value
+                                            && old.left() < word.right()
+                                            && old.right() > word.left()
+                                            && old.top() < word.bottom()
+                                            && old.bottom() > word.top())) result.add(token);
+        }
+        return List.copyOf(result);
+    }
+
     static List<ScoreTempoChange> detect(
             List<MeasureNumberReconciler.NumberToken> tokens,
             byte[] gray,
@@ -325,6 +360,8 @@ final class TempoChangeDetector {
             int equalsLeft) {
         double normal = printedBeatUnit(token, gray, width, height, equalsLeft, 200);
         double core = printedBeatUnit(token, gray, width, height, equalsLeft, 165);
+        if (!Double.isFinite(normal)) normal = Double.isFinite(core) ? core : 1;
+        if (!Double.isFinite(core)) core = normal;
         // A light scan bridge can attach the dot to its notehead. Only use the
         // darker segmentation to recover a complete dot, not to erase faint ink.
         return core == normal * 1.5 || normal == 1 && (core == 2 || core == 3) ? core : normal;
@@ -356,7 +393,7 @@ final class TempoChangeDetector {
         int top = Math.max(0, Math.round(token.top() * height) - unit);
         int bottom = Math.min(height - 1, Math.round(token.bottom() * height) + unit / 3);
         int rw = right - left + 1, rh = bottom - top + 1;
-        if (rw <= 0 || rh <= 0) return 1;
+        if (rw <= 0 || rh <= 0) return Double.NaN;
         boolean[] seen = new boolean[rw * rh];
         int[] queue = new int[seen.length];
         List<int[]> parts = new ArrayList<>();
@@ -448,7 +485,7 @@ final class TempoChangeDetector {
             }
             return beat;
         }
-        return 1;
+        return Double.NaN;
     }
 
     /** A half head needs a paper pocket enclosed by ink, not merely a light letter edge. */

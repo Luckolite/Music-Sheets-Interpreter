@@ -278,11 +278,11 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "092863d2ac11b6e26c412608f9804a9facb3b076ea73b2c597110045b07fd928",
+      "source_sha256": "73a2b01709bd6264ede26855e6b2104d12978c97b441814d17a2485700544a24",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Retains prior staff, beam, tie, dot-frame and entrance safeguards. Complete printed phase is retained against unsupported inferred rescaling; fractional beam extent is raster-bounded. Adjacent flag roots and a recentered axis require independent shaft/curved-hook proof. Center-first pale shaft tracing keeps the original threshold first; its darker fallback requires a bounded rooted flag, companion-head-aware samples and independent contrast. Faint augmentation dots retain nested-core/shape ownership at intermediate contrast thresholds; double-beam recovery retains full-body and separated-core proof. A corroborated printed frame supersedes a substantially compressed seed only for beam measurement, preserving its slope. Complete modified methods and overloads have app/standalone code-and-literal parity. Original generated geometry covers phase, beam, root, shaft, occlusion, dot contrast, slope and negative controls. No song-specific rule, new dependency, model change or private fixture.",
-      "source_normalized_sha256": "7a0d10f8ac44f8ea87a747413bd5eb57b27b051be209c3ff134def80c2532e65"
+      "review_note": "Complete code/literal parity with package, diagnostics and equivalent declaration adaptations. Original synthetic controls cover displaced accidentals, octave sharp columns, shared-shaft beams/dots and compact thin tie arcs; prior safeguards retained. No new dependency, model or private fixture.",
+      "source_normalized_sha256": "a878986235481ec1d1845d2fda2b25493b6957b7230a8c4a1ed897e77bef3783"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -302,10 +302,10 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "c956531fda24390034f8fec6bd0b82c721729fdb483d88331fde4f25b97e9c0e",
+      "source_sha256": "6bc7b64e52171bb6abb1bef8be0d755f297dcd2a77467decef4c61e94cc5a24c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed global geometric hairpin continuation and bounded isolated-wedge ownership; full app/standalone code and literal parity. Original generated positive and rejection controls; no private score artifacts or new dependencies.",
-      "source_normalized_sha256": "c956531fda24390034f8fec6bd0b82c721729fdb483d88331fde4f25b97e9c0e"
+      "review_note": "Package-only code/literal parity. Ledger-note envelope ownership and bounded italic bar overlap preserve template confidence; original synthetic ownership controls, no new dependencies.",
+      "source_normalized_sha256": "6bc7b64e52171bb6abb1bef8be0d755f297dcd2a77467decef4c61e94cc5a24c"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
@@ -332,10 +332,10 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "810c6a5bcf6fc31d40112aae11cdf57df36fb776a2886873facd2a21423b61fa",
+      "source_sha256": "b6344153b8e7e3895aee60bb719f6231cb40e781567c089b14dde59194445721",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed app worktree rest overflow guard ported with original synthetic regressions; final sustain across the bar remains valid. No new helper or dependency.",
-      "source_normalized_sha256": "810c6a5bcf6fc31d40112aae11cdf57df36fb776a2886873facd2a21423b61fa"
+      "review_note": "Package-only code/literal parity. Matching explicit note/rest spans on all independent staves prove short rhythms; unexplained gaps retain existing timing. Original procedural controls and existing rest-overflow safeguards retained.",
+      "source_normalized_sha256": "91f24e7c371f694ee8a447ca47fd81b239bb2ac64ee38eae671106a8d0ba7e02"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
@@ -368,9 +368,10 @@
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
-      "source_sha256": "305057fe0771c270d0526620242ad1e2975462127b52809d208b77e005ccc4fc",
+      "source_sha256": "22bc1d9b6b75622069f271b62d74ed08e1ebdeb7250e91ec4ab582d0db23c9f5",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "305057fe0771c270d0526620242ad1e2975462127b52809d208b77e005ccc4fc"
+      "source_normalized_sha256": "22bc1d9b6b75622069f271b62d74ed08e1ebdeb7250e91ec4ab582d0db23c9f5",
+      "review_note": "Package-only code/literal parity. Isolated OCR digits require printed equals and independently recognized beat unit; Python numeric-only rejection unchanged. NativePageGuide and standalone SheetInterpreter share the helper; original synthetic controls, no new dependencies."
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
@@ -847,11 +848,19 @@
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "source_normalized_sha256": "cc34d83cb501ea251b19647fa2e287e83eb55bb27886229440d72b5fb7c430bc"
     },
+    "ScoreOpeningDuration.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreOpeningDuration.java",
+      "source_sha256": "89a0922716eec49ee46c55e51b88cb0129ba79eddafac1b48ffd5f41a80e128a",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "89a0922716eec49ee46c55e51b88cb0129ba79eddafac1b48ffd5f41a80e128a",
+      "review_note": "Original pure Java boundary duration proof; complete package-only code/literal parity. Opening requires short source layout and agreeing explicit staff spans; closing requires at least two staves and explicit terminal rests. Unknown gaps, ties, cross-staff and disagreement veto inference. Synthetic controls only, no private score or new dependencies."
+    },
     "ScoreMeterMap.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreMeterMap.java",
-      "source_sha256": "3f303a120c548372b08ad47b90c7908f1a1657c0346f318bad0a9aa4db9703cf",
+      "source_sha256": "fc70b038c6b05df1c2c26f4ce06bcd0c581b49eae9cf88f81d5a46b6ee761030",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "3f303a120c548372b08ad47b90c7908f1a1657c0346f318bad0a9aa4db9703cf"
+      "source_normalized_sha256": "fc70b038c6b05df1c2c26f4ce06bcd0c581b49eae9cf88f81d5a46b6ee761030",
+      "review_note": "Package-only code/literal parity. Exact proved boundary duration grid leaves printed meter caller-owned; zero means unproved and conflicting single-bar spans are rejected. Original generated regression coverage."
     },
     "MusicalOcr.java": {
       "source_path": "tools/native-worker/NativeMusicalOcr.java",

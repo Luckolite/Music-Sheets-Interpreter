@@ -459,7 +459,8 @@ public final class ScoreNoteTiming {
                 }
             }
         }
-        if (completePrintedRestRhythm(groups, safeBeats)) {
+        if (completePrintedRestRhythm(groups, safeBeats)
+                || sharedShortRestRhythm(target, notes, groups, safeBeats)) {
             double onset = leadingRest(groups);
             for (RhythmGroup group : groups) {
                 if (group.contains(target)) return onset;
@@ -794,7 +795,9 @@ public final class ScoreNoteTiming {
                 Float.isFinite(beatsPerMeasure)
                         ? Math.max(.125, Math.min(128, beatsPerMeasure))
                         : Double.NaN;
-        if (completePrintedRestRhythm(groups, safeBeats)) return writtenDurationBeats(target);
+        if (completePrintedRestRhythm(groups, safeBeats)
+                || sharedShortRestRhythm(target, notes, groups, safeBeats))
+            return writtenDurationBeats(target);
         double[] durations = stabilizedDurations(groups, safeBeats);
         for (int index = 0; index < groups.size(); index++)
             if (groups.get(index).contains(target)) return durations[index];
@@ -989,6 +992,42 @@ public final class ScoreNoteTiming {
                 && Double.isFinite(total)
                 && Double.isFinite(beats)
                 && Math.abs(total - beats) < .03125;
+    }
+
+    /** Matching explicit closing silence on every stave proves a shorter written bar.
+     * Its engraving may fill a nominal full-bar width, so positions cannot add beats. */
+    private static boolean sharedShortRestRhythm(
+            ScoreNoteEvent target,
+            List<ScoreNoteEvent> notes,
+            List<RhythmGroup> groups,
+            double beats) {
+        if (target.staffCount() < 2 || !Double.isFinite(beats) || groups.isEmpty()) return false;
+        double span = restBoundedSpan(groups);
+        if (!Double.isFinite(span) || span <= 0 || span >= beats - .03125) return false;
+        for (int staff = 0; staff < target.staffCount(); staff++)
+            if (staff != target.staffIndex()) {
+                var voice = new ArrayList<ScoreNoteEvent>();
+                for (ScoreNoteEvent note : notes)
+                    if (note.measureIndex() == target.measureIndex()
+                            && note.staffIndex() == staff
+                            && note.staffCount() == target.staffCount()
+                            && !grace(note)) voice.add(note);
+                double other = restBoundedSpan(rhythmGroups(voice));
+                if (!Double.isFinite(other) || Math.abs(other - span) >= .03125) return false;
+            }
+        return true;
+    }
+
+    private static double restBoundedSpan(List<RhythmGroup> groups) {
+        if (groups.isEmpty() || followingRest(groups.get(groups.size() - 1)) <= 0)
+            return Double.NaN;
+        double span = leadingRest(groups);
+        for (RhythmGroup group : groups) {
+            double written = group.writtenDuration();
+            if (!Double.isFinite(written) || written <= 0) return Double.NaN;
+            span += written + followingRest(group);
+        }
+        return span;
     }
 
     /** Quarter-note beats encoded by flags/beams and one or two augmentation dots. */

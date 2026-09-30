@@ -1190,6 +1190,18 @@ final class OmrScoreInterpreter {
                 for (Component part : seconds) {
                     int partStep =
                             printedPitchStep(gray, width, height, part, localBottom, localGap);
+                    int partAccidental =
+                            displacedSecondAccidental(
+                                    labels,
+                                    gray,
+                                    width,
+                                    height,
+                                    localAccidentals,
+                                    head,
+                                    part,
+                                    seconds,
+                                    accidentalGap,
+                                    heads);
                     // Displaced seconds share the stem/attack, despite their two horizontal
                     // centres.
                     var chord =
@@ -1203,7 +1215,7 @@ final class OmrScoreInterpreter {
                                             false,
                                             augmentationDots,
                                             beamCount,
-                                            writtenAccidental,
+                                            partAccidental,
                                             unbeamedDuration)
                                     .withArticulations(event.articulations());
                     detected.add(new DetectedNote(chord, part, staff.gap));
@@ -1555,6 +1567,15 @@ final class OmrScoreInterpreter {
                                     event.clefBottomDiatonic())
                             .withLeadingRest(leading));
         }
+        // Rest exclusion revalidates dots beside individual ovals. A displaced
+        // second still shares the surviving printed duration of its proved shaft.
+        List<DetectedNote> validatedRhythms = new ArrayList<>(joined.size());
+        for (int i = 0; i < joined.size(); i++)
+            validatedRhythms.add(
+                    new DetectedNote(withRests.get(i), joined.get(i).head, joined.get(i).staffGap));
+        List<DetectedNote> chordRhythms =
+                reconcileSingleShaftChords(validatedRhythms, labels, gray, width, height);
+        for (int i = 0; i < chordRhythms.size(); i++) withRests.set(i, chordRhythms.get(i).event);
         List<NoteArticulationDetector.Anchor> anchors = new ArrayList<>();
         for (DetectedNote note : joined)
             anchors.add(
@@ -4736,6 +4757,13 @@ final class OmrScoreInterpreter {
                                         && !orderedSignaturePitches(
                                                 labels, width, height, run, recognized, staff)))
                     continue;
+                // Octave chord accidentals can share one column while a third sharp
+                // supplies the apparent F/C key order. A signature never repeats
+                // two complete sharp glyphs an octave apart in the same column.
+                if (!signatureHeader
+                        && sharps > 1
+                        && stackedSignatureSharpColumn(
+                                labels, width, height, run, recognized, staff)) continue;
                 int fifths = naturals > 0 ? 0 : flats > 0 ? -flats : sharps;
                 if (clef != null
                         && !result.isEmpty()
@@ -5045,6 +5073,37 @@ final class OmrScoreInterpreter {
     private static boolean completeHeaderClef(Component glyph, Staff staff) {
         return glyph.minY < staff.top - staff.gap * .35f
                 && glyph.maxY > staff.bottom + staff.gap * .20f;
+    }
+
+    private static boolean stackedSignatureSharpColumn(
+            byte[] labels,
+            int width,
+            int height,
+            List<SignatureGlyph> run,
+            Map<AccidentalCandidate, Float> recognized,
+            Staff staff) {
+        var entries = new ArrayList<>(recognized.entrySet());
+        for (int i = 0; i < entries.size(); i++) {
+            var a = entries.get(i);
+            if (run.stream()
+                    .noneMatch(
+                            g ->
+                                    g.accidental == ScoreNoteEvent.ACCIDENTAL_SHARP
+                                            && Math.abs(g.x - a.getValue()) < staff.gap * .45f))
+                continue;
+            for (int j = i + 1; j < entries.size(); j++) {
+                var b = entries.get(j);
+                if (Math.abs(a.getValue() - b.getValue()) >= staff.gap * .45f) continue;
+                if (!isSharpGlyph(labels, width, height, a.getKey(), staff.gap)
+                        || !isSharpGlyph(labels, width, height, b.getKey(), staff.gap)) continue;
+                float ay = sharpPitchCenter(labels, width, height, a.getKey(), staff.pitchGap);
+                float by = sharpPitchCenter(labels, width, height, b.getKey(), staff.pitchGap);
+                if (Float.isFinite(ay)
+                        && Float.isFinite(by)
+                        && Math.abs(ay - by) > staff.pitchGap * 2.75f) return true;
+            }
+        }
+        return false;
     }
 
     /** Adjacent key symbols follow fourths/fifths; a nearby note accidental need not. */
@@ -12145,6 +12204,94 @@ final class OmrScoreInterpreter {
         return best == null ? ScoreNoteEvent.ACCIDENTAL_FROM_KEY : bestAccidental;
     }
 
+    /** Recover the glyph against the intact merged head, then assign it to one tone.
+     * A displaced right-hand head is too far from the glyph for ordinary crop recovery. */
+    private static int displacedSecondAccidental(
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            List<AccidentalCandidate> candidates,
+            Component merged,
+            Component part,
+            List<Component> seconds,
+            float gap,
+            List<Component> heads) {
+        int result = ScoreNoteEvent.ACCIDENTAL_FROM_KEY;
+        float best = Float.POSITIVE_INFINITY;
+        for (AccidentalCandidate candidate : candidates) {
+            List<AccidentalCandidate> single = List.of(candidate);
+            int accidental =
+                    detectWrittenAccidental(
+                            labels, width, height, single, merged, gap, heads, gray);
+            if (accidental == ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                    && rawSharpFromSeed(gray, width, height, single, merged, gap))
+                accidental = ScoreNoteEvent.ACCIDENTAL_SHARP;
+            if (accidental == ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                    && rawFlatFromBowl(gray, width, height, single, merged, gap))
+                accidental = ScoreNoteEvent.ACCIDENTAL_FLAT;
+            if ((accidental == ScoreNoteEvent.ACCIDENTAL_FROM_KEY
+                            || accidental == ScoreNoteEvent.ACCIDENTAL_FLAT)
+                    && rawNaturalFromCrossbars(gray, width, height, single, merged, gap))
+                accidental = ScoreNoteEvent.ACCIDENTAL_NATURAL;
+            if (accidental == ScoreNoteEvent.ACCIDENTAL_FROM_KEY) continue;
+            float pitch =
+                    accidental == ScoreNoteEvent.ACCIDENTAL_FLAT
+                            ? flatPitchCenter(labels, width, candidate, gap)
+                            : accidental == ScoreNoteEvent.ACCIDENTAL_SHARP
+                                    ? sharpPitchCenter(labels, width, height, candidate, gap)
+                                    : candidate.component.centerY;
+            float raw =
+                    displacedAccidentalPitch(
+                            gray, width, height, candidate, merged, gap, accidental);
+            if (Float.isFinite(raw)) pitch = raw;
+            if (!Float.isFinite(pitch)) continue;
+            float distance = Math.abs(part.centerY - pitch);
+            Component owner = seconds.get(0);
+            for (Component other : seconds)
+                if (Math.abs(other.centerY - pitch) < Math.abs(owner.centerY - pitch))
+                    owner = other;
+            if (owner == part && distance <= gap * .6f && distance < best) {
+                best = distance;
+                result = accidental;
+            }
+        }
+        return result;
+    }
+
+    private static float displacedAccidentalPitch(
+            byte[] gray,
+            int width,
+            int height,
+            AccidentalCandidate candidate,
+            Component merged,
+            float gap,
+            int accidental) {
+        if (gray == null) return Float.NaN;
+        Component seed = candidate.component;
+        int margin = Math.max(1, Math.round(gap * .16f));
+        int left = Math.max(0, seed.minX - margin),
+                right = Math.min(width - 1, Math.min(seed.maxX + margin, merged.minX - 2));
+        int top = Math.max(0, Math.round(merged.centerY - gap * 3)),
+                bottom = Math.min(height - 1, Math.round(merged.centerY + gap * 3));
+        int w = right - left + 1, h = bottom - top + 1;
+        if (w <= 0 || h <= 0) return Float.NaN;
+        byte[] ink = flatInkAtThreshold(gray, width, height, left, right, top, bottom, gap, 180);
+        Component glyph = retainSeedConnectedInk(ink, w, h, seed, left, top);
+        if (glyph == null || rawStrokeLeavesCrop(gray, width, height, ink, w, h, left, top, gap))
+            return Float.NaN;
+        AccidentalCandidate isolated =
+                new AccidentalCandidate(glyph, OmrMeasurePostProcessor.SYMBOL);
+        if (accidental == ScoreNoteEvent.ACCIDENTAL_NATURAL
+                && isNaturalGlyph(ink, w, h, isolated, gap))
+            return top + (glyph.minY + glyph.maxY) * .5f;
+        if (accidental == ScoreNoteEvent.ACCIDENTAL_FLAT && isFlatGlyph(ink, w, h, isolated, gap))
+            return top + flatPitchCenter(ink, w, isolated, gap);
+        if (accidental == ScoreNoteEvent.ACCIDENTAL_SHARP)
+            return top + sharpPitchCenter(ink, w, h, isolated, gap);
+        return Float.NaN;
+    }
+
     /** A repaired union cannot turn an intact natural plus stray rule ink into a flat. */
     private static boolean containsPrintedNatural(
             byte[] gray,
@@ -15835,7 +15982,8 @@ final class OmrScoreInterpreter {
     }
 
     /** A filled chord on one independently proved shaft has one beam count.
-     * Require a strict majority and exclude hollow or opposing-stem voices. */
+     * Read the rhythm beside its outer head, not by voting on interior heads
+     * whose ovals and ledger lines can obscure or resemble extra beam bands. */
     private static List<DetectedNote> reconcileSingleShaftChords(
             List<DetectedNote> source, byte[] labels, byte[] gray, int width, int height) {
         if (gray == null) return source;
@@ -15855,10 +16003,12 @@ final class OmrScoreInterpreter {
                                 < .002f
                         && Math.abs(n.head.centerX - seed.head.centerX) < gap * 1.8f) group.add(j);
             }
-            if (group.size() < 3 || group.size() > 6) continue;
+            if (group.size() < 2 || group.size() > 6) continue;
             boolean filled = true;
             int left = width, right = 0, top = height, bottom = 0;
             int[] counts = new int[4];
+            int dots = 0;
+            boolean dotsDiffer = false;
             for (int j : group) {
                 DetectedNote n = source.get(j);
                 Component h = n.head;
@@ -15872,14 +16022,17 @@ final class OmrScoreInterpreter {
                 top = Math.min(top, h.minY);
                 bottom = Math.max(bottom, h.maxY);
                 if (n.event.beamCount() <= 3) counts[n.event.beamCount()]++;
+                dots = Math.max(dots, n.event.augmentationDots());
+                dotsDiffer |= n.event.augmentationDots() != seed.event.augmentationDots();
             }
             int common = 0;
             for (int b = 1; b < 4; b++) if (counts[b] > counts[common]) common = b;
             if (!filled
-                    || counts[common] <= group.size() / 2
-                    || counts[common] == group.size()
+                    || (counts[common] == group.size() && !dotsDiffer)
                     || bottom - top > gap * 6) continue;
             int directions = 0;
+            int[] shaft = null;
+            int shaftLength = 0;
             for (int x = Math.max(1, left); x <= Math.min(width - 2, right); x++) {
                 boolean edge = true;
                 for (int j : group) {
@@ -15920,16 +16073,41 @@ final class OmrScoreInterpreter {
                     }
                     if (Math.abs(end - start) >= gap * 1.5f
                             && thinShaftRun(
-                                    gray, width, height, bounds, x, end, direction, gap, 170))
+                                    gray, width, height, bounds, x, end, direction, gap, 170)) {
                         directions |= direction < 0 ? 1 : 2;
+                        if (Math.abs(end - start) > shaftLength) {
+                            shaftLength = Math.abs(end - start);
+                            shaft = new int[] {x, end, direction};
+                        }
+                    }
                 }
             }
-            if (directions != 1 && directions != 2) continue;
+            if ((directions != 1 && directions != 2) || shaft == null) continue;
+            DetectedNote outer = seed;
+            for (int j : group) {
+                DetectedNote n = source.get(j);
+                if ((n.head.centerY - outer.head.centerY) * shaft[2] > 0) outer = n;
+            }
+            float staffBottom = outer.event.pageY() * height + outer.event.staffStep() * gap * .5f;
+            Staff printed = new Staff(staffBottom - gap * 4, staffBottom, gap);
+            if (counts[common] != group.size())
+                common =
+                        detectBeamCount(
+                                labels,
+                                gray,
+                                width,
+                                height,
+                                outer.head,
+                                printed,
+                                false,
+                                false,
+                                shaft);
+            if (common < 0 || common > 3) continue;
             for (int j : group) {
                 visited[j] = true;
                 DetectedNote n = source.get(j);
                 ScoreNoteEvent e = n.event;
-                if (e.beamCount() == common) continue;
+                if (e.beamCount() == common && e.augmentationDots() == dots) continue;
                 var corrected =
                         new ScoreNoteEvent(
                                 e.measureIndex(),
@@ -15939,7 +16117,7 @@ final class OmrScoreInterpreter {
                                 e.staffCount(),
                                 e.pageY(),
                                 e.tiedFromPrevious(),
-                                e.augmentationDots(),
+                                dots,
                                 common,
                                 e.writtenAccidental(),
                                 common > 0 ? 0 : 1,
@@ -17516,6 +17694,9 @@ final class OmrScoreInterpreter {
             for (float offset = .2f; offset <= 1.15f; offset += .15f)
                 for (float bend = -.75f; bend <= 1.8f; bend += .1f) {
                     if (Math.abs(bend) < .24f || offset + bend < .12f) continue;
+                    // A compact span cannot own a deep bowl under the heads;
+                    // rounded dynamics and rest bulbs can supply unrelated ink.
+                    if (right - left < gap * 2.6f && offset + Math.max(0, bend) > 1.6f) continue;
                     if (target != null
                             && Math.abs(centerY + side * gap * (offset + bend) - target.centerY)
                                     > gap * .25f) continue;
@@ -17585,8 +17766,13 @@ final class OmrScoreInterpreter {
                                 while (inkBottom < Math.min(height - 1, yy + reach)
                                         && (gray[(inkBottom + 1) * width + x] & 255) <= inkLimit)
                                     inkBottom++;
-                                if (inkBottom - inkTop <= gap * .6f)
-                                    strokeCenters[sample] = (inkTop + inkBottom) * .5f;
+                                // Follow the actual thin stroke, not the convenient
+                                // edge of a thick accidental, rest bulb or letter.
+                                if (inkBottom - inkTop > gap * .6f) continue;
+                                float strokeCenter = (inkTop + inkBottom) * .5f;
+                                if (Math.abs(strokeCenter - y) > radius + Math.max(1f, gap * .06f))
+                                    continue;
+                                strokeCenters[sample] = strokeCenter;
                                 ink = true;
                                 centers[sample] = yy;
                                 supportedCenters[sample] = yy;

@@ -31,8 +31,15 @@ def main():
                            encoding='utf-8')
     subprocess.run([jdk_tool('javac'), '--release', '17', '-encoding', 'UTF-8', '-cp', cp,
                     '-d', str(classes), '@' + str(source_list)], cwd=ROOT, check=True)
-    subprocess.run([jdk_tool('java'), '-cp', os.pathsep.join([str(classes), cp]),
-                    'org.junit.runner.JUnitCore', *['io.github.luckolite.interpreter.' + p.stem for p in sources]], check=True)
+    # The growing regression suite exceeds Windows' command-line limit. Java 17
+    # reads the same arguments from a file without splitting or omitting tests.
+    arguments = ['-cp', os.pathsep.join([str(classes), cp]),
+                 'org.junit.runner.JUnitCore',
+                 *['io.github.luckolite.interpreter.' + p.stem for p in sources]]
+    runner_list = ROOT / 'build/test-runner-args.txt'
+    runner_list.write_text('\n'.join('"' + argument.replace('\\', '\\\\').replace('"', '\\"') + '"'
+                                    for argument in arguments), encoding='utf-8')
+    subprocess.run([jdk_tool('java'), '@' + str(runner_list)], check=True)
 
 
 if __name__ == '__main__':

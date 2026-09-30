@@ -65,7 +65,7 @@ final class ScoreDynamicsDetector {
                         }
                     }
             }
-            var staff = owner(staffs, top, bottom);
+            var staff = owner(staffs, top, bottom, 8f);
             if (staff == null) continue;
             float gap = staff.gap();
             // A nearby hairpin must not glue itself to mf/mp and make the whole
@@ -223,7 +223,14 @@ final class ScoreDynamicsDetector {
         for (var word : words) {
             float db = level(word.text());
             if (!Float.isFinite(db)) continue;
-            var owner = owner(staffs, word.top() * height, word.bottom() * height);
+            var owner =
+                    directionOwner(
+                            staffs,
+                            word.top() * height,
+                            word.bottom() * height,
+                            notes,
+                            measures,
+                            height);
             if (owner == null || word.bottom() - word.top() > owner.gap() * 3 / height) continue;
             var common =
                     GrandStaffDynamics.between(shared, word.top() * height, word.bottom() * height);
@@ -270,7 +277,7 @@ final class ScoreDynamicsDetector {
                             }
                         }
                 }
-                var owner = owner(staffs, top, bottom);
+                var owner = directionOwner(staffs, top, bottom, notes, measures, height);
                 if (owner == null) owner = HairpinContinuation.distantOwner(staffs, top, bottom);
                 if (owner == null) continue;
                 float gap = owner.gap();
@@ -405,7 +412,14 @@ final class ScoreDynamicsDetector {
         for (var word : words) {
             int direction = textDirection(word.text());
             if (direction == 0) continue;
-            var owner = owner(staffs, word.top() * height, word.bottom() * height);
+            var owner =
+                    directionOwner(
+                            staffs,
+                            word.top() * height,
+                            word.bottom() * height,
+                            notes,
+                            measures,
+                            height);
             if (owner == null) continue;
             var common =
                     GrandStaffDynamics.between(shared, word.top() * height, word.bottom() * height);
@@ -518,6 +532,11 @@ final class ScoreDynamicsDetector {
 
     private static PlayingTechniqueDetector.Staff owner(
             List<PlayingTechniqueDetector.Staff> staffs, float top, float bottom) {
+        return owner(staffs, top, bottom, 4.5f);
+    }
+
+    private static PlayingTechniqueDetector.Staff owner(
+            List<PlayingTechniqueDetector.Staff> staffs, float top, float bottom, float limit) {
         PlayingTechniqueDetector.Staff best = null;
         float score = Float.MAX_VALUE;
         for (var staff : staffs) {
@@ -525,6 +544,42 @@ final class ScoreDynamicsDetector {
             if (top >= Math.round(staff.bottom() + staff.gap() * .25f))
                 distance = (top - staff.bottom()) / staff.gap();
             else if (bottom <= Math.round(staff.top() - staff.gap() * .25f))
+                distance = (staff.top() - bottom) / staff.gap() + .75f;
+            else continue;
+            if (distance <= limit && distance < score) {
+                score = distance;
+                best = staff;
+            }
+        }
+        return best;
+    }
+
+    /** Ledger-heavy parts place directions beyond the nominal five-line staff. */
+    static PlayingTechniqueDetector.Staff directionOwner(
+            List<PlayingTechniqueDetector.Staff> staffs,
+            float top,
+            float bottom,
+            List<ScoreNoteEvent> notes,
+            List<MeasureRegion> measures,
+            int height) {
+        var best = owner(staffs, top, bottom);
+        float score = Float.MAX_VALUE;
+        for (var staff : staffs) {
+            float center = (staff.top() + staff.bottom()) * .5f / height, floor = staff.bottom();
+            for (var note : notes) {
+                if (note.staffIndex() != staff.index()
+                        || note.staffCount() != staff.count()
+                        || note.measureIndex() < 0
+                        || note.measureIndex() >= measures.size()) continue;
+                var measure = measures.get(note.measureIndex());
+                if (center < measure.top() || center > measure.bottom()) continue;
+                floor = Math.max(floor, note.pageY() * height + staff.gap() * 1.5f);
+            }
+            if (floor <= staff.bottom() + staff.gap() * 2) floor = staff.bottom();
+            float distance;
+            if (top >= Math.round(staff.bottom() + staff.gap() * .25f)) {
+                distance = Math.max(0, (top - floor) / staff.gap());
+            } else if (bottom <= Math.round(staff.top() - staff.gap() * .25f))
                 distance = (staff.top() - bottom) / staff.gap() + .75f;
             else continue;
             if (distance <= 4.5f && distance < score) {
@@ -553,7 +608,7 @@ final class ScoreDynamicsDetector {
         if (word.left() < next.left()
                 && next.left() - word.left() <= gap * 1.5f
                 && center >= next.left()
-                && center - next.left() <= gap) return center;
+                && center - next.left() <= gap * 1.5f) return center;
         return word.left();
     }
 
