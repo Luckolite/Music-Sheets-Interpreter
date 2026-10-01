@@ -282,12 +282,13 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "a8b5cb31e06d02629bf29743bfb1340efe84cdac1ff6672fddfe8424490c62ae",
+      "source_sha256": "9f3cdb1b1d44983ff7eb39eb70a48e6098a4d6cc4520dd8cfb4fd46b5b53a756",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Reviewed behavior-preserving tie search: reset per-call scratch arrays for each candidate and hoist invariant reach; preserves curve ordering, thresholds and recursive contrast calls. Original generated differential/isolation regressions; no new dependencies or private raster.",
-      "source_normalized_sha256": "49779fd4717f3e41238543a7570fb29308a8ac9e252712311e5df2728772411a",
-      "reviewed_app_state": "Uncommitted reviewed speedup snapshot derived from guide266 Android release source; baseline app commit recorded separately and exact source hashes pin the changes."
+      "review_note": "Reviewed behavior-preserving tie search: reset per-call scratch arrays for each candidate and hoist invariant reach; preserves curve ordering, thresholds and recursive contrast calls. Original generated differential/isolation regressions; no new dependencies or private raster. Tie search abandons only candidates whose remaining samples cannot meet any existing acceptance path; per-visited-sample NaN initialization preserves completed candidate curvature data. Reviewed six unchanged acceptance paths and original1024-case returning/noisy/faint/flat/straight-rule decision golden; no private imagery, model, thresholds, output layout or dependencies changed.",
+      "source_normalized_sha256": "9f3cdb1b1d44983ff7eb39eb70a48e6098a4d6cc4520dd8cfb4fd46b5b53a756",
+      "reviewed_app_state": "Uncommitted reviewed speedup snapshot derived from guide266 Android release source; baseline app commit recorded separately and exact source hashes pin the changes.",
+      "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-tie-845-release-source"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",

@@ -17787,6 +17787,7 @@ final class OmrScoreInterpreter {
         int reach = Math.max(2, Math.round(gap * .4f));
         for (int side : requiredSide == 0 ? new int[] {-1, 1} : new int[] {requiredSide})
             for (float offset = .2f; offset <= 1.15f; offset += .15f)
+                candidate:
                 for (float bend = -.75f; bend <= 1.8f; bend += .1f) {
                     if (Math.abs(bend) < .24f || offset + bend < .12f) continue;
                     // A compact span cannot own a deep bowl under the heads;
@@ -17798,10 +17799,22 @@ final class OmrScoreInterpreter {
                     int hits = 0, obscured = 0, strong = 0;
                     java.util.Arrays.fill(bins, 0);
                     java.util.Arrays.fill(coveredBins, 0);
-                    java.util.Arrays.fill(centers, Float.NaN);
-                    java.util.Arrays.fill(supportedCenters, Float.NaN);
-                    java.util.Arrays.fill(strokeCenters, Float.NaN);
                     for (int sample = 0; sample < 50; sample++) {
+                        // Every acceptance path needs at least 34 visible hits, 43 total
+                        // samples, and seven covered samples in every ten-sample bin.
+                        // Remaining samples cannot repair a failed bound; skip only then.
+                        int remaining = 50 - sample;
+                        int bin = sample / 10;
+                        if (hits + remaining < 34
+                                || hits + obscured + remaining < 43
+                                || (inkLimit > 165 && strong + remaining < 30)
+                                || coveredBins[bin] + 10 - sample % 10 < 7
+                                || (sample % 10 == 0 && bin > 0 && coveredBins[bin - 1] < 7))
+                            continue candidate;
+                        // Only completed candidates reach curvature checks. Initialize each
+                        // visited sample; abandoned candidates never read their stale tail.
+                        centers[sample] =
+                                supportedCenters[sample] = strokeCenters[sample] = Float.NaN;
                         float t = (sample + .5f) / 50f;
                         int x = Math.round(left + t * (right - left));
                         int y =
