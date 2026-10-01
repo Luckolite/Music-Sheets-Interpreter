@@ -161,4 +161,40 @@ public class MislabeledWedgeArticulationTest {
     public void concaveOuterRasterRowPreservesFilledWedge() {
         assertEquals(NoteArticulation.STACCATISSIMO, outerCornerWedge(false, true));
     }
+
+    private int substantialPartialFace(boolean below) {
+        int w = 2048, h = 1600, gw = below ? 10 : 8, gh = below ? 18 : 12;
+        byte[] gray = new byte[w * h], labels = new byte[w * h];
+        Arrays.fill(gray, (byte) 255);
+        for (int row = 0; row < gh; row++) {
+            int span =
+                    row == 0
+                            ? gw
+                            : 1 + (int) Math.round((gw - 1) * (gh - 1 - row) / (double) (gh - 2));
+            int left = 310 + (gw - span) / 2;
+            for (int x = left; x < left + span; x++) {
+                if (row == 0 && (below ? x >= 314 && x <= 316 : x == left || x == left + span - 1))
+                    continue;
+                int yy = 80 + (below ? gh - 1 - row : row);
+                gray[yy * w + x] = 0;
+                labels[yy * w + x] = OmrMeasurePostProcessor.NOTEHEAD;
+            }
+        }
+        return NoteArticulationDetector.detect(
+                labels,
+                gray,
+                w,
+                h,
+                List.of(new NoteArticulationDetector.Anchor(314, below ? 40 : 125, 17, 0)))[0];
+    }
+
+    @Test
+    public void mostlyFilledConcaveOuterFacePreservesLowerWedge() {
+        assertEquals(NoteArticulation.STACCATISSIMO, substantialPartialFace(true));
+    }
+
+    @Test
+    public void mostlyFilledOuterFacePreservesRoundedWedgeAspect() {
+        assertEquals(NoteArticulation.STACCATISSIMO, substantialPartialFace(false));
+    }
 }

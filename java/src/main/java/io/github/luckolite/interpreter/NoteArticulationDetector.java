@@ -471,6 +471,12 @@ final class NoteArticulationDetector {
                         if (notes.get(j).staff == note.staff
                                 && Math.abs(notes.get(j).x - note.x) < note.gap * .45f)
                             result[j] |= NoteArticulation.MARCATO;
+                if ((result[i] & NoteArticulation.STACCATISSIMO) == 0
+                        && ruleJoinedWedge(note, notes, glyphs, gray, labels, width, height))
+                    for (int j = 0; j < notes.size(); j++)
+                        if (notes.get(j).staff == note.staff
+                                && Math.abs(notes.get(j).x - note.x) < note.gap * .45f)
+                            result[j] |= NoteArticulation.STACCATISSIMO;
                 if ((result[i] & NoteArticulation.STACCATO) == 0
                         && textJoinedDot(note, glyphs, labels, gray, width, height))
                     for (int j = 0; j < notes.size(); j++)
@@ -479,6 +485,104 @@ final class NoteArticulationDetector {
                             result[j] |= NoteArticulation.STACCATO;
             }
         return result;
+    }
+
+    /** A filled wedge can meet a staff rule at its pointed end. */
+    private static boolean ruleJoinedWedge(
+            Anchor note,
+            List<Anchor> notes,
+            List<Glyph> glyphs,
+            byte[] gray,
+            byte[] labels,
+            int width,
+            int height) {
+        float gap = note.gap;
+        if (!Float.isFinite(gap)
+                || gap < 6
+                || gap > Math.min(width, height)
+                || !Float.isFinite(note.x)
+                || !Float.isFinite(note.y)
+                || note.x < 0
+                || note.x >= width
+                || note.y < 0
+                || note.y >= height) return false;
+        int left = Math.max(0, Math.round(note.x - gap * 1.2f));
+        int right = Math.min(width - 1, Math.round(note.x + gap * 1.2f));
+        for (int direction : new int[] {-1, 1}) {
+            int top = Math.max(0, Math.round(note.y + (direction < 0 ? -5.5f : .7f) * gap));
+            int bottom =
+                    Math.min(height - 1, Math.round(note.y + (direction < 0 ? -.7f : 5.5f) * gap));
+            int w = right - left + 1, h = bottom - top + 1;
+            if (w < 3 || h < 3) continue;
+            boolean[] rules = new boolean[h];
+            boolean any = false;
+            for (int y = top; y <= bottom; y++) {
+                rules[y - top] =
+                        thinIndependentRule(gray, width, height, Math.round(note.x), y, gap);
+                any |= rules[y - top];
+            }
+            if (!any) continue;
+            boolean[] seen = new boolean[w * h];
+            int[] queue = new int[w * h];
+            for (int origin = 0; origin < seen.length; origin++) {
+                int ox = origin % w, oy = origin / w;
+                if (seen[origin]
+                        || rules[oy]
+                        || (gray[(top + oy) * width + left + ox] & 255) >= 155) continue;
+                int size = 1, take = 0;
+                queue[0] = origin;
+                seen[origin] = true;
+                int gx0 = width, gx1 = 0, gy0 = height, gy1 = 0;
+                boolean clipped = false;
+                while (take < size) {
+                    int at = queue[take++], x = at % w, y = at / w;
+                    clipped |= x == 0 || x == w - 1 || y == 0 || y == h - 1;
+                    gx0 = Math.min(gx0, left + x);
+                    gx1 = Math.max(gx1, left + x);
+                    gy0 = Math.min(gy0, top + y);
+                    gy1 = Math.max(gy1, top + y);
+                    for (int dy = -1; dy <= 1; dy++)
+                        for (int dx = -1; dx <= 1; dx++) {
+                            int nx = x + dx, ny = y + dy;
+                            if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+                            int next = ny * w + nx;
+                            if (!seen[next]
+                                    && !rules[ny]
+                                    && (gray[(top + ny) * width + left + nx] & 255) < 155) {
+                                seen[next] = true;
+                                queue[size++] = next;
+                            }
+                        }
+                }
+                // Only the tip may be trimmed. A beam or a sliced oval must not
+                // acquire a wedge simply because it intersects a horizontal line.
+                int tip = direction < 0 ? gy1 + 1 : gy0 - 1;
+                if (clipped || size < 3 || tip < top || tip > bottom || !rules[tip - top]) continue;
+                // A curved eighth-note flag can leave a triangular fragment
+                // after its staff stripe is removed. A wedge ends at the rule;
+                // it has no ink continuing through that rule toward the head.
+                int beyond = tip;
+                while (beyond >= top && beyond <= bottom && rules[beyond - top])
+                    beyond -= direction;
+                boolean continues = beyond < top || beyond > bottom;
+                if (!continues)
+                    for (int x = Math.max(0, gx0 - 1); x <= Math.min(width - 1, gx1 + 1); x++)
+                        continues |= (gray[beyond * width + x] & 255) < 155;
+                if (continues) continue;
+                int[] pixels = new int[size];
+                for (int i = 0; i < size; i++)
+                    pixels[i] = (top + queue[i] / w) * width + left + queue[i] % w;
+                Glyph glyph = new Glyph(gx0, gy0, gx1, gy1, size, pixels);
+                if (Math.abs(glyph.x() - note.x) > gap * .7f
+                        || nearHead(glyph, notes)
+                        || classify(glyph, width, gap, direction < 0)
+                                != NoteArticulation.STACCATISSIMO
+                        || !filledTaper(glyph, width, direction < 0)
+                        || directionText(glyph, glyphs, gap, labels)) continue;
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Recover an upward angular mark joined to independently long, thin staff rules. */
@@ -1713,7 +1817,7 @@ final class NoteArticulationDetector {
                 h >= 3
                                 && rows[0] > 0
                                 && rows[1] >= 4
-                                && rows[0] <= rows[1] * .6f
+                                && rows[0] <= rows[1] * .8f
                                 && left[0] >= left[1]
                                 && right[0] <= right[1]
                         ? 1
