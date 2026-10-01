@@ -79,6 +79,20 @@ final class ScoreDynamicsDetector {
                     && right - left <= gap * 8)
                 boxes.add(new int[] {left, top, right + 1, bottom + 1, staffs.indexOf(staff)});
         }
+        // A faded printed mark may have no pixels at the ordinary component threshold.
+        // These are shape proposals only: the music-font matcher still proves its identity.
+        for (var b : FaintDynamicGlyphComponents.find(gray, width, height, seen, queue)) {
+            var staff = owner(staffs, b.top(), b.bottom() - 1, 8f);
+            if (staff == null) continue;
+            float gap = staff.gap();
+            int w = b.right() - b.left(), h = b.bottom() - b.top();
+            if (w - 1 >= gap * 4 && w - 1 > (h - 1) * 4) continue;
+            if (h - 1 >= gap * .2 && h - 1 <= gap * 3 && w - 1 >= gap * .12 && w - 1 <= gap * 8)
+                boxes.add(
+                        new int[] {
+                            b.left(), b.top(), b.right(), b.bottom(), staffs.indexOf(staff)
+                        });
+        }
         boxes.sort(Comparator.<int[]>comparingInt(b -> b[4]).thenComparingInt(b -> b[0]));
         List<int[]> joined = new ArrayList<>();
         for (int[] b : boxes) {
@@ -376,6 +390,33 @@ final class ScoreDynamicsDetector {
                 if (stroke != null) strokes.add(stroke);
                 if (h < gap * .4) continue;
                 int direction = hairpinDirection(upper, lower, gap);
+                if (direction == 0) {
+                    var faint =
+                            FaintHairpinArms.recover(
+                                    gray, width, height, queue[0], left, right, top, bottom, upper,
+                                    lower, gap);
+                    if (faint != null) {
+                        var recoveredOwner =
+                                directionOwner(
+                                        staffs,
+                                        faint.top(),
+                                        faint.bottom(),
+                                        notes,
+                                        measures,
+                                        height);
+                        if (recoveredOwner == null)
+                            recoveredOwner =
+                                    HairpinContinuation.distantOwner(
+                                            staffs, faint.top(), faint.bottom());
+                        if (owner.equals(recoveredOwner)) {
+                            top = faint.top();
+                            bottom = faint.bottom();
+                            upper = faint.upper();
+                            lower = faint.lower();
+                            direction = faint.direction();
+                        }
+                    }
+                }
                 var common = GrandStaffDynamics.between(shared, top, bottom);
                 if (direction != 0) {
                     add(

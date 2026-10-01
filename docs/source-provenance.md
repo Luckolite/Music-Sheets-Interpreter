@@ -207,3 +207,14 @@ The reviewed rest projection and sloped-rule cleanup optimizations preserve thei
 The reviewed octave-word classifier packs the existing original template bits once. Exact intersection and union cardinalities replace per-pixel counts; bilinear and nearest sampling, thresholds, candidate order and float scores remain unchanged. Original scaled/shaded words and threshold-noise fixtures cover complete decision parity. No model, private scan or new dependency is included.
 
 Tie candidate search retains all six original acceptance paths. A candidate is skipped only when the remaining samples cannot provide the required visible hits, total coverage, per-bin coverage or existing dark-core gate. Every sample of a completed candidate initializes its curve slots; abandoned tails are never evaluated. Original generated returning curves, staff occlusion, faint ink, straight rules and deterministic noise retain all 1,024 baseline decisions. No model, source image or new dependency is included.
+
+Faint expressions require their original shape evidence. A long straight strong
+hairpin arm can recover its pale partner only with opposing straight slopes,
+a complete apex and unchanged staff ownership. Predominantly faded dynamic
+components remain proposals for the existing music-font matcher; ordinary
+dark components keep their bounds. Small accents round their existing core
+fraction to pixels with one antialiased edge pixel tolerance while retaining
+the absolute core, paired-chevron and physical-staff guards. Original generated
+positive and rejection controls include the existing licensed Bravura templates.
+The two new helpers use the JDK only; weights, dependencies and record fields
+are unchanged, and no private source imagery is included.

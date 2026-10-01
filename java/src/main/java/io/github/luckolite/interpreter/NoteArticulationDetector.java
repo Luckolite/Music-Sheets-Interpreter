@@ -1885,8 +1885,11 @@ final class NoteArticulationDetector {
                         }
                     }
             }
+            // A complete independently proved pair can lose one dark edge pixel
+            // to antialiasing. Round its core budget to actual pixels; retain the
+            // absolute dark seed and every chevron, size, ownership and notation guard.
             if (end < 8
-                    || dark < Math.max(3, end * .18f)
+                    || dark < Math.max(3, Math.round(end * .18f) - 1)
                     || right - left > width * .025f
                     || bottom - top > height * .018f) continue;
             int[] pixels = java.util.Arrays.copyOf(queue, end);

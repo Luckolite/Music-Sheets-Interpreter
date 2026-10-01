@@ -249,10 +249,10 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "bd3f8500d685daeddc1c7cdf1b27f0bf4ee2dcde2ec37dcfa66be39d22e04a04",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed detector-owned arc/dot recognition, written attack ownership and musical-meter resolution. Exact package-only parity. Original procedural ink and page-rebasing controls; no private score, model, new dependency or wire field.",
-      "source_normalized_sha256": "4f2c0f4b0217be8c4e69b1a16e9c2d63b808357390b7c086b938d3035b3d4f94"
+      "source_sha256": "88a6edb65723a47814395ae914db9fbc222d1409944f0bdd66a944e5313c8ff3",
+      "review_note": "Reviewed uncommitted app 1.18.373 expression source. Complete package-only port; original procedural geometry and existing licensed font regressions. No private source, model, dependency or record layout changes.",
+      "source_normalized_sha256": "24649699f526936c2131c76e762d399d8701d2dc71356a8d0476ca9657e43280",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "OpenChevron.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",
@@ -308,10 +308,10 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "1dc0fa2f9775a519377c7de803836aa64bc5d7b7b8df786c3cc349828dcc7d14",
-      "source_normalized_sha256": "7fbbab68e50025cc56fa8130576236ba400e4192359a2b960f83a558de5cac95",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed lexical-only page continuation with retained OCR evidence, exact staff topology, contiguous offsets and movement-restart guard. Graphic/fixed/unproven/missing destinations preserve existing ranges. Exact package-only standalone parity; Android/native producers and viewer/conversion/native-audio adapter hunks separately reviewed. Original synthetic geometry and semantic-frame tests; no private score, model or new dependency."
+      "source_sha256": "983d06ab7327592bb89b1c3ca27a4f49164239e5bd6a7bb4d9f4e1dbd68e9870",
+      "source_normalized_sha256": "1e7277fd9a8d2103c93a7d2ae403b51decb5f2b285624c05881481a6812bcde9",
+      "review_note": "Reviewed uncommitted app 1.18.373 expression source. Complete package-only port; original procedural geometry and existing licensed font regressions. No private source, model, dependency or record layout changes.",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
@@ -993,6 +993,20 @@
       "source_normalized_sha256": "1aa8e4546bff741d97970dfbedbfd890263befe65b88b07af0f83f9e54653e71",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Original global three-attack secondary-beam context proof on untouched pixels. Requires distinct matching stems, two separated thick connected rails, secondary termination at both group edges and main continuation outside the group. Only three equal double-beamed attacks may use this additional in-staff numeral context; shape, contrast consistency, voice/system ownership and rest/fingering guards remain. Pure-JDK package-only parity and fourteen original procedural regressions. No score imagery, song rules, models, dependencies or wire-layout changes."
+    },
+    "FaintHairpinArms.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/FaintHairpinArms.java",
+      "source_sha256": "47b10e3ed85fad5581082981ef60e3f97d506eb003d9a4bbcccf1fc219f6af90",
+      "source_normalized_sha256": "47b10e3ed85fad5581082981ef60e3f97d506eb003d9a4bbcccf1fc219f6af90",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Reviewed uncommitted app 1.18.373 expression source. Complete package-only port; original procedural geometry and existing licensed font regressions. No private source, model, dependency or record layout changes."
+    },
+    "FaintDynamicGlyphComponents.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/FaintDynamicGlyphComponents.java",
+      "source_sha256": "6236a7416a78b9d4e85caea4bcce83441478bc67a35ff9789c6ba6666d98b846",
+      "source_normalized_sha256": "6236a7416a78b9d4e85caea4bcce83441478bc67a35ff9789c6ba6666d98b846",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Reviewed uncommitted app 1.18.373 expression source. Complete package-only port; original procedural geometry and existing licensed font regressions. No private source, model, dependency or record layout changes."
     }
   },
   "interpreter_speedup_review": {
