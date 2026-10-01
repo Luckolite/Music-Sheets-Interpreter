@@ -12,6 +12,12 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Rest flags joined by a masked staff valley are separated only when visible
+rounded peaks prove the printed flag spacing, a width dip and adequate unmasked
+support. Ordinary unsplit bulb centers and existing rest outline guards remain.
+Original generated width profiles cover merged flags, single rounded bulbs, flat
+plateaus and small width noise. No model, dependency or record layout changes.
+
 Overwide semantic staff bands no longer erase a curved raw tie crest. Actual
 straight rows remain occluded, and every remaining thin stroke must pass the
 existing continuity, returning shoulders and curvature checks. Original generated

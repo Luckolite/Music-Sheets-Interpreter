@@ -737,38 +737,7 @@ final class SixteenthRestDetector {
                                                             ? .15f
                                                             : deepLowered ? .8f : .85f))
                     || minY > staff.top() + gap * 1.55f) return;
-            // Interpolate removed staff rows before counting bulb lobes, so staff crossings do not
-            // split a single bulb into several flags.
-            for (int y = minY; y <= maxY; y++)
-                if (line[y - top]) {
-                    int before = y - 1, after = y + 1;
-                    while (before >= minY && line[before - top]) before--;
-                    while (after <= maxY && line[after - top]) after++;
-                    if (before >= minY && after <= maxY)
-                        ink[y - top] = Math.round((ink[before - top] + ink[after - top]) * .5f);
-                }
-            List<Integer> lobes = new ArrayList<>();
-            int run = 0, runStart = 0;
-            // Quantize bulb dimensions to raster pixels for both rest types.
-            // Sixteenths still require two separated bulbs and a diagonal tail.
-            float bulbWidth = Math.max(2, Math.round(gap * (faintShapes ? .50f : .58f)));
-            float bulbRows = Math.max(2, Math.round(gap * .22f));
-            for (int y = minY; y <= maxY + 1; y++) {
-                boolean bulb =
-                        y <= maxY
-                                && (ink[y - top] >= bulbWidth
-                                        || y > minY
-                                                && y < maxY
-                                                && ink[y - top] == bulbWidth - 1
-                                                && ink[y - 1 - top] >= bulbWidth
-                                                && ink[y + 1 - top] >= bulbWidth);
-                if (bulb) {
-                    if (run++ == 0) runStart = y;
-                } else {
-                    if (run >= bulbRows) lobes.add((runStart + y - 1) / 2);
-                    run = 0;
-                }
-            }
+            List<Integer> lobes = restBulbs(ink, line, top, minY, maxY, gap, faintShapes);
             if (thirtySecond
                     ? lobes.size() != 3
                             || lobes.get(1) - lobes.get(0) < gap * .7f
@@ -1007,11 +976,55 @@ final class SixteenthRestDetector {
             if (bulb) {
                 if (run++ == 0) start = y;
             } else {
-                if (run >= bulbRows) lobes.add((start + y - 1) / 2);
+                if (run >= bulbRows)
+                    appendRestBulbs(lobes, ink, line, top, start, y - 1, gap, bulbRows, false);
                 run = 0;
             }
         }
         return lobes;
+    }
+
+    /** Split only separately visible rounded flags at their printed spacing. */
+    private static void appendRestBulbs(
+            List<Integer> lobes,
+            int[] ink,
+            boolean[] line,
+            int top,
+            int start,
+            int end,
+            float gap,
+            int bulbRows,
+            boolean refined) {
+        int reach = Math.max(2, Math.round(gap * 1.25f));
+        int prominence = Math.max(2, (int) Math.ceil(gap * .18f));
+        int support = Math.max(1, Math.round(gap * .22f));
+        for (int valley = start + bulbRows; valley <= end - bulbRows; valley++) {
+            int left = -1, right = -1;
+            for (int y = Math.max(start, valley - reach); y < valley; y++)
+                if (left < 0 || ink[y - top] >= ink[left - top]) left = y;
+            for (int y = valley + 1; y <= Math.min(end, valley + reach); y++)
+                if (right < 0 || ink[y - top] > ink[right - top]) right = y;
+            if (left < 0
+                    || right < 0
+                    || right - left < gap * .7f
+                    || right - left > gap * 1.3f
+                    || Math.min(ink[left - top], ink[right - top]) - ink[valley - top] < prominence)
+                continue;
+            int visibleLeft = 0, visibleRight = 0;
+            for (int y = Math.max(start, left - support);
+                    y <= Math.min(valley - 1, left + support);
+                    y++) if (!line[y - top] && ink[y - top] >= ink[left - top] - 2) visibleLeft++;
+            for (int y = Math.max(valley + 1, right - support);
+                    y <= Math.min(end, right + support);
+                    y++) if (!line[y - top] && ink[y - top] >= ink[right - top] - 2) visibleRight++;
+            if (visibleLeft < bulbRows || visibleRight < bulbRows) continue;
+            appendRestBulbs(lobes, ink, line, top, start, valley, gap, bulbRows, true);
+            appendRestBulbs(lobes, ink, line, top, valley + 1, end, gap, bulbRows, true);
+            return;
+        }
+        int peak = start;
+        for (int y = start + 1; y <= end; y++) if (ink[y - top] > ink[peak - top]) peak = y;
+        lobes.add(refined ? peak : (start + end) / 2);
     }
 
     /** An italic descender can resemble a lowered eighth rest. Three separately

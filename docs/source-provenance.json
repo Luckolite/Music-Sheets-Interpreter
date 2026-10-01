@@ -365,10 +365,10 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "36bef7ead2fbe09b43d94c7c72b6884801e119bc20aa15afa753511eb256e023",
+      "source_sha256": "7fea007529145ff400ecd8e76c03e9e96546ff4df19d8ce6d875565c339876df",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Global original geometric repair ported with reviewed token parity and synthetic positive and rejection regressions; no new dependencies or private source imagery.",
-      "source_normalized_sha256": "2097e581ebdda313779adcf58ba0b62c4a6bc5c76d7b3e8e19f8f6b0d8b0605d"
+      "review_note": "Reviewed global rest-bulb separation when a masked staff valley joins separately visible rounded peaks. Printed spacing, valley prominence and unmasked peak support are required; unsplit bands retain original centers. Inspect and shared bulb helper token parity verified. Original generated width profiles cover two flags and ordinary, broad, flat and noisy single bulbs. No dependency, model or record-layout changes; private scores excluded.",
+      "source_normalized_sha256": "16be3c8ce33921e07b256f013c1c671412c1127869543a1bf80a102fac5ff4db"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
