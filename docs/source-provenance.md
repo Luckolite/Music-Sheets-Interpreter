@@ -12,6 +12,14 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Engraved MusicXML tuplets recover exact written time only when an exporter
+division grid cannot represent the cumulative type, dots and ratio and its
+serialized duration is exactly the nearest export unit. Explicit intended
+durations on exact grids are preserved. The pure-JDK helper has package-only app
+parity and original procedural regressions; the app layout adapter still checks
+full source identity, pitch, voice and timing coverage. No private score, external
+dependency, model or wire-layout change is included.
+
 Octave text and its dotted span use the same local paper contrast. Shallow
 texture on shaded paper cannot supply numeral counters or a dotted-line chain;
 genuine dark octave ink remains detectable. Original generated ring and stipple

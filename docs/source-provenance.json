@@ -967,6 +967,13 @@
       "source_normalized_sha256": "c88bb39f03514b8dc5f49387f8a214fe627352d6f81ce2c93c5af8f81b191b47",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Original shared fermata notation ownership planner; exact package-only parity. One surviving outer chord member per proved printed symbol, preserving orientation and final written release rather than a tie-chain sound alias. Original procedural target/filter/tie tests. Actual app XML adapter reviewed separately; no private score, model, dependency or wire-layout change."
+    },
+    "MusicXmlWrittenDuration.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MusicXmlWrittenDuration.java",
+      "source_sha256": "5f1773a0507eca7ba0c47a85ce6ce05b7f37a878e24f8f1d1f5c6967b59a7387",
+      "source_normalized_sha256": "ca191b03600b1698f44cd37d994834220c0910a884e831e0d92ba74701ad88ea",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original pure-JDK engraved MusicXML duration recovery. Exact cumulative written type, direct dots and time-modification ratio are used only when the exporter division grid cannot represent them and the serialized duration is exactly the nearest exporter unit. Explicit intended durations on exact grids are preserved. Package-only app parity; original procedural duration/ratio/precision/voice-clock controls. App source-identity layout adapter reviewed separately, remains strict, and is not copied. No private scores, dependencies, models or wire layout changes."
     }
   },
   "interpreter_speedup_review": {
