@@ -699,10 +699,10 @@
     },
     "NoteSlideDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteSlideDetector.java",
-      "source_sha256": "490d2163c55b4633d86b8317d1417f0ab91b76949c540c7b2cad0c12560a2fd7",
+      "source_sha256": "6c38b10ee6227485e43b90bc2b7de4cd72d5496807d8ebc6b07883643101433d",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "8d6408b57ee7d0489bcafa0dcc10171df220dadb9bcd35abf8f743c8575b1f60",
-      "review_note": "Reviewed global raw-ink, rhythmic and bounded-navigation repair; full token parity with package/diagnostics adapters verified. Original synthetic positive and rejection controls; no source score, model or new dependency included."
+      "source_normalized_sha256": "4d0d78aa50a5b066ba53f6573c770b30f633e956601b2a2195fd247e5cb99171",
+      "review_note": "Reviewed unique immediate printed source-pitch binding after straight-stroke detection. Same physical staff/measure, bounded endpoint agreement and attack adjacency; isolated, intervening, wrong-part and ambiguous chord controls preserve unbound approaches. Package-only full source parity; existing FROM_PREVIOUS metadata and audio realization unchanged. Original synthetic regression; no private score, new helper/dependency/model or record layout."
     },
     "OutlinedBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OutlinedBeamInk.java",

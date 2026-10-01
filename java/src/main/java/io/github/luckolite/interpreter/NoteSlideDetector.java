@@ -167,9 +167,36 @@ final class NoteSlideDetector {
                                 (float) rightY,
                                 slope < 0 ? 1 : -1,
                                 owner,
-                                false));
+                                immediateSource(
+                                        heads, heads.get(owner), l, cy + (l - cx) * slope, slope)));
         }
         return List.copyOf(result);
+    }
+
+    /** A printed two-note glide starts at its unique immediate attack, not a scale neighbor. */
+    private static boolean immediateSource(
+            List<Head> heads, Head target, float left, double leftY, double slope) {
+        float gap = target.gap, latest = -Float.MAX_VALUE;
+        for (var head : heads)
+            if (head.staff == target.staff
+                    && head.measure == target.measure
+                    && head.x < target.x - gap * .35f) latest = Math.max(latest, head.x);
+        Head source = null;
+        for (var head : heads)
+            if (head.staff == target.staff
+                    && head.measure == target.measure
+                    && head.x < target.x - gap * .35f
+                    && latest - head.x <= gap * .35f) {
+                // The existing wire stores "previous attack", not one selected head of a chord.
+                if (source != null) return false;
+                source = head;
+            }
+        if (source == null) return false;
+        double distance = (left - source.x) / gap;
+        return distance >= .5
+                && distance <= 3
+                && Math.abs(source.y - leftY) < gap
+                && (target.y - source.y) * slope > 0;
     }
 
     /** Verify the connecting line before accepting an OCR portamento word (or a clipped p/t). */

@@ -12,6 +12,14 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Printed note-to-note slides bind their source pitch only when the straight stroke
+matches the unique immediate attack on the same staff and in the same measure.
+An isolated approach, an intervening attack or an ambiguous source chord cannot
+select an arbitrary previous pitch. The shared detector has package-only parity
+with the app; existing note metadata and playback realization carry the binding.
+The regression uses original synthetic line geometry, with no new assets,
+dependencies, model weights or wire fields.
+
 Lexical crescendo/diminuendo continuation preserves bounded OCR evidence in the
 existing expressive frame and joins only contiguous pages with observed matching
 staff ownership. Physical page edges, graphic hairpins, movement restarts, missing
