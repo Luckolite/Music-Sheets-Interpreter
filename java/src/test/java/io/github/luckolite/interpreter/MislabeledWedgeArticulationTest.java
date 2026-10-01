@@ -119,4 +119,46 @@ public class MislabeledWedgeArticulationTest {
     public void rasterAllowanceDoesNotAdmitOval() {
         assertEquals(0, roundedPixelBounds(false, true));
     }
+
+    private int outerCornerWedge(boolean twoRows) {
+        return outerCornerWedge(twoRows, false);
+    }
+
+    private int outerCornerWedge(boolean twoRows, boolean partialFace) {
+        int w = 2048, h = 1600;
+        byte[] gray = new byte[w * h], labels = new byte[w * h];
+        Arrays.fill(gray, (byte) 255);
+        int[] spans = {1, 10, 9, 8, 8, 7, 6, 5, 5, 5, 4, 3, 3, 3, 3, 2, 1};
+        if (partialFace) spans[0] = 5;
+        if (twoRows) {
+            spans[1] = 1;
+            spans[2] = 10;
+        }
+        for (int row = 0; row < spans.length; row++) {
+            if (row == 0 && partialFace) {
+                for (int x = 310; x < 320; x++) if (x < 313 || x > 317) gray[80 * w + x] = 0;
+                continue;
+            }
+            int left = row == 0 && !twoRows && !partialFace ? 311 : 310 + (10 - spans[row]) / 2;
+            for (int x = left; x < left + spans[row]; x++) gray[(80 + row) * w + x] = 0;
+        }
+        return NoteArticulationDetector.detect(
+                labels, gray, w, h, List.of(new NoteArticulationDetector.Anchor(315, 130, 17, 0)))[
+                0];
+    }
+
+    @Test
+    public void singleOuterRasterCornerPreservesFilledWedge() {
+        assertEquals(NoteArticulation.STACCATISSIMO, outerCornerWedge(false));
+    }
+
+    @Test
+    public void narrowNeckBeforeBroadBodyIsNotWedge() {
+        assertEquals(0, outerCornerWedge(true));
+    }
+
+    @Test
+    public void concaveOuterRasterRowPreservesFilledWedge() {
+        assertEquals(NoteArticulation.STACCATISSIMO, outerCornerWedge(false, true));
+    }
 }

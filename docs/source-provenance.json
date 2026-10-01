@@ -249,10 +249,10 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "e74cfe4d7ef9685ae67a74c10ed96c40c59e37d9e7b2c60a788d1f0a0db1ff06",
+      "source_sha256": "2595ef13c344a4c3434c654b81f9c7e78b89a022c22e09ddef2a0eee1466aa3a",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed package-only standalone port: raw glyph ownership, complete open angular marks with available raster bins, bounded beam-covered staff-rule recovery, tapered filled-wedge false-mask recovery and two-initial punctuation including italic overhangs. Accepted heads, complete two-arm geometry, crossbars, text runs and shaft/beam endpoints remain guarded. Original generated positive and negative regressions; no private imagery, new dependencies or model changes.",
-      "source_normalized_sha256": "79ee0bf17d0ae84b586c5a0bac5ca82c45490a164aa0231cb67588551ac6d761"
+      "review_note": "Reviewed package-only standalone port: raw glyph ownership, complete open angular marks with available raster bins, bounded beam-covered staff-rule recovery, tapered filled-wedge false-mask recovery and two-initial punctuation including italic overhangs. Accepted heads, complete two-arm geometry, crossbars, text runs and shaft/beam endpoints remain guarded. Original generated positive and negative regressions; no private imagery, new dependencies or model changes. Filled-wedge outer-row review permits one bounded partial raster face only inside the following solid row; the remaining body must taper continuously. Original narrow-neck and oval controls remain rejected.",
+      "source_normalized_sha256": "dbc80ab660943ef90cb398f00519818411df7c09a96006f35155f996f5b9bcda"
     },
     "OpenChevron.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",

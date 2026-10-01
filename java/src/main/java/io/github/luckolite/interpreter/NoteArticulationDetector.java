@@ -1634,15 +1634,27 @@ final class NoteArticulationDetector {
             left[row] = Math.min(left[row], x);
             right[row] = Math.max(right[row], x);
         }
+        // A fractional outer edge can leave a partial row above the broad
+        // face. Ignore only that single partial row, inside the following face;
+        // a neck or a separate scan speck must still fail the continuous taper.
+        int first =
+                h >= 3
+                                && rows[0] > 0
+                                && rows[1] >= 4
+                                && rows[0] <= rows[1] * .6f
+                                && left[0] >= left[1]
+                                && right[0] <= right[1]
+                        ? 1
+                        : 0;
         int decreases = 0;
-        for (int row = 0; row < h; row++) {
+        for (int row = first; row < h; row++) {
             spans[row] = right[row] - left[row] + 1;
             if (rows[row] == 0 || rows[row] < spans[row] * .9f) return false;
-            if (row > 0) {
+            if (row > first) {
                 if (spans[row] > spans[row - 1] + 1) return false;
                 if (spans[row] < spans[row - 1]) decreases++;
             }
         }
-        return spans[0] >= spans[h - 1] * 2 && decreases >= 2;
+        return spans[first] >= spans[h - 1] * 2 && decreases >= 2;
     }
 }
