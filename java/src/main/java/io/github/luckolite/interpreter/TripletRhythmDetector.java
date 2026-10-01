@@ -277,6 +277,28 @@ final class TripletRhythmDetector {
                                 Float.NaN,
                                 Float.NaN);
                 if (numeral == null
+                        && a.indices().size() == 1
+                        && b.indices().size() == 1
+                        && c.indices().size() == 1
+                        && first.beamCount() == 2
+                        && result.get(b.indices().get(0)).beamCount() == 2
+                        && result.get(c.indices().get(0)).beamCount() == 2) {
+                    float x2 =
+                            (region.left() + b.position() * (region.right() - region.left()))
+                                    * width;
+                    if (BoundedSecondaryBeam.proves(
+                            gray,
+                            width,
+                            height,
+                            new float[] {x1, x2, x3},
+                            new float[] {a.top() * height, b.top() * height, c.top() * height},
+                            gap))
+                        numeral =
+                                findContrastedNumeral(
+                                        gray, width, height, x1, x3, y1, y2, gap, true, Float.NaN,
+                                        Float.NaN, 3, true);
+                }
+                if (numeral == null
                         || insideOtherSystem(numeral, region, measures, width, height)
                         || !ownsNumeral(numeral, first, result, region, gap, width, height))
                     continue;
@@ -983,6 +1005,36 @@ final class TripletRhythmDetector {
             float headX,
             float headY,
             int number) {
+        return findContrastedNumeral(
+                gray,
+                width,
+                height,
+                firstX,
+                lastX,
+                firstY,
+                lastY,
+                gap,
+                shortNotes,
+                headX,
+                headY,
+                number,
+                false);
+    }
+
+    private static Glyph findContrastedNumeral(
+            byte[] gray,
+            int width,
+            int height,
+            float firstX,
+            float lastX,
+            float firstY,
+            float lastY,
+            float gap,
+            boolean shortNotes,
+            float headX,
+            float headY,
+            int number,
+            boolean boundedSecondary) {
         Glyph normal =
                 findPrintedNumeral(
                         gray,
@@ -996,7 +1048,8 @@ final class TripletRhythmDetector {
                         shortNotes,
                         headX,
                         headY,
-                        number);
+                        number,
+                        boundedSecondary);
         if (normal != null
                 && TupletNumeralInk.hasGlyphContrast(
                         gray,
@@ -1006,7 +1059,11 @@ final class TripletRhythmDetector {
                         normal.top(),
                         normal.right(),
                         normal.bottom(),
-                        gap) && validNumeralContext(gray,width,height,normal,firstX,lastX,gap,number)) return normal;
+                        gap)
+                && (boundedSecondary
+                        || validNumeralContext(
+                                gray, width, height, normal, firstX, lastX, gap, number)))
+            return normal;
         Glyph candidate = null;
         int candidateLevel = -1;
         for (int pass = 0; pass < 2; pass++)
@@ -1033,7 +1090,8 @@ final class TripletRhythmDetector {
                                 shortNotes,
                                 headX - local.left(),
                                 headY - local.top(),
-                                number);
+                                number,
+                                boundedSecondary);
                 if (retry != null
                         && TupletNumeralInk.hasGlyphContrast(
                                 gray,
@@ -1044,21 +1102,30 @@ final class TripletRhythmDetector {
                                 retry.right() + local.left(),
                                 retry.bottom() + local.top(),
                                 gap)) {
-                    Glyph found = new Glyph(
-                            retry.left() + local.left(),
-                            retry.top() + local.top(),
-                            retry.right() + local.left(),
-                            retry.bottom() + local.top());
-                    if (!validNumeralContext(gray,width,height,found,firstX,lastX,gap,number)) continue;
+                    Glyph found =
+                            new Glyph(
+                                    retry.left() + local.left(),
+                                    retry.top() + local.top(),
+                                    retry.right() + local.left(),
+                                    retry.bottom() + local.top());
+                    if (!boundedSecondary
+                            && !validNumeralContext(
+                                    gray, width, height, found, firstX, lastX, gap, number))
+                        continue;
                     // A single threshold can turn antialiased rest ink into two apparent
                     // bowls. A recovered numeral needs the same outline at another level;
                     // two masking passes at one threshold are not independent evidence.
-                    if (candidate != null && candidateLevel != level
+                    if (candidate != null
+                            && candidateLevel != level
                             && Math.abs(candidate.left() - found.left()) <= gap * .25f
                             && Math.abs(candidate.right() - found.right()) <= gap * .25f
                             && Math.abs(candidate.top() - found.top()) <= gap * .25f
-                            && Math.abs(candidate.bottom() - found.bottom()) <= gap * .25f) return found;
-                    if (candidate == null) { candidate = found; candidateLevel = level; }
+                            && Math.abs(candidate.bottom() - found.bottom()) <= gap * .25f)
+                        return found;
+                    if (candidate == null) {
+                        candidate = found;
+                        candidateLevel = level;
+                    }
                 }
             }
         return null;
@@ -1077,6 +1144,36 @@ final class TripletRhythmDetector {
             float headX,
             float headY,
             int number) {
+        return findPrintedNumeral(
+                gray,
+                width,
+                height,
+                firstX,
+                lastX,
+                firstY,
+                lastY,
+                gap,
+                shortNotes,
+                headX,
+                headY,
+                number,
+                false);
+    }
+
+    private static Glyph findPrintedNumeral(
+            byte[] gray,
+            int width,
+            int height,
+            float firstX,
+            float lastX,
+            float firstY,
+            float lastY,
+            float gap,
+            boolean shortNotes,
+            float headX,
+            float headY,
+            int number,
+            boolean boundedSecondary) {
         float centerX = (firstX + lastX) * .5f;
         // Numerals align with the beam/stems, which can sit to one side of the
         // oval centres. Include that offset without clipping an italic 3.
@@ -1143,7 +1240,8 @@ final class TripletRhythmDetector {
                 continue;
             // Quarter-note tuplets need the two bracket arms. For beamed/flagged short notes,
             // publishers routinely print only the numeral, so its shape/group alignment suffices.
-            boolean bracket = bracketArm(
+            boolean bracket =
+                    bracketArm(
                                     gray,
                                     width,
                                     height,
@@ -1164,54 +1262,96 @@ final class TripletRhythmDetector {
             // An unbracketed two-bowl shape inside five actual staff rules can be
             // a rest, not a numeral below an elevated beamed melody. Explicit
             // brackets still prove in-staff tuplets; isolated beam rules do not.
-            if (number == 3 && !bracket && insideFiveLineStaff(gray,width,height,minX,minY,maxX,maxY,gap)) continue;
+            if (number == 3
+                    && !boundedSecondary
+                    && !bracket
+                    && insideFiveLineStaff(gray, width, height, minX, minY, maxX, maxY, gap))
+                continue;
             if (shortNotes || bracket) return new Glyph(minX, minY, maxX, maxY);
         }
         return null;
     }
 
     /** Validate against the untouched raster, not a retry with its staff rules erased. */
-    private static boolean validNumeralContext(byte[] gray,int width,int height,Glyph glyph,
-            float firstX,float lastX,float gap,int number) {
-        if(number!=3||!insideFiveLineStaff(gray,width,height,glyph.left(),glyph.top(),glyph.right(),glyph.bottom(),gap))return true;
-        return bracketHook(gray,width,height,firstX,glyph.top(),glyph.bottom(),gap)
-                &&bracketHook(gray,width,height,lastX,glyph.top(),glyph.bottom(),gap);
+    private static boolean validNumeralContext(
+            byte[] gray,
+            int width,
+            int height,
+            Glyph glyph,
+            float firstX,
+            float lastX,
+            float gap,
+            int number) {
+        if (number != 3
+                || !insideFiveLineStaff(
+                        gray,
+                        width,
+                        height,
+                        glyph.left(),
+                        glyph.top(),
+                        glyph.right(),
+                        glyph.bottom(),
+                        gap)) return true;
+        return bracketHook(gray, width, height, firstX, glyph.top(), glyph.bottom(), gap)
+                && bracketHook(gray, width, height, lastX, glyph.top(), glyph.bottom(), gap);
     }
 
-    private static boolean bracketHook(byte[] gray,int width,int height,float x,int top,int bottom,float gap) {
-        for(int xx=Math.max(0,Math.round(x-gap*.4f));xx<=Math.min(width-1,Math.round(x+gap*.4f));xx++) {
-            int run=0;
-            for(int y=Math.max(0,Math.round(top-gap*.5f));y<=Math.min(height-1,Math.round(bottom+gap*.5f));y++) {
-                run=dark(gray,width,xx,y)?run+1:0;
-                if(run>=Math.max(3,Math.round(gap*.65f)))return true;
+    private static boolean bracketHook(
+            byte[] gray, int width, int height, float x, int top, int bottom, float gap) {
+        for (int xx = Math.max(0, Math.round(x - gap * .4f));
+                xx <= Math.min(width - 1, Math.round(x + gap * .4f));
+                xx++) {
+            int run = 0;
+            for (int y = Math.max(0, Math.round(top - gap * .5f));
+                    y <= Math.min(height - 1, Math.round(bottom + gap * .5f));
+                    y++) {
+                run = dark(gray, width, xx, y) ? run + 1 : 0;
+                if (run >= Math.max(3, Math.round(gap * .65f))) return true;
             }
         }
         return false;
     }
 
-
-    private static boolean insideFiveLineStaff(byte[] gray,int width,int height,
-            int left,int top,int right,int bottom,float gap) {
-        float center=(top+bottom)*.5f;
-        int x0=Math.max(0,Math.round(left-gap*5)),x1=Math.min(width-1,Math.round(right+gap*5));
-        if(x1-x0<gap*6)return false;
-        var rules=new ArrayList<Integer>();
-        boolean previous=false;
-        for(int y=Math.max(0,Math.round(center-gap*6));y<=Math.min(height-1,Math.round(center+gap*6));y++) {
-            int count=0,total=0;
-            for(int x=x0;x<=x1;x++)if(x<left-1||x>right+1) {
-                total++;if(dark(gray,width,x,y))count++;
-            }
-            boolean rule=total>0&&count>=total*.8f;
-            if(rule&&!previous)rules.add(y);
-            previous=rule;
+    private static boolean insideFiveLineStaff(
+            byte[] gray,
+            int width,
+            int height,
+            int left,
+            int top,
+            int right,
+            int bottom,
+            float gap) {
+        float center = (top + bottom) * .5f;
+        int x0 = Math.max(0, Math.round(left - gap * 5)),
+                x1 = Math.min(width - 1, Math.round(right + gap * 5));
+        if (x1 - x0 < gap * 6) return false;
+        var rules = new ArrayList<Integer>();
+        boolean previous = false;
+        for (int y = Math.max(0, Math.round(center - gap * 6));
+                y <= Math.min(height - 1, Math.round(center + gap * 6));
+                y++) {
+            int count = 0, total = 0;
+            for (int x = x0; x <= x1; x++)
+                if (x < left - 1 || x > right + 1) {
+                    total++;
+                    if (dark(gray, width, x, y)) count++;
+                }
+            boolean rule = total > 0 && count >= total * .8f;
+            if (rule && !previous) rules.add(y);
+            previous = rule;
         }
-        for(int i=0;i+4<rules.size();i++) {
-            float spacing=(rules.get(i+4)-rules.get(i))/4f;
-            if(spacing<3||spacing<gap*.4f||spacing>gap*2||center<rules.get(i)||center>rules.get(i+4))continue;
-            boolean regular=true;
-            for(int j=1;j<=4;j++)if(Math.abs(rules.get(i+j)-rules.get(i)-j*spacing)>spacing*.2f)regular=false;
-            if(regular)return true;
+        for (int i = 0; i + 4 < rules.size(); i++) {
+            float spacing = (rules.get(i + 4) - rules.get(i)) / 4f;
+            if (spacing < 3
+                    || spacing < gap * .4f
+                    || spacing > gap * 2
+                    || center < rules.get(i)
+                    || center > rules.get(i + 4)) continue;
+            boolean regular = true;
+            for (int j = 1; j <= 4; j++)
+                if (Math.abs(rules.get(i + j) - rules.get(i) - j * spacing) > spacing * .2f)
+                    regular = false;
+            if (regular) return true;
         }
         return false;
     }

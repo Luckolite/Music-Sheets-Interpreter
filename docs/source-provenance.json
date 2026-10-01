@@ -381,10 +381,10 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "9985884fecca5608a87a19df207104993cf47574525688faed9c6612a0d08063",
+      "source_sha256": "ffd57ecc22aef5724dd2a3172c30bb383d00fae2d88b7a40074782975b72d532",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "4a07f3192a7d6e223b25da023364aa96db9751bbbbf74618921fd86059b16925",
-      "review_note": "Reviewed patch against app base 650d1b3a: blank-row and multi-threshold guards plus original-raster five-staff-rule context. In-staff recovery requires real bracket hooks; erased retry rules cannot hide rest context. Package/formatting-only port differences, original synthetic controls, no new dependencies or weights."
+      "source_normalized_sha256": "ffd57ecc22aef5724dd2a3172c30bb383d00fae2d88b7a40074782975b72d532",
+      "review_note": "Original global three-attack secondary-beam context proof on untouched pixels. Requires distinct matching stems, two separated thick connected rails, secondary termination at both group edges and main continuation outside the group. Only three equal double-beamed attacks may use this additional in-staff numeral context; shape, contrast consistency, voice/system ownership and rest/fingering guards remain. Pure-JDK package-only parity and fourteen original procedural regressions. No score imagery, song rules, models, dependencies or wire-layout changes."
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
@@ -985,6 +985,13 @@
       "source_normalized_sha256": "b6e9f1f380a9bc00d1a6d8808b4cf3214c6ec484e1adbfcf8e409bf093e45c0a",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Original pure-JDK raw five-rule phase proof at an isolated staff-height closing bar. Both sides of the head must supply every thin rule, five rules must join the bar, outside stroke extension and a sixth joined rule reject ambiguous groups. Local line centers refine spacing and slope; near-best fits must agree on pitch. Package-only app parity. Original procedural positive, rejection, real decoder path, bounds and pixel preservation tests; no score imagery, dependencies, model or wire changes."
+    },
+    "BoundedSecondaryBeam.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/BoundedSecondaryBeam.java",
+      "source_sha256": "1aa8e4546bff741d97970dfbedbfd890263befe65b88b07af0f83f9e54653e71",
+      "source_normalized_sha256": "1aa8e4546bff741d97970dfbedbfd890263befe65b88b07af0f83f9e54653e71",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original global three-attack secondary-beam context proof on untouched pixels. Requires distinct matching stems, two separated thick connected rails, secondary termination at both group edges and main continuation outside the group. Only three equal double-beamed attacks may use this additional in-staff numeral context; shape, contrast consistency, voice/system ownership and rest/fingering guards remain. Pure-JDK package-only parity and fourteen original procedural regressions. No score imagery, song rules, models, dependencies or wire-layout changes."
     }
   },
   "interpreter_speedup_review": {

@@ -12,6 +12,14 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+An in-staff triplet numeral may use a bounded secondary beam as context. Three
+equal double-beamed attacks need distinct connected stems, two separated thick
+rails, a secondary rail ending at both group edges and a continuing main rail.
+The untouched raster supplies this evidence; numeral shape, independent contrast
+levels, voice/system ownership and existing rest/fingering guards remain. The
+helper and fourteen procedural tests are original, with package-only app parity.
+No score images, song rules, weights, dependencies or record layout changed.
+
 Engraved MusicXML tuplets recover exact written time only when an exporter
 division grid cannot represent the cumulative type, dots and ratio and its
 serialized duration is exactly the nearest export unit. Explicit intended
