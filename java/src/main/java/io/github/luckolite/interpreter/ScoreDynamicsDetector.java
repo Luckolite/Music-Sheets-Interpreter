@@ -286,8 +286,18 @@ final class ScoreDynamicsDetector {
                 if (owner == null) continue;
                 float gap = owner.gap();
                 int w = right - left + 1, h = bottom - top + 1;
-                // Short >/< remain accents. Reject staff/beam blocks and vertical/slanted text.
-                if (w < gap * 4 || h > gap * 3 || w < h * 4 || n > w * Math.max(8, gap)) continue;
+                // Compact hairpins beside a printed level can have a steeper opening.
+                // Isolated >/< still need the ordinary long, shallow shape.
+                boolean qualifiedShort =
+                        w >= gap * 3
+                                && w <= gap * 6
+                                && h <= gap * 1.75f
+                                && w >= h * 2.5f
+                                && precedingPrintedLevel(
+                                        words, gray, width, height, left, top, bottom, gap);
+                if (!qualifiedShort && (w < gap * 4 || w < h * 4)
+                        || h > gap * 3
+                        || n > w * Math.max(8, gap)) continue;
                 int[] upper = new int[w], lower = new int[w];
                 Arrays.fill(upper, Integer.MAX_VALUE);
                 Arrays.fill(lower, Integer.MIN_VALUE);
@@ -296,6 +306,8 @@ final class ScoreDynamicsDetector {
                     upper[x] = Math.min(upper[x], y);
                     lower[x] = Math.max(lower[x], y);
                 }
+                if (qualifiedShort && !openHairpinInterior(gray, width, left, upper, lower, gap))
+                    continue;
                 var stroke = HairpinContinuation.stroke(owner, left, right, upper, lower);
                 if (stroke != null) strokes.add(stroke);
                 if (h < gap * .4) continue;
@@ -499,6 +511,52 @@ final class ScoreDynamicsDetector {
                         .thenComparingDouble(ScoreDynamicChange::positionInMeasure)
                         .thenComparingInt(c -> c.direction() == 0 ? 0 : 1));
         return List.copyOf(scoped);
+    }
+
+    private static boolean openHairpinInterior(
+            byte[] gray, int width, int left, int[] upper, int[] lower, float gap) {
+        int eligible = 0, open = 0;
+        for (int x = 0; x < upper.length; x++) {
+            if (upper[x] == Integer.MAX_VALUE || lower[x] - upper[x] < gap * .5f) continue;
+            eligible++;
+            if ((gray[((upper[x] + lower[x]) / 2) * width + left + x] & 255) >= 145) open++;
+        }
+        return eligible >= upper.length / 4 && open >= eligible * .8f;
+    }
+
+    private static boolean precedingPrintedLevel(
+            List<PlayingTechniqueDetector.Word> words,
+            byte[] gray,
+            int width,
+            int height,
+            int left,
+            int top,
+            int bottom,
+            float gap) {
+        for (var word : words) {
+            if (!Float.isFinite(level(word.text()))) continue;
+            // A literal OCR box can include the following hairpin. Require ink
+            // before the wedge, independently of ink inside the wedge itself.
+            float prefixRight = Math.min(word.right(), (left - gap * .25f) / width);
+            float separation = left - prefixRight * width;
+            float centerDistance =
+                    Math.abs((word.top() + word.bottom()) * height * .5f - (top + bottom) * .5f);
+            if (word.left() * width < left
+                    && left - word.left() * width <= gap * 6
+                    && separation <= gap * 3
+                    && centerDistance <= gap * .9f
+                    && containsInk(
+                            new PlayingTechniqueDetector.Word(
+                                    word.text(),
+                                    word.left(),
+                                    word.top(),
+                                    prefixRight,
+                                    word.bottom()),
+                            gray,
+                            width,
+                            height)) return true;
+        }
+        return false;
     }
 
     private static boolean sameDynamicPart(

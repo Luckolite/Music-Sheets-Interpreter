@@ -306,10 +306,10 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "b6db3da0edaf50925365549b077e6b0f30d4b112f417bd353b0797a1ae2658ac",
+      "source_sha256": "e5fb59a6a762d374c3493b3f1a73635b78237fa222800e31829f6f1e08fc8611",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed package-only standalone port of complete sudden-dynamic OCR tokens: abbreviated sub and merged sub/subito levels retain their printed level. Whole-token qualification, mixed-lyric rejection and raw ink requirements stay enforced. Original synthetic tests; no private score material, new dependencies or model changes.",
-      "source_normalized_sha256": "ccc3ca398b1f8b4feeba7d1dc39167ef9e99b6d876c76b7de704c42daf554693"
+      "review_note": "Reviewed package-only standalone port: complete sudden-dynamic OCR qualification plus bounded compact hairpins beside a separately ink-backed level on the same row. Padded boxes cannot use wedge ink as level evidence; a hollow interior and straight two arms are required. Filled/isolated/narrow accents, remote/unprinted levels and style words remain excluded. Original synthetic controls; no private imagery, new dependencies or model changes.",
+      "source_normalized_sha256": "f36a6aa348dca415ecdec4b48955f6fe4ffa78daaa9d5811cc563a3b40729001"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
