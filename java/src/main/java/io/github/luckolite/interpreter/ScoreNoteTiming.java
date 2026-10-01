@@ -433,6 +433,65 @@ public final class ScoreNoteTiming {
         return Double.isFinite(principal) && principal > 0 ? Math.min(.25, principal * .25) : .125;
     }
 
+    /** Written engraving clock; grace values do not consume the principal's metric duration. */
+    public record WrittenPlacement(
+            double onsetBeats,
+            double durationBeats,
+            int principalIndex,
+            int ordinal,
+            boolean afterGrace,
+            double stealPercent) {
+        public boolean grace() {
+            return principalIndex >= 0;
+        }
+    }
+
+    /** Unknown grace ownership stays unresolved rather than acquiring a geometric beat. */
+    public static java.util.Optional<WrittenPlacement> writtenPlacement(
+            ScoreNoteEvent target, List<ScoreNoteEvent> notes, float beats) {
+        if (target == null || notes == null || !Float.isFinite(beats) || beats <= 0)
+            return java.util.Optional.empty();
+        if (notes.stream().noneMatch(n -> n == target)) return java.util.Optional.empty();
+        TimingSession session = SESSION.get();
+        var metrical =
+                session == null
+                        ? notes.stream()
+                                .filter(n -> !grace(n))
+                                .collect(java.util.stream.Collectors.toList())
+                        : session.metrical(notes);
+        GracePlayback context = grace(target) ? gracePlayback(target, notes) : null;
+        int principal = -1, ordinal = -1;
+        boolean after = false;
+        double onset, duration, steal = 0;
+        if (grace(target)) {
+            if (context == null || context.principal == null || context.index < 0)
+                return java.util.Optional.empty();
+            for (int i = 0; i < notes.size(); i++)
+                if (notes.get(i) == context.principal) {
+                    principal = i;
+                    break;
+                }
+            if (principal < 0) return java.util.Optional.empty();
+            onset = beatInMeasure(context.principal, metrical, beats);
+            double principalDuration =
+                    resolvedWrittenDurationBeats(context.principal, metrical, beats);
+            if (!Double.isFinite(principalDuration) || principalDuration <= 0)
+                return java.util.Optional.empty();
+            after = context.trailing;
+            ordinal = context.index;
+            if (after) onset += principalDuration;
+            duration = writtenDurationBeats(target);
+            steal = 100 * graceBudget(context, beats) / context.count / principalDuration;
+        } else {
+            onset = beatInMeasure(target, metrical, beats);
+            duration = resolvedWrittenDurationBeats(target, metrical, beats);
+        }
+        if (!Double.isFinite(onset) || onset < 0 || !Double.isFinite(duration) || duration <= 0)
+            return java.util.Optional.empty();
+        return java.util.Optional.of(
+                new WrittenPlacement(onset, duration, principal, ordinal, after, steal));
+    }
+
     /** Uses written beam/dot values to correct close onsets that spatial spacing compresses. */
     public static double beatInMeasure(
             ScoreNoteEvent target, List<ScoreNoteEvent> notes, float beatsPerMeasure) {

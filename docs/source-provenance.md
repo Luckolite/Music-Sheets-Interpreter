@@ -12,6 +12,16 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Written grace placement exposes original notation values and explicit principal
+identity on a metrical clock that preserves the principal's full duration. The
+performance clock retains its existing grace budget. Original generated tests
+cover prefixes, terminal pairs, unknown ownership, ordinary fast notes, sessions
+and distinct source identity. The shared timing API has exact package-only app
+parity. The app MusicXML writer emits grace tags without metric duration, and its
+layout reader validates grace type, anchor, pitch, voice and retained identities;
+those adapters remain outside the standalone Python renderer boundary. No private
+score, model, external dependency or wire-layout change is included.
+
 Fermata notation planning selects one surviving outer chord member for a proved
 printed symbol and preserves its orientation and final written release. The
 shared planner has exact package-only parity with the app. Its original generated

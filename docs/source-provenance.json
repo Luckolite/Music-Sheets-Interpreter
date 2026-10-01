@@ -336,10 +336,10 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "8ad5fde24e06727e93190cb636f8159e5c09e8cf06fb1caf31f9146578d8cae1",
+      "source_sha256": "ee9dab6ad4a8147f9076446fd2541883789d568e644bd6a7c17ee021efe3667b",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed global raw-ink, rhythmic and bounded-navigation repair; full token parity with package/diagnostics adapters verified. Original synthetic positive and rejection controls; no source score, model or new dependency included.",
-      "source_normalized_sha256": "2fde6a6466906794b6e72a070a89738e1209caad6fe7a0da253bde7bf4c948f4"
+      "review_note": "Reviewed global written-grace clock API with exact package-only app parity; baseline canonical token parity checked before port. Original written beam/dot values, explicit principal source identity and before/after ordinal ownership; performance timing unchanged. Original synthetic prefix/trailing/unowned/fast-note/session/identity regressions. Scoped app MusicXML writer and layout reader reviewed separately; no model, asset, dependency or wire-layout change.",
+      "source_normalized_sha256": "955ae10a2d31efcd1c3215e36cd9df9472cc54428a91982e72ba3fe78ce01f28"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
