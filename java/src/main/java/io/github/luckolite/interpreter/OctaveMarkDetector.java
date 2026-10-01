@@ -36,6 +36,7 @@ final class OctaveMarkDetector {
             int width,
             int height) {
         if (staffs == null || staffs.isEmpty() || notes.isEmpty()) return notes;
+        gray = contrastedInk(gray, width, height);
         List<PlayingTechniqueDetector.Word> combined =
                 new ArrayList<>(words == null ? List.of() : words);
         combined.addAll(printedWords(gray, width, height, staffs));
@@ -115,6 +116,42 @@ final class OctaveMarkDetector {
         return List.copyOf(result);
     }
 
+    /** Remove dark paper texture from octave text and its dash evidence together. */
+    private static byte[] contrastedInk(byte[] gray, int width, int height) {
+        if (gray == null || gray.length != (long) width * height || width <= 0 || height <= 0)
+            return gray;
+        byte[] result = gray.clone();
+        final int tile = 64;
+        int[] histogram = new int[256];
+        for (int top = 0; top < height; top += tile)
+            for (int left = 0; left < width; left += tile) {
+                java.util.Arrays.fill(histogram, 0);
+                int bottom = Math.min(height, top + tile), right = Math.min(width, left + tile);
+                for (int y = top; y < bottom; y++)
+                    for (int x = left; x < right; x++) histogram[gray[y * width + x] & 255]++;
+                int target = ((bottom - top) * (right - left) * 85 + 99) / 100,
+                        total = 0,
+                        background = 255;
+                for (int value = 0; value < 256; value++) {
+                    total += histogram[value];
+                    if (total >= target) {
+                        background = value;
+                        break;
+                    }
+                }
+                // Ordinary high-contrast scans retain their exact pixels. On darker
+                // paper, a stroke must lie below its local paper by the same margin
+                // used for the numeral counters, suffixes and dotted-line chain.
+                int shift = Math.max(0, 165 - (background - 24));
+                if (shift == 0) continue;
+                for (int y = top; y < bottom; y++)
+                    for (int x = left; x < right; x++)
+                        result[y * width + x] =
+                                (byte) Math.min(255, (gray[y * width + x] & 255) + shift);
+            }
+        return result;
+    }
+
     private record InkBox(int left, int top, int right, int bottom, int area) {}
 
     /** Confirmed printed direction text cannot also be a sounding notehead. */
@@ -154,6 +191,7 @@ final class OctaveMarkDetector {
             byte[] gray, int width, int height, List<PlayingTechniqueDetector.Staff> staffs) {
         List<PlayingTechniqueDetector.Word> words = new ArrayList<>();
         if (gray == null || gray.length != width * height) return words;
+        gray = contrastedInk(gray, width, height);
         for (var staff : staffs)
             for (boolean below : new boolean[] {false, true}) {
                 float gap = staff.gap();

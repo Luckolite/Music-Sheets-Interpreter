@@ -427,10 +427,10 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "f24ce18f045b663ef2778036fc5ee425a9c4632956a142282255aef074e253ad",
+      "source_sha256": "e33d2db5ccc1fdbe18c239dbe77a9ba5e7fcb86d8435e9ca9e467f0e58461e8d",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "76cd8b9f6400d5f6550dafad538b3680614bf882b3ab8c96e1bc8e84bc6c8921",
-      "review_note": "Printed suffix and dash handling and containment-based suppression of a duplicate bare-numeral interpretation; original generated span and font-render regressions."
+      "source_normalized_sha256": "58fdf228db1ff61d3aa6faf6eeea07b2b088591030f9fc2d07239d3c69ccf9e1",
+      "review_note": "Reviewed global local-paper contrast for octave numeral, suffix and dash evidence. High-contrast scans preserve exact pixels; shaded-paper texture must clear a 24-level contrast margin against the local 85th percentile. Caller pixels are preserved. Original generated ring/stipple negative and dark-ink flat/gradient positive controls; complete octave suite passes. Entire class token parity checked with the standalone package adapter. No weights, dependencies or wire-layout changes; private evidence excluded."
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",

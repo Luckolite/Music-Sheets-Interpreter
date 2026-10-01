@@ -12,6 +12,13 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Octave text and its dotted span use the same local paper contrast. Shallow
+texture on shaded paper cannot supply numeral counters or a dotted-line chain;
+genuine dark octave ink remains detectable. Original generated ring and stipple
+geometry covers the negative case, dark marks on flat and gradient backgrounds,
+and preservation of caller pixels. The standalone class has token parity with
+the app; weights, dependencies and record layouts are unchanged.
+
 Rest flags joined by a masked staff valley are separated only when visible
 rounded peaks prove the printed flag spacing, a width dip and adequate unmasked
 support. Ordinary unsplit bulb centers and existing rest outline guards remain.
