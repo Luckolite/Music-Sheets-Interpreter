@@ -699,10 +699,10 @@
     },
     "NoteSlideDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteSlideDetector.java",
-      "source_sha256": "d4a8a3065867f8267817d9a258548a2125567c1971b0b59f7209e3b5f84855cd",
+      "source_sha256": "53231d6a454e86e7165a827e9037f83c1d51594cd3f0cb3d7f5bea723642ef9a",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "0daf4b1cb91302743f0f7fbdc85846e5b4b5cbbab3a537b1acc99b35a560b96b",
-      "review_note": "Reviewed package-only standalone port. Head-owned thin ledger rules on the physical staff grid are removed only outside its body, preserving shafts and diagonal crossings; full straight-component and unique source ownership guards remain. Original generated upper/lower positives and curved, thick, unresolved-staff controls. No private score, model change or dependency added."
+      "source_normalized_sha256": "ea8a7555cd5ead34ab97111a8bfcf8969519e663aae902c33bcf38a5823436a6",
+      "review_note": "Reviewed package-only standalone port. Bounded straight fragments may rejoin only at an assigned physical staff-rule crossing with95percent original gap ink, combined residual/correlation and unique immediate same-staff same-measure source proof. Existing results preserved; recursion limited to one staff-free recheck. Original9 generated tests. No private source, model, dependency or layout change."
     },
     "OutlinedBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OutlinedBeamInk.java",

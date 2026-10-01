@@ -103,3 +103,12 @@ shaft and diagonal continuity. Original `LedgerCrossingSlideTest` examples
 cover upper and lower rules and reject curved ink, thick shapes and unresolved
 staff ownership. No private score imagery, weights, dependencies or wire changes
 are included.
+
+Shallow connecting strokes can split when staff rules are removed. The detector
+rejoins only bounded straight fragments at a proved physical rule crossing,
+restoring original dark pixels after combined residual, correlation and unique
+immediate source checks. Existing detections are preserved and the staff-free
+recheck cannot recurse. Original `StaffCrossingSlideTest` examples cover both
+directions, curves, part/measure ownership, source ambiguity, intervening attacks
+and genuinely absent ink. No private score or model/dependency/wire changes
+are included.
