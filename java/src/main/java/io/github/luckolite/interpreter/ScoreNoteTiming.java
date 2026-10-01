@@ -68,12 +68,20 @@ public final class ScoreNoteTiming {
                 metricalNotes = new java.util.IdentityHashMap<>();
         private final java.util.IdentityHashMap<List<ScoreNoteEvent>, ScoreIndex> indexes =
                 new java.util.IdentityHashMap<>();
+        private final java.util.IdentityHashMap<List<ScoreNoteEvent>, List<RhythmGroup>>
+                rhythmGroups = new java.util.IdentityHashMap<>();
+        private final java.util.IdentityHashMap<
+                        List<ScoreNoteEvent>, java.util.IdentityHashMap<ScoreNoteEvent, Boolean>>
+                independentDurations = new java.util.IdentityHashMap<>();
         private final java.util.IdentityHashMap<
                         List<ScoreNoteEvent>, java.util.Map<StaffKey, SystemProfile>>
                 systemProfiles = new java.util.IdentityHashMap<>();
         private int leadingInsetCalculations;
         private int metricalListCalculations;
         private int scoreIndexCalculations;
+        private int rhythmGroupCalculations;
+        private int independentDurationCalculations;
+        private int independentDurationCount;
         private int size;
         private boolean closed;
 
@@ -150,6 +158,41 @@ public final class ScoreNoteTiming {
             return scoreIndexCalculations;
         }
 
+        private List<RhythmGroup> groups(List<ScoreNoteEvent> voice) {
+            List<RhythmGroup> found = rhythmGroups.get(voice);
+            if (found != null) return found;
+            rhythmGroupCalculations++;
+            List<RhythmGroup> result = buildRhythmGroups(voice);
+            if (rhythmGroups.size() >= 8192) rhythmGroups.clear();
+            rhythmGroups.put(voice, result);
+            return result;
+        }
+
+        int rhythmGroupCalculationCount() {
+            return rhythmGroupCalculations;
+        }
+
+        private boolean independentDuration(ScoreNoteEvent note, List<ScoreNoteEvent> notes) {
+            var map = independentDurations.get(notes);
+            Boolean found = map == null ? null : map.get(note);
+            if (found != null) return found;
+            independentDurationCalculations++;
+            boolean result = uncachedIndependentDuration(note, measureVoice(note, notes));
+            if (independentDurationCount >= 8192) {
+                independentDurations.clear();
+                independentDurationCount = 0;
+            }
+            independentDurations
+                    .computeIfAbsent(notes, ignored -> new java.util.IdentityHashMap<>())
+                    .put(note, result);
+            independentDurationCount++;
+            return result;
+        }
+
+        int independentDurationCalculationCount() {
+            return independentDurationCalculations;
+        }
+
         @Override
         public void close() {
             if (closed) return;
@@ -160,6 +203,8 @@ public final class ScoreNoteTiming {
             leadingInsets.clear();
             metricalNotes.clear();
             indexes.clear();
+            rhythmGroups.clear();
+            independentDurations.clear();
             systemProfiles.clear();
             if (previous == null) SESSION.remove();
             else SESSION.set(previous);
@@ -196,13 +241,13 @@ public final class ScoreNoteTiming {
 
         List<ScoreNoteEvent> attacks() {
             if (attackNotes == null) {
-                boolean moving = notes.stream().anyMatch(n -> !hasIndependentSustain(n));
-                attackNotes =
-                        moving
-                                ? notes.stream()
-                                        .filter(n -> !hasIndependentSustain(n))
-                                        .collect(java.util.stream.Collectors.toList())
-                                : notes;
+                List<ScoreNoteEvent> moving = null;
+                for (ScoreNoteEvent note : notes)
+                    if (!hasIndependentSustain(note)) {
+                        if (moving == null) moving = new ArrayList<>(notes.size());
+                        moving.add(note);
+                    }
+                attackNotes = moving == null ? notes : moving;
             }
             return attackNotes;
         }
@@ -817,7 +862,14 @@ public final class ScoreNoteTiming {
         if (note == null || notes == null) return false;
         // Every check below is confined to this bar/staff. Reuse the session index
         // instead of rescanning the whole piece (including a nested all-note scan).
-        if (SESSION.get() != null) notes = measureVoice(note, notes);
+        TimingSession session = SESSION.get();
+        return session == null
+                ? uncachedIndependentDuration(note, notes)
+                : session.independentDuration(note, notes);
+    }
+
+    private static boolean uncachedIndependentDuration(
+            ScoreNoteEvent note, List<ScoreNoteEvent> notes) {
         // Explicitly different tuplet values at one attack prove parallel rhythms.
         // The faster attack clock must not shorten the other voice's written value.
         for (ScoreNoteEvent other : notes)
@@ -958,12 +1010,11 @@ public final class ScoreNoteTiming {
     }
 
     private static double leadingRest(List<RhythmGroup> groups) {
-        return groups.isEmpty()
-                ? 0
-                : groups.get(0).notes.stream()
-                        .mapToDouble(ScoreNoteEvent::leadingRestBeats)
-                        .max()
-                        .orElse(0);
+        if (groups.isEmpty()) return 0;
+        List<ScoreNoteEvent> notes = groups.get(0).notes;
+        double rest = Double.NEGATIVE_INFINITY;
+        for (ScoreNoteEvent note : notes) rest = Math.max(rest, note.leadingRestBeats());
+        return notes.isEmpty() ? 0 : rest;
     }
 
     /** A complete sequence of explicitly read values is an anchor even without rests. */
@@ -1115,6 +1166,12 @@ public final class ScoreNoteTiming {
     }
 
     private static List<RhythmGroup> rhythmGroups(List<ScoreNoteEvent> voice) {
+        TimingSession session = SESSION.get();
+        return session == null ? buildRhythmGroups(voice) : session.groups(voice);
+    }
+
+    /** Groups are read-only after assembly; reuse them only for an unchanged session snapshot. */
+    private static List<RhythmGroup> buildRhythmGroups(List<ScoreNoteEvent> voice) {
         List<RhythmGroup> groups = new ArrayList<>();
         for (ScoreNoteEvent note : voice) {
             RhythmGroup group = groups.isEmpty() ? null : groups.get(groups.size() - 1);

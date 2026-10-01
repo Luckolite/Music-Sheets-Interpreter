@@ -333,10 +333,10 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "fb5caaf87c2d53cf94f4efe001510dbadea1009e69fc0314673bd851bb614f3c",
+      "source_sha256": "bfd1fc202c744f3423a6ffa309aacfb4b1a7073a123285ee7128886d01e0e875",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed session-local measure/staff index reuse in parallel-duration checks. Identical existential rhythm checks; original shuffled multi-staff/tuplet regression compares indexed and unindexed results. No private score data or new dependencies.",
-      "source_normalized_sha256": "828f7413d2e2f98e62eb3c10a7ac935d6dcc470de27ed1269228c9fd156204f3"
+      "review_note": "Reviewed working-tree timing snapshot: bounded thread-confined rhythm-group and independent-duration reuse, with allocation-free rest/attack iteration. All musical calculations and ordering retained; original synthetic meter, grace/polyphony, nested/snapshot and eviction regressions. Package-only standalone adaptation and formatting; no new dependencies, weights or private data.",
+      "source_normalized_sha256": "3527b6c66a9198c0751a313d67275aa5caf0e55a746cadbc05cc047d93f3cc64"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
