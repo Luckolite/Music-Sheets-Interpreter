@@ -27,7 +27,7 @@ public class SubitoDynamicOcrTest {
     @Test
     public void abbreviatedSpacedInstructionKeepsLevel() {
         assertTrue(ScoreDynamicsDetector.dynamicLine("sub p"));
-        assertEquals("p", read("sub p", "p").get(0).text());
+        assertEquals(-8, ScoreDynamicsDetector.level(read("sub p", "p").get(0).text()), 0);
     }
 
     @Test

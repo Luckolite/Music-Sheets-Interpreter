@@ -59,7 +59,8 @@ final class NativeDynamicGlyphs {
                 if (!match.accepted()
                         || match.score() < .55f
                         || match.margin() < .08f
-                        || !match.text().equals(word.text())) continue;
+                        || !match.text().equals(ScoreDynamicsDetector.glyphLevelText(word.text())))
+                    continue;
                 var box = candidate.word();
                 cleanedWords.removeIf(
                         old ->
@@ -104,7 +105,8 @@ final class NativeDynamicGlyphs {
                                                             match.text(),
                                                             match.score(),
                                                             match.margin(),
-                                                            word.text())
+                                                            ScoreDynamicsDetector.glyphLevelText(
+                                                                    word.text()))
                                                     && word.left() <= box.left()
                                                     && word.right() >= box.right()
                                                     && word.top() <= box.top()
@@ -122,21 +124,21 @@ final class NativeDynamicGlyphs {
                                                     && word.bottom() > box.top()
                                                     && DynamicGlyphEvidence.clippedCompound(
                                                             match.text(),
-                                                            word.text(),
+                                                            ScoreDynamicsDetector.glyphLevelText(
+                                                                    word.text()),
                                                             box.left(),
                                                             box.right(),
                                                             word.left(),
                                                             word.right()));
             if (clipped) continue;
+            var recognized = ScoreDynamicsDetector.recognizedWord(match.text(), box, result);
             result.removeIf(
                     word ->
                             word.left() < box.right()
                                     && word.right() > box.left()
                                     && word.top() < box.bottom()
                                     && word.bottom() > box.top());
-            result.add(
-                    new PlayingTechniqueDetector.Word(
-                            match.text(), box.left(), box.top(), box.right(), box.bottom()));
+            result.add(recognized);
         }
         return result;
     }

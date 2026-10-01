@@ -306,10 +306,10 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "e5fb59a6a762d374c3493b3f1a73635b78237fa222800e31829f6f1e08fc8611",
+      "source_sha256": "76732db66cc87ed6942e8cd527d4cdbb0aa35a27405ec1e5cf82c4f5f0cb8648",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed package-only standalone port: complete sudden-dynamic OCR qualification plus bounded compact hairpins beside a separately ink-backed level on the same row. Padded boxes cannot use wedge ink as level evidence; a hollow interior and straight two arms are required. Filled/isolated/narrow accents, remote/unprinted levels and style words remain excluded. Original synthetic controls; no private imagery, new dependencies or model changes.",
-      "source_normalized_sha256": "f36a6aa348dca415ecdec4b48955f6fe4ffa78daaa9d5811cc563a3b40729001"
+      "review_note": "Reviewed sudden-dynamic qualifier retention through OCR and glyph refinement, with bounded same-bar unique note attachment. Ordinary/far/ambiguous during-note levels retain printed anchors. Shared semantic helper used by Android glyph adapters; native constructor retains its pre-existing file/resource loading adapter. Original synthetic and licensed shipped-glyph regressions; no private score, new dependency or model change.",
+      "source_normalized_sha256": "9ecd3ed0e3d56eac7922823cad52caf5878231abe305fd428e9eec0be9f85bdd"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
@@ -882,9 +882,10 @@
     },
     "NativeDynamicGlyphs.java": {
       "source_path": "tools/native-worker/NativeDynamicGlyphs.java",
-      "source_sha256": "93b9689416859cf12a035147cd2f124102e840567867cd3e4af2199970430ee0",
+      "source_sha256": "69579221633fb74d6ea1475efa9b6084cb62abbe422120cf4fb511387b1b1cfb",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "93b9689416859cf12a035147cd2f124102e840567867cd3e4af2199970430ee0"
+      "source_normalized_sha256": "61433e7ca17b5bdae66da366db4d906bba29deb789511801ccb503e6650e3556",
+      "review_note": "Reviewed sudden-dynamic qualifier retention through OCR and glyph refinement, with bounded same-bar unique note attachment. Ordinary/far/ambiguous during-note levels retain printed anchors. Shared semantic helper used by Android glyph adapters; native constructor retains its pre-existing file/resource loading adapter. Original synthetic and licensed shipped-glyph regressions; no private score, new dependency or model change."
     },
     "NativeOrnamentGlyphs.java": {
       "source_path": "tools/native-worker/NativeOrnamentGlyphs.java",

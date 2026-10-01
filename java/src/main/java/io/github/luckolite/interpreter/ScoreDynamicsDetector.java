@@ -195,10 +195,55 @@ final class ScoreDynamicsDetector {
             }
             return List.copyOf(result);
         }
+        if (isSuddenLevel(line)
+                && Float.isFinite(level(word.text()))
+                && level(line) == level(word.text())) {
+            word =
+                    new PlayingTechniqueDetector.Word(
+                            line.trim(), word.left(), word.top(), word.right(), word.bottom());
+        }
         return (Float.isFinite(level(word.text())) || textDirection(word.text()) != 0)
                         && containsInk(word, gray, width, height)
                 ? List.of(word)
                 : List.of();
+    }
+
+    static boolean isSuddenLevel(String text) {
+        return text != null
+                && Float.isFinite(level(text))
+                && text.trim()
+                        .toLowerCase(Locale.ROOT)
+                        .matches("(?:subito|sub)\\.?\\s*(?:ppp|pp|p|mp|mf|fff|ff|f)[.,:;]?");
+    }
+
+    static String glyphLevelText(String text) {
+        return isSuddenLevel(text)
+                ? text.trim()
+                        .toLowerCase(Locale.ROOT)
+                        .replaceFirst("^(?:subito|sub)\\.?\\s*", "")
+                        .replaceAll("[.,:;]$", "")
+                : text;
+    }
+
+    /** Glyph refinement changes bounds without erasing a verified sudden instruction. */
+    static PlayingTechniqueDetector.Word recognizedWord(
+            String glyph,
+            PlayingTechniqueDetector.Word box,
+            List<PlayingTechniqueDetector.Word> literalWords) {
+        String text = glyph;
+        for (var literal : literalWords) {
+            if (isSuddenLevel(literal.text())
+                    && level(literal.text()) == level(glyph)
+                    && literal.left() < box.right()
+                    && literal.right() > box.left()
+                    && literal.top() < box.bottom()
+                    && literal.bottom() > box.top()) {
+                text = literal.text();
+                break;
+            }
+        }
+        return new PlayingTechniqueDetector.Word(
+                text, box.left(), box.top(), box.right(), box.bottom());
     }
 
     static boolean containsInk(
@@ -654,6 +699,38 @@ final class ScoreDynamicsDetector {
 
     // Italic dynamic marks can overhang the preceding bar while their body belongs to the next.
     private static float literalAnchor(
+            PlayingTechniqueDetector.Word word,
+            PlayingTechniqueDetector.Staff staff,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes,
+            int width,
+            int height) {
+        float anchor = printedLiteralAnchor(word, staff, measures, notes, width, height);
+        if (!isSuddenLevel(word.text())) return anchor;
+        Slot target = slot(anchor, staff, measures, notes, width, height);
+        if (target == null) return anchor;
+        var region = measures.get(target.measure);
+        float bestDistance = staff.gap() * 3, best = anchor;
+        boolean ambiguous = false;
+        for (var note : notes) {
+            if (note.measureIndex() != target.measure
+                    || note.staffIndex() != staff.index()
+                    || note.staffCount() != staff.count()) continue;
+            float x = region.left() + note.positionInMeasure() * (region.right() - region.left());
+            float distance = Math.abs(x - anchor) * width;
+            if (distance < bestDistance - .1f) {
+                bestDistance = distance;
+                best = x;
+                ambiguous = false;
+            } else if (Math.abs(distance - bestDistance) < .1f
+                    && Math.abs(x - best) * width > .1f) {
+                ambiguous = true;
+            }
+        }
+        return ambiguous ? anchor : best;
+    }
+
+    private static float printedLiteralAnchor(
             PlayingTechniqueDetector.Word word,
             PlayingTechniqueDetector.Staff staff,
             List<MeasureRegion> measures,
