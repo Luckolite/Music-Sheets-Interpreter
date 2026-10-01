@@ -222,6 +222,7 @@ final class SixteenthRestDetector {
                                         s.index(),
                                         s.count()),
                                 (s.top() + s.bottom()) * .5f));
+        int[] columnInk = null, rowDark = null, rowLongest = null;
         for (Placement placement : placements) {
             Staff staff = placement.staff();
             float gap = staff.gap();
@@ -270,15 +271,24 @@ final class SixteenthRestDetector {
             if (bottom < top) continue;
             boolean[] line = new boolean[bottom - top + 1];
             boolean[] narrowLine = new boolean[line.length];
+            // Raw row statistics are independent of the staff's position and gap.
+            if (rowDark == null) {
+                rowDark = new int[height]; rowLongest = new int[height];
+                java.util.Arrays.fill(rowDark, -1);
+            }
             // Remove only long horizontal ink rows, including a line's antialiased edge.
             for (int y = top; y <= bottom; y++) {
-                int dark = 0, longest = 0, run = 0;
-                for (int x = 0; x < width; x++) {
-                    if ((gray[y * width + x] & 255) < 170) {
-                        dark++;
-                        longest = Math.max(longest, ++run);
-                    } else run = 0;
+                if (rowDark[y] < 0) {
+                    int dark = 0, longest = 0, run = 0;
+                    for (int x = 0; x < width; x++) {
+                        if ((gray[y * width + x] & 255) < 170) {
+                            dark++;
+                            longest = Math.max(longest, ++run);
+                        } else run = 0;
+                    }
+                    rowDark[y] = dark; rowLongest[y] = longest;
                 }
+                int dark = rowDark[y], longest = rowLongest[y];
                 float nearestLine = staff.top() + Math.round((y - staff.top()) / gap) * gap;
                 // Rectification can leave only a local antialiased edge of a rule.
                 // A continuous five-gap segment still establishes line ink; rest
@@ -334,12 +344,17 @@ final class SixteenthRestDetector {
                                     ? baseMask
                                     : java.util.Arrays.copyOfRange(
                                             baseMask, scanTop - top, scanBottom - top + 1);
+                    if (columnInk == null) columnInk = new int[width];
+                    else java.util.Arrays.fill(columnInk, 0);
+                    for (int y = scanTop; y <= scanBottom; y++) {
+                        if (mask[y - scanTop]) continue;
+                        int row = y * width;
+                        for (int x = 0; x < width; x++)
+                            if ((gray[row + x] & 255) < 170) columnInk[x]++;
+                    }
                     int start = -1;
                     for (int x = 0; x <= width; x++) {
-                        int ink = 0;
-                        if (x < width)
-                            for (int y = scanTop; y <= scanBottom; y++)
-                                if (!mask[y - scanTop] && (gray[y * width + x] & 255) < 170) ink++;
+                        int ink = x < width ? columnInk[x] : 0;
                         if (ink >= 2) {
                             if (start < 0) start = x;
                         } else if (start >= 0) {

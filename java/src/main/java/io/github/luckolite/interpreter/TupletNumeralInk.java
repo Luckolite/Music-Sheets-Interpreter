@@ -176,6 +176,10 @@ final class TupletNumeralInk {
             for (int cy = max + 2; cy < h - max - 2; cy++) {
                 int valid = 0, thin = 0;
                 for (int x = 0; x < w; x++) {
+                    // Each remaining column can supply at most one observation.
+                    // Reject only when the original coverage thresholds are unreachable.
+                    int remaining = w - x;
+                    if (valid + remaining < w * .90f || thin + remaining < w * .82f) break;
                     int y = Math.round(cy + slope * (x - w * .5f));
                     if (y - max < 0 || y + max >= h) continue;
                     if (original[y * w + x] != 0) continue;

@@ -193,3 +193,5 @@ weak contrast and extra joined rules cannot establish a phase. Original syntheti
 controls cover direct geometry and the actual pitch-decoding path, including an
 earlier-ending slur and absent semantic stripes. The helper uses the JDK only;
 no private score, model, dependency or record-layout change is included.
+
+The reviewed rest projection and sloped-rule cleanup optimizations preserve their detection thresholds and output order. Scratch state stays within one detection call; raw row statistics are reused only across placements of the same immutable input raster. Two original generated parity regressions cover complete rest records and cleaned mask bytes, including coverage boundaries. No private images, model changes, or additional dependencies are included.

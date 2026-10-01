@@ -366,10 +366,11 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "7fea007529145ff400ecd8e76c03e9e96546ff4df19d8ce6d875565c339876df",
+      "source_sha256": "858d4511b3a8653375ab4ff32550639e4c84bdd884c67ff58a4436722af54cba",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed global rest-bulb separation when a masked staff valley joins separately visible rounded peaks. Printed spacing, valley prominence and unmasked peak support are required; unsplit bands retain original centers. Inspect and shared bulb helper token parity verified. Original generated width profiles cover two flags and ordinary, broad, flat and noisy single bulbs. No dependency, model or record-layout changes; private scores excluded.",
-      "source_normalized_sha256": "16be3c8ce33921e07b256f013c1c671412c1127869543a1bf80a102fac5ff4db"
+      "review_note": "Reviewed original row-major projection with per-call raw row statistics and scratch reuse; staff-specific masks and detection order unchanged. Package-only standalone adapter, original synthetic parity regression, no private scores, new dependencies or model changes. Immutable app snapshot based on released 840.",
+      "source_normalized_sha256": "858d4511b3a8653375ab4ff32550639e4c84bdd884c67ff58a4436722af54cba",
+      "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-rest-tuplet-841-source"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -829,9 +830,11 @@
     },
     "TupletNumeralInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TupletNumeralInk.java",
-      "source_sha256": "c693059aedaf6fa01814139afabdc9d3727148cd7fc7623ddc773132d7cf5d5e",
+      "source_sha256": "a978cfda45e48342b7d6f8b4428b8705d8880a52f37f6b9506208167f468df7e",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "c693059aedaf6fa01814139afabdc9d3727148cd7fc7623ddc773132d7cf5d5e"
+      "source_normalized_sha256": "a978cfda45e48342b7d6f8b4428b8705d8880a52f37f6b9506208167f468df7e",
+      "review_note": "Reviewed unreachable sloped-rule coverage rejection; original thresholds, rounding, and deletion order unchanged. Package-only standalone adapter, original synthetic parity regression, no private scores, new dependencies or model changes. Immutable app snapshot based on released 840.",
+      "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-rest-tuplet-841-source"
     },
     "ScoreNavigationProjection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationProjection.java",
