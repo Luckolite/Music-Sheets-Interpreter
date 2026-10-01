@@ -209,7 +209,9 @@ final class NoteArticulationDetector {
                             : rightY + (1 - rightY) * (1 - x) / (1 - apex);
             double slope = x < apex ? (1 - leftY) / apex : (1 - rightY) / (1 - apex);
             double distance = Math.abs(y - expected) / Math.sqrt(1 + slope * slope);
-            if (distance < .14 + .75 / Math.max(1, Math.min(g.right - g.left, g.bottom - g.top))) {
+            // Independently rounded stroke edges need a full raster pixel of
+            // tolerance. Precision and complete coverage still prove both arms.
+            if (distance < .14 + 1.0 / Math.max(1, Math.min(g.right - g.left, g.bottom - g.top))) {
                 hits++;
                 bins[Math.min(binCount - 1, (int) (x * binCount))] = true;
             }
@@ -292,6 +294,18 @@ final class NoteArticulationDetector {
                 raw ? faintAccentGlyphs(gray, width, height, seen, queue) : List.of();
         List<Glyph> candidates = new ArrayList<>(faintAccents), claimedAccents = new ArrayList<>();
         candidates.addAll(glyphs);
+        // A peak-shaped first letter needs word context on its right as well.
+        // Reflect positions once; semantic pixel references remain unchanged.
+        List<Glyph> reflectedGlyphs =
+                raw
+                        ? glyphs.stream()
+                                .map(
+                                        g ->
+                                                new Glyph(
+                                                        -g.right, g.top, -g.left, g.bottom, g.count,
+                                                        g.pixels))
+                                .toList()
+                        : List.of();
         for (Glyph glyph : candidates) {
             // A dark arm belongs to the recovered complete mark, not a separate dash.
             boolean fragment = false;
@@ -367,6 +381,21 @@ final class NoteArticulationDetector {
                                 || candidate == NoteArticulation.STACCATO
                                 || candidate == NoteArticulation.STACCATISSIMO)
                         && directionText(glyph, glyphs, note.gap, labels)) continue;
+                if (raw
+                        && candidate == NoteArticulation.MARCATO
+                        && (embeddedDirectionWord(glyph, glyphs, note.gap, labels, width)
+                                || directionText(glyph, glyphs, note.gap, labels)
+                                || directionText(
+                                        new Glyph(
+                                                -glyph.right,
+                                                glyph.top,
+                                                -glyph.left,
+                                                glyph.bottom,
+                                                glyph.count,
+                                                glyph.pixels),
+                                        reflectedGlyphs,
+                                        note.gap,
+                                        labels))) continue;
                 if (raw
                         && candidate == NoteArticulation.STACCATO
                         && initialsPunctuation(glyph, glyphs, note.gap, labels)) continue;
@@ -687,6 +716,49 @@ final class NoteArticulationDetector {
                         }
                     }
             }
+        return false;
+    }
+
+    /** An angular fragment inside a continuous word is still a letter. */
+    private static boolean embeddedDirectionWord(
+            Glyph target, List<Glyph> glyphs, float gap, byte[] labels, int width) {
+        List<Glyph> letters = new ArrayList<>();
+        letters.add(target);
+        for (Glyph g : glyphs) {
+            float h = g.bottom - g.top + 1, w = g.right - g.left + 1;
+            if (g == target
+                    || Math.abs(g.x() - target.x()) > gap * 12
+                    || Math.abs(g.bottom - target.bottom) > gap * .45f
+                    || h < gap * .5f
+                    || h > gap * 2.2f
+                    || w < gap * .25f
+                    || w > gap * 3f
+                    || classify(g, width, gap, true) == NoteArticulation.MARCATO
+                    || roundedAngular(g, width, gap, true) == NoteArticulation.MARCATO) continue;
+            int notation = 0;
+            for (int pixel : g.pixels)
+                if (labels[pixel] == OmrMeasurePostProcessor.NOTEHEAD
+                        || labels[pixel] == OmrMeasurePostProcessor.STEM_OR_REST
+                        || labels[pixel] == OmrMeasurePostProcessor.CLEF_OR_KEY
+                        || labels[pixel] == OmrMeasurePostProcessor.STAFF) notation++;
+            if (notation <= g.count * .25f) letters.add(g);
+        }
+        letters.sort(java.util.Comparator.comparingInt(Glyph::left));
+        for (int i = 0; i < letters.size(); i++) {
+            int count = 0;
+            boolean left = false, right = false, includes = false;
+            Glyph last = letters.get(i);
+            for (int j = i; j < letters.size(); j++) {
+                Glyph next = letters.get(j);
+                if (next.left - last.right > gap * .65f) break;
+                count++;
+                includes |= next == target;
+                left |= next.right < target.left;
+                right |= next.left > target.right;
+                last = next;
+            }
+            if (includes && count >= 4 && left && right) return true;
+        }
         return false;
     }
 

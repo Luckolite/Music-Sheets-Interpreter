@@ -37,6 +37,57 @@ public class ArticulationTextRunTest {
                 labels, gray, W, H, List.of(new NoteArticulationDetector.Anchor(x, 480, 16, 0)))[0];
     }
 
+    private int textPeak(int x) {
+        for (int xx = x - 10; xx <= x + 10; xx++) {
+            int y = 510 + (int) Math.round(Math.abs(xx - x) * 1.4);
+            box(xx, y - 1, xx, y + 1);
+        }
+        return NoteArticulationDetector.detect(
+                labels, gray, W, H, List.of(new NoteArticulationDetector.Anchor(x, 550, 17, 0)))[0];
+    }
+
+    @Test
+    public void detachedPeakBeforeLetterRunIsText() {
+        word();
+        assertEquals(0, textPeak(280));
+    }
+
+    @Test
+    public void detachedPeakAfterLetterRunIsText() {
+        word();
+        assertEquals(0, textPeak(364));
+    }
+
+    @Test
+    public void detachedPeakWithoutLetterRunRemainsMarcato() {
+        assertEquals(NoteArticulation.MARCATO, textPeak(280));
+    }
+
+    private void splitWord(boolean notation) {
+        for (int x : new int[] {250, 268, 318, 336}) {
+            box(x, 510, x + 2, 523);
+            box(x, 510, x + 12, 512);
+            box(x, 521, x + 12, 523);
+            if (notation)
+                for (int y = 510; y <= 523; y++)
+                    for (int xx = x; xx <= x + 12; xx++)
+                        if (gray[y * W + xx] == 0)
+                            labels[y * W + xx] = OmrMeasurePostProcessor.NOTEHEAD;
+        }
+    }
+
+    @Test
+    public void embeddedPeakInsideLetterRunIsText() {
+        splitWord(false);
+        assertEquals(0, textPeak(300));
+    }
+
+    @Test
+    public void notationBesidePeakIsNotText() {
+        splitWord(true);
+        assertEquals(NoteArticulation.MARCATO, textPeak(300));
+    }
+
     @Test
     public void wordExtensionDashesAreNotTenuto() {
         word();
