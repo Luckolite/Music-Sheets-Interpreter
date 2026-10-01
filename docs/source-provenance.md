@@ -12,6 +12,16 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Printed fermatas reuse the independently proved compact roof/dot geometry. The
+shared producer keeps a written attack descriptor and raw evidence; continuation
+pages keep musical timing unresolved until inherited meter is supplied. Page
+assembly rebases only detector-owned targets and identities, and rejects ambiguous
+chord release times. Original generated ink tests cover orientation, distant
+ledger ownership, false dots/slurs and cross-page targets. The standalone page
+adapter and app/desktop producer and assembly changes were reviewed separately.
+No model, external dependency or record layout changed. Exact hold duration and
+performed-target realization remain explicit downstream responsibilities.
+
 Printed note-to-note slides bind their source pitch only when the straight stroke
 matches the unique immediate attack on the same staff and in the same measure.
 An isolated approach, an intervening attack or an ambiguous source chord cannot

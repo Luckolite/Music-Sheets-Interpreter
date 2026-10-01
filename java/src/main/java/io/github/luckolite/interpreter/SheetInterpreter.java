@@ -263,16 +263,24 @@ public final class SheetInterpreter {
                         width,
                         height,
                         !tabs.isEmpty());
-        return finalScore
-                .withExpressiveEvents(
-                        finalScore.measures().isEmpty() ? List.of() : dynamicDetection.events())
-                .withPlaybackDirections(
-                        ScoreNavigationDetector.detect(
-                                words,
-                                NavigationSegnoGlyphs.detect(gray, width, height, staffs),
-                                staffs,
-                                finalScore.measures(),
-                                width,
-                                height));
+        return ScoreFermataDetector.withFermatas(
+                finalScore
+                        .withExpressiveEvents(
+                                finalScore.measures().isEmpty()
+                                        ? List.of()
+                                        : dynamicDetection.events())
+                        .withPlaybackDirections(
+                                ScoreNavigationDetector.detect(
+                                        words,
+                                        NavigationSegnoGlyphs.detect(gray, width, height, staffs),
+                                        staffs,
+                                        finalScore.measures(),
+                                        width,
+                                        height)),
+                labels,
+                gray,
+                width,
+                height,
+                staffs);
     }
 }

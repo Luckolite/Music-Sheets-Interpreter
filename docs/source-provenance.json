@@ -249,10 +249,10 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "48660c4341b9e159a28ba3fe3cdb544fab905c898539e350b927187c4dfb90a4",
+      "source_sha256": "bd3f8500d685daeddc1c7cdf1b27f0bf4ee2dcde2ec37dcfa66be39d22e04a04",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed package-only standalone port: raw glyph ownership, complete open angular marks with available raster bins, bounded beam-covered staff-rule recovery, tapered filled-wedge false-mask recovery and two-initial punctuation including italic overhangs. Accepted heads, complete two-arm geometry, crossbars, text runs and shaft/beam endpoints remain guarded. Original generated positive and negative regressions; no private imagery, new dependencies or model changes. Includes one physical pixel for caret strokes, embedded/bidirectional word guards, a single partial wedge face and staff-tip wedge recovery with headward-continuation veto. A detached dot inside four aligned word bodies is a serif; short disconnected letter pieces do not break their baseline. Original geometry/OFL font regressions, unchanged dependencies and models.",
-      "source_normalized_sha256": "1b2cfa6addbf50e6fce1a09feaf49d5ea64ada2322d1b2569e30abf0c6053286"
+      "review_note": "Reviewed detector-owned arc/dot recognition, written attack ownership and musical-meter resolution. Exact package-only parity. Original procedural ink and page-rebasing controls; no private score, model, new dependency or wire field.",
+      "source_normalized_sha256": "4f2c0f4b0217be8c4e69b1a16e9c2d63b808357390b7c086b938d3035b3d4f94"
     },
     "OpenChevron.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",
@@ -946,10 +946,17 @@
     },
     "ScoreDynamicContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicContinuation.java",
-      "source_sha256": "4e31400dfdf5cf846a6bee3a2105f4a55982a44b8c7b7f77f5c30aee088b76e3",
-      "source_normalized_sha256": "8f7a55519809f32a5c35b5ae19085e37b0e5bbf08f172dc455f47ddb31a30ae6",
+      "source_sha256": "a4565910c14e1b15683ca6298f62ec763350a9982c7b305e9bf43cff342445a7",
+      "source_normalized_sha256": "569a7241060cc132bb95c86f2d98c48158d3573a38c65173fd87ea02a2f0f9c3",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed lexical-only page continuation with retained OCR evidence, exact staff topology, contiguous offsets and movement-restart guard. Graphic/fixed/unproven/missing destinations preserve existing ranges. Exact package-only standalone parity; Android/native producers and viewer/conversion/native-audio adapter hunks separately reviewed. Original synthetic geometry and semantic-frame tests; no private score, model or new dependency."
+      "review_note": "Reviewed detector-owned arc/dot recognition, written attack ownership and musical-meter resolution. Exact package-only parity. Original procedural ink and page-rebasing controls; no private score, model, new dependency or wire field."
+    },
+    "ScoreFermataDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreFermataDetector.java",
+      "source_sha256": "4d1c8be92e82652cb7a5dc65bbefea0a59abe70f2350af58d3a2c58378915bba",
+      "source_normalized_sha256": "e773da1543373ae1e2ffb330240910c8e32b4d1721a5022eee5106762dd4a2f4",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Reviewed detector-owned arc/dot recognition, written attack ownership and musical-meter resolution. Exact package-only parity. Original procedural ink and page-rebasing controls; no private score, model, new dependency or wire field."
     }
   }
 }

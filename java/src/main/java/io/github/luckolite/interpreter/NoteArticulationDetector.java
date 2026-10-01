@@ -22,6 +22,73 @@ final class NoteArticulationDetector {
 
     private NoteArticulationDetector() {}
 
+    record FermataMark(int noteIndex, float x, float y, boolean inverted) {}
+
+    /** The same independently proved roof that shelters a dot also preserves its hold symbol. */
+    static List<FermataMark> fermataMarks(
+            byte[] labels, byte[] gray, int width, int height, List<Anchor> notes) {
+        if (notes.isEmpty()
+                || labels == null
+                || gray == null
+                || labels.length != (long) width * height
+                || gray.length != labels.length) return List.of();
+        boolean[] seen = new boolean[gray.length];
+        int[] queue = new int[gray.length];
+        List<FermataMark> result = new ArrayList<>();
+        for (int seed = 0; seed < gray.length; seed++) {
+            if (seen[seed] || (gray[seed] & 255) >= 155) continue;
+            int read = 0, size = 1;
+            queue[0] = seed;
+            seen[seed] = true;
+            int left = width, right = 0, top = height, bottom = 0;
+            while (read < size) {
+                int at = queue[read++], x = at % width, y = at / width;
+                left = Math.min(left, x);
+                right = Math.max(right, x);
+                top = Math.min(top, y);
+                bottom = Math.max(bottom, y);
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++) {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+                        int next = ny * width + nx;
+                        if (!seen[next] && (gray[next] & 255) < 155) {
+                            seen[next] = true;
+                            queue[size++] = next;
+                        }
+                    }
+            }
+            if (size < 3 || right - left > width * .025f || bottom - top > height * .018f) continue;
+            Glyph dot =
+                    new Glyph(left, top, right, bottom, size, java.util.Arrays.copyOf(queue, size));
+            if (nearHead(dot, notes)) continue;
+            int owner = -1;
+            double best = Double.POSITIVE_INFINITY;
+            boolean inverted = false;
+            for (int i = 0; i < notes.size(); i++) {
+                var note = notes.get(i);
+                if (note.staff < 0 || note.gap <= 0 || Math.abs(dot.x() - note.x) > note.gap * .9f)
+                    continue;
+                double distance = Math.abs(dot.y() - note.y) / note.gap;
+                if (distance < .55
+                        || distance > 8
+                        || classify(dot, width, note.gap, dot.y() < note.y)
+                                != NoteArticulation.STACCATO) continue;
+                int direction = dot.y() < note.y ? -1 : 1;
+                if (!connectedFermataRoof(dot, labels, gray, width, height, note.gap, direction))
+                    continue;
+                double score = Math.abs(dot.x() - note.x) / note.gap * 3 + distance;
+                if (score < best) {
+                    best = score;
+                    owner = i;
+                    inverted = direction > 0;
+                }
+            }
+            if (owner >= 0) result.add(new FermataMark(owner, dot.x(), dot.y(), inverted));
+        }
+        return List.copyOf(result);
+    }
+
     /** Recover an angular mark whose mask was mistaken for a small notehead.
      * Staff rules may cross its tip or feet; exclude only proven horizontal rules. */
     static boolean marcatoAtHead(

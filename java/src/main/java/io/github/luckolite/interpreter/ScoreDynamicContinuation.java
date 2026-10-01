@@ -201,6 +201,8 @@ public final class ScoreDynamicContinuation {
     /** Namespace generated page-local evidence while preserving independently authored semantics. */
     public static ScoreExpressiveEvent offsetEvidence(
             ScoreExpressiveEvent event, int offset, int page) {
+        if (ScoreFermataDetector.owns(event))
+            return ScoreFermataDetector.offsetEvidence(event, offset, page);
         if (!event.eventId().startsWith("lexical-dynamic:")
                 || event.evidence().stream().noneMatch(e -> e.sourceId().equals(WORD_SOURCE)))
             return event.offset(offset);
