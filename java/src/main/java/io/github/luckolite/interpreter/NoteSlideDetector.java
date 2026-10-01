@@ -53,6 +53,7 @@ final class NoteSlideDetector {
 
     static List<Stroke> detect(byte[] gray, int w, int h, List<Staff> staffs, List<Head> heads) {
         byte[] clean = removeStaffLines(gray, w, h, staffs);
+        removeHeadLedgerLines(clean, gray, w, h, staffs, heads);
         boolean[] ink = new boolean[gray.length];
         for (int i = 0; i < ink.length; i++) ink[i] = (clean[i] & 255) < 150;
         int[] queue = new int[ink.length];
@@ -177,6 +178,50 @@ final class NoteSlideDetector {
                                         heads, heads.get(owner), l, cy + (l - cx) * slope, slope)));
         }
         return List.copyOf(result);
+    }
+
+    /** A short ledger rule can join a genuine slide to its source head and stem. */
+    private static void removeHeadLedgerLines(
+            byte[] clean, byte[] gray, int w, int h, List<Staff> staffs, List<Head> heads) {
+        for (var head : heads) {
+            if (head.staff < 0 || head.staff >= staffs.size()) continue;
+            var staff = staffs.get(head.staff);
+            float gap = head.gap;
+            int direction =
+                    head.y < staff.top - gap * .25f
+                            ? -1
+                            : head.y > staff.bottom + gap * .25f ? 1 : 0;
+            if (direction == 0) continue;
+            float edge = direction < 0 ? staff.top : staff.bottom;
+            int left = Math.max(0, Math.round(head.x - gap * 1.4f));
+            int right = Math.min(w - 1, Math.round(head.x + gap * 1.4f));
+            for (int line = 1; line <= 6; line++) {
+                int center = Math.round(edge + line * gap * direction);
+                if (Math.abs(center - head.y) > gap * 1.25f) continue;
+                int top = h, bottom = -1;
+                for (int y = Math.max(2, center - 3); y <= Math.min(h - 3, center + 3); y++) {
+                    int count = 0;
+                    for (int x = left; x <= right; x++) if ((gray[y * w + x] & 255) < 150) count++;
+                    if (count >= gap * 1.7f) {
+                        top = Math.min(top, y);
+                        bottom = Math.max(bottom, y);
+                    }
+                }
+                if (bottom < top || bottom - top + 1 > Math.max(2, gap * .25f)) continue;
+                // Preserve the source shaft and diagonal crossings using original ink.
+                for (int x = left; x <= right; x++) {
+                    boolean above = false, below = false;
+                    for (int dx = -2; dx <= 2; dx++)
+                        if (x + dx >= 0 && x + dx < w)
+                            for (int dy = 1; dy <= 2; dy++) {
+                                above |= (gray[(top - dy) * w + x + dx] & 255) < 150;
+                                below |= (gray[(bottom + dy) * w + x + dx] & 255) < 150;
+                            }
+                    if (!above || !below)
+                        for (int y = top; y <= bottom; y++) clean[y * w + x] = (byte) 255;
+                }
+            }
+        }
     }
 
     /** A printed two-note glide starts at its unique immediate attack, not a scale neighbor. */

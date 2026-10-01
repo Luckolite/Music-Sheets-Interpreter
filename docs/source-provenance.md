@@ -95,3 +95,11 @@ measure. The original generated `WideConnectedSlideTest` covers ascending,
 descending and shallow strokes plus absent, displaced, ambiguous and intervening
 source attacks, curved ink and excessive length. No private page imagery or
 score-specific rules are included. Model weights and record layouts are unchanged.
+
+Short ledger rules can join a printed slide to its source head and stem. The
+slide-only raster cleanup verifies a thin horizontal rule on the assigned
+physical staff grid, outside its body and near the accepted head, while retaining
+shaft and diagonal continuity. Original `LedgerCrossingSlideTest` examples
+cover upper and lower rules and reject curved ink, thick shapes and unresolved
+staff ownership. No private score imagery, weights, dependencies or wire changes
+are included.
