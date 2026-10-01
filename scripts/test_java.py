@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import subprocess
+import shutil
 import urllib.request
 from pathlib import Path
 from build_java import ROOT, jdk_tool
@@ -24,6 +25,12 @@ def main():
         jars.append(path)
     sources = sorted((ROOT / 'java/src/test/java').rglob('*Test.java'))
     classes = ROOT / 'build/test-classes'
+    # Old implicit production classes can shadow the newly built core because
+    # the runner places test output first. Always compile into a fresh directory.
+    if classes.exists():
+        if classes.resolve().parent != (ROOT / 'build').resolve():
+            raise SystemExit('Refusing to clear test classes outside the build directory')
+        shutil.rmtree(classes)
     classes.mkdir(exist_ok=True)
     cp = os.pathsep.join(map(str, [ROOT / 'build/classes', *jars]))
     source_list = ROOT / 'build/test-sources.txt'

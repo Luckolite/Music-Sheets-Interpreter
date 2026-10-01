@@ -815,6 +815,9 @@ public final class ScoreNoteTiming {
     public static boolean hasIndependentDuration(ScoreNoteEvent note, List<ScoreNoteEvent> notes) {
         if (hasIndependentSustain(note)) return true;
         if (note == null || notes == null) return false;
+        // Every check below is confined to this bar/staff. Reuse the session index
+        // instead of rescanning the whole piece (including a nested all-note scan).
+        if (SESSION.get() != null) notes = measureVoice(note, notes);
         // Explicitly different tuplet values at one attack prove parallel rhythms.
         // The faster attack clock must not shorten the other voice's written value.
         for (ScoreNoteEvent other : notes)

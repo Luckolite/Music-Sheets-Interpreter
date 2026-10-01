@@ -333,10 +333,10 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "b6344153b8e7e3895aee60bb719f6231cb40e781567c089b14dde59194445721",
+      "source_sha256": "fb5caaf87c2d53cf94f4efe001510dbadea1009e69fc0314673bd851bb614f3c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Package-only code/literal parity. Matching explicit note/rest spans on all independent staves prove short rhythms; unexplained gaps retain existing timing. Original procedural controls and existing rest-overflow safeguards retained.",
-      "source_normalized_sha256": "91f24e7c371f694ee8a447ca47fd81b239bb2ac64ee38eae671106a8d0ba7e02"
+      "review_note": "Reviewed session-local measure/staff index reuse in parallel-duration checks. Identical existential rhythm checks; original shuffled multi-staff/tuplet regression compares indexed and unindexed results. No private score data or new dependencies.",
+      "source_normalized_sha256": "828f7413d2e2f98e62eb3c10a7ac935d6dcc470de27ed1269228c9fd156204f3"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
