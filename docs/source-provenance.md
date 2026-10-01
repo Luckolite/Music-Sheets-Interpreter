@@ -12,6 +12,14 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Fermata notation planning selects one surviving outer chord member for a proved
+printed symbol and preserves its orientation and final written release. The
+shared planner has exact package-only parity with the app. Its original generated
+regressions cover held notes/chords, filtered parts, ties and unknown ownership.
+The app's MusicXML adapter emits the symbol on the fragment reaching that release
+and omits the duplicate direction word; the adapter remains outside the standalone
+renderer boundary. No private scan, model, dependency or record layout is included.
+
 Printed fermatas reuse the independently proved compact roof/dot geometry. The
 shared producer keeps a written attack descriptor and raw evidence; continuation
 pages keep musical timing unresolved until inherited meter is supplied. Page

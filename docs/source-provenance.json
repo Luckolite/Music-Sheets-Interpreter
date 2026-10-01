@@ -957,6 +957,13 @@
       "source_normalized_sha256": "e773da1543373ae1e2ffb330240910c8e32b4d1721a5022eee5106762dd4a2f4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Reviewed detector-owned arc/dot recognition, written attack ownership and musical-meter resolution. Exact package-only parity. Original procedural ink and page-rebasing controls; no private score, model, new dependency or wire field."
+    },
+    "ScoreFermataNotation.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreFermataNotation.java",
+      "source_sha256": "df0dc7fc1c7ad1e8bd5b70832af46f155cbaedb8793cf458a325eee87dec29f6",
+      "source_normalized_sha256": "c88bb39f03514b8dc5f49387f8a214fe627352d6f81ce2c93c5af8f81b191b47",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original shared fermata notation ownership planner; exact package-only parity. One surviving outer chord member per proved printed symbol, preserving orientation and final written release rather than a tie-chain sound alias. Original procedural target/filter/tie tests. Actual app XML adapter reviewed separately; no private score, model, dependency or wire-layout change."
     }
   }
 }
