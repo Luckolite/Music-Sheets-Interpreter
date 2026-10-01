@@ -283,6 +283,23 @@ final class OctaveMarkDetector {
                                     (b + 1) / (float) height));
                 }
             }
+        // A proved suffix determines the direction. Do not also interpret its
+        // numeral as a bare lower-octave mark for the preceding staff.
+        var completeWords = List.copyOf(words);
+        words.removeIf(
+                word ->
+                        completeWords.stream()
+                                .anyMatch(
+                                        other ->
+                                                other != word
+                                                        && other.left() * width
+                                                                <= word.left() * width + 1
+                                                        && other.top() * height
+                                                                <= word.top() * height + 1
+                                                        && other.right() * width
+                                                                > word.right() * width + 2
+                                                        && other.bottom() * height
+                                                                >= word.bottom() * height - 1));
         return words;
     }
 
@@ -431,6 +448,7 @@ final class OctaveMarkDetector {
                     interruptions = 0,
                     x = left,
                     scanY = y;
+            boolean skippedSuffix = false;
             while (x < width) {
                 int blank = 0;
                 while (x < width && (gray[scanY * width + x] & 255) >= 165) {
@@ -477,7 +495,13 @@ final class OctaveMarkDetector {
                         count++;
                         break;
                     }
+                    // A superscript suffix may precede the dash chain of a proved eight.
+                    // This fallback still requires six dashes and the two-counter numeral.
                     if (count == 0 && a < start) continue;
+                    if (count == 0 && a < start + gap * 2) {
+                        skippedSuffix = true;
+                        continue;
+                    }
                     if (count > 0 && ++interruptions <= 1) continue;
                     break;
                 }
@@ -486,7 +510,7 @@ final class OctaveMarkDetector {
                 last = x - 1;
                 count++;
             }
-            if (count >= Math.max(minimum, shortDots > count / 2 ? 5 : 3)
+            if (count >= Math.max(minimum, skippedSuffix ? 6 : shortDots > count / 2 ? 5 : 3)
                     && last - first >= gap * 3) best = Math.max(best, last);
         }
         return best < 0 ? -1 : best + gap * .55f;

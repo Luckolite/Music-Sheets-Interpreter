@@ -38,6 +38,62 @@ public final class PairedGraceBeamInkTest {
     }
 
     @Test
+    public void risingGracePairKeepsBothParallelBeams() {
+        byte[] p = new byte[W * H];
+        Arrays.fill(p, (byte) 255);
+        for (int x = 100; x <= 124; x++)
+            for (int i = 0; i < 2; i++)
+                for (int dy = 0; dy < 4; dy++)
+                    p[(72 - Math.round((x - 100) * .5f) + i * 8 + dy) * W + x] = 20;
+        for (int y = 72; y < 110; y++) p[y * W + 100] = 20;
+        for (int y = 60; y < 102; y++) p[y * W + 124] = 20;
+        assertEquals(
+                2,
+                PairedGraceBeamInk.count(
+                        p, W, H, new int[] {100, 72, -1}, new int[] {124, 60, -1}, 14));
+    }
+
+    private byte[] slurAtShaftTip(int beams) {
+        byte[] p = new byte[W * H];
+        Arrays.fill(p, (byte) 255);
+        for (int x = 100; x <= 124; x++) {
+            int rise = Math.round((x - 100) * .08f);
+            for (int b = 0; b < beams; b++)
+                for (int dy = 0; dy < 4; dy++) p[(60 - rise + b * 7 + dy) * W + x] = 20;
+            for (int dy = 0; dy < 4; dy++) p[(60 - Math.round((x - 100) * .45f) + dy) * W + x] = 20;
+        }
+        for (int y = 60; y < 110; y++) p[y * W + 100] = 20;
+        for (int y = 49; y < 110; y++) p[y * W + 124] = 20;
+        return p;
+    }
+
+    @Test
+    public void slurAtOneShaftTipDoesNotHideParallelPair() {
+        assertEquals(
+                2,
+                PairedGraceBeamInk.count(
+                        slurAtShaftTip(2),
+                        W,
+                        H,
+                        new int[] {100, 60, -1},
+                        new int[] {124, 49, -1},
+                        14));
+    }
+
+    @Test
+    public void slurAtTipCannotUpgradeSingleBeam() {
+        assertEquals(
+                0,
+                PairedGraceBeamInk.count(
+                        slurAtShaftTip(1),
+                        W,
+                        H,
+                        new int[] {100, 60, -1},
+                        new int[] {124, 49, -1},
+                        14));
+    }
+
+    @Test
     public void shadedTwoBeamPairIsRecovered() {
         assertEquals(2, count(page(2, 180, false, false)));
     }

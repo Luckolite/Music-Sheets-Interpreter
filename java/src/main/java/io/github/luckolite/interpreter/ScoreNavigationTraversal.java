@@ -70,6 +70,7 @@ public final class ScoreNavigationTraversal {
     private boolean replayRepeats = true;
     private String codaTarget = "", enteringEdge = "source-start", skippedRepeatEdge = "";
     private double performanceBeat;
+    private ScoreAnchor unresolvedCodaStart;
 
     private ScoreNavigationTraversal(int count, ScoreMeterMap meter) {
         if (count < 0 || count > 100000)
@@ -328,6 +329,9 @@ public final class ScoreNavigationTraversal {
                 cursor = destination;
                 continue;
             }
+            // A missing return destination does not authorize a first-pass coda.
+            // Retain the diagnostic and omit only the unambiguously identified section.
+            if (unresolvedCodaStart != null && cursor.compareTo(unresolvedCodaStart) >= 0) break;
             if (cursor.compareTo(scoreEnd) >= 0) break;
             for (var repeat : repeats)
                 if (repeat.start().equals(cursor))
@@ -513,7 +517,14 @@ public final class ScoreNavigationTraversal {
                 var destination = new ScoreAnchor(0, 0);
                 if (segno) {
                     var found = target(SEGNO, direction.details().targetId(), mark.id());
-                    if (found == null) continue;
+                    if (found == null) {
+                        if (kind == DAL_SEGNO_AL_CODA) {
+                            var coda = target(CODA, direction.details().codaTargetId(), mark.id());
+                            if (coda != null && coda.anchor().compareTo(cursor) >= 0)
+                                unresolvedCodaStart = coda.anchor();
+                        }
+                        continue;
+                    }
                     destination = found.anchor();
                 }
                 if (destination.compareTo(cursor) >= 0) {

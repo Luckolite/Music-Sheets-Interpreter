@@ -52,7 +52,10 @@ public class ScoreNavigationPlanTest {
         for (int i = 0; i < 4; i++) {
             var marks = new ArrayList<>(directions());
             marks.remove(i);
-            assertEquals(linear(), ScoreNavigationPlan.create(10, marks).sourceMeasures());
+            // Without a segno, the return stays unresolved and its identified coda is omitted.
+            assertEquals(
+                    i == 0 ? List.of(0, 1, 2, 3, 4, 5, 6, 7) : linear(),
+                    ScoreNavigationPlan.create(10, marks).sourceMeasures());
         }
     }
 
@@ -64,10 +67,12 @@ public class ScoreNavigationPlanTest {
     }
 
     @Test
-    public void ambiguousDestinationsRemainLinear() {
+    public void ambiguousSegnoDoesNotChooseReturnAndOmitsCoda() {
         var marks = new ArrayList<>(directions());
         marks.add(d(1, SEGNO));
-        assertEquals(linear(), ScoreNavigationPlan.create(10, marks).sourceMeasures());
+        assertEquals(
+                List.of(0, 1, 2, 3, 4, 5, 6, 7),
+                ScoreNavigationPlan.create(10, marks).sourceMeasures());
     }
 
     @Test

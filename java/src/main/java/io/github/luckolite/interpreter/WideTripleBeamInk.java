@@ -9,6 +9,15 @@ final class WideTripleBeamInk {
     private WideTripleBeamInk() {}
 
     static int count(byte[] gray, int w, int h, int[] a, int[] b, float gap) {
+        return count(gray, w, h, a, b, gap, 3);
+    }
+
+    /** Four complete aligned cores, proved away from each attached shaft. */
+    static int countFour(byte[] gray, int w, int h, int[] a, int[] b, float gap) {
+        return count(gray, w, h, a, b, gap, 4);
+    }
+
+    private static int count(byte[] gray, int w, int h, int[] a, int[] b, float gap, int expected) {
         if (gray == null
                 || w < 3
                 || h < 3
@@ -30,15 +39,19 @@ final class WideTripleBeamInk {
                 || b[1] < 1
                 || b[1] >= h - 1) return 0;
         int span = Math.abs(a[0] - b[0]);
-        if (span < gap * 3 || span > gap * 4 || Math.abs(a[1] - b[1]) > gap * .75f) return 0;
+        if (span < gap * (expected == 4 ? 1.2f : 3)
+                || span > gap * 4
+                || Math.abs(a[1] - b[1]) > gap * .75f) return 0;
         for (float fraction : new float[] {.5f, .75f}) {
             float[] previous = null;
             boolean okay = true;
             for (float f : new float[] {.25f, .5f, .75f}) {
                 int x = Math.round(a[0] + (b[0] - a[0]) * f);
                 float end = a[1] + (b[1] - a[1]) * f;
-                int top = Math.max(1, Math.round(end - (a[2] < 0 ? .35f : 2.4f) * gap)),
-                        bottom = Math.min(h - 2, Math.round(end + (a[2] < 0 ? 2.4f : .35f) * gap));
+                float inside = expected == 4 ? 3.4f : 2.4f;
+                int top = Math.max(1, Math.round(end - (a[2] < 0 ? .35f : inside) * gap)),
+                        bottom =
+                                Math.min(h - 2, Math.round(end + (a[2] < 0 ? inside : .35f) * gap));
                 int threshold = BeamInkThreshold.at(gray, w, h, x, top, bottom, gap),
                         darkest = threshold;
                 for (int y = top; y <= bottom; y++)
@@ -60,12 +73,12 @@ final class WideTripleBeamInk {
                         start = -1;
                     }
                 }
-                if (cores.size() != 3) {
+                if (cores.size() != expected) {
                     okay = false;
                     break;
                 }
-                float[] current = new float[3];
-                for (int i = 0; i < 3; i++) {
+                float[] current = new float[expected];
+                for (int i = 0; i < expected; i++) {
                     current[i] = cores.get(i);
                     if (i > 0
                             && (current[i] - current[i - 1] < gap * .3f
@@ -75,7 +88,7 @@ final class WideTripleBeamInk {
                 }
                 previous = current;
             }
-            if (okay) return 3;
+            if (okay) return expected;
         }
         return 0;
     }

@@ -504,6 +504,11 @@ final class NoteArticulationDetector {
                     }
                 for (int direction = -1; direction <= 1; direction += 2) {
                     int ny = y + direction, distance = 1;
+                    // A caret foot can end on a rule, without continuing through it.
+                    if (ny >= 0
+                            && ny < h
+                            && rules[ny]
+                            && (gray[(top + ny) * width + left + x] & 255) < 155) joined = true;
                     while (ny >= 0
                             && ny < h
                             && rules[ny]
@@ -541,10 +546,10 @@ final class NoteArticulationDetector {
             if (joined
                     && Math.abs(glyph.x() - note.x) <= gap * .7f
                     && gw >= gap * .5f
-                    && gw <= gap * 1.3f
+                    && gw <= gap * 2.1f + 1
                     && gh >= gap * .6f
                     && gh <= gap * 1.7f
-                    && gh / gw >= .8f) marks.add(glyph);
+                    && gh / gw >= .45f) marks.add(glyph);
         }
         // Reflect only geometry for the existing text-run veto. Pixel references still
         // address the original labels; no source ink or shape classifier is modified.
@@ -585,7 +590,9 @@ final class NoteArticulationDetector {
                                     glyph.count,
                                     mirrored),
                             width)
-                    && beamOwnedMarcato(glyph, note, gray, width, height)) return true;
+                    && !interiorCrossbar(glyph, width, .45f)
+                    && (Math.abs(glyph.y() - note.y) <= gap * 3f
+                            || beamOwnedMarcato(glyph, note, gray, width, height))) return true;
         }
         return false;
     }
@@ -920,7 +927,8 @@ final class NoteArticulationDetector {
     /** An independently long, thin rule is not a shaft continuing past its beam. */
     private static boolean thinIndependentRule(
             byte[] gray, int width, int height, int x, int y, float gap) {
-        if (!horizontalRuleInk(gray, width, height, x, y, gap, 155, .95f)) return false;
+        if (!horizontalRuleInk(gray, width, height, x, y, gap, 155, .95f))
+            return edgeStaffRule(gray, width, height, x, y, gap);
         int limit = Math.max(2, (int) Math.ceil(gap * .25f));
         for (int side : new int[] {-1, 1}) {
             int thin = 0;
@@ -942,8 +950,60 @@ final class NoteArticulationDetector {
         return true;
     }
 
+    /** At a staff end, one long thin side plus two parallel rules proves the line. */
+    private static boolean edgeStaffRule(
+            byte[] gray, int width, int height, int x, int y, float gap) {
+        for (int side : new int[] {-1, 1}) {
+            if (!thinRuleSide(gray, width, height, x, y, gap, side)) continue;
+            int parallel = 0;
+            for (int offset : new int[] {-2, -1, 1, 2}) {
+                boolean found = false;
+                for (int delta = -1; delta <= 1; delta++)
+                    found |=
+                            thinRuleSide(
+                                    gray,
+                                    width,
+                                    height,
+                                    x,
+                                    Math.round(y + offset * gap) + delta,
+                                    gap,
+                                    side);
+                if (found) parallel++;
+            }
+            if (parallel >= 2) return true;
+        }
+        return false;
+    }
+
+    private static boolean thinRuleSide(
+            byte[] gray, int width, int height, int x, int y, float gap, int side) {
+        if (y < 0 || y >= height) return false;
+        int near = Math.round(gap * 2f), far = Math.round(gap * 4f), ink = 0;
+        int thin = 0, limit = Math.max(2, (int) Math.ceil(gap * .25f));
+        for (int distance = near; distance <= far; distance++) {
+            int xx = x + side * distance;
+            if (xx < 0 || xx >= width) return false;
+            if ((gray[y * width + xx] & 255) >= 155) continue;
+            ink++;
+            int top = y, bottom = y;
+            while (top > 0 && (gray[(top - 1) * width + xx] & 255) < 155 && y - top <= limit) top--;
+            while (bottom + 1 < height
+                    && (gray[(bottom + 1) * width + xx] & 255) < 155
+                    && bottom - y <= limit) bottom++;
+            if (bottom - top + 1 <= limit) thin++;
+        }
+        int samples = far - near + 1;
+        // Nearby heads may intersect a proved rule; most of the long side
+        // must still be thin, and two parallel rules remain mandatory.
+        return ink >= samples * .95f && thin >= samples * .6f;
+    }
+
     /** A letter's interior crossbar is not the two open arms of a distant caret. */
     private static boolean interiorCrossbar(Glyph mark, int width) {
+        return interiorCrossbar(mark, width, .65f);
+    }
+
+    private static boolean interiorCrossbar(Glyph mark, int width, float minimumSpan) {
         int w = mark.right - mark.left + 1, h = mark.bottom - mark.top + 1, consecutive = 0;
         for (int y = mark.top + (int) Math.ceil(h * .35f);
                 y <= mark.top + (int) Math.floor(h * .8f);
@@ -956,7 +1016,7 @@ final class NoteArticulationDetector {
                     count++;
                 }
             int span = right < 0 ? 0 : right - left + 1;
-            if (span >= w * .65f && count >= span * .9f) {
+            if (span >= w * minimumSpan && count >= span * .9f) {
                 if (++consecutive >= 2) return true;
             } else consecutive = 0;
         }
@@ -1350,7 +1410,29 @@ final class NoteArticulationDetector {
                 && RoundedAngularArticulation.matches(
                         g.pixels, width, g.left, g.top, g.right, g.bottom, above ? 1 : 2))
             return NoteArticulation.MARCATO;
+        // Detached carets can have broad arms. Keep the two-arm ink proof and
+        // open interior instead of identifying them by a narrow aspect ratio.
+        if (above
+                && w >= gap * .5f
+                && w <= gap * 2.1f + 1
+                && h >= gap * .6f
+                && h <= gap * 1.7f
+                && h / w >= .45f
+                && chevronVertical(g, width, true)
+                && openPeak(g, width)
+                && !interiorCrossbar(g, width, .45f)) return NoteArticulation.MARCATO;
         return 0;
+    }
+
+    private static boolean openPeak(Glyph glyph, int width) {
+        int[] mirrored = new int[glyph.count];
+        for (int i = 0; i < mirrored.length; i++) {
+            int pixel = glyph.pixels[i];
+            mirrored[i] = (glyph.top + glyph.bottom - pixel / width) * width + pixel % width;
+        }
+        return upBowShape(
+                new Glyph(glyph.left, glyph.top, glyph.right, glyph.bottom, glyph.count, mirrored),
+                width);
     }
 
     private static boolean fit(Glyph g, int width, int kind) {

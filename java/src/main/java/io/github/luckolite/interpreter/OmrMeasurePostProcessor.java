@@ -48,7 +48,7 @@ final class OmrMeasurePostProcessor {
         if (gray != null && gray.length != labels.length) gray = null;
         List<StaffRun> staffs = findStaffs(labels, gray, width, height);
         if (staffs.isEmpty()) return List.of();
-        List<SystemRun> systems = mergeAlignedStaffs(staffs, gray, width, height);
+        List<SystemRun> systems = mergeAlignedStaffs(staffs, labels, gray, width, height);
         List<MeasureRegion> result = new ArrayList<>();
         for (int i = 0; i < systems.size(); i++) {
             SystemRun system = systems.get(i);
@@ -82,6 +82,7 @@ final class OmrMeasurePostProcessor {
                         rowStrength, minimumStrength, height, slope == 0f ? gray : null, width);
 
         List<StaffRun> result = new ArrayList<>();
+        List<StaffRun> shortCandidates = new ArrayList<>();
         for (RawStaffLineDetector.StaffLines semantic : semanticStaffs) {
             int[] rows = semantic.rows();
             float gap = semantic.gap();
@@ -136,14 +137,80 @@ final class OmrMeasurePostProcessor {
                     result.add(
                             new StaffRun(
                                     rows[0], rows[4], gap, left, right, boundaries, slope, track));
+            } else if (slope == 0f && right - left >= gap * 9) {
+                List<Integer> boundaries =
+                        findBoundaries(
+                                labels, gray, width, height, rows, gap, left, right, slope, track);
+                if (boundaries.size() >= 2)
+                    shortCandidates.add(
+                            new StaffRun(
+                                    rows[0], rows[4], gap, left, right, boundaries, slope, track));
             }
         }
         recoverRawStaffs(labels, gray, width, height, result, 0f);
         // A tilted system may lose every staff label while retaining clear printed rules.
         if (gray != null && Math.abs(slope) > .001f)
             recoverRawStaffs(labels, gray, width, height, result, slope);
+        for (StaffRun cue : shortCandidates) {
+            boolean partner = false;
+            for (StaffRun full : result)
+                if (insetCueStaff(gray, width, height, cue, full)) partner = true;
+            if (partner
+                    && countLabel(
+                                    labels,
+                                    width,
+                                    height,
+                                    NOTEHEAD,
+                                    cue.left,
+                                    cue.right,
+                                    Math.round(cue.top - cue.gap * 2),
+                                    Math.round(cue.bottom + cue.gap * 2))
+                            >= cue.gap * cue.gap * .4f) result.add(cue);
+        }
         result.sort(Comparator.comparingInt(StaffRun::top));
         return result;
+    }
+
+    /** A short cue above one full-size bar can omit a bracket and clef. */
+    private static boolean insetCueStaff(
+            byte[] gray, int width, int height, StaffRun cue, StaffRun full) {
+        if (gray == null
+                || cue.slope != 0f
+                || full.slope != 0f
+                || cue.gap < full.gap * .6f
+                || cue.gap > full.gap * .9f
+                || full.top <= cue.bottom
+                || full.top - cue.bottom > full.gap * 9
+                || full.right - full.left < width * .4f
+                || cue.right - cue.left > (full.right - full.left) * .85f
+                || cue.right - cue.left < cue.gap * 9
+                || cue.left - full.left < full.gap * 8
+                || Math.abs(cue.right - full.right) > full.gap
+                || cue.boundaries.size() < 2) return false;
+        for (int boundary : cue.boundaries) {
+            boolean shared = false;
+            // The opening can inset one space; projection trimming adds a small fringe.
+            float tolerance = boundary == cue.boundaries.get(0) ? 1.5f : .65f;
+            for (int other : full.boundaries)
+                if (Math.abs(boundary - other) <= full.gap * tolerance) shared = true;
+            if (!shared) return false;
+        }
+        for (int boundary : full.boundaries) {
+            if (boundary <= cue.left + full.gap || boundary >= cue.right - full.gap) continue;
+            boolean shared = false;
+            for (int other : cue.boundaries)
+                if (Math.abs(boundary - other) <= full.gap * .65f) shared = true;
+            if (!shared) return false;
+        }
+        int start = cue.left + Math.round(cue.gap), end = cue.right - Math.round(cue.gap * .5f);
+        int radius = Math.max(1, Math.round(cue.gap * .18f));
+        for (int line = 0; line < 5; line++) {
+            int y = Math.round(cue.top + line * cue.gap), hits = 0;
+            for (int x = start; x <= end; x++)
+                if (thinHorizontalInk(gray, width, height, x, y, radius, cue.gap)) hits++;
+            if (hits < (end - start + 1) * .8f) return false;
+        }
+        return true;
     }
 
     /**
@@ -1500,6 +1567,11 @@ final class OmrMeasurePostProcessor {
 
     private static List<SystemRun> mergeAlignedStaffs(
             List<StaffRun> staffs, byte[] gray, int width, int height) {
+        return mergeAlignedStaffs(staffs, null, gray, width, height);
+    }
+
+    private static List<SystemRun> mergeAlignedStaffs(
+            List<StaffRun> staffs, byte[] labels, byte[] gray, int width, int height) {
         List<SystemRun> systems = new ArrayList<>();
         for (StaffRun staff : staffs) {
             if (!systems.isEmpty()) {
@@ -1514,7 +1586,23 @@ final class OmrMeasurePostProcessor {
                                 && verticalGap <= gap * MAX_CONNECTED_STAFF_SEPARATION_GAPS
                                 && connectedByVerticalRule(
                                         gray, width, height, previous, staff, gap);
-                if ((compactAligned && (gray == null || verticalGap < 0)) || visiblyConnected) {
+                StaffRun cue = previous.lastStaff;
+                boolean insetCue =
+                        labels != null
+                                && insetCueStaff(gray, width, height, cue, staff)
+                                && countLabel(
+                                                labels,
+                                                width,
+                                                height,
+                                                NOTEHEAD,
+                                                cue.left,
+                                                cue.right,
+                                                Math.round(cue.top - cue.gap * 2),
+                                                Math.round(cue.bottom + cue.gap * 2))
+                                        >= cue.gap * cue.gap * .4f;
+                if ((compactAligned && (gray == null || verticalGap < 0))
+                        || visiblyConnected
+                        || insetCue) {
                     List<Integer> upperBoundaries = previous.boundaries,
                             lowerBoundaries = staff.boundaries;
                     if (gray != null) {
@@ -1576,20 +1664,61 @@ final class OmrMeasurePostProcessor {
                 if (checked[x]) continue;
                 checked[x] = true;
                 if (verticalRuleAt(gray, width, x, top, bottom, gap)
-                        && horizontalStaffBeside(
-                                gray,
-                                width,
-                                height,
-                                x,
-                                upper.lastStaff.top,
-                                upper.lastStaff.gap,
-                                upper.lastStaff.slope)
+                        && (horizontalStaffBeside(
+                                        gray,
+                                        width,
+                                        height,
+                                        x,
+                                        upper.lastStaff.top,
+                                        upper.lastStaff.gap,
+                                        upper.lastStaff.slope)
+                                || staggeredCueBracket(
+                                        gray, width, height, x, upper.lastStaff, lower, gap))
                         && horizontalStaffBeside(
                                 gray, width, height, x, lower.top, lower.gap, lower.slope))
                     return true;
             }
         }
         return false;
+    }
+
+    /** A reduced staff can enter after the first bar of its full-sized partner.
+     * Its system bracket still starts at the partner's left edge. Require the
+     * nested extent, shared bars and bounded bracket ends before joining it. */
+    private static boolean staggeredCueBracket(
+            byte[] gray, int width, int height, int x, StaffRun upper, StaffRun lower, float gap) {
+        if (upper.slope != 0
+                || lower.slope != 0
+                || upper.gap < lower.gap * .6f
+                || upper.gap > lower.gap * .9f
+                || upper.left < lower.left + gap * 8
+                || upper.right - upper.left > (lower.right - lower.left) * .85f
+                || Math.abs(upper.right - lower.right) > gap * 2
+                || Math.abs(x - lower.left) > gap * 1.7f
+                || upper.boundaries.size() < 3) return false;
+        for (int boundary : upper.boundaries) {
+            boolean shared = false;
+            for (int other : lower.boundaries)
+                if (Math.abs(boundary - other) <= gap * .9f) {
+                    shared = true;
+                    break;
+                }
+            if (!shared) return false;
+        }
+        if (!horizontalStaffBeside(
+                gray, width, height, upper.left, upper.top, upper.gap, upper.slope)) return false;
+        int top = Math.max(0, Math.round(upper.top)),
+                bottom = Math.min(height - 1, Math.round(lower.bottom));
+        if (!verticalRuleAt(gray, width, x, top, bottom, gap)) return false;
+        int margin = Math.max(3, Math.round(gap * .75f));
+        // A page crease continues beyond the system; a bracket ends beside its rules.
+        if (top - margin < 0 || bottom + margin >= height) return false;
+        int radius = Math.max(1, Math.round(gap * .16f));
+        for (int row : new int[] {top - margin, bottom + margin})
+            for (int column = Math.max(0, x - radius);
+                    column <= Math.min(width - 1, x + radius);
+                    column++) if ((gray[row * width + column] & 255) < 205) return false;
+        return true;
     }
 
     /** A crease can cross every system, but it does not join their five printed rules. */

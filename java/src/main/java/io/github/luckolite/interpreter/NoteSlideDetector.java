@@ -86,7 +86,7 @@ final class NoteSlideDetector {
                         }
                     }
             }
-            if (end < 8 || r - l < 6 || b - t < 5 || b - t < (r - l) * .5 || b - t > (r - l) * 1.5)
+            if (end < 8 || r - l < 6 || b - t < 5 || b - t < (r - l) * .2 || b - t > (r - l) * 5)
                 continue;
             double cx = sx / end,
                     cy = sy / end,
@@ -102,10 +102,14 @@ final class NoteSlideDetector {
                                     0,
                                     (vx + vy - Math.sqrt((vx - vy) * (vx - vy) + 4 * cov * cov))
                                             / 2));
-            if (Math.abs(correlation) < .90
-                    || residual > 1.3
-                    || Math.abs(slope) < .55
-                    || Math.abs(slope) > 1.5) continue;
+            // A nearly vertical raster has little horizontal variance, so its
+            // stroke thickness lowers Pearson correlation. Both printed heads
+            // are mandatory below for these steep strokes.
+            boolean steep = Math.abs(slope) > 1.5;
+            if (Math.abs(correlation) < (steep ? .85 : .90)
+                    || residual > (steep ? 1.4 : 1.3)
+                    || Math.abs(slope) < .2
+                    || Math.abs(slope) > 5) continue;
             double rightY = cy + (r - cx) * slope;
             int owner = -1;
             double best = Double.MAX_VALUE;
@@ -118,7 +122,7 @@ final class NoteSlideDetector {
                         || dx > 3
                         || Math.abs(dy) > 1
                         || r - l < g * .65
-                        || r - l > g * 3.5) continue;
+                        || r - l > g * 6) continue;
                 boolean touchesHead = false;
                 for (int j = 0; j < heads.size(); j++)
                     if (j != i) {
@@ -131,6 +135,23 @@ final class NoteSlideDetector {
                         }
                     }
                 if (touchesHead) continue;
+                // Small note-to-note wavy glissandi may have a shallower overall
+                // slope than an isolated approach slash. Their preceding printed
+                // endpoint must agree with the line; a slur still fails residuals.
+                if (Math.abs(slope) < .55 || Math.abs(slope) > 1.5 || r - l > g * 3.5) {
+                    boolean prior = false;
+                    double leftY = cy + (l - cx) * slope;
+                    for (Head other : heads) {
+                        if (other == n || other.staff != n.staff || other.measure != n.measure)
+                            continue;
+                        double distance = (l - other.x) / g;
+                        if (distance >= .5
+                                && distance <= 3
+                                && Math.abs(other.y - leftY) < g
+                                && (n.y - other.y) * slope > 0) prior = true;
+                    }
+                    if (!prior) continue;
+                }
                 double distance = dx + Math.abs(dy) * 2;
                 if (distance < best) {
                     best = distance;

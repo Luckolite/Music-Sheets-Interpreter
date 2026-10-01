@@ -81,6 +81,50 @@ public final class MultiMeasureRestDetectorTest {
     }
 
     @Test
+    public void precedingWrittenRowOwnsItsTupletNumber() {
+        int width = 240, height = 300;
+        byte[] labels = new byte[width * height];
+        byte[] gray = new byte[width * height];
+        java.util.Arrays.fill(gray, (byte) 255);
+        MeasureRegion written = new MeasureRegion(.10f, .90f, .20f, .40f);
+        MeasureRegion silent = new MeasureRegion(.10f, .90f, .50f, .85f);
+        addNotehead(labels, width, 105, 100);
+        addHorizontalBar(labels, gray, width, 80, 160, 180, 185);
+        var tuplet = token(7, .50f, .38f);
+        var restCount = token(4, .50f, .47f);
+        assertEquals(
+                List.of(restCount),
+                MultiMeasureRestDetector.detect(
+                        labels,
+                        gray,
+                        width,
+                        height,
+                        List.of(written, silent),
+                        List.of(tuplet, restCount)));
+    }
+
+    @Test
+    public void precedingRowTupletAloneCannotExpandRest() {
+        int width = 240, height = 300;
+        byte[] labels = new byte[width * height];
+        byte[] gray = new byte[width * height];
+        java.util.Arrays.fill(gray, (byte) 255);
+        MeasureRegion written = new MeasureRegion(.10f, .90f, .20f, .40f);
+        MeasureRegion silent = new MeasureRegion(.10f, .90f, .50f, .85f);
+        addNotehead(labels, width, 105, 100);
+        addHorizontalBar(labels, gray, width, 80, 160, 180, 185);
+        assertEquals(
+                List.of(),
+                MultiMeasureRestDetector.detect(
+                        labels,
+                        gray,
+                        width,
+                        height,
+                        List.of(written, silent),
+                        List.of(token(7, .50f, .38f))));
+    }
+
+    @Test
     public void rejectsBareNumberWithoutThickRestBar() {
         int width = 200, height = 100;
         byte[] labels = new byte[width * height];

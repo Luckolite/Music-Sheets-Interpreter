@@ -3958,6 +3958,21 @@ final class OmrScoreInterpreter {
                         }
                         if (samples >= gap * 1.6f && count >= samples * .92f) shared = true;
                     }
+                // Opposing voices can place their touching second on opposite sides
+                // of two outer shafts. Their offset is also engraving, while the
+                // independently printed beams/dots must remain different.
+                if (!shared
+                        && a.event.beamCount() > 0
+                        && b.event.beamCount() > 0
+                        && a.event.augmentationDots() != b.event.augmentationDots()) {
+                    DetectedNote upper = a.head.centerY < b.head.centerY ? a : b;
+                    DetectedNote lower = upper == a ? b : a;
+                    shared =
+                            directionalVoiceShaft(gray, width, height, upper.head, gap, -1) != null
+                                    && directionalVoiceShaft(
+                                                    gray, width, height, lower.head, gap, 1)
+                                            != null;
+                }
                 if (!shared) continue;
                 float position = Math.min(a.event.positionInMeasure(), b.event.positionInMeasure());
                 // A displaced second may share its original column with further chord tones.
@@ -4000,7 +4015,9 @@ final class OmrScoreInterpreter {
                                             e.clefBottomDiatonic(),
                                             e.crossStaffBeam(),
                                             e.leadingRestBeats(),
-                                            e.compactOpening()),
+                                            e.compactOpening(),
+                                            e.octaveShift(),
+                                            e.boundaryTies()),
                                     n.head,
                                     n.staffGap));
                 }
@@ -8206,20 +8223,32 @@ final class OmrScoreInterpreter {
                     || head.minX <= left.maxX
                     || head.maxX >= right.minX) continue;
             int a = left.maxX + 1, b = right.minX - 1;
-            if (b - a + 1 < gap * 1.3f || b - a + 1 > gap * 4.5f) continue;
+            if (b - a <= 2 || b - a + 1 > gap * 4.5f || right.centerX - left.centerX < gap * 1.8f)
+                continue;
             List<Component> retained = new ArrayList<>(heads);
             retained.remove(head);
             byte[] arcLabels = tieLabelsWithoutSlurHeads(labels, width, List.of(head), retained);
-            if (hasContinuousTieArc(
-                    arcLabels,
-                    gray,
-                    width,
-                    height,
-                    a,
-                    b,
-                    (left.centerY + right.centerY) * .5f,
-                    gap,
-                    head)) result.add(head);
+            float center = (left.centerY + right.centerY) * .5f;
+            boolean proved =
+                    hasContinuousTieArc(arcLabels, gray, width, height, a, b, center, gap, head);
+            // A compact tie returns under the heads. Its full dark curve must
+            // pass through the small island, with both stemmed endpoints retained.
+            if (!proved && b - a + 1 < gap * 1.3f) {
+                int overlap = Math.round(gap * .6f), step = Math.max(1, Math.round(gap * .1f));
+                int arcLeft = Math.max(Math.round(left.centerX), a - overlap);
+                int arcRight = Math.min(Math.round(right.centerX), b + overlap);
+                int count = (int) Math.ceil(gap * .75f / step);
+                for (int first = 0; first <= count && !proved; first++)
+                    for (int last = 0; last <= count && !proved; last++) {
+                        int from = arcLeft + first * step, to = arcRight - last * step;
+                        if (to - from >= gap)
+                            proved =
+                                    hasContinuousTieArc(
+                                            arcLabels, gray, width, height, from, to, center, gap,
+                                            head);
+                    }
+            }
+            if (proved) result.add(head);
         }
         return result;
     }
@@ -9755,7 +9784,10 @@ final class OmrScoreInterpreter {
             List<ScoreNoteEvent> events) {
         if (gray == null) return;
         for (int i = 0; i + 1 < detected.size(); i++) {
-            DetectedNote a = detected.get(i), b = detected.get(i + 1);
+            DetectedNote a = detected.get(i);
+            int bIndex = adjacentGraceVoiceIndex(detected, i, 1);
+            if (bIndex < 0) continue;
+            DetectedNote b = detected.get(bIndex);
             float gap = a.staffGap;
             if (!sameGraceVoice(a, b)
                     || !reducedPairedGrace(a)
@@ -9811,19 +9843,21 @@ final class OmrScoreInterpreter {
                                 gap * .65f,
                                 Math.max(1, Math.round(gap * .16f)),
                                 185);
+            int provedBeams = PairedGraceBeamInk.count(gray, width, height, first, last, gap);
             if (first == null
                     || last == null
                     || Math.abs(first[1] - a.head.centerY) > gap * 4.8f
                     || Math.abs(last[1] - b.head.centerY) > gap * 4.8f
-                    || PairedGraceBeamInk.count(gray, width, height, first, last, gap) < 2)
-                continue;
+                    || provedBeams < 2) continue;
             DetectedNote principal = null;
-            if (i + 2 < detected.size() && sameGraceVoice(a, detected.get(i + 2))) {
-                DetectedNote next = detected.get(i + 2);
+            int nextIndex = adjacentGraceVoiceIndex(detected, bIndex, 1);
+            int priorIndex = adjacentGraceVoiceIndex(detected, i, -1);
+            if (nextIndex >= 0) {
+                DetectedNote next = detected.get(nextIndex);
                 float dx = next.head.centerX - b.head.centerX;
                 if (dx >= gap * .65f && dx <= gap * 4) principal = next;
-            } else if (i > 0 && sameGraceVoice(a, detected.get(i - 1))) {
-                DetectedNote prior = detected.get(i - 1);
+            } else if (priorIndex >= 0) {
+                DetectedNote prior = detected.get(priorIndex);
                 float dx = a.head.centerX - prior.head.centerX;
                 if (dx >= gap * .65f
                         && dx <= gap * 4.5f
@@ -9834,10 +9868,23 @@ final class OmrScoreInterpreter {
                     || principal.head.maxX - principal.head.minX + 1 <= gap * 1.05f
                     || principal.head.area <= a.head.area * 1.65f
                     || principal.head.area <= b.head.area * 1.65f) continue;
-            events.set(i, asEngravedGrace(events.get(i), 2));
-            events.set(i + 1, asEngravedGrace(events.get(i + 1), 2));
-            i++;
+            events.set(i, asEngravedGrace(events.get(i), provedBeams));
+            events.set(bIndex, asEngravedGrace(events.get(bIndex), provedBeams));
+            if (bIndex == i + 1) i++;
         }
+    }
+
+    /** Accompaniment on another staff cannot split an ornamental pair. */
+    private static int adjacentGraceVoiceIndex(List<DetectedNote> notes, int index, int direction) {
+        DetectedNote anchor = notes.get(index);
+        for (int candidate = index + direction;
+                candidate >= 0 && candidate < notes.size();
+                candidate += direction) {
+            DetectedNote next = notes.get(candidate);
+            if (next.event.measureIndex() != anchor.event.measureIndex()) break;
+            if (sameGraceVoice(anchor, next)) return candidate;
+        }
+        return -1;
     }
 
     /** An independently slashed short shaft can survive a modestly faded scan. */
@@ -9905,7 +9952,7 @@ final class OmrScoreInterpreter {
                 e.pageY(),
                 e.tiedFromPrevious(),
                 e.augmentationDots(),
-                Math.max(beams, e.beamCount()),
+                beams,
                 e.writtenAccidental(),
                 0,
                 e.tupletDivisor(),
@@ -12957,15 +13004,14 @@ final class OmrScoreInterpreter {
         int reach = Math.max(3, Math.round(gap * .55f)),
                 range = Math.max(2, Math.round(gap * .25f));
         int flank = Math.max(2, Math.round(gap * .3f));
-        float[] centers = new float[2];
+        var candidates = new ArrayList<List<Float>>();
         for (int side = 0; side < 2; side++) {
             int left = side == 0 ? head.minX - reach : head.maxX + 1,
                     right = side == 0 ? head.minX - 1 : head.maxX + reach;
             if (left < 0 || right >= width) return Float.NaN;
             int first = Math.max(flank, Math.round(expected) - range),
                     last = Math.min(height - 1 - flank, Math.round(expected) + range);
-            double weighted = 0, weight = 0;
-            int peak = 0, peakY = -1;
+            int peak = 0;
             int[] strengths = new int[Math.max(0, last - first + 1)];
             for (int y = first; y <= last; y++) {
                 int support = 0;
@@ -12976,22 +13022,39 @@ final class OmrScoreInterpreter {
                             && (gray[(y + flank) * width + x] & 255) > ink + 20) support++;
                 }
                 strengths[y - first] = support;
-                if (support > peak) {
-                    peak = support;
-                    peakY = y;
-                }
+                peak = Math.max(peak, support);
             }
             if (peak < Math.max(1, Math.round(gap * .12f))) return Float.NaN;
-            for (int y = first; y <= last; y++)
-                if (Math.abs(y - peakY) <= gap * .15f && strengths[y - first] >= peak * .65f) {
-                    weighted += y * strengths[y - first];
-                    weight += strengths[y - first];
-                }
-            if (weight == 0) return Float.NaN;
-            centers[side] = (float) (weighted / weight);
+            var centers = new ArrayList<Float>();
+            for (int y = first; y <= last; y++) {
+                int support = strengths[y - first];
+                if (support < Math.max(1, Math.round(gap * .12f))
+                        || y > first && support < strengths[y - first - 1]
+                        || y < last && support < strengths[y - first + 1]) continue;
+                double weighted = 0, weight = 0;
+                for (int yy = first; yy <= last; yy++)
+                    if (Math.abs(yy - y) <= gap * .15f && strengths[yy - first] >= support * .65f) {
+                        weighted += yy * strengths[yy - first];
+                        weight += strengths[yy - first];
+                    }
+                if (weight > 0) centers.add((float) (weighted / weight));
+            }
+            if (centers.isEmpty()) return Float.NaN;
+            candidates.add(centers);
         }
-        if (Math.abs(centers[0] - centers[1]) > gap * .1f) return Float.NaN;
-        float center = (centers[0] + centers[1]) * .5f;
+        // A returning curve can be stronger than the ledger on one flank.
+        // Select matching local peaks on both sides, preserving the phase limit.
+        float center = Float.NaN, best = Float.POSITIVE_INFINITY;
+        for (float left : candidates.get(0))
+            for (float right : candidates.get(1)) {
+                if (Math.abs(left - right) > gap * .1f) continue;
+                float mean = (left + right) * .5f, distance = Math.abs(mean - expected);
+                if (distance < best) {
+                    best = distance;
+                    center = mean;
+                }
+            }
+        if (!Float.isFinite(center)) return Float.NaN;
         // A ledger ends near its head; an extended beam cannot establish this reference.
         if (bounded)
             for (int x : new int[] {head.minX - Math.round(gap), head.maxX + Math.round(gap)}) {
@@ -13560,7 +13623,7 @@ final class OmrScoreInterpreter {
             // Augmentation dots sit beside the head (with at most the usual line-to-space
             // engraving offset). A detached bowing/staccato mark near the next note is not a dot.
             if (Math.abs(dot.centerY - head.centerY) > gap * .65f) continue;
-            if (staccatoBelowNextHead(dot, head, neighboringHeads, gap)) continue;
+            if (staccatoAtNextHead(dot, head, neighboringHeads, gap)) continue;
             if (dotWidth < Math.max(1f, gap * .10f)
                     || dotHeight < Math.max(1f, gap * .10f)
                     || dotWidth > gap * .68f
@@ -13603,17 +13666,28 @@ final class OmrScoreInterpreter {
                 : 1;
     }
 
-    private static boolean staccatoBelowNextHead(
+    private static boolean staccatoAtNextHead(
             Component dot, Component head, List<Component> neighboringHeads, float gap) {
         for (Component next : neighboringHeads)
             if (next != head
                     && next.maxX > head.maxX
                     && next.centerX - head.centerX > gap * .8f
                     && next.centerX - head.centerX < gap * 2.4f
-                    && Math.abs(next.centerY - head.centerY) < gap * .6f
-                    && Math.abs(dot.centerX - next.centerX) < gap * .35f
-                    && dot.centerY - next.centerY > gap * .5f
-                    && dot.centerY - next.centerY < gap * 1.3f) return true;
+                    && Math.abs(dot.centerX - next.centerX) < gap * .35f) {
+                boolean below =
+                        Math.abs(next.centerY - head.centerY) < gap * .6f
+                                && dot.centerY - next.centerY > gap * .5f
+                                && dot.centerY - next.centerY < gap * 1.3f;
+                // A descending interval can put the next head's upper staccato
+                // beside the previous head. Its own vertical column owns the mark.
+                boolean above =
+                        Math.abs(next.centerY - head.centerY) > gap * .7f
+                                && Math.abs(next.centerY - head.centerY) < gap * 1.5f
+                                && next.maxX - next.minX + 1 >= gap * .8f
+                                && next.centerY - dot.centerY > gap * .8f
+                                && next.centerY - dot.centerY < gap * 2.5f;
+                if (below || above) return true;
+            }
         return false;
     }
 
@@ -14277,7 +14351,7 @@ final class OmrScoreInterpreter {
                 && gray != null
                 && head.maxX - head.minX + 1 > staff.gap * 1.05f
                 && barePaleStemEndpoint(labels, gray, width, height, head, staff)) count = 0;
-        if (gray != null && count < 3 && head.maxX - head.minX + 1 > staff.gap * 1.05f) {
+        if (gray != null && count < 4 && head.maxX - head.minX + 1 > staff.gap * 1.05f) {
             int threshold =
                     BeamInkThreshold.at(
                                     gray,
@@ -14315,12 +14389,11 @@ final class OmrScoreInterpreter {
             if (count > 0
                     && OutlinedBeamInk.count(gray, width, height, own, head.centerY, staff.gap) > 0)
                 return count;
-            if (own != null && Math.abs(own[1] - head.centerY) < staff.gap * 5.5f)
+            if (own != null && Math.abs(own[1] - head.centerY) < staff.gap * 8.5f)
                 for (Component other : heads) {
                     if (other == head
                             || Math.abs(other.centerX - head.centerX) < staff.gap * .95f
-                            || Math.abs(other.centerX - head.centerX)
-                                    > staff.gap * (count == 2 ? 4 : 3)
+                            || Math.abs(other.centerX - head.centerX) > staff.gap * 4
                             || Math.abs(other.centerY - head.centerY) > staff.gap * 2
                             || other.maxX - other.minX + 1 <= staff.gap * 1.05f) continue;
                     int[] pair =
@@ -14332,7 +14405,11 @@ final class OmrScoreInterpreter {
                                     staff.gap,
                                     Math.max(1, Math.round(staff.gap * .16f)),
                                     threshold);
-                    if (pair == null || Math.abs(pair[1] - other.centerY) > staff.gap * 5.5f)
+                    if (pair == null || Math.abs(pair[1] - other.centerY) > staff.gap * 8.5f)
+                        continue;
+                    if (WideTripleBeamInk.countFour(gray, width, height, own, pair, staff.gap) == 4)
+                        return 4;
+                    if (count < 2 && Math.abs(other.centerX - head.centerX) > staff.gap * 3)
                         continue;
                     int paired =
                             Math.abs(other.centerX - head.centerX) > staff.gap * 3
@@ -14340,7 +14417,12 @@ final class OmrScoreInterpreter {
                                             gray, width, height, own, pair, staff.gap)
                                     : PairedGraceBeamInk.countFullSize(
                                             gray, width, height, own, pair, staff.gap);
-                    if (paired > count) return paired;
+                    // Longer shafts need all three independently aligned beam cores.
+                    // Keep the ordinary two-beam recovery within its original stem bound.
+                    boolean longShaft =
+                            Math.abs(own[1] - head.centerY) >= staff.gap * 5.5f
+                                    || Math.abs(pair[1] - other.centerY) > staff.gap * 5.5f;
+                    if (paired > count && (!longShaft || paired == 3)) return paired;
                 }
         }
         if (gray != null
@@ -15151,9 +15233,12 @@ final class OmrScoreInterpreter {
             List<Component> neighboringHeads) {
         List<Component> result = new ArrayList<>();
         if (head.area < gap * gap * .5f || head.maxX - head.minX + 1 < gap * .85f) return result;
-        int inner = Math.max(2, (int) Math.floor(gap * .18f));
+        // Round the independently proved disk radius; flooring fractional spacing
+        // can let a thick diagonal slur pass all eight inner probes. Keep the
+        // crop inside its fractional bound so the connected tail does not widen it.
+        int inner = Math.max(2, Math.round(gap * .18f));
         int outer = Math.max(inner + 2, Math.round(gap * .43f));
-        int box = Math.max(inner + 1, Math.round(gap * .28f));
+        int box = Math.max(inner + 1, (int) Math.floor(gap * .28f));
         for (int cy = Math.max(outer, Math.round(head.centerY - gap * .6f));
                 cy <= Math.min(height - 1 - outer, Math.round(head.centerY + gap * .6f));
                 cy++) {
@@ -15184,7 +15269,6 @@ final class OmrScoreInterpreter {
                 }
                 if (darkInner != 8
                         || clearOuter < 6
-                        || clearOuter == 8
                         || !shallowDotConnection(gray, width, height, cx, cy, gap, inner)
                         || steepDotConnection(gray, width, height, cx, cy, gap, inner)) continue;
                 int area = 0, minX = cx + box, maxX = cx - box, minY = cy + box, maxY = cy - box;
@@ -17161,8 +17245,8 @@ final class OmrScoreInterpreter {
             if (current.event.measureIndex() - previous.event.measureIndex() > 1) break;
             if (samePrintedOnset(previous, current)) continue;
             if (previousOnset == null) previousOnset = previous;
-            // A held voice can bridge a barline while another voice keeps moving. Both
-            // endpoints must be sustained to search past those intervening attacks.
+            // A held voice can bridge a barline while another voice keeps moving. Sustained
+            // endpoints or opposing printed shafts prove that independent voice.
             else if (!samePrintedOnset(previous, previousOnset)
                     && !(ScoreNoteTiming.hasIndependentSustain(previous.event)
                             && (previous.event.measureIndex() == current.event.measureIndex()
@@ -17228,7 +17312,7 @@ final class OmrScoreInterpreter {
         return -1;
     }
 
-    /** Opposing printed shafts keep a dotted quarter voice independent of moving notes. */
+    /** Opposing printed shafts keep a tied voice independent of other attacks. */
     private static boolean independentTieVoice(
             List<DetectedNote> notes,
             int previousIndex,
@@ -17240,8 +17324,7 @@ final class OmrScoreInterpreter {
         DetectedNote before = notes.get(previousIndex), after = notes.get(currentIndex);
         if (before.event.diatonicPitchIdentity() != after.event.diatonicPitchIdentity()
                 || before.event.followingRestBeats() > 0
-                || after.event.leadingRestBeats() > 0
-                || ScoreNoteTiming.writtenDurationBeats(before.event) < 1) return false;
+                || after.event.leadingRestBeats() > 0) return false;
         int directions =
                 tieVoiceStemDirections(gray, width, height, before.head, before.staffGap)
                         & tieVoiceStemDirections(gray, width, height, after.head, after.staffGap);
@@ -17476,8 +17559,11 @@ final class OmrScoreInterpreter {
         // Faint ink is allowed only between heads: under a head it can belong
         // to the tail of an unrelated slur. The faint path still requires a dark core.
         int step = Math.max(1, Math.round(gap * .1f));
-        for (int first = 0; first <= 4; first++)
-            for (int last = 0; last <= 4; last++) {
+        // Under-head shoulders can be asymmetric. Keep the raw, dark curve
+        // proof while allowing either end to return before the head center.
+        int shoulderCount = faintShoulders ? 4 : (int) Math.ceil(gap * .75f / step);
+        for (int first = 0; first <= shoulderCount; first++)
+            for (int last = 0; last <= shoulderCount; last++) {
                 if (first == 0 && last == 0) continue;
                 int a = left + first * step, b = right - last * step;
                 if (b - a < gap) continue;

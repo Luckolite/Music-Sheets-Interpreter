@@ -38,6 +38,10 @@ public class TieTouchingDotTest {
     }
 
     private int count(boolean neighbor, boolean excluded) throws Exception {
+        return count(neighbor, excluded, 16f);
+    }
+
+    private int count(boolean neighbor, boolean excluded, float gap) throws Exception {
         Object head = head(90, 110, 73, 87, 100, 80);
         var method =
                 OmrScoreInterpreter.class.getDeclaredMethod(
@@ -58,7 +62,7 @@ public class TieTouchingDotTest {
                         null,
                         List.of(),
                         head,
-                        16f,
+                        gap,
                         gray,
                         W,
                         H,
@@ -117,6 +121,22 @@ public class TieTouchingDotTest {
             gray[y * W + x + 1] = 0;
         }
         assertEquals(0, count(false, false));
+    }
+
+    @Test
+    public void thickSlurAtFractionalSpacingCannotBecomeDot() throws Exception {
+        for (int x = 110; x <= 180; x++)
+            for (int y = 55; y <= 110; y++)
+                if (Math.abs(y - (78 + (x - 126) * .35)) / Math.sqrt(1 + .35 * .35) <= 2.45)
+                    gray[y * W + x] = 0;
+        assertEquals(0, count(false, false, 16.625f));
+    }
+
+    @Test
+    public void roundDotOnTieSurvivesFractionalSpacing() throws Exception {
+        disk(126, 80);
+        curve();
+        assertEquals(1, count(false, false, 16.625f));
     }
 
     @Test

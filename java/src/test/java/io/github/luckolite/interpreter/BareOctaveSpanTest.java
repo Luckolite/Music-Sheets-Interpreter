@@ -182,4 +182,43 @@ public class BareOctaveSpanTest {
                 List.of(new PlayingTechniqueDetector.Staff(150, 198, 12, 0, 1)));
         assertArrayEquals(copy, gray);
     }
+
+    private void superscriptSuffix(int y, boolean line) {
+        mark(y, line);
+        for (int row = 0; row <= 9; row++) {
+            int x = 68 + Math.min(row, 9 - row) / 2;
+            gray[(y + row) * W + x] = 0;
+            gray[(y + row) * W + x + 1] = 0;
+            gray[(y + row) * W + 74 - (x - 68)] = 0;
+        }
+    }
+
+    @Test
+    public void smallSuffixBeforeDashesDoesNotHideProvedEight() {
+        superscriptSuffix(90, true);
+        var result =
+                apply(
+                        List.of(note(180, 170)),
+                        List.of(new PlayingTechniqueDetector.Staff(150, 198, 12, 0, 1)));
+        assertEquals(1, result.get(0).octaveShift());
+    }
+
+    @Test
+    public void smallSuffixBelowStaffKeepsProvedLowerDirection() {
+        superscriptSuffix(220, true);
+        var result =
+                apply(
+                        List.of(note(180, 170)),
+                        List.of(new PlayingTechniqueDetector.Staff(150, 198, 12, 0, 1)));
+        assertEquals(-1, result.get(0).octaveShift());
+    }
+
+    @Test
+    public void suffixWithoutDashesDoesNotAuthorizeNumeral() {
+        superscriptSuffix(90, false);
+        var notes = List.of(note(180, 170));
+        assertEquals(
+                notes,
+                apply(notes, List.of(new PlayingTechniqueDetector.Staff(150, 198, 12, 0, 1))));
+    }
 }

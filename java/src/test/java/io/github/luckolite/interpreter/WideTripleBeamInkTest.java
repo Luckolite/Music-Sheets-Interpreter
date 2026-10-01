@@ -100,16 +100,24 @@ public class WideTripleBeamInkTest {
     }
 
     int decoded() throws Exception {
+        return decoded(false, 3);
+    }
+
+    int decoded(boolean longStem, int beams) throws Exception {
+        return decodedAtTip(longStem ? 72 : 90, beams);
+    }
+
+    int decodedAtTip(int tip, int beams) throws Exception {
         Arrays.fill(g, (byte) 255);
         byte[] labels = new byte[W * H];
         for (int x : new int[] {110, 155})
-            for (int y = 90; y <= 145; y++) {
+            for (int y = tip; y <= 145; y++) {
                 g[y * W + x] = 30;
                 labels[y * W + x] = 5;
             }
         for (int x = 110; x <= 155; x++) {
-            for (int j = 0; j < 3; j++)
-                for (int y = 90 + j * 10; y <= 96 + j * 10; y++) {
+            for (int j = 0; j < beams; j++)
+                for (int y = tip + j * 10; y <= tip + 6 + j * 10; y++) {
                     g[y * W + x] = 30;
                     labels[y * W + x] = 5;
                 }
@@ -141,5 +149,30 @@ public class WideTripleBeamInkTest {
     @Test
     public void decoderDoesNotStopAtTwoFusedCores() throws Exception {
         assertEquals(3, decoded());
+    }
+
+    @Test
+    public void longPrintedShaftCanStillOwnThreeFullCores() throws Exception {
+        assertEquals(3, decoded(true, 3));
+    }
+
+    @Test
+    public void longShaftWithOnlyTwoBeamsRemainsTwo() throws Exception {
+        assertEquals(2, decoded(true, 2));
+    }
+
+    @Test
+    public void extendedLedgerShaftCanOwnThreePrintedCores() throws Exception {
+        assertEquals(3, decodedAtTip(50, 3));
+    }
+
+    @Test
+    public void extendedShaftWithOnlyTwoBeamsRemainsTwo() throws Exception {
+        assertEquals(2, decodedAtTip(50, 2));
+    }
+
+    @Test
+    public void fourIndependentFullCoresReachTheDecoder() throws Exception {
+        assertEquals(4, decodedAtTip(80, 4));
     }
 }

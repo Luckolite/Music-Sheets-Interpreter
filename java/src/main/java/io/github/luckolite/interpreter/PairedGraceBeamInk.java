@@ -21,7 +21,10 @@ final class PairedGraceBeamInk {
             byte[] gray, int width, int height, int[] a, int[] b, float gap, float inside) {
         if (gray == null || a == null || b == null || gap < 4 || a[2] != b[2]) return 0;
         int span = Math.abs(a[0] - b[0]);
-        if (span < gap * .95f || span > gap * 3 || Math.abs(a[1] - b[1]) > gap * .75f) return 0;
+        // Compact ornaments can rise one staff space between their stems. The
+        // sampled cores below must still follow that same slope at every column.
+        float maximumRise = inside == 1.5f ? gap : gap * .75f;
+        if (span < gap * .95f || span > gap * 3 || Math.abs(a[1] - b[1]) > maximumRise) return 0;
         int maximum = 0;
         float edge = Math.min(.2f, 2f / span);
         float[] probes =
@@ -43,6 +46,24 @@ final class PairedGraceBeamInk {
                             countAtContrast(
                                     gray, width, height, a, b, gap, fraction, inside, columns);
                     if (count == 2) return count;
+                }
+        // A returning slur can extend one stem beyond its actual beam tip.
+        // Retry bounded inward tip positions only for compact ornaments; every
+        // accepted position still proves separate parallel cores at three columns.
+        if (maximum == 0 && inside == 1.5f && span >= gap * 1.4f)
+            for (float inset : new float[] {.25f, .5f, .75f, 1f})
+                for (int side = 0; side < 2; side++) {
+                    int[] first = a.clone(), last = b.clone();
+                    int[] changed = side == 0 ? first : last;
+                    changed[1] -= changed[2] * Math.round(gap * inset);
+                    if (Math.abs(first[1] - last[1]) > gap) continue;
+                    for (float fraction : new float[] {.5f, .75f}) {
+                        int count =
+                                countAtContrast(
+                                        gray, width, height, first, last, gap, fraction, inside,
+                                        probes);
+                        if (count >= 2) return count;
+                    }
                 }
         return maximum;
     }

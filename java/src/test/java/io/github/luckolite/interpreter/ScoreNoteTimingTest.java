@@ -172,11 +172,11 @@ public final class ScoreNoteTimingTest {
     }
 
     @Test
-    public void falseFourthBeamCannotTurnThirtySecondsIntoSixtyFourths() {
+    public void provedFourthBeamRetainsSixtyFourthValue() {
         ScoreNoteEvent splitBeam = new ScoreNoteEvent(0, .10f, 0, 0, 1, .4f, false, 0, 4);
 
-        assertEquals(.125, ScoreNoteTiming.writtenDurationBeats(splitBeam), .0001);
-        assertEquals(.125, ScoreNoteTiming.rhythmicGrid(List.of(splitBeam)), .0001);
+        assertEquals(.0625, ScoreNoteTiming.writtenDurationBeats(splitBeam), .0001);
+        assertEquals(.0625, ScoreNoteTiming.rhythmicGrid(List.of(splitBeam)), .0001);
     }
 
     @Test

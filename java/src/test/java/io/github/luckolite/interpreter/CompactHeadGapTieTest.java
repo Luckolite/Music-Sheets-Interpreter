@@ -49,8 +49,10 @@ public class CompactHeadGapTieTest {
                 gray[y * w + x] = 0;
                 labels[y * w + x] = 4;
             }
-        for (int x = Math.round(106 * scale); x <= Math.round((end - 7) * scale); x++) {
-            float t = (x / scale - 106) / (end - 113f);
+        for (int x = Math.round(106 * scale);
+                x <= Math.round((end - (mode == 4 ? 20 : 7)) * scale);
+                x++) {
+            float t = (x / scale - 106) / (end - (mode == 4 ? 126f : 113f));
             if (mode == 0 || mode == 2 && t > .5f) continue;
             float curve = mode == 3 ? 7 * t : 7 * 4 * t * (1 - t);
             int yy = Math.round((80 + side * (20 + curve)) * scale);
@@ -145,5 +147,15 @@ public class CompactHeadGapTieTest {
     @Test
     public void overlappingHeadsCannotBecomeSequentialTies() throws Exception {
         assertFalse(detect(1, 1, 0, 1, 127, false));
+    }
+
+    @Test
+    public void asymmetricCompactShoulderEndsBelowSecondHead() throws Exception {
+        assertTrue(detect(4, 1, 0, 1, 143, false));
+    }
+
+    @Test
+    public void asymmetricUpperShoulderEndsBelowSecondHead() throws Exception {
+        assertTrue(detect(4, -1, 0, 1, 143, false));
     }
 }

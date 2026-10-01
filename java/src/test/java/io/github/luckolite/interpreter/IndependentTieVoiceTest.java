@@ -73,6 +73,56 @@ public class IndependentTieVoiceTest {
         return (int) m.invoke(null, notes, notes.size() - 1, W, labels, gray, H);
     }
 
+    private Object shortNote(int x, int pitch, boolean up) throws Exception {
+        Object n = note(0, x, pitch, x / (float) W, up, true, false);
+        var type = n.getClass();
+        var head = type.getDeclaredMethod("head");
+        head.setAccessible(true);
+        var event =
+                new ScoreNoteEvent(
+                        0,
+                        x / (float) W,
+                        pitch,
+                        0,
+                        1,
+                        (80 - pitch * 7) / (float) H,
+                        false,
+                        0,
+                        2,
+                        2,
+                        0);
+        return make("DetectedNote", event, head.invoke(n), 14f);
+    }
+
+    private int shortPrevious(boolean opposing) throws Exception {
+        var notes =
+                List.of(
+                        shortNote(100, 0, false),
+                        shortNote(220, 2, opposing),
+                        shortNote(300, 0, false));
+        var m =
+                OmrScoreInterpreter.class.getDeclaredMethod(
+                        "previousSamePitch",
+                        List.class,
+                        int.class,
+                        int.class,
+                        byte[].class,
+                        byte[].class,
+                        int.class);
+        m.setAccessible(true);
+        return (int) m.invoke(null, notes, 2, W, labels, gray, H);
+    }
+
+    @Test
+    public void shortVoiceCanTiePastOpposingAttack() throws Exception {
+        assertEquals(0, shortPrevious(true));
+    }
+
+    @Test
+    public void shortMelodyCannotSkipSameDirectionAttack() throws Exception {
+        assertEquals(-1, shortPrevious(false));
+    }
+
     @Test
     public void dottedVoiceCanContinueAcrossBarOverOpposingMovingVoice() throws Exception {
         assertEquals(0, previous(true, true, false));

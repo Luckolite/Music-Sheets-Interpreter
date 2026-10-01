@@ -169,6 +169,75 @@ public class ScoreNavigationTraversalTest {
     }
 
     @Test
+    public void unresolvedSegnoOmitsNamedCodaWithoutInventingReturn() {
+        var result =
+                route(
+                        8,
+                        List.of(
+                                named(2, TO_CODA, "to", "c"),
+                                mark(
+                                        5,
+                                        DAL_SEGNO_AL_CODA,
+                                        "return",
+                                        "missing",
+                                        "c",
+                                        "",
+                                        2,
+                                        List.of(),
+                                        null,
+                                        DEFAULT),
+                                named(5, CODA, "c", "")));
+        assertTrue(result.complete());
+        assertEquals(List.of(0, 1, 2, 3, 4), result.sourceMeasures());
+        assertEquals(20, result.performedBeats(), 0);
+        assertTrue(
+                result.diagnostics().stream()
+                        .anyMatch(
+                                d ->
+                                        d.code().equals("AMBIGUOUS_TARGET")
+                                                && d.message().contains("SEGNO")));
+    }
+
+    @Test
+    public void unresolvedReturnKeepsOrdinaryMusicBeforeLaterCoda() {
+        var result = route(9, List.of(d(2, TO_CODA), d(5, DAL_SEGNO_AL_CODA), d(7, CODA)));
+        assertEquals(List.of(0, 1, 2, 3, 4, 5, 6), result.sourceMeasures());
+    }
+
+    @Test
+    public void validSegnoStillReturnsAndJumpsToCoda() {
+        var result =
+                route(8, List.of(d(1, SEGNO), d(3, TO_CODA), d(5, DAL_SEGNO_AL_CODA), d(5, CODA)));
+        assertEquals(List.of(0, 1, 2, 3, 4, 1, 2, 5, 6, 7), result.sourceMeasures());
+        assertTrue(result.diagnostics().isEmpty());
+    }
+
+    @Test
+    public void ordinaryMissingSegnoDoesNotOmitFollowingMusic() {
+        assertEquals(
+                List.of(0, 1, 2, 3, 4, 5, 6, 7),
+                route(8, List.of(d(5, DAL_SEGNO), d(5, CODA))).sourceMeasures());
+    }
+
+    @Test
+    public void ambiguousCodaIsNotSelectedByInputOrder() {
+        var result =
+                route(
+                        8,
+                        List.of(
+                                d(5, DAL_SEGNO_AL_CODA),
+                                named(5, CODA, "one", ""),
+                                named(6, CODA, "two", "")));
+        assertEquals(List.of(0, 1, 2, 3, 4, 5, 6, 7), result.sourceMeasures());
+        assertTrue(
+                result.diagnostics().stream()
+                        .anyMatch(
+                                d ->
+                                        d.code().equals("AMBIGUOUS_TARGET")
+                                                && d.message().contains("CODA")));
+    }
+
+    @Test
     public void midbarFineRetainsOnlyPrefixInMusicalBeats() {
         var details =
                 new ScorePlaybackDirection.Details(

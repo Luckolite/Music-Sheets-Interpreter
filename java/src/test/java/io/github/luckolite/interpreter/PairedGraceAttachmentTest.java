@@ -13,14 +13,41 @@ public class PairedGraceAttachmentTest {
     private static List<ScoreNoteEvent> run(
             boolean trailing, boolean paired, int paper, float principalX, boolean fullPair)
             throws Exception {
+        return run(trailing, paired, paper, principalX, fullPair, paired ? 2 : 1, 2);
+    }
+
+    private static List<ScoreNoteEvent> run(
+            boolean trailing,
+            boolean paired,
+            int paper,
+            float principalX,
+            boolean fullPair,
+            int printedBeams,
+            int initialBeams)
+            throws Exception {
+        return run(
+                trailing, paired, paper, principalX, fullPair, printedBeams, initialBeams, false);
+    }
+
+    private static List<ScoreNoteEvent> run(
+            boolean trailing,
+            boolean paired,
+            int paper,
+            float principalX,
+            boolean fullPair,
+            int printedBeams,
+            int initialBeams,
+            boolean interleaved)
+            throws Exception {
         byte[] gray = new byte[W * H];
         Arrays.fill(gray, (byte) paper);
         for (int y = 110; y <= 150; y++) gray[y * W + 105] = 40;
         for (int y = 112; y <= 158; y++) gray[y * W + 130] = 40;
         for (int x = 105; x <= 130; x++) {
             int y = 110 + Math.round((x - 105) * 2f / 25);
-            for (int b = 0; b < (paired ? 2 : 1); b++)
-                for (int dy = 0; dy < 5; dy++) gray[(y + b * 11 + dy) * W + x] = 40;
+            for (int b = 0; b < printedBeams; b++)
+                for (int dy = 0; dy < 5; dy++)
+                    gray[(y + b * (printedBeams == 3 ? 8 : 11) + dy) * W + x] = 40;
         }
         var hc =
                 Class.forName(OmrScoreInterpreter.class.getName() + "$Component")
@@ -54,16 +81,24 @@ public class PairedGraceAttachmentTest {
                             x / W,
                             2,
                             0,
-                            1,
+                            interleaved ? 2 : 1,
                             y / H,
                             false,
                             0,
-                            principal ? 0 : 2,
+                            principal ? 0 : initialBeams,
                             2,
                             principal ? 1 : 0);
             events.add(event);
             detected.add(dc.newInstance(event, head, 16f));
         }
+        if (interleaved)
+            for (int index : new int[] {2, 1}) {
+                float x = trailing ? (index == 1 ? 80 : 112) : (index == 1 ? 112 : 140);
+                var head = hc.newInstance(260, (int) x - 11, (int) x + 11, 208, 222, x, 215f);
+                var event = new ScoreNoteEvent(0, x / W, 2, 1, 2, 215f / H, false, 0, 1, 2, 0);
+                detected.add(index, dc.newInstance(event, head, 16f));
+                events.add(index, event);
+            }
         var m =
                 OmrScoreInterpreter.class.getDeclaredMethod(
                         "markPairedGraces",
@@ -75,6 +110,42 @@ public class PairedGraceAttachmentTest {
         m.setAccessible(true);
         m.invoke(null, gray, W, H, detected, events);
         return events;
+    }
+
+    @Test
+    public void otherStaffAttacksDoNotSplitPrefixPair() throws Exception {
+        var r = run(false, true, 220, 180, false, 2, 3, true);
+        assertTrue((r.get(0).articulations() & NoteOrnament.GRACE) != 0);
+        assertTrue((r.get(2).articulations() & NoteOrnament.GRACE) != 0);
+        assertEquals(2, r.get(0).beamCount());
+        assertEquals(2, r.get(2).beamCount());
+        assertEquals(0, r.get(1).articulations());
+        assertEquals(0, r.get(3).articulations());
+    }
+
+    @Test
+    public void otherStaffAttacksDoNotSplitTrailingPair() throws Exception {
+        var r = run(true, true, 220, 55, false, 2, 3, true);
+        assertTrue((r.get(2).articulations() & NoteOrnament.GRACE) != 0);
+        assertTrue((r.get(4).articulations() & NoteOrnament.GRACE) != 0);
+        assertEquals(2, r.get(2).beamCount());
+        assertEquals(2, r.get(4).beamCount());
+    }
+
+    @Test
+    public void provedDoubleBeamReplacesSpuriousThirdBeam() throws Exception {
+        var r = run(false, true, 220, 180, false, 2, 3);
+        assertTrue((r.get(0).articulations() & NoteOrnament.GRACE) != 0);
+        assertEquals(2, r.get(0).beamCount());
+        assertEquals(2, r.get(1).beamCount());
+    }
+
+    @Test
+    public void genuineThreeBeamGracePairKeepsAllThreeBeams() throws Exception {
+        var r = run(false, true, 220, 180, false, 3, 3);
+        assertTrue((r.get(0).articulations() & NoteOrnament.GRACE) != 0);
+        assertEquals(3, r.get(0).beamCount());
+        assertEquals(3, r.get(1).beamCount());
     }
 
     @Test

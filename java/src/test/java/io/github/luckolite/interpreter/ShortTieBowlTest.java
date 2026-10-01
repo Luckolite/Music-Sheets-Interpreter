@@ -13,10 +13,14 @@ public final class ShortTieBowlTest {
         byte[] a = new byte[w * h], g = new byte[w * h];
 
         Page() {
+            this(150);
+        }
+
+        Page(int endpoint) {
             Arrays.fill(g, (byte) 255);
             for (int y = 100; y <= 164; y += 16) rect(20, y, 280, 1, 4);
             oval(100, 140, 11, 8, false, true);
-            oval(150, 140, 11, 8, false, true);
+            oval(endpoint, 140, 11, 8, false, true);
         }
 
         void rect(int x, int y, int ww, int hh, int label) {
@@ -132,5 +136,35 @@ public final class ShortTieBowlTest {
         p.notes();
         assertArrayEquals(a, p.a);
         assertArrayEquals(g, p.g);
+    }
+
+    private Page compact(boolean arc) {
+        Page p = new Page(140);
+        if (arc)
+            for (int x = 106; x <= 132; x++) {
+                float t = (x - 106) / 26f;
+                int y = Math.round(146 + 10 * 4 * t * (1 - t));
+                for (int dy = -1; dy <= 1; dy++) p.rect(x, y + dy, 1, 1, 5);
+            }
+        if (arc)
+            for (int y = 150; y <= 157; y++) for (int x = 118; x <= 125; x++) p.a[y * p.w + x] = 2;
+        else p.oval(121, 156, 5, 4, false, false);
+        return p;
+    }
+
+    @Test
+    public void narrowHeadGapStillRemovesProvedTieBowl() {
+        assertEquals(2, compact(true).notes().size());
+    }
+
+    @Test
+    public void narrowHeadGapStillProvesContinuation() {
+        var notes = compact(true).notes();
+        assertTrue(notes.get(notes.size() - 1).tiedFromPrevious());
+    }
+
+    @Test
+    public void narrowHeadGapAloneDoesNotRemoveSmallPitch() {
+        assertEquals(3, compact(false).notes().size());
     }
 }

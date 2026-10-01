@@ -21,7 +21,7 @@ public class StaccatoBelowNeighborTest {
         var type = current.getClass();
         var method =
                 OmrScoreInterpreter.class.getDeclaredMethod(
-                        "staccatoBelowNextHead", type, type, List.class, float.class);
+                        "staccatoAtNextHead", type, type, List.class, float.class);
         method.setAccessible(true);
         return (boolean) method.invoke(null, dot, current, heads, GAP);
     }

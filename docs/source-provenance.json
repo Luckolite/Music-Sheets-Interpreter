@@ -26,9 +26,10 @@
     },
     "ScoreNavigationTraversal.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationTraversal.java",
-      "source_sha256": "af7406c227764d95805873825410862c821a1b27df818ad50fa137193eb4aa13",
+      "source_sha256": "d22632bda1653c65f35d50ef139211c2dcc74f28b224849165d617452dc165b2",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "af7406c227764d95805873825410862c821a1b27df818ad50fa137193eb4aa13"
+      "source_normalized_sha256": "2188dedc76acdab913ad053932777b44ecf062f97af1893f86fb030b3039601d",
+      "review_note": "Reviewed global raw-ink, rhythmic and bounded-navigation repair; full token parity with package/diagnostics adapters verified. Original synthetic positive and rejection controls; no source score, model or new dependency included."
     },
     "ScoreSemanticWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreSemanticWire.java",
@@ -235,9 +236,10 @@
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
-      "source_sha256": "d0c5a4a02bfa1d93b8603b40b0c4d60dc0650a34070d7216ff2fdf504f9d5710",
+      "source_sha256": "b92d3c4dd1bda52720ead29cfb048b19d6ae64fe83a0e83327b8069bcd545e37",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "40167bc7b343f7532606e1ca79ba74a4fe9d416d032abcd3ab0738aac7677466"
+      "source_normalized_sha256": "1246b328878f7544f425be3663cd048d463bcd6827a3f994b4232b4a9908ca1b",
+      "review_note": "Global original geometric repair ported with reviewed token parity and synthetic positive and rejection regressions; no new dependencies or private source imagery."
     },
     "NoteArticulation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulation.java",
@@ -247,10 +249,10 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "7517582e785d7126deb07359da87bad7406ff38c18ebf09d412336c420f571e4",
+      "source_sha256": "7a91b6d2d413584613f41841a66c117349e46be1f71471a5a7609b78719d3ba6",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Retains prior shaft/beam ownership, finite termination, contiguous junction, thin-rule, letter-crossbar and existing text-run vetoes. Supplementary pale-accent components require dark seeds, bounded extent, complete open-chevron topology and existing semantic/scale/note ownership. Only an accepted complete accent suppresses its own contained dark fragments; independent tenutos and original context glyphs remain. A false tenuto is rejected only with three independently thin aligned ledger strokes at corroborated note phase, allowing a narrow continuous shaft but not broad gray blocks. Whole detector15032 and OpenChevron760 code/literal tokens match app. Twenty-eight original synthetic controls cover topology, false shapes, source immutability, fragment ownership, ledger spacing/phase, short/thick rules and independent tenutos. New helper is pure Java using existing collections only; no new dependency, model, private fixture or diagnostic log.",
-      "source_normalized_sha256": "7517582e785d7126deb07359da87bad7406ff38c18ebf09d412336c420f571e4"
+      "review_note": "Reviewed global raw-ink, rhythmic and bounded-navigation repair; full token parity with package/diagnostics adapters verified. Original synthetic positive and rejection controls; no source score, model or new dependency included.",
+      "source_normalized_sha256": "0af7d171c679dacb3aa67fd13e69f9a6225ddc4f164b9767b1b48c0885027228"
     },
     "OpenChevron.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",
@@ -266,9 +268,10 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "911b00958c85b730460b3436f66e4027df3a90dae5827a13b35aa8bc895d485a",
+      "source_sha256": "7532c12204cb1f0c35517296341bb19dd8f097392f7ae31c4c49a6302b6ab4db",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "911b00958c85b730460b3436f66e4027df3a90dae5827a13b35aa8bc895d485a"
+      "source_normalized_sha256": "9509c2b9ba89eb48de7c54dc987b5886782ee066070540d46618788cb124e294",
+      "review_note": "Global original geometric repair ported with reviewed token parity and synthetic positive and rejection regressions; no new dependencies or private source imagery."
     },
     "ShortFinalStaff.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShortFinalStaff.java",
@@ -279,11 +282,11 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "73a2b01709bd6264ede26855e6b2104d12978c97b441814d17a2485700544a24",
+      "source_sha256": "00b459b5630000bb484a9baa3e93825879a1cde6a24ebad65ac0602b7860e8e6",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Complete code/literal parity with package, diagnostics and equivalent declaration adaptations. Original synthetic controls cover displaced accidentals, octave sharp columns, shared-shaft beams/dots and compact thin tie arcs; prior safeguards retained. No new dependency, model or private fixture.",
-      "source_normalized_sha256": "a878986235481ec1d1845d2fda2b25493b6957b7230a8c4a1ed897e77bef3783"
+      "review_note": "Reviewed global raw-ink, rhythmic and bounded-navigation repair; full token parity with package/diagnostics adapters verified. Original synthetic positive and rejection controls; no source score, model or new dependency included.",
+      "source_normalized_sha256": "676b5e8c52831d8dd8e2e6b797271f9c24739b3f02a83f683a9faf9029423ee8"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -333,10 +336,10 @@
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "fb5caaf87c2d53cf94f4efe001510dbadea1009e69fc0314673bd851bb614f3c",
+      "source_sha256": "8ad5fde24e06727e93190cb636f8159e5c09e8cf06fb1caf31f9146578d8cae1",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed session-local measure/staff index reuse in parallel-duration checks. Identical existential rhythm checks; original shuffled multi-staff/tuplet regression compares indexed and unindexed results. No private score data or new dependencies.",
-      "source_normalized_sha256": "828f7413d2e2f98e62eb3c10a7ac935d6dcc470de27ed1269228c9fd156204f3"
+      "review_note": "Reviewed global raw-ink, rhythmic and bounded-navigation repair; full token parity with package/diagnostics adapters verified. Original synthetic positive and rejection controls; no source score, model or new dependency included.",
+      "source_normalized_sha256": "2fde6a6466906794b6e72a070a89738e1209caad6fe7a0da253bde7bf4c948f4"
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
@@ -362,10 +365,10 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "dbfecc2ab88b491467426a0179566d7c7aa4e7b2575c3fbd3c27725537fbff39",
+      "source_sha256": "36bef7ead2fbe09b43d94c7c72b6884801e119bc20aa15afa753511eb256e023",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Retains sharp ownership, existing rest topology and established detections. Supplementary locally contrasted faint tails require ordinary staff placement, at least twelve original dark pixels in three non-rule rows, two separated bulbs for sixteenths, and existing shaft/contour guards. Narrow bulb and raster-rounded height allowances apply only to this seeded fallback; duplicate records and their dots remain owned by the established result. Complete 13668-token app/standalone code-and-literal parity after namespace normalization; nine original procedural faint-tail, narrow-bulb and negative controls accompany prior generated regressions. No private pixels, new helper, dependency or model change.",
-      "source_normalized_sha256": "5a09d390231783cd7331c2fd63d4a286a34322df9ee88cc2371d9e64e3a5aca3"
+      "review_note": "Global original geometric repair ported with reviewed token parity and synthetic positive and rejection regressions; no new dependencies or private source imagery.",
+      "source_normalized_sha256": "2097e581ebdda313779adcf58ba0b62c4a6bc5c76d7b3e8e19f8f6b0d8b0605d"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -424,14 +427,17 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "53943fbac5b539f5d677e6bc60662df226b629f8a5fe1eab1c51c85ab63bf44d",
+      "source_sha256": "f24ce18f045b663ef2778036fc5ee425a9c4632956a142282255aef074e253ad",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "ee6a879dd6aaa902fc7adf62379583aebdac2c23a99813face926f028895fc49"
+      "source_normalized_sha256": "76cd8b9f6400d5f6550dafad538b3680614bf882b3ab8c96e1bc8e84bc6c8921",
+      "review_note": "Printed suffix and dash handling and containment-based suppression of a duplicate bare-numeral interpretation; original generated span and font-render regressions."
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",
-      "source_sha256": "d5cd7ea44ad51b241855e6d5cda0620485747f3845d3631edec4636b70ec9bb2",
-      "source_normalized_sha256": "d5cd7ea44ad51b241855e6d5cda0620485747f3845d3631edec4636b70ec9bb2"
+      "source_sha256": "b2aeeb095045dc82c6111c0b7da3e65f4ab1782094a0ccd3605e2fca08253b2d",
+      "source_normalized_sha256": "d01665d87e4daef6b1f7a8fffe2cd1d93ee7699d5f6fc88284c0b15d83fcaa16",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original rendered music numeral and small italic suffix templates; Bravura OFL glyphs and graphical text-font renders. Existing confidence threshold and margin retained; no score pixels or font files added."
     },
     "MeterOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterOcrEvidence.java",
@@ -693,9 +699,10 @@
     },
     "NoteSlideDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteSlideDetector.java",
-      "source_sha256": "0385dd3c1f0d1fd9eaf2e1c02e81feb8b4b4115ced0d7d54dc93895b753b8b2b",
+      "source_sha256": "490d2163c55b4633d86b8317d1417f0ab91b76949c540c7b2cad0c12560a2fd7",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "a4b2aeae62fbb25f602ad8f6bfd55ee0ea50bef652f609a7b8017801d63bb978"
+      "source_normalized_sha256": "8d6408b57ee7d0489bcafa0dcc10171df220dadb9bcd35abf8f743c8575b1f60",
+      "review_note": "Reviewed global raw-ink, rhythmic and bounded-navigation repair; full token parity with package/diagnostics adapters verified. Original synthetic positive and rejection controls; no source score, model or new dependency included."
     },
     "OutlinedBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OutlinedBeamInk.java",
@@ -705,15 +712,17 @@
     },
     "PairedGraceBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PairedGraceBeamInk.java",
-      "source_sha256": "1ef3db6dae10e0f7d55a40f7384396bee73d45fcc922f749ae10f194bc8b5981",
+      "source_sha256": "9a230dbbc7fc38d82fc2c709af1b52b877778d21eda9eeadd42fbaa354615ac4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "1ef3db6dae10e0f7d55a40f7384396bee73d45fcc922f749ae10f194bc8b5981"
+      "source_normalized_sha256": "a123b92c31a3bee9c2d1e793be977a478fcf869fea597862413330bb9c8c1be8",
+      "review_note": "Global original geometric repair ported with reviewed token parity and synthetic positive and rejection regressions; no new dependencies or private source imagery."
     },
     "WideTripleBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/WideTripleBeamInk.java",
-      "source_sha256": "ba9a2e09a9e1a8a0c774f325f3a2a9a607538a57bcc87646e1931e37da126d52",
+      "source_sha256": "1cc46d98b626708658d7103750fe2d6ba84bed55fb2b3c73de058b22fbbcb94a",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "ba9a2e09a9e1a8a0c774f325f3a2a9a607538a57bcc87646e1931e37da126d52"
+      "source_normalized_sha256": "422e5dc119c5efd50223991ca1879419c46d996cfa8184080b838dfdc632ebcd",
+      "review_note": "Reviewed global raw-ink, rhythmic and bounded-navigation repair; full token parity with package/diagnostics adapters verified. Original synthetic positive and rejection controls; no source score, model or new dependency included."
     },
     "PaleSingleBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PaleSingleBeamInk.java",
@@ -768,9 +777,10 @@
     },
     "ScoreNavigationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationDetector.java",
-      "source_sha256": "0fc300a9cf9fd8e2ce5f65ac09cf722ae69b34546ea725be6d32ebc3c50f020e",
+      "source_sha256": "d7f8c4a68b40a4827d4ad25c2223211d11700c842124fcbc96fc28d59434f35a",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "0fc300a9cf9fd8e2ce5f65ac09cf722ae69b34546ea725be6d32ebc3c50f020e"
+      "source_normalized_sha256": "d7f8c4a68b40a4827d4ad25c2223211d11700c842124fcbc96fc28d59434f35a",
+      "review_note": "Global original geometric repair ported with reviewed token parity and synthetic positive and rejection regressions; no new dependencies or private source imagery."
     },
     "ScoreNavigationPlan.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationPlan.java",

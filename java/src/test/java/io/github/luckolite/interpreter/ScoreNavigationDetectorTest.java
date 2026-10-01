@@ -99,6 +99,28 @@ public class ScoreNavigationDetectorTest {
     }
 
     @Test
+    public void destinationAtRoundedSixSpaceLimitKeepsItsStaff() {
+        assertEquals(
+                List.of(new ScorePlaybackDirection(0, CODA)),
+                detect(
+                        List.of(
+                                new PlayingTechniqueDetector.Word(
+                                        "Coda", .12f, .078f, .18f, .098f)),
+                        List.of()));
+    }
+
+    @Test
+    public void destinationBeyondOnePixelAllowanceStaysUnowned() {
+        assertTrue(
+                detect(
+                                List.of(
+                                        new PlayingTechniqueDetector.Word(
+                                                "Coda", .12f, .076f, .18f, .096f)),
+                                List.of())
+                        .isEmpty());
+    }
+
+    @Test
     public void verifiedSegnoGlyphDoesNotRequireAnOcrToken() {
         assertEquals(
                 List.of(new ScorePlaybackDirection(0, SEGNO)),

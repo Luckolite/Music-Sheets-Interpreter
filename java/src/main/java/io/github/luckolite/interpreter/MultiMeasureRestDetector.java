@@ -52,7 +52,7 @@ final class MultiMeasureRestDetector {
             if (token.value() < 2 || token.value() > 32) continue;
             float centerX = (token.left() + token.right()) * .5f;
             float centerY = (token.top() + token.bottom()) * .5f;
-            int measureIndex = containingRestBar(restBars, centerX, centerY);
+            int measureIndex = containingRestBar(restBars, measures, centerX, centerY);
             if (measureIndex < 0 || claimedMeasures[measureIndex]) continue;
             claimedMeasures[measureIndex] = true;
             result.add(token);
@@ -780,14 +780,20 @@ final class MultiMeasureRestDetector {
         result.add(candidate);
     }
 
-    private static int containingRestBar(List<RestBarCandidate> candidates, float x, float y) {
+    private static int containingRestBar(
+            List<RestBarCandidate> candidates, List<MeasureRegion> measures, float x, float y) {
         for (RestBarCandidate candidate : candidates) {
             MeasureRegion region = candidate.region;
             float regionHeight = region.bottom() - region.top();
-            if (x >= region.left()
-                    && x <= region.right()
-                    && y >= region.top() - regionHeight * .95f
-                    && y <= region.bottom()) return candidate.measureIndex;
+            float countTop = region.top() - regionHeight * .95f;
+            // A rest's count window stops in the gap to the preceding row.
+            // Otherwise a low tuplet number on that row can claim this rest.
+            MeasureRegion parent = measures.get(candidate.measureIndex);
+            for (MeasureRegion other : measures)
+                if (x >= other.left() && x <= other.right() && other.bottom() < parent.top())
+                    countTop = Math.max(countTop, (other.bottom() + parent.top()) * .5f);
+            if (x >= region.left() && x <= region.right() && y >= countTop && y <= region.bottom())
+                return candidate.measureIndex;
         }
         return -1;
     }

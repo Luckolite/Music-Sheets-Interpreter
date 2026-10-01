@@ -40,6 +40,12 @@ New dependencies and adapters require separate review.
   fingerprints. App and Sync Hub lifecycle management remain outside this repo.
 - Glyph loading uses checksum-verified classpath resources. Bravura and Leland
   templates retain their SIL OFL notices; no score pages are bundled with them.
+- Octave direction templates are original font renders, including SMuFL music
+  numerals with separately typeset small italic suffixes. The generator uses the
+  bundled Bravura OFL font and locally licensed graphical text-font renders;
+  Windows defaults use Times Italic, Cambria Italic and Georgia Italic for the
+  suffixes. Other hosts can supply those fonts explicitly. No text-font files,
+  private score pixels or extracted score glyphs are added to the distribution.
 - Shared navigation records and projection are available to integrators. Python
   MIDI export uses the original standalone decoded-data `NavigationBridge` adapter
   to execute the actual shared Java traversal and arrangement rules. Its note

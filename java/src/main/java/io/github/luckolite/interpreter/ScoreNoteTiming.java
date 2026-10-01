@@ -1,5 +1,3 @@
-// Copyright 2026 Luckolite
-// SPDX-License-Identifier: Apache-2.0
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -68,12 +66,20 @@ public final class ScoreNoteTiming {
                 metricalNotes = new java.util.IdentityHashMap<>();
         private final java.util.IdentityHashMap<List<ScoreNoteEvent>, ScoreIndex> indexes =
                 new java.util.IdentityHashMap<>();
+        private final java.util.IdentityHashMap<List<ScoreNoteEvent>, List<RhythmGroup>>
+                rhythmGroups = new java.util.IdentityHashMap<>();
+        private final java.util.IdentityHashMap<
+                        List<ScoreNoteEvent>, java.util.IdentityHashMap<ScoreNoteEvent, Boolean>>
+                independentDurations = new java.util.IdentityHashMap<>();
         private final java.util.IdentityHashMap<
                         List<ScoreNoteEvent>, java.util.Map<StaffKey, SystemProfile>>
                 systemProfiles = new java.util.IdentityHashMap<>();
         private int leadingInsetCalculations;
         private int metricalListCalculations;
         private int scoreIndexCalculations;
+        private int rhythmGroupCalculations;
+        private int independentDurationCalculations;
+        private int independentDurationCount;
         private int size;
         private boolean closed;
 
@@ -150,6 +156,41 @@ public final class ScoreNoteTiming {
             return scoreIndexCalculations;
         }
 
+        private List<RhythmGroup> groups(List<ScoreNoteEvent> voice) {
+            List<RhythmGroup> found = rhythmGroups.get(voice);
+            if (found != null) return found;
+            rhythmGroupCalculations++;
+            List<RhythmGroup> result = buildRhythmGroups(voice);
+            if (rhythmGroups.size() >= 8192) rhythmGroups.clear();
+            rhythmGroups.put(voice, result);
+            return result;
+        }
+
+        int rhythmGroupCalculationCount() {
+            return rhythmGroupCalculations;
+        }
+
+        private boolean independentDuration(ScoreNoteEvent note, List<ScoreNoteEvent> notes) {
+            var map = independentDurations.get(notes);
+            Boolean found = map == null ? null : map.get(note);
+            if (found != null) return found;
+            independentDurationCalculations++;
+            boolean result = uncachedIndependentDuration(note, measureVoice(note, notes));
+            if (independentDurationCount >= 8192) {
+                independentDurations.clear();
+                independentDurationCount = 0;
+            }
+            independentDurations
+                    .computeIfAbsent(notes, ignored -> new java.util.IdentityHashMap<>())
+                    .put(note, result);
+            independentDurationCount++;
+            return result;
+        }
+
+        int independentDurationCalculationCount() {
+            return independentDurationCalculations;
+        }
+
         @Override
         public void close() {
             if (closed) return;
@@ -160,6 +201,8 @@ public final class ScoreNoteTiming {
             leadingInsets.clear();
             metricalNotes.clear();
             indexes.clear();
+            rhythmGroups.clear();
+            independentDurations.clear();
             systemProfiles.clear();
             if (previous == null) SESSION.remove();
             else SESSION.set(previous);
@@ -188,26 +231,38 @@ public final class ScoreNoteTiming {
         }
 
         private List<ScoreNoteEvent> attackNotes;
+        // Group membership is fixed during timing queries. Reuse symbol evidence,
+        // including unknown durations, and invalidate every property if a note is added.
+        private int cachedBeams = -1, cachedDots = -1;
+        private double cachedWritten;
+        private boolean writtenReady, longReady, tupletReady, cachedLong, cachedTuplet;
 
         void add(ScoreNoteEvent note) {
             notes.add(note);
             attackNotes = null;
+            cachedBeams = cachedDots = -1;
+            writtenReady = longReady = tupletReady = false;
         }
 
         List<ScoreNoteEvent> attacks() {
             if (attackNotes == null) {
-                boolean moving = notes.stream().anyMatch(n -> !hasIndependentSustain(n));
-                attackNotes =
-                        moving
-                                ? notes.stream()
-                                        .filter(n -> !hasIndependentSustain(n))
-                                        .collect(java.util.stream.Collectors.toList())
-                                : notes;
+                List<ScoreNoteEvent> moving = null;
+                for (ScoreNoteEvent note : notes)
+                    if (!hasIndependentSustain(note)) {
+                        if (moving == null) moving = new ArrayList<>(notes.size());
+                        moving.add(note);
+                    }
+                attackNotes = moving == null ? notes : moving;
             }
             return attackNotes;
         }
 
         int beamCount() {
+            if (cachedBeams < 0) cachedBeams = calculateBeamCount();
+            return cachedBeams;
+        }
+
+        private int calculateBeamCount() {
             int result = 0;
             for (ScoreNoteEvent note : attacks())
                 result = Math.max(result, rhythmicBeamCount(note));
@@ -215,6 +270,11 @@ public final class ScoreNoteTiming {
         }
 
         int augmentationDots() {
+            if (cachedDots < 0) cachedDots = calculateAugmentationDots();
+            return cachedDots;
+        }
+
+        private int calculateAugmentationDots() {
             int result = 0;
             for (ScoreNoteEvent note : attacks())
                 result = Math.max(result, note.augmentationDots());
@@ -222,6 +282,14 @@ public final class ScoreNoteTiming {
         }
 
         double writtenDuration() {
+            if (!writtenReady) {
+                cachedWritten = calculateWrittenDuration();
+                writtenReady = true;
+            }
+            return cachedWritten;
+        }
+
+        private double calculateWrittenDuration() {
             int beams = beamCount();
             if (beams > 0 && hasTuplet()) {
                 double shortest = Double.POSITIVE_INFINITY;
@@ -246,6 +314,14 @@ public final class ScoreNoteTiming {
         }
 
         boolean hasReliableLongDuration() {
+            if (!longReady) {
+                cachedLong = calculateReliableLongDuration();
+                longReady = true;
+            }
+            return cachedLong;
+        }
+
+        private boolean calculateReliableLongDuration() {
             for (ScoreNoteEvent note : notes) {
                 // The white center of a half/whole head is direct symbol evidence. Horizontal
                 // spacing and neighbouring beams must not turn that sustained note into part of
@@ -258,6 +334,14 @@ public final class ScoreNoteTiming {
         }
 
         boolean hasTuplet() {
+            if (!tupletReady) {
+                cachedTuplet = calculateHasTuplet();
+                tupletReady = true;
+            }
+            return cachedTuplet;
+        }
+
+        private boolean calculateHasTuplet() {
             for (ScoreNoteEvent note : notes) if (note.tupletDivisor() > 1) return true;
             return false;
         }
@@ -426,6 +510,14 @@ public final class ScoreNoteTiming {
         List<ScoreNoteEvent> voice = measureVoice(target, notes);
         List<RhythmGroup> groups = rhythmGroups(voice);
         if (groups.isEmpty()) return beatInMeasure(target, (float) safeBeats);
+        double[] parallelClock = parallelWrittenClock(groups, safeBeats);
+        if (parallelClock != null) {
+            double onset = leadingRest(groups);
+            for (int i = 0; i < groups.size(); i++) {
+                if (groups.get(i).contains(target)) return onset;
+                onset += parallelClock[i] + followingRest(groups.get(i));
+            }
+        }
         double pickupStart = openingPickupStart(target, notes, safeBeats);
         if (Double.isFinite(pickupStart)) {
             double onset = pickupStart;
@@ -795,6 +887,7 @@ public final class ScoreNoteTiming {
                 Float.isFinite(beatsPerMeasure)
                         ? Math.max(.125, Math.min(128, beatsPerMeasure))
                         : Double.NaN;
+        if (parallelWrittenClock(groups, safeBeats) != null) return writtenDurationBeats(target);
         if (completePrintedRestRhythm(groups, safeBeats)
                 || sharedShortRestRhythm(target, notes, groups, safeBeats))
             return writtenDurationBeats(target);
@@ -817,7 +910,15 @@ public final class ScoreNoteTiming {
         if (note == null || notes == null) return false;
         // Every check below is confined to this bar/staff. Reuse the session index
         // instead of rescanning the whole piece (including a nested all-note scan).
-        if (SESSION.get() != null) notes = measureVoice(note, notes);
+        TimingSession session = SESSION.get();
+        return session == null
+                ? uncachedIndependentDuration(note, measureVoice(note, notes))
+                : session.independentDuration(note, notes);
+    }
+
+    private static boolean uncachedIndependentDuration(
+            ScoreNoteEvent note, List<ScoreNoteEvent> notes) {
+        if (note.beamCount() > 0 && hasRepeatedDottedVoice(rhythmGroups(notes))) return true;
         // Explicitly different tuplet values at one attack prove parallel rhythms.
         // The faster attack clock must not shorten the other voice's written value.
         for (ScoreNoteEvent other : notes)
@@ -843,6 +944,45 @@ public final class ScoreNoteTiming {
                         && writtenDurationBeats(b) < writtenDurationBeats(a)) return true;
         }
         return false;
+    }
+
+    /** Repeated coincident dotted/shorter values prove two beamed rhythms, rather than
+     * one isolated missing chord dot. Keep the existing dense-onset spacing guard. */
+    private static boolean hasRepeatedDottedVoice(List<RhythmGroup> groups) {
+        int mixed = 0;
+        List<ScoreNoteEvent> voice = new ArrayList<>();
+        for (RhythmGroup group : groups) voice.addAll(group.notes);
+        for (RhythmGroup group : groups) {
+            boolean different = false;
+            for (ScoreNoteEvent dotted : group.notes) {
+                if (dotted.beamCount() == 0 || dotted.augmentationDots() == 0) continue;
+                for (ScoreNoteEvent moving : group.notes) {
+                    if (moving.beamCount() > 0
+                            && moving.augmentationDots() == 0
+                            && writtenDurationBeats(moving) < writtenDurationBeats(dotted)
+                            && independentVoiceOnset(dotted, moving, voice)) different = true;
+                }
+            }
+            if (different && ++mixed >= 2) return true;
+        }
+        return false;
+    }
+
+    /** Sounding length belongs to each voice. The shortest coincident value advances
+     * the moving attack clock only when every symbol/rest exactly fills this meter. */
+    private static double[] parallelWrittenClock(List<RhythmGroup> groups, double beats) {
+        if (!Double.isFinite(beats) || !hasRepeatedDottedVoice(groups)) return null;
+        double[] result = new double[groups.size()];
+        double total = leadingRest(groups);
+        for (int i = 0; i < groups.size(); i++) {
+            double shortest = Double.POSITIVE_INFINITY;
+            for (ScoreNoteEvent note : groups.get(i).notes)
+                shortest = Math.min(shortest, writtenDurationBeats(note));
+            if (!Double.isFinite(shortest) || shortest <= 0) return null;
+            result[i] = shortest;
+            total += shortest + followingRest(groups.get(i));
+        }
+        return Math.abs(total - beats) < .001 ? result : null;
     }
 
     /** In a dense passage, the fixed onset tolerance can span successive attacks.
@@ -958,12 +1098,11 @@ public final class ScoreNoteTiming {
     }
 
     private static double leadingRest(List<RhythmGroup> groups) {
-        return groups.isEmpty()
-                ? 0
-                : groups.get(0).notes.stream()
-                        .mapToDouble(ScoreNoteEvent::leadingRestBeats)
-                        .max()
-                        .orElse(0);
+        if (groups.isEmpty()) return 0;
+        List<ScoreNoteEvent> notes = groups.get(0).notes;
+        double rest = Double.NEGATIVE_INFINITY;
+        for (ScoreNoteEvent note : notes) rest = Math.max(rest, note.leadingRestBeats());
+        return notes.isEmpty() ? 0 : rest;
     }
 
     /** A complete sequence of explicitly read values is an anchor even without rests. */
@@ -1115,6 +1254,12 @@ public final class ScoreNoteTiming {
     }
 
     private static List<RhythmGroup> rhythmGroups(List<ScoreNoteEvent> voice) {
+        TimingSession session = SESSION.get();
+        return session == null ? buildRhythmGroups(voice) : session.groups(voice);
+    }
+
+    /** Groups are read-only after assembly; reuse them only for an unchanged session snapshot. */
+    private static List<RhythmGroup> buildRhythmGroups(List<ScoreNoteEvent> voice) {
         List<RhythmGroup> groups = new ArrayList<>();
         for (ScoreNoteEvent note : voice) {
             RhythmGroup group = groups.isEmpty() ? null : groups.get(groups.size() - 1);
@@ -1528,18 +1673,14 @@ public final class ScoreNoteTiming {
         return gaps.get((gaps.size() - 1) / 2);
     }
 
-    /**
-     * At the guide's analysis resolution, thick/antialiased 32nd beams can split into four dark
-     * bands. Treating that artifact as a 64th halves several notes in a row, which is far more
-     * damaging than the unsupported 64th-note case. The optical guide therefore has a deliberate
-     * 32nd-note floor until a beam-topology recognizer can prove a genuine fourth beam.
-     */
+    /** The optical decoder requires four complete, independently aligned ink cores
+     * before emitting a fourth beam. Preserve that proved 64th-note value here. */
     private static int rhythmicBeamCount(ScoreNoteEvent note) {
-        return note == null ? 0 : Math.max(0, Math.min(3, note.beamCount()));
+        return note == null ? 0 : Math.max(0, Math.min(4, note.beamCount()));
     }
 
     private static double durationForBeam(int beams, int dots) {
-        return 1.0 / (1 << Math.max(1, Math.min(3, beams))) * dotMultiplier(dots);
+        return 1.0 / (1 << Math.max(1, Math.min(4, beams))) * dotMultiplier(dots);
     }
 
     private static double dotMultiplier(int dots) {

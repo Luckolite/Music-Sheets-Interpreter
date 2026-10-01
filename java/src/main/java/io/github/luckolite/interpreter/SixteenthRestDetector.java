@@ -809,6 +809,9 @@ final class SixteenthRestDetector {
                     && deepLowered
                     && continuedRestTail(gray, width, height, left, right, maxY, gap)) return;
         }
+        if (eighth
+                && deepLowered
+                && eighthRestLetterRow(gray, width, height, left, right, minY, maxY, gap)) return;
         float centerX = (left + right) * .5f / width;
         float centerY = (minY + maxY) * .5f / height;
         for (int m = 0; m < measures.size(); m++) {
@@ -825,7 +828,10 @@ final class SixteenthRestDetector {
                     if (note.measureIndex() == m
                             && note.staffIndex() == staff.index()
                             && note.staffCount() == staff.count()
-                            && ScoreNoteTiming.hasIndependentSustain(note)
+                            && (ScoreNoteTiming.hasIndependentSustain(note)
+                                    || quarter
+                                            && movingVoiceBelow(
+                                                    gray, width, height, region, note, gap))
                             && note.pageY() * height > maxY + gap * .65f
                             && Math.abs(
                                             (region.left()
@@ -1006,6 +1012,78 @@ final class SixteenthRestDetector {
             }
         }
         return lobes;
+    }
+
+    /** An italic descender can resemble a lowered eighth rest. Three separately
+     * bounded outline letters with a shared baseline establish the text row. */
+    private static boolean eighthRestLetterRow(
+            byte[] gray,
+            int width,
+            int height,
+            int left,
+            int right,
+            int minY,
+            int maxY,
+            float gap) {
+        int x0 = Math.max(0, Math.round(left - gap * 5)),
+                x1 = Math.min(width - 1, Math.round(right + gap * 5));
+        int y0 = Math.max(0, Math.round(minY - gap * .55f)),
+                y1 = Math.min(height - 1, Math.round(maxY + gap * .15f));
+        int w = x1 - x0 + 1, h = y1 - y0 + 1;
+        boolean[] seen = new boolean[w * h];
+        int[] queue = new int[w * h];
+        List<int[]> letters = new ArrayList<>();
+        for (int origin = 0; origin < seen.length; origin++) {
+            if (seen[origin] || (gray[(y0 + origin / w) * width + x0 + origin % w] & 255) >= 170)
+                continue;
+            int take = 0, size = 1, area = 0, a = x1, b = x0, c = y1, d = y0;
+            queue[0] = origin;
+            seen[origin] = true;
+            while (take < size) {
+                int at = queue[take++], x = x0 + at % w, y = y0 + at / w;
+                area++;
+                a = Math.min(a, x);
+                b = Math.max(b, x);
+                c = Math.min(c, y);
+                d = Math.max(d, y);
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++) {
+                        int xx = x + dx, yy = y + dy;
+                        if (xx < x0 || xx > x1 || yy < y0 || yy > y1) continue;
+                        int next = (yy - y0) * w + xx - x0;
+                        if (!seen[next] && (gray[yy * width + xx] & 255) < 170) {
+                            seen[next] = true;
+                            queue[size++] = next;
+                        }
+                    }
+            }
+            int glyphWidth = b - a + 1, glyphHeight = d - c + 1;
+            if (a == x0
+                    || b == x1
+                    || c == y0
+                    || d == y1
+                    || a <= right && b >= left
+                    || glyphWidth < gap * .35f
+                    || glyphWidth > gap * 1.4f
+                    || glyphHeight < gap * .65f
+                    || glyphHeight > gap * 1.65f
+                    || Math.abs(c - minY) > gap * .4f
+                    || d > maxY - gap * .25f
+                    || area < gap * gap * .10f
+                    || area > glyphWidth * glyphHeight * .72f) continue;
+            letters.add(new int[] {a, b, d});
+        }
+        for (int[] seed : letters) {
+            int count = 0, first = right, last = left;
+            for (int[] glyph : letters)
+                if (Math.abs(glyph[2] - seed[2]) <= gap * .22f) {
+                    count++;
+                    first = Math.min(first, glyph[0]);
+                    last = Math.max(last, glyph[1]);
+                }
+            if (count >= 3 && last - first >= gap * 3) return true;
+        }
+        return false;
     }
 
     /** A staff mask must not turn a longer connected glyph into an eighth rest. */
