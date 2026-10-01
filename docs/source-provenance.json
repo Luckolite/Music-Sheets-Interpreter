@@ -366,10 +366,10 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "858d4511b3a8653375ab4ff32550639e4c84bdd884c67ff58a4436722af54cba",
+      "source_sha256": "7a30583591571f1919a432f09838536d7ed1eb322334624adb182b5c1bccff00",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Reviewed original row-major projection with per-call raw row statistics and scratch reuse; staff-specific masks and detection order unchanged. Package-only standalone adapter, original synthetic parity regression, no private scores, new dependencies or model changes. Immutable app snapshot based on released 840.",
-      "source_normalized_sha256": "858d4511b3a8653375ab4ff32550639e4c84bdd884c67ff58a4436722af54cba",
+      "source_normalized_sha256": "7a30583591571f1919a432f09838536d7ed1eb322334624adb182b5c1bccff00",
       "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-rest-tuplet-841-source"
     },
     "TempoChangeDetector.java": {
