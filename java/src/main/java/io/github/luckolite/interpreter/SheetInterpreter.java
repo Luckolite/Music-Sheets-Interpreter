@@ -221,6 +221,9 @@ public final class SheetInterpreter {
                     .noneMatch(explicit -> explicit.measureIndex() == meter.measureIndex()))
                 meters.add(meter);
         meters.sort(java.util.Comparator.comparingInt(ScoreMeterChange::measureIndex));
+        var dynamicDetection =
+                ScoreDynamicsDetector.detectWithEvidence(
+                        dynamicWords, staffs, measures, notes, gray, width, height);
         var decoded =
                 TablatureDecoder.apply(
                         new ScorePageInterpretation(
@@ -245,14 +248,7 @@ public final class SheetInterpreter {
                                 rhythm.rests(),
                                 PlayingTechniqueDetector.detect(
                                         words, staffs, measures, notes, width, height),
-                                ScoreDynamicsDetector.detect(
-                                        dynamicWords,
-                                        staffs,
-                                        measures,
-                                        notes,
-                                        gray,
-                                        width,
-                                        height)),
+                                dynamicDetection.changes()),
                         tabs,
                         width,
                         height);
@@ -267,13 +263,16 @@ public final class SheetInterpreter {
                         width,
                         height,
                         !tabs.isEmpty());
-        return finalScore.withPlaybackDirections(
-                ScoreNavigationDetector.detect(
-                        words,
-                        NavigationSegnoGlyphs.detect(gray, width, height, staffs),
-                        staffs,
-                        finalScore.measures(),
-                        width,
-                        height));
+        return finalScore
+                .withExpressiveEvents(
+                        finalScore.measures().isEmpty() ? List.of() : dynamicDetection.events())
+                .withPlaybackDirections(
+                        ScoreNavigationDetector.detect(
+                                words,
+                                NavigationSegnoGlyphs.detect(gray, width, height, staffs),
+                                staffs,
+                                finalScore.measures(),
+                                width,
+                                height));
     }
 }

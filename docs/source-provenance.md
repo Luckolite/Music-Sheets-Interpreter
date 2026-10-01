@@ -12,6 +12,16 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Lexical crescendo/diminuendo continuation preserves bounded OCR evidence in the
+existing expressive frame and joins only contiguous pages with observed matching
+staff ownership. Physical page edges, graphic hairpins, movement restarts, missing
+arrivals and fixed targets remain distinct. The shared continuation helper and
+detector have exact package-only parity with the app. The Android analyzer,
+desktop page bridge, conversion/viewer assembly and desktop audio assembly use
+those same helpers; their scoped adapter changes were reviewed separately.
+Original synthetic ownership/geometry and semantic-frame regressions contain no
+private score material. No model, external dependency or wire layout changed.
+
 [source-provenance.json](source-provenance.json) records the upstream paths,
 reviewed source hashes and base commits used for maintenance. The hashes describe
 the reviewed upstream files, not the formatted standalone copies. A base commit

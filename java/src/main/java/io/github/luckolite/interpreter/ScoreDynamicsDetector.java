@@ -267,7 +267,26 @@ final class ScoreDynamicsDetector {
             byte[] gray,
             int width,
             int height) {
+        return detectWithEvidence(words, staffs, measures, notes, gray, width, height).changes();
+    }
+
+    record Detection(List<ScoreDynamicChange> changes, List<ScoreExpressiveEvent> events) {
+        Detection {
+            changes = List.copyOf(changes);
+            events = List.copyOf(events);
+        }
+    }
+
+    static Detection detectWithEvidence(
+            List<PlayingTechniqueDetector.Word> words,
+            List<PlayingTechniqueDetector.Staff> staffs,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes,
+            byte[] gray,
+            int width,
+            int height) {
         List<ScoreDynamicChange> result = new ArrayList<>();
+        Map<ScoreDynamicChange, PlayingTechniqueDetector.Word> openWords = new HashMap<>();
         var shared = GrandStaffDynamics.bracedPairs(staffs, measures, gray, width, height);
         for (var word : words) {
             float db = level(word.text());
@@ -517,8 +536,8 @@ final class ScoreDynamicsDetector {
                         && c.measureIndex() == a.measure
                         && c.staffIndex() == owner.index()
                         && Math.abs(c.positionInMeasure() - a.position) < .025f) duplicate = true;
-            if (!duplicate && (end.measure > a.measure || end.position > a.position))
-                result.add(
+            if (!duplicate && (end.measure > a.measure || end.position > a.position)) {
+                var change =
                         new ScoreDynamicChange(
                                 a.measure,
                                 a.position,
@@ -528,12 +547,18 @@ final class ScoreDynamicsDetector {
                                 end.position,
                                 0,
                                 direction,
-                                common != null));
+                                common != null);
+                result.add(change);
+                if (end.measure == measures.size() - 1 && end.position == 1)
+                    openWords.put(change, word);
+            }
         }
         // A keyboard brace inside an ensemble shares only its two staves, not the
         // soloist or every other part. Materialize those lanes in the existing wire format.
         List<ScoreDynamicChange> scoped = new ArrayList<>();
+        List<ScoreExpressiveEvent> events = new ArrayList<>();
         for (var c : result) {
+            int first = scoped.size();
             if (c.sharedStaffs() && c.staffCount() > 2) {
                 for (int staff = c.staffIndex(); staff <= c.staffIndex() + 1; staff++)
                     scoped.add(
@@ -550,12 +575,18 @@ final class ScoreDynamicsDetector {
                                     c.fixedTarget(),
                                     false));
             } else scoped.add(c);
+            var word = openWords.get(c);
+            if (word != null)
+                for (int i = first; i < scoped.size(); i++)
+                    events.add(
+                            ScoreDynamicContinuation.evidence(
+                                    scoped.get(i), word.text(), word.left()));
         }
         scoped.sort(
                 Comparator.comparingInt(ScoreDynamicChange::measureIndex)
                         .thenComparingDouble(ScoreDynamicChange::positionInMeasure)
                         .thenComparingInt(c -> c.direction() == 0 ? 0 : 1));
-        return List.copyOf(scoped);
+        return new Detection(scoped, events);
     }
 
     private static boolean openHairpinInterior(

@@ -306,10 +306,10 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "76732db66cc87ed6942e8cd527d4cdbb0aa35a27405ec1e5cf82c4f5f0cb8648",
+      "source_sha256": "1dc0fa2f9775a519377c7de803836aa64bc5d7b7b8df786c3cc349828dcc7d14",
+      "source_normalized_sha256": "7fbbab68e50025cc56fa8130576236ba400e4192359a2b960f83a558de5cac95",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed sudden-dynamic qualifier retention through OCR and glyph refinement, with bounded same-bar unique note attachment. Ordinary/far/ambiguous during-note levels retain printed anchors. Shared semantic helper used by Android glyph adapters; native constructor retains its pre-existing file/resource loading adapter. Original synthetic and licensed shipped-glyph regressions; no private score, new dependency or model change.",
-      "source_normalized_sha256": "9ecd3ed0e3d56eac7922823cad52caf5878231abe305fd428e9eec0be9f85bdd"
+      "review_note": "Reviewed lexical-only page continuation with retained OCR evidence, exact staff topology, contiguous offsets and movement-restart guard. Graphic/fixed/unproven/missing destinations preserve existing ranges. Exact package-only standalone parity; Android/native producers and viewer/conversion/native-audio adapter hunks separately reviewed. Original synthetic geometry and semantic-frame tests; no private score, model or new dependency."
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
@@ -943,6 +943,13 @@
       "source_sha256": "76db58e5ba1eef7b085edc0673562b060f81e890940f283e159421894d4d4124",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "source_normalized_sha256": "76db58e5ba1eef7b085edc0673562b060f81e890940f283e159421894d4d4124"
+    },
+    "ScoreDynamicContinuation.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicContinuation.java",
+      "source_sha256": "4e31400dfdf5cf846a6bee3a2105f4a55982a44b8c7b7f77f5c30aee088b76e3",
+      "source_normalized_sha256": "8f7a55519809f32a5c35b5ae19085e37b0e5bbf08f172dc455f47ddb31a30ae6",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Reviewed lexical-only page continuation with retained OCR evidence, exact staff topology, contiguous offsets and movement-restart guard. Graphic/fixed/unproven/missing destinations preserve existing ranges. Exact package-only standalone parity; Android/native producers and viewer/conversion/native-audio adapter hunks separately reviewed. Original synthetic geometry and semantic-frame tests; no private score, model or new dependency."
     }
   }
 }
