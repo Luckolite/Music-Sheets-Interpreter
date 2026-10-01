@@ -198,6 +198,13 @@ public class MusicXmlWrittenDurationTest {
     }
 
     @Test
+    public void largePositiveWrittenDurationRetainsEveryBit() throws Exception {
+        assertEquals(
+                6148914691236517204L,
+                ticks(note("quarter", 107, 3, 2, ""), 160, Long.MAX_VALUE - 1));
+    }
+
+    @Test
     public void unknownTypeIsRejected() throws Exception {
         rejects(note("invalid", 23, 7, 4, ""), 160, 10080);
     }

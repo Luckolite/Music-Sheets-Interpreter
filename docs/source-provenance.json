@@ -970,8 +970,8 @@
     },
     "MusicXmlWrittenDuration.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MusicXmlWrittenDuration.java",
-      "source_sha256": "5f1773a0507eca7ba0c47a85ce6ce05b7f37a878e24f8f1d1f5c6967b59a7387",
-      "source_normalized_sha256": "ca191b03600b1698f44cd37d994834220c0910a884e831e0d92ba74701ad88ea",
+      "source_sha256": "25ef26238d1bc8222c10648ec5e1c8bf8c183760938ab0b736c69a0b30eec939",
+      "source_normalized_sha256": "e2c23d5cf94321303a80907752b6459d4231183be8dc6aaa5e255a7f369834bd",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Original pure-JDK engraved MusicXML duration recovery. Exact cumulative written type, direct dots and time-modification ratio are used only when the exporter division grid cannot represent them and the serialized duration is exactly the nearest exporter unit. Explicit intended durations on exact grids are preserved. Package-only app parity; original procedural duration/ratio/precision/voice-clock controls. App source-identity layout adapter reviewed separately, remains strict, and is not copied. No private scores, dependencies, models or wire layout changes."
     }

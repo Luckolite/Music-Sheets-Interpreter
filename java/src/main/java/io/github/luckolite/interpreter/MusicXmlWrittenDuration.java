@@ -73,7 +73,11 @@ public final class MusicXmlWrittenDuration {
                     if (ticks[1].signum() != 0 || ticks[0].signum() <= 0)
                         throw new IOException(
                                 "Written tuplet exceeds the requested timing precision");
-                    return ticks[0].longValueExact();
+                    // longValueExact is unavailable on older Android releases.
+                    // The positive value fits a signed long exactly up to 63 bits.
+                    if (ticks[0].bitLength() > 63)
+                        throw new IOException("Written tuplet duration exceeds a signed long");
+                    return ticks[0].longValue();
                 }
             }
             // Explicit intended durations stay unchanged when no rounding is proved.
