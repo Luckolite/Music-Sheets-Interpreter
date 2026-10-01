@@ -7,6 +7,49 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class WholeNoteMeterOcrTest {
+    @Test
+    public void repeatedThreeBeatBarsRejectSpuriousOneOverFour() {
+        assertTrue(filtered(1, 4, 3).isEmpty());
+    }
+
+    @Test
+    public void genuineOneOverFourIsPreserved() {
+        assertEquals(1, filtered(1, 4, 1).size());
+    }
+
+    @Test
+    public void oneBarCannotRejectOneOverFour() {
+        var input = List.of(new ScoreMeterChange(0, 1, 4));
+        assertEquals(input, MeterChangeDetector.filterWholeNoteOcrReadings(input, bars(3), 1));
+    }
+
+    @Test
+    public void uncertainNotesCannotRejectOneOverFour() {
+        var input = List.of(new ScoreMeterChange(0, 1, 4));
+        var notes = new ArrayList<ScoreNoteEvent>();
+        for (int m = 0; m < 2; m++)
+            notes.add(
+                    new ScoreNoteEvent(
+                            m,
+                            .05f,
+                            4,
+                            0,
+                            1,
+                            .5f,
+                            false,
+                            0,
+                            0,
+                            ScoreNoteEvent.ACCIDENTAL_FROM_KEY,
+                            0));
+        assertEquals(input, MeterChangeDetector.filterWholeNoteOcrReadings(input, notes, 2));
+    }
+
+    @Test
+    public void laterMeterBoundsOneOverFourEvidence() {
+        var input = List.of(new ScoreMeterChange(0, 1, 4), new ScoreMeterChange(1, 3, 4));
+        assertEquals(input, MeterChangeDetector.filterWholeNoteOcrReadings(input, bars(3), 2));
+    }
+
     private List<ScoreNoteEvent> bars(int beats) {
         var notes = new ArrayList<ScoreNoteEvent>();
         for (int m = 0; m < 2; m++)

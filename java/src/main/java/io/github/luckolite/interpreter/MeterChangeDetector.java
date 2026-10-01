@@ -176,9 +176,9 @@ public final class MeterChangeDetector {
         return Math.abs(left - right) < .04;
     }
 
-    /** Tiny stem/rest crops can OCR as 1/1, 2/1 or 1/2. Reject those readings only
-     * when multiple complete written bars contradict them. Other denominators
-     * remain unchanged: missed beams can make even genuine compound bars disagree. */
+    /** Tiny stem/rest crops can OCR as 1/1, 2/1, 1/2 or 1/4. Reject those readings only
+     * when multiple complete written bars contradict them. Other readings remain
+     * unchanged: missed beams can make even genuine compound bars disagree. */
     public static List<ScoreMeterChange> filterWholeNoteOcrReadings(
             List<ScoreMeterChange> readings, List<ScoreNoteEvent> notes, int measureCount) {
         var sorted =
@@ -191,7 +191,8 @@ public final class MeterChangeDetector {
             int next = i + 1 < sorted.size() ? sorted.get(i + 1).measureIndex() : measureCount;
             boolean suspicious =
                     choice.denominator() == 1
-                            || choice.numerator() == 1 && choice.denominator() == 2;
+                            || choice.numerator() == 1
+                                    && (choice.denominator() == 2 || choice.denominator() == 4);
             if (!suspicious || !contradictedByWrittenBars(choice, notes, next)) result.add(choice);
         }
         return List.copyOf(result);

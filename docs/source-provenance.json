@@ -228,9 +228,10 @@
     },
     "MeterChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterChangeDetector.java",
-      "source_sha256": "e2006f54bc4effb4884f4f1aefe9724b96ff524b34784cbc28742bc41aa0d1e7",
+      "source_sha256": "10c5ffffa0ffb57e740f7156bb113b0f9c777d73af8ec44e7a4ce52c838cafde",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "06d8dc43aa2e78140ea5693a200b6fa7901d1e6d841fa34f6f9792f6bbc396d1"
+      "review_note": "Reviewed one-beat OCR meter rejection against the stated app base: 1/4 requires the existing two complete contradictory written bars, with genuine, unknown, single-bar and later-change controls. Standalone port only changes this bounded predicate and comment; no new helpers, dependencies, weights or private score evidence.",
+      "source_normalized_sha256": "8c92aa28713e169b72870247b56820860e272ca302129394d630555dda16e1db"
     },
     "MultiMeasureRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MultiMeasureRestDetector.java",
