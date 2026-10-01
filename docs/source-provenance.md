@@ -12,6 +12,13 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Overwide semantic staff bands no longer erase a curved raw tie crest. Actual
+straight rows remain occluded, and every remaining thin stroke must pass the
+existing continuity, returning shoulders and curvature checks. Original generated
+curves cover mislabeled crests above and below; bare and partial rules, sloped
+beams, one shoulder and broken middles remain negative controls. No inferred
+ink, private source raster, model, dependency or record-layout change is added.
+
 Antialiased returning ties crossing staff rules retain both shoulders with a
 dark core and almost complete, independently curved stroke coverage. Strict
 local contrast remains required. Original generated vectors test above and below

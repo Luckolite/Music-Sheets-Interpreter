@@ -17837,7 +17837,10 @@ final class OmrScoreInterpreter {
                                 }
                                 if (paper < shade + 20) continue;
                             }
-                            if (straightRows[yy] || labels[at] == OmrMeasurePostProcessor.STAFF) {
+                            // Semantic staff bands can cover a curved tie crest. Raw
+                            // straight rules stay occluded; the remaining thin stroke
+                            // must independently pass the returning-curve checks.
+                            if (straightRows[yy]) {
                                 if (obscuredY < 0) obscuredY = yy;
                             } else {
                                 // Measure the printed stroke center, not whichever edge

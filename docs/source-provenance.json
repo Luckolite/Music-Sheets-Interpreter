@@ -282,11 +282,11 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "140f608d00f0b0faa908ba16c2ba8aceee50a7ea21efac4d761234832a57b0c3",
+      "source_sha256": "d1bf0b01f1780839d739b430d2e3f8cd2a05499e699375feb6ef3b670baa37cf",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Reviewed global antialiased staff-crossing returning arc repair. Near-complete coverage, two independently visible returning shoulders, dark core, actual curved stroke center and strict local contrast remain required. Original vector/raster synthetic tests cover above/below arcs, bare rules, nonreturning beams, one shoulder, missing middle and uniformly pale curves. Ultimate arc matcher token parity checked between standalone and app; no weights, dependencies or wire-layout change; all private source evidence excluded.",
-      "source_normalized_sha256": "829530fdfed8a90f313ccadde448745b602a0bd4af1ace2ef63964d20b5ce831"
+      "review_note": "Reviewed global raw returning-curve evidence through overwide semantic staff bands, plus bounded antialiased shoulders through genuine raw rules. Actual straight rows stay occluded; raw thin-stroke centers, continuity, curvature, dark-core and local-contrast checks remain. Original synthetic above/below mislabeled crests reject rules, partial straight rules, nonreturning beams, one shoulder and missing middles. Ultimate matcher token parity verified; models/dependencies/wire layouts unchanged; private score evidence excluded.",
+      "source_normalized_sha256": "edbe4e873512732a160de3ba4d9d98bdd93b11a6d83a79e8cf1e40fcfc534b92"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
