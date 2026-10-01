@@ -99,6 +99,7 @@ final class NoteArticulationDetector {
                         gy1,
                         pixels.size(),
                         pixels.stream().mapToInt(Integer::intValue).toArray());
+        if (interiorCrossbar(glyph, width, .45f)) return false;
         if (classify(glyph, width, gap, above) == NoteArticulation.MARCATO) return true;
         // Removing staff stripes can trim both the peak and feet of a small caret.
         // Only relax its aspect ratio when both edges were actually cut by rules.
@@ -197,7 +198,8 @@ final class NoteArticulationDetector {
         double rightY = (rightTop - g.top) / (double) Math.max(1, g.bottom - g.top);
         if (leftY > .45 || rightY > .45) return false;
         int hits = 0;
-        boolean[] bins = new boolean[12];
+        int binCount = Math.min(12, g.right - g.left + 1);
+        boolean[] bins = new boolean[binCount];
         for (int p : g.pixels) {
             double x = (p % width - g.left) / (double) Math.max(1, g.right - g.left);
             double y = (p / width - g.top) / (double) Math.max(1, g.bottom - g.top);
@@ -209,12 +211,12 @@ final class NoteArticulationDetector {
             double distance = Math.abs(y - expected) / Math.sqrt(1 + slope * slope);
             if (distance < .14 + .75 / Math.max(1, Math.min(g.right - g.left, g.bottom - g.top))) {
                 hits++;
-                bins[Math.min(11, (int) (x * 12))] = true;
+                bins[Math.min(binCount - 1, (int) (x * binCount))] = true;
             }
         }
         int covered = 0;
         for (boolean bin : bins) if (bin) covered++;
-        return hits >= g.count * .85 && covered >= 10;
+        return hits >= g.count * .85 && covered >= Math.ceil(binCount * 10d / 12);
     }
 
     private static boolean recoveryStaffRule(
@@ -340,6 +342,8 @@ final class NoteArticulationDetector {
                                 : classify(glyph, width, note.gap, glyph.y() < note.y);
                 if (candidate == 0)
                     candidate = roundedAngular(glyph, width, note.gap, glyph.y() < note.y);
+                if (candidate == NoteArticulation.MARCATO && interiorCrossbar(glyph, width, .45f))
+                    continue;
                 // A faint rounded dash needs nearby note ownership, not a lyric
                 // extender several spaces beyond the staff.
                 if (candidate == 0 && dy <= 3f && roundedTenuto(glyph, width, note.gap))
@@ -360,8 +364,12 @@ final class NoteArticulationDetector {
                     continue;
                 if (raw
                         && (candidate == NoteArticulation.TENUTO
-                                || candidate == NoteArticulation.STACCATO)
+                                || candidate == NoteArticulation.STACCATO
+                                || candidate == NoteArticulation.STACCATISSIMO)
                         && directionText(glyph, glyphs, note.gap, labels)) continue;
+                if (raw
+                        && candidate == NoteArticulation.STACCATO
+                        && initialsPunctuation(glyph, glyphs, note.gap, labels)) continue;
                 if (raw
                         && candidate == NoteArticulation.TENUTO
                         && continuedDashRow(glyph, glyphs, notes, note)) continue;
@@ -371,7 +379,9 @@ final class NoteArticulationDetector {
                     continue;
                 if (semanticNotation
                         && (!raw
-                                || candidate != NoteArticulation.STACCATO
+                                || (candidate != NoteArticulation.STACCATO
+                                        && (candidate != NoteArticulation.STACCATISSIMO
+                                                || !filledTaper(glyph, width, glyph.y() < note.y)))
                                 || nearHead(glyph, notes))) continue;
                 if (candidate == NoteArticulation.TENUTO && nearHead(glyph, notes)) continue;
                 if (raw
@@ -449,7 +459,7 @@ final class NoteArticulationDetector {
         if (!Float.isFinite(gap)
                 || !Float.isFinite(note.x)
                 || !Float.isFinite(note.y)
-                || gap < 10
+                || gap < 6
                 || gap > Math.min(width, height)
                 || note.x < 0
                 || note.x >= width
@@ -465,6 +475,8 @@ final class NoteArticulationDetector {
         boolean any = false;
         for (int y = top; y <= bottom; y++) {
             rules[y - top] = thinIndependentRule(gray, width, height, Math.round(note.x), y, gap);
+            if (!rules[y - top])
+                rules[y - top] = occludedStaffRule(gray, width, height, Math.round(note.x), y, gap);
             any |= rules[y - top];
         }
         if (!any) return false;
@@ -526,6 +538,10 @@ final class NoteArticulationDetector {
                         if (nx < 0 || nx >= w) continue;
                         int next = ny * w + nx;
                         if ((gray[(top + ny) * width + left + nx] & 255) >= 155) continue;
+                        // A beam can meet the far side of a staff stripe. Keep
+                        // that long horizontal body out of the caret component.
+                        if (longHorizontalBody(gray, width, height, left + nx, top + ny, gap))
+                            continue;
                         joined = true;
                         if (!seen[next]) {
                             seen[next] = true;
@@ -592,7 +608,8 @@ final class NoteArticulationDetector {
                             width)
                     && !interiorCrossbar(glyph, width, .45f)
                     && (Math.abs(glyph.y() - note.y) <= gap * 3f
-                            || beamOwnedMarcato(glyph, note, gray, width, height))) return true;
+                            || beamOwnedMarcato(glyph, note, gray, width, height, true)))
+                return true;
         }
         return false;
     }
@@ -743,6 +760,76 @@ final class NoteArticulationDetector {
         return false;
     }
 
+    /** Two initials with two aligned periods prove punctuation, rather than note dots. */
+    private static boolean initialsPunctuation(
+            Glyph target, List<Glyph> glyphs, float gap, byte[] labels) {
+        List<Glyph> letters = new ArrayList<>(), periods = new ArrayList<>();
+        for (Glyph glyph : glyphs) {
+            if (Math.abs(glyph.x() - target.x()) > gap * 7f
+                    || Math.abs(glyph.bottom - target.bottom) > gap * .45f) continue;
+            float w = glyph.right - glyph.left + 1, h = glyph.bottom - glyph.top + 1;
+            if (w <= gap * .62f && h <= gap * .62f && w / h > .65f && w / h < 1.55f) {
+                periods.add(glyph);
+                continue;
+            }
+            if (h < gap * .65f || h > gap * 2.2f || w < gap * .25f || w > gap * 3f) continue;
+            int notation = 0;
+            for (int pixel : glyph.pixels)
+                if (labels[pixel] == OmrMeasurePostProcessor.NOTEHEAD
+                        || labels[pixel] == OmrMeasurePostProcessor.STEM_OR_REST
+                        || labels[pixel] == OmrMeasurePostProcessor.CLEF_OR_KEY
+                        || labels[pixel] == OmrMeasurePostProcessor.STAFF) notation++;
+            if (notation <= glyph.count * .25f) letters.add(glyph);
+        }
+        for (Glyph first : letters)
+            for (Glyph second : letters) {
+                if (second.left <= first.right || second.left - first.right > gap * 1.3f) continue;
+                for (Glyph firstPeriod : periods) {
+                    if (!periodAfterInitial(firstPeriod, first, gap)
+                            || firstPeriod.right >= second.left
+                            || firstPeriod.left - first.right > gap * .65f) continue;
+                    for (Glyph secondPeriod : periods)
+                        if (periodAfterInitial(secondPeriod, second, gap)
+                                && secondPeriod.left - second.right <= gap * .65f
+                                && (target == firstPeriod || target == secondPeriod)) return true;
+                }
+            }
+        return false;
+    }
+
+    /** A beam-covered rule needs continuous ink to a proved uncovered staff section. */
+    private static boolean occludedStaffRule(
+            byte[] gray, int width, int height, int x, int y, float gap) {
+        if ((gray[y * width + x] & 255) >= 155) return false;
+        for (int side : new int[] {-1, 1})
+            for (int spaces = 4; spaces <= 14; spaces++) {
+                int proof = x + side * Math.round(gap * spaces);
+                if (proof < 0 || proof >= width) break;
+                if (!edgeStaffRule(gray, width, height, proof, y, gap, 2)) continue;
+                int hits = 0, samples = Math.abs(proof - x) + 1;
+                for (int xx = Math.min(x, proof); xx <= Math.max(x, proof); xx++)
+                    if ((gray[y * width + xx] & 255) < 155) hits++;
+                if (hits >= samples * .95f) return true;
+            }
+        return false;
+    }
+
+    private static boolean longHorizontalBody(
+            byte[] gray, int width, int height, int x, int y, float gap) {
+        int left = x, right = x, reach = Math.max(3, Math.round(gap * 2));
+        while (left > 0 && x - left < reach && (gray[y * width + left - 1] & 255) < 155) left--;
+        while (right + 1 < width && right - x < reach && (gray[y * width + right + 1] & 255) < 155)
+            right++;
+        return right - left + 1 >= gap * 1.5f;
+    }
+
+    /** Italic capitals can overhang a detached baseline period horizontally. */
+    private static boolean periodAfterInitial(Glyph period, Glyph letter, float gap) {
+        return period.x() > letter.x()
+                && period.left >= letter.right - gap * .25f
+                && period.left - letter.right <= gap * .65f;
+    }
+
     /** A continued text or pedal line has regular spacing independent of note onsets. */
     private static boolean continuedDashRow(
             Glyph target, List<Glyph> glyphs, List<Anchor> notes, Anchor owner) {
@@ -852,6 +939,11 @@ final class NoteArticulationDetector {
     /** A distant marcato needs its head's shaft terminating at a thick attached beam. */
     private static boolean beamOwnedMarcato(
             Glyph mark, Anchor note, byte[] gray, int width, int height) {
+        return beamOwnedMarcato(mark, note, gray, width, height, false);
+    }
+
+    private static boolean beamOwnedMarcato(
+            Glyph mark, Anchor note, byte[] gray, int width, int height, boolean ruleJoined) {
         if (interiorCrossbar(mark, width)) return false;
         int direction = mark.y() < note.y ? -1 : 1;
         int edge = direction < 0 ? mark.bottom : mark.top;
@@ -864,7 +956,10 @@ final class NoteArticulationDetector {
                     offset++) {
                 int x = Math.round(note.x) + side * offset;
                 if (x < 1 || x >= width - 1) continue;
-                for (int separation = Math.max(1, Math.round(note.gap * .25f));
+                for (int separation =
+                                ruleJoined
+                                        ? -Math.round(note.gap * .25f)
+                                        : Math.max(1, Math.round(note.gap * .25f));
                         separation <= Math.round(note.gap * 2.5f);
                         separation++) {
                     int endpoint = edge - direction * separation;
@@ -872,7 +967,8 @@ final class NoteArticulationDetector {
                             || head >= height
                             || endpoint < 0
                             || endpoint + thickness >= height
-                            || direction * (endpoint - head) < note.gap * 3f) continue;
+                            || direction * (endpoint - head) < note.gap * (ruleJoined ? 2.5f : 3f))
+                        continue;
                     int hits = 0, total = Math.abs(endpoint - head) + 1;
                     for (int y = Math.min(head, endpoint); y <= Math.max(head, endpoint); y++)
                         if ((gray[y * width + x] & 255) < 155) hits++;
@@ -888,9 +984,11 @@ final class NoteArticulationDetector {
                     // cross a longer shaft or staff rule on the way toward the mark.
                     int firstBeyond = direction < 0 ? 1 : thickness;
                     int look =
-                            Math.min(
-                                    Math.max(3, Math.round(note.gap * .6f)),
-                                    separation - firstBeyond);
+                            ruleJoined && separation <= Math.round(note.gap * .25f)
+                                    ? Math.max(3, Math.round(note.gap * .6f))
+                                    : Math.min(
+                                            Math.max(3, Math.round(note.gap * .6f)),
+                                            separation - firstBeyond);
                     if (look < 3) continue;
                     int beyondInk = 0;
                     for (int d = firstBeyond; d < firstBeyond + look; d++) {
@@ -945,7 +1043,7 @@ final class NoteArticulationDetector {
             }
             // Two separated columns on each side establish thinness even when
             // a sloped beam or text stroke intersects other samples of the rule.
-            if (thin < 2) return false;
+            if (thin < 2) return edgeStaffRule(gray, width, height, x, y, gap);
         }
         return true;
     }
@@ -953,12 +1051,17 @@ final class NoteArticulationDetector {
     /** At a staff end, one long thin side plus two parallel rules proves the line. */
     private static boolean edgeStaffRule(
             byte[] gray, int width, int height, int x, int y, float gap) {
+        return edgeStaffRule(gray, width, height, x, y, gap, 1);
+    }
+
+    private static boolean edgeStaffRule(
+            byte[] gray, int width, int height, int x, int y, float gap, int tolerance) {
         for (int side : new int[] {-1, 1}) {
             if (!thinRuleSide(gray, width, height, x, y, gap, side)) continue;
             int parallel = 0;
             for (int offset : new int[] {-2, -1, 1, 2}) {
                 boolean found = false;
-                for (int delta = -1; delta <= 1; delta++)
+                for (int delta = -tolerance; delta <= tolerance; delta++)
                     found |=
                             thinRuleSide(
                                     gray,
@@ -1005,7 +1108,9 @@ final class NoteArticulationDetector {
 
     private static boolean interiorCrossbar(Glyph mark, int width, float minimumSpan) {
         int w = mark.right - mark.left + 1, h = mark.bottom - mark.top + 1, consecutive = 0;
-        for (int y = mark.top + (int) Math.ceil(h * .35f);
+        // Rasterized arms can meet for several rows near a small caret's
+        // peak. A crossbar must cross the open lower half of its interior.
+        for (int y = mark.top + (int) Math.ceil(h * .5f);
                 y <= mark.top + (int) Math.floor(h * .8f);
                 y++) {
             int left = Integer.MAX_VALUE, right = -1, count = 0;
@@ -1418,7 +1523,6 @@ final class NoteArticulationDetector {
                 && h >= gap * .6f
                 && h <= gap * 1.7f
                 && h / w >= .45f
-                && chevronVertical(g, width, true)
                 && openPeak(g, width)
                 && !interiorCrossbar(g, width, .45f)) return NoteArticulation.MARCATO;
         return 0;
@@ -1437,7 +1541,8 @@ final class NoteArticulationDetector {
 
     private static boolean fit(Glyph g, int width, int kind) {
         int hits = 0;
-        boolean[] bins = new boolean[12];
+        int binCount = Math.min(12, kind == 0 ? g.bottom - g.top + 1 : g.right - g.left + 1);
+        boolean[] bins = new boolean[binCount];
         for (int p : g.pixels) {
             double x = (p % width - g.left) / (double) Math.max(1, g.right - g.left);
             double y = (p / width - g.top) / (double) Math.max(1, g.bottom - g.top);
@@ -1456,12 +1561,12 @@ final class NoteArticulationDetector {
                     .22 + .75 / Math.max(1, kind == 0 ? g.right - g.left : g.bottom - g.top);
             if (Math.abs(a - expected) < tolerance) {
                 hits++;
-                bins[Math.min(11, (int) (b * 12))] = true;
+                bins[Math.min(binCount - 1, (int) (b * binCount))] = true;
             }
         }
         int covered = 0;
         for (boolean bin : bins) if (bin) covered++;
-        return hits >= g.count * .78 && covered >= 10;
+        return hits >= g.count * .78 && covered >= Math.ceil(binCount * 10d / 12);
     }
 
     /** Recover only complete open chevrons; pale ink never becomes a dot or dash. */
@@ -1513,5 +1618,31 @@ final class NoteArticulationDetector {
             if (y > .67) tip++;
         }
         return broad >= tip * 1.6 && tip > 0;
+    }
+
+    /** A mislabeled wedge must be solid and taper continuously toward its note. */
+    private static boolean filledTaper(Glyph glyph, int width, boolean above) {
+        int h = glyph.bottom - glyph.top + 1;
+        int[] rows = new int[h], spans = new int[h];
+        int[] left = new int[h], right = new int[h];
+        java.util.Arrays.fill(left, Integer.MAX_VALUE);
+        java.util.Arrays.fill(right, -1);
+        for (int pixel : glyph.pixels) {
+            int row = pixel / width - glyph.top, x = pixel % width;
+            if (!above) row = h - 1 - row;
+            rows[row]++;
+            left[row] = Math.min(left[row], x);
+            right[row] = Math.max(right[row], x);
+        }
+        int decreases = 0;
+        for (int row = 0; row < h; row++) {
+            spans[row] = right[row] - left[row] + 1;
+            if (rows[row] == 0 || rows[row] < spans[row] * .9f) return false;
+            if (row > 0) {
+                if (spans[row] > spans[row - 1] + 1) return false;
+                if (spans[row] < spans[row - 1]) decreases++;
+            }
+        }
+        return spans[0] >= spans[h - 1] * 2 && decreases >= 2;
     }
 }

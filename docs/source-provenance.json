@@ -249,10 +249,10 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "7a91b6d2d413584613f41841a66c117349e46be1f71471a5a7609b78719d3ba6",
+      "source_sha256": "e09c3135cd0d7a0f8a6b30a7241bdd1748eb5bb51101370b582168d7cdcb7db4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed global raw-ink, rhythmic and bounded-navigation repair; full token parity with package/diagnostics adapters verified. Original synthetic positive and rejection controls; no source score, model or new dependency included.",
-      "source_normalized_sha256": "0af7d171c679dacb3aa67fd13e69f9a6225ddc4f164b9767b1b48c0885027228"
+      "review_note": "Reviewed package-only standalone port: raw glyph ownership, complete open angular marks with available raster bins, bounded beam-covered staff-rule recovery, tapered filled-wedge false-mask recovery and two-initial punctuation including italic overhangs. Accepted heads, complete two-arm geometry, crossbars, text runs and shaft/beam endpoints remain guarded. Original generated positive and negative regressions; no private imagery, new dependencies or model changes.",
+      "source_normalized_sha256": "bfb8cfeaf2f02a3294d8bc3cf02c3c1b4d35ed5f85d5e94a3cdaa6cd578ca2c2"
     },
     "OpenChevron.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",

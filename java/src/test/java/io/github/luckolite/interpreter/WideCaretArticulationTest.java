@@ -55,6 +55,10 @@ public class WideCaretArticulationTest {
     }
 
     private int feetOnRules(int x, int end, boolean parallel, boolean inverted) {
+        return feetOnRules(x, end, parallel, inverted, false);
+    }
+
+    private int feetOnRules(int x, int end, boolean parallel, boolean inverted, boolean crowded) {
         byte[] gray = new byte[W * H], labels = new byte[W * H];
         Arrays.fill(gray, (byte) 255);
         for (int row : parallel ? new int[] {100, 124, 148, 172, 196} : new int[] {100})
@@ -65,6 +69,13 @@ public class WideCaretArticulationTest {
             int y = (int) Math.round(80 + (inverted ? 1 - fraction : fraction) * 20);
             for (int dy = -1; dy <= 1; dy++) gray[(y + dy) * W + xx] = 0;
         }
+        if (crowded)
+            for (int column : new int[] {54, 66, 78, 90})
+                for (int yy = 88; yy <= 112; yy++)
+                    for (int xx = column - 2; xx <= column + 2; xx++) {
+                        gray[yy * W + xx] = 0;
+                        labels[yy * W + xx] = OmrMeasurePostProcessor.NOTEHEAD;
+                    }
         return NoteArticulationDetector.detect(
                 labels, gray, W, H, List.of(new NoteArticulationDetector.Anchor(x, 135, 24, 0)))[0];
     }
@@ -87,5 +98,74 @@ public class WideCaretArticulationTest {
     @Test
     public void ruleTouchingUpBowIsRejected() {
         assertEquals(0, feetOnRules(220, 240, true, true) & NoteArticulation.MARCATO);
+    }
+
+    @Test
+    public void crowdedRuleUsesTheUnobstructedParallelSide() {
+        assertEquals(NoteArticulation.MARCATO, feetOnRules(150, 400, true, false, true));
+    }
+
+    private int smallCueCaret(boolean rules, boolean inverted) {
+        byte[] gray = new byte[W * H], labels = new byte[W * H];
+        Arrays.fill(gray, (byte) 255);
+        if (rules)
+            for (int y : new int[] {100, 108, 116, 124, 132})
+                for (int x = 30; x <= 400; x++) gray[y * W + x] = 0;
+        for (int x = 216; x <= 224; x++) {
+            double fraction = Math.abs(x - 220) / 4d;
+            int y = (int) Math.round(94 + (inverted ? 1 - fraction : fraction) * 6);
+            gray[y * W + x] = 0;
+            gray[(y + 1) * W + x] = 0;
+        }
+        return NoteArticulationDetector.detect(
+                labels, gray, W, H, List.of(new NoteArticulationDetector.Anchor(220, 114, 8, 0)))[
+                0];
+    }
+
+    @Test
+    public void cueCaretUsesOnlyAvailablePixelBins() {
+        assertEquals(NoteArticulation.MARCATO, smallCueCaret(false, false));
+    }
+
+    @Test
+    public void cueCaretFeetEndOnThinStaffRule() {
+        assertEquals(NoteArticulation.MARCATO, smallCueCaret(true, false));
+    }
+
+    @Test
+    public void tinyCueUpBowDoesNotBecomeCaret() {
+        assertEquals(0, smallCueCaret(true, true) & NoteArticulation.MARCATO);
+    }
+
+    private int thickSmallPeak(boolean crossbar, boolean shifted) {
+        byte[] gray = new byte[W * H], labels = new byte[W * H];
+        Arrays.fill(gray, (byte) 255);
+        int peak = shifted ? 304 : 306;
+        for (int x = 300; x <= 313; x++) {
+            double y =
+                    x <= peak ? (peak - x) * 10d / (peak - 300) : (x - peak) * 10d / (313 - peak);
+            int row = 80 + (int) Math.round(y);
+            for (int dy = 0; dy <= 2; dy++) gray[(row + dy) * W + x] = 0;
+        }
+        if (crossbar)
+            for (int x = 303; x <= 311; x++) for (int y = 87; y <= 88; y++) gray[y * W + x] = 0;
+        return NoteArticulationDetector.detect(
+                labels, gray, W, H, List.of(new NoteArticulationDetector.Anchor(306, 126, 13, 0)))[
+                0];
+    }
+
+    @Test
+    public void smallThickArmsCanMeetNearTheirPeak() {
+        assertEquals(NoteArticulation.MARCATO, thickSmallPeak(false, false));
+    }
+
+    @Test
+    public void offCenterSmallPeakKeepsBothArmProofs() {
+        assertEquals(NoteArticulation.MARCATO, thickSmallPeak(false, true));
+    }
+
+    @Test
+    public void smallLetterBarCrossesOpenInterior() {
+        assertEquals(0, thickSmallPeak(true, false) & NoteArticulation.MARCATO);
     }
 }
