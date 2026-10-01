@@ -12,6 +12,14 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Antialiased returning ties crossing staff rules retain both shoulders with a
+dark core and almost complete, independently curved stroke coverage. Strict
+local contrast remains required. Original generated vectors test above and below
+curves and reject bare rules, sloped beams, one-sided or broken curves and pale
+ink without a dark core. The ultimate matcher has token parity with the app;
+models, dependencies and record layouts are unchanged. Private evidence remains
+outside this repository.
+
 Written grace placement exposes original notation values and explicit principal
 identity on a metrical clock that preserves the principal's full duration. The
 performance clock retains its existing grace budget. Original generated tests

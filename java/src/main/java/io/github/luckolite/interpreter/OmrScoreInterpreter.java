@@ -17951,6 +17951,42 @@ final class OmrScoreInterpreter {
                                             inkLimit,
                                             requiredSide,
                                             true))) return true;
+                    // Antialiased shoulders can reduce the dark count while staff rules
+                    // obscure a returning curve. Require nearly complete coverage in
+                    // every bin, both shoulders, an independently dark core and contrast.
+                    if (right - left >= gap * 8
+                            && right - left <= gap * (flatProfile ? 48 : 24)
+                            && hits >= 36
+                            && strong >= 30
+                            && obscured > 0
+                            && obscured <= 14
+                            && hits + obscured >= 48
+                            && bins[0] >= 4
+                            && bins[4] >= 4
+                            && bins[0] + bins[4] >= 10
+                            && bins[1] >= 8
+                            && bins[2] >= 8
+                            && bins[3] >= 8
+                            && coveredBins[0] >= 8
+                            && coveredBins[1] >= 8
+                            && coveredBins[2] >= 8
+                            && coveredBins[3] >= 8
+                            && coveredBins[4] >= 8
+                            && arcCurvature(supportedCenters, 0, 0, 49) >= gap * .45f
+                            && (strictContrast
+                                    || hasContinuousTieArc(
+                                            labels,
+                                            gray,
+                                            width,
+                                            height,
+                                            left,
+                                            right,
+                                            centerY,
+                                            gap,
+                                            target,
+                                            inkLimit,
+                                            requiredSide,
+                                            true))) return true;
                     // A compact tie can touch a staff rule at its crest instead of
                     // at the endpoints. Both returning shoulders must remain visible;
                     // the rule only supplies the small occluded central section.
