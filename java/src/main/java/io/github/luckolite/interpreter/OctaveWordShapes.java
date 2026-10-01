@@ -8,10 +8,18 @@ final class OctaveWordShapes {
 
     private static final int W = 48, H = 32;
 
-    private record Template(int shift, float aspect, byte[] bits) {
+    private record Template(int shift, float aspect, long[] bits) {
         Template(int shift, float aspect, String encoded) {
-            this(shift, aspect, java.util.Base64.getDecoder().decode(encoded));
+            this(shift, aspect, packed(java.util.Base64.getDecoder().decode(encoded)));
         }
+    }
+
+    private static long[] packed(byte[] bytes) {
+        long[] words = new long[(W * H + 63) / 64];
+        for (int i = 0; i < W * H; i++)
+            if ((bytes[i / 8] & (1 << (7 - i % 8))) != 0)
+                words[i / 64] |= 1L << (i % 64);
+        return words;
     }
 
     private static final Template[] TEMPLATES = {
@@ -2308,14 +2316,14 @@ final class OctaveWordShapes {
     static int match(byte[] gray, int width, int left, int top, int right, int bottom) {
         if (right <= left || bottom <= top) return 0;
         float aspect = (right - left + 1) / (float) (bottom - top + 1);
-        boolean[] mask = new boolean[W * H], nearest = new boolean[W * H];
+        long[] mask = new long[(W * H + 63) / 64], nearest = new long[mask.length];
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++) {
                 float sx = left + (x + .5f) * (right - left + 1) / W - .5f,
                         sy = top + (y + .5f) * (bottom - top + 1) / H - .5f;
                 int nx = Math.max(left, Math.min(right, Math.round(sx))),
                         ny = Math.max(top, Math.min(bottom, Math.round(sy)));
-                nearest[y * W + x] = (gray[ny * width + nx] & 255) < 165;
+                if ((gray[ny * width + nx] & 255) < 165) nearest[(y * W + x) / 64] |= 1L << ((y * W + x) % 64);
                 int x0 = (int) Math.floor(sx), y0 = (int) Math.floor(sy);
                 float dx = sx - x0, dy = sy - y0;
                 int x1 = Math.max(left, Math.min(right, x0 + 1)),
@@ -2328,7 +2336,7 @@ final class OctaveWordShapes {
                 float lower =
                         (gray[y1 * width + x0] & 255) * (1 - dx)
                                 + (gray[y1 * width + x1] & 255) * dx;
-                mask[y * W + x] = upper * (1 - dy) + lower * dy < 165;
+                if (upper * (1 - dy) + lower * dy < 165) mask[(y * W + x) / 64] |= 1L << ((y * W + x) % 64);
             }
         float[] scores = new float[5];
         for (var t : TEMPLATES) {
@@ -2336,11 +2344,11 @@ final class OctaveWordShapes {
             if (ratio > .45f) continue;
             int intersection = 0, union = 0, nearIntersection = 0, nearUnion = 0;
             for (int i = 0; i < mask.length; i++) {
-                boolean ink = (t.bits[i / 8] & (1 << (7 - i % 8))) != 0;
-                if (ink && mask[i]) intersection++;
-                if (ink || mask[i]) union++;
-                if (ink && nearest[i]) nearIntersection++;
-                if (ink || nearest[i]) nearUnion++;
+                long ink = t.bits[i];
+                intersection += Long.bitCount(ink & mask[i]);
+                union += Long.bitCount(ink | mask[i]);
+                nearIntersection += Long.bitCount(ink & nearest[i]);
+                nearUnion += Long.bitCount(ink | nearest[i]);
             }
             float score =
                     Math.max(

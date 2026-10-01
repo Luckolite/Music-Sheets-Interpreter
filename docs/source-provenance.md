@@ -195,3 +195,5 @@ earlier-ending slur and absent semantic stripes. The helper uses the JDK only;
 no private score, model, dependency or record-layout change is included.
 
 The reviewed rest projection and sloped-rule cleanup optimizations preserve their detection thresholds and output order. Scratch state stays within one detection call; raw row statistics are reused only across placements of the same immutable input raster. Two original generated parity regressions cover complete rest records and cleaned mask bytes, including coverage boundaries. No private images, model changes, or additional dependencies are included.
+
+The reviewed octave-word classifier packs the existing original template bits once. Exact intersection and union cardinalities replace per-pixel counts; bilinear and nearest sampling, thresholds, candidate order and float scores remain unchanged. Original scaled/shaded words and threshold-noise fixtures cover complete decision parity. No model, private scan or new dependency is included.

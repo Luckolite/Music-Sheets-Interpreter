@@ -436,10 +436,11 @@
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",
-      "source_sha256": "b2aeeb095045dc82c6111c0b7da3e65f4ab1782094a0ccd3605e2fca08253b2d",
-      "source_normalized_sha256": "d01665d87e4daef6b1f7a8fffe2cd1d93ee7699d5f6fc88284c0b15d83fcaa16",
+      "source_sha256": "818aef8c0321ce8689808cefa469103237312cf1b59d6a26c50b8e9de5c81848",
+      "source_normalized_sha256": "818aef8c0321ce8689808cefa469103237312cf1b59d6a26c50b8e9de5c81848",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Original rendered music numeral and small italic suffix templates; Bravura OFL glyphs and graphical text-font renders. Existing confidence threshold and margin retained; no score pixels or font files added."
+      "review_note": "Original rendered templates packed once into immutable long words; per-window bilinear/nearest masks and exact intersection/union counts use Long.bitCount. Raster thresholds, ratio penalties, score order and rejection margins unchanged. Original generated224-case regression and700-case differential benchmark, no private images, model change, or dependencies.",
+      "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-word-bank-842-source"
     },
     "MeterOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeterOcrEvidence.java",
