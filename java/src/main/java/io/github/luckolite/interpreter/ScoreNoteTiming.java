@@ -233,10 +233,17 @@ public final class ScoreNoteTiming {
         }
 
         private List<ScoreNoteEvent> attackNotes;
+        // Group membership is fixed during timing queries. Reuse symbol evidence,
+        // including unknown durations, and invalidate every property if a note is added.
+        private int cachedBeams = -1, cachedDots = -1;
+        private double cachedWritten;
+        private boolean writtenReady, longReady, tupletReady, cachedLong, cachedTuplet;
 
         void add(ScoreNoteEvent note) {
             notes.add(note);
             attackNotes = null;
+            cachedBeams = cachedDots = -1;
+            writtenReady = longReady = tupletReady = false;
         }
 
         List<ScoreNoteEvent> attacks() {
@@ -253,6 +260,11 @@ public final class ScoreNoteTiming {
         }
 
         int beamCount() {
+            if (cachedBeams < 0) cachedBeams = calculateBeamCount();
+            return cachedBeams;
+        }
+
+        private int calculateBeamCount() {
             int result = 0;
             for (ScoreNoteEvent note : attacks())
                 result = Math.max(result, rhythmicBeamCount(note));
@@ -260,6 +272,11 @@ public final class ScoreNoteTiming {
         }
 
         int augmentationDots() {
+            if (cachedDots < 0) cachedDots = calculateAugmentationDots();
+            return cachedDots;
+        }
+
+        private int calculateAugmentationDots() {
             int result = 0;
             for (ScoreNoteEvent note : attacks())
                 result = Math.max(result, note.augmentationDots());
@@ -267,6 +284,14 @@ public final class ScoreNoteTiming {
         }
 
         double writtenDuration() {
+            if (!writtenReady) {
+                cachedWritten = calculateWrittenDuration();
+                writtenReady = true;
+            }
+            return cachedWritten;
+        }
+
+        private double calculateWrittenDuration() {
             int beams = beamCount();
             if (beams > 0 && hasTuplet()) {
                 double shortest = Double.POSITIVE_INFINITY;
@@ -291,6 +316,14 @@ public final class ScoreNoteTiming {
         }
 
         boolean hasReliableLongDuration() {
+            if (!longReady) {
+                cachedLong = calculateReliableLongDuration();
+                longReady = true;
+            }
+            return cachedLong;
+        }
+
+        private boolean calculateReliableLongDuration() {
             for (ScoreNoteEvent note : notes) {
                 // The white center of a half/whole head is direct symbol evidence. Horizontal
                 // spacing and neighbouring beams must not turn that sustained note into part of
@@ -303,6 +336,14 @@ public final class ScoreNoteTiming {
         }
 
         boolean hasTuplet() {
+            if (!tupletReady) {
+                cachedTuplet = calculateHasTuplet();
+                tupletReady = true;
+            }
+            return cachedTuplet;
+        }
+
+        private boolean calculateHasTuplet() {
             for (ScoreNoteEvent note : notes) if (note.tupletDivisor() > 1) return true;
             return false;
         }
