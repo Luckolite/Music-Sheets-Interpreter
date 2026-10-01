@@ -178,3 +178,18 @@ and genuinely absent ink. No private score or model/dependency/wire changes
 are included.
 
 The interpreter speedup review preserves tie candidate ordering and component connectivity. Per-call scratch buffers are reset for each curve, and component membership is captured before local-offset flood filling. The new isolation and membership tests use original generated geometry; no source scans, device data, models or dependencies were added.
+
+Local pitch recovery accepts a beam-covered interior rule only when all four
+remaining raw and semantic rules survive on both sides, a thick physical beam
+covers the missing rule, and the five-rule extent is unambiguous. The existing
+interior fixture has both outer rails and that complete proof; its phase
+expectation was reviewed while retaining absent, one-sided and sixth-rule guards.
+
+The original `ClosedStaffBarPhase` helper resolves a curved closing edge from
+five thin raw rules joined to an isolated staff-height bar. Every rule must also
+survive on both sides of the head. Raw line centers refine slope and spacing;
+competing near-best fits must agree on pitch. Extended stems, missing rules,
+weak contrast and extra joined rules cannot establish a phase. Original synthetic
+controls cover direct geometry and the actual pitch-decoding path, including an
+earlier-ending slur and absent semantic stripes. The helper uses the JDK only;
+no private score, model, dependency or record-layout change is included.

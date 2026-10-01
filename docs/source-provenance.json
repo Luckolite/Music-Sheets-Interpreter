@@ -282,11 +282,11 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "e4d9d81125258ef1e19f195e33b8e071a76d370114fffbb64a949a671170d4b7",
+      "source_sha256": "a8b5cb31e06d02629bf29743bfb1340efe84cdac1ff6672fddfe8424490c62ae",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
       "review_note": "Reviewed behavior-preserving tie search: reset per-call scratch arrays for each candidate and hoist invariant reach; preserves curve ordering, thresholds and recursive contrast calls. Original generated differential/isolation regressions; no new dependencies or private raster.",
-      "source_normalized_sha256": "cf640e28b0610af6daee42ed4a2ef845cfc077f9cdde61f94478e121610c7c51",
+      "source_normalized_sha256": "49779fd4717f3e41238543a7570fb29308a8ac9e252712311e5df2728772411a",
       "reviewed_app_state": "Uncommitted reviewed speedup snapshot derived from guide266 Android release source; baseline app commit recorded separately and exact source hashes pin the changes."
     },
     "PlayingTechniqueDetector.java": {
@@ -690,9 +690,9 @@
     },
     "BeamOccludedStaffPhase.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/BeamOccludedStaffPhase.java",
-      "source_sha256": "fabb4303d575ac9a39367ec179a31cfc351075d99c2fd25e7a42baf7d387ec0d",
+      "source_sha256": "74d738c90c640788eece18496866665122943e4489eb3605b907c0f1ac537036",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "fabb4303d575ac9a39367ec179a31cfc351075d99c2fd25e7a42baf7d387ec0d"
+      "source_normalized_sha256": "52d4f7ba66fb1f89d176d92c1f08fc8c219ce9b1f03867ee617e39c8c307cdaf"
     },
     "NeighboringStaffPhase.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NeighboringStaffPhase.java",
@@ -974,6 +974,13 @@
       "source_normalized_sha256": "e2c23d5cf94321303a80907752b6459d4231183be8dc6aaa5e255a7f369834bd",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Original pure-JDK engraved MusicXML duration recovery. Exact cumulative written type, direct dots and time-modification ratio are used only when the exporter division grid cannot represent them and the serialized duration is exactly the nearest exporter unit. Explicit intended durations on exact grids are preserved. Package-only app parity; original procedural duration/ratio/precision/voice-clock controls. App source-identity layout adapter reviewed separately, remains strict, and is not copied. No private scores, dependencies, models or wire layout changes."
+    },
+    "ClosedStaffBarPhase.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ClosedStaffBarPhase.java",
+      "source_sha256": "543a7ce399186d91111f68dcbac9314ad5f91ddea722dab0c1776020627029e5",
+      "source_normalized_sha256": "b6e9f1f380a9bc00d1a6d8808b4cf3214c6ec484e1adbfcf8e409bf093e45c0a",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Original pure-JDK raw five-rule phase proof at an isolated staff-height closing bar. Both sides of the head must supply every thin rule, five rules must join the bar, outside stroke extension and a sixth joined rule reject ambiguous groups. Local line centers refine spacing and slope; near-best fits must agree on pitch. Package-only app parity. Original procedural positive, rejection, real decoder path, bounds and pixel preservation tests; no score imagery, dependencies, model or wire changes."
     }
   },
   "interpreter_speedup_review": {
@@ -988,5 +995,17 @@
     ],
     "boundary": "Only local scratch allocation and connected-component bookkeeping; no model, format, musical threshold or Android adapter changes. All new fixtures are original generated geometry under Apache-2.0.",
     "baseline_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+  },
+  "staff_phase_review": {
+    "base_public_commit": "ed75ea7f2d1955c475b0569e9a51833de13505f8",
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "scope": "Only the localStaffPitch fallback callsites and one beam-occluded rule eligibility change in established mapped classes; new original ClosedStaffBarPhase helper reviewed separately. Four surviving raw and semantic rails plus an actual thick bilateral beam bound an interior missing rule. Closing-bar recovery requires all five physical rules on both sides and does not infer absent ink.",
+    "regressions": [
+      "InteriorBeamStaffPhaseTest",
+      "ClosedStaffBarPhaseTest",
+      "BeamOccludedStaffPhaseTest"
+    ],
+    "existing_fixture_review": "The prior interior-beam fixture contains both surviving outer rails, four complete semantic/raw thin rules, and a genuine thick middle beam. Its expected phase now reflects that complete bounded proof. Missing, one-sided, semantically unsupported and sixth-rule rejection controls are preserved.",
+    "boundary": "Original generated Java geometry only. No commercial source, private evidence, phone logs, score rules, weights, model lineage, dependencies or record layout changes."
   }
 }

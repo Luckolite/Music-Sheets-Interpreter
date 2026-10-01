@@ -67,8 +67,8 @@ public final class BeamOccludedStaffPhaseTest {
     }
 
     @Test
-    public void interiorMissingRuleDoesNotProveOuterPhase() {
-        assertNull(resolve(page(2, 0, 0), BOTTOM + 6));
+    public void interiorBeamWithBothOuterRulesEstablishesPhase() {
+        exact(page(2, 0, 0));
     }
 
     @Test

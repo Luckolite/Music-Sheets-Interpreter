@@ -13311,7 +13311,7 @@ final class OmrScoreInterpreter {
             complete =
                     NeighboringStaffPhase.rawBracket(
                             gray, width, height, head.centerX, referenceBottom, gap);
-        if (complete == null && curved && shaded)
+        if (complete == null && shaded)
             complete =
                     BeamOccludedStaffPhase.resolve(
                             labels,
@@ -13323,6 +13323,11 @@ final class OmrScoreInterpreter {
                             head.maxX,
                             referenceBottom,
                             gap);
+        if (complete == null && shaded)
+            complete =
+                    ClosedStaffBarPhase.resolve(
+                            gray, width, height, head.centerX, head.centerY,
+                            head.minX, head.maxX, referenceBottom, gap);
         if (complete != null
                 && !curved
                 && Math.abs(Math.abs(complete[0] - referenceBottom) - gap) < gap * .2f) {

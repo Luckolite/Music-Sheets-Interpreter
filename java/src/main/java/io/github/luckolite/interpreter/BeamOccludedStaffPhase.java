@@ -4,7 +4,7 @@ package io.github.luckolite.interpreter;
 
 import java.util.*;
 
-/** Four complete thin rules can locate one edge rule hidden beneath a thick beam. */
+/** Four complete thin rules can locate one staff rule hidden beneath a thick beam. */
 final class BeamOccludedStaffPhase {
     private BeamOccludedStaffPhase() {}
 
@@ -59,7 +59,7 @@ final class BeamOccludedStaffPhase {
                             missing = line;
                         }
                     }
-                    if (rejected || (missing != 0 && missing != 4)) continue;
+                    if (rejected || missing < 0) continue;
                     var gaps = new ArrayList<Float>();
                     var bottoms = new ArrayList<Float>();
                     for (int a = 0; a < 5; a++)
