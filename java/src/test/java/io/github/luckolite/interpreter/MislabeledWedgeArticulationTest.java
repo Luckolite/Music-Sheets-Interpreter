@@ -71,4 +71,52 @@ public class MislabeledWedgeArticulationTest {
     public void elongatedOvalIsNotWedge() {
         assertEquals(0, detect(false, false, 2, true));
     }
+
+    private int roundedPixelBounds(boolean labeled, boolean oval) {
+        int w = 2048, h = 1600;
+        byte[] gray = new byte[w * h], labels = new byte[w * h];
+        Arrays.fill(gray, (byte) 255);
+        for (int row = 0; row < 16; row++) {
+            int span =
+                    oval
+                            ? Math.max(
+                                    1,
+                                    (int)
+                                            Math.round(
+                                                    10
+                                                            * Math.sqrt(
+                                                                    Math.max(
+                                                                            0,
+                                                                            1
+                                                                                    - Math.pow(
+                                                                                            (row
+                                                                                                            - 7.5)
+                                                                                                    / 8,
+                                                                                            2)))))
+                            : 1 + (int) Math.round(9 * (15 - row) / 15d);
+            int left = 310 + (10 - span) / 2;
+            for (int x = left; x < left + span; x++) {
+                gray[(80 + row) * w + x] = 0;
+                if (labeled) labels[(80 + row) * w + x] = OmrMeasurePostProcessor.NOTEHEAD;
+            }
+        }
+        return NoteArticulationDetector.detect(
+                labels, gray, w, h, List.of(new NoteArticulationDetector.Anchor(315, 130, 17, 0)))[
+                0];
+    }
+
+    @Test
+    public void independentRasterEdgesCanWidenFilledWedge() {
+        assertEquals(NoteArticulation.STACCATISSIMO, roundedPixelBounds(false, false));
+    }
+
+    @Test
+    public void roundedWedgeBoundsStillNeedRawTaperForFalseMask() {
+        assertEquals(NoteArticulation.STACCATISSIMO, roundedPixelBounds(true, false));
+    }
+
+    @Test
+    public void rasterAllowanceDoesNotAdmitOval() {
+        assertEquals(0, roundedPixelBounds(false, true));
+    }
 }

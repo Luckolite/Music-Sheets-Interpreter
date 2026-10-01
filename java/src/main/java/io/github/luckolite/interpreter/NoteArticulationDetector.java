@@ -1484,7 +1484,7 @@ final class NoteArticulationDetector {
                 && w <= gap * .65f
                 && h >= gap * .7f
                 && h <= gap * 1.65f
-                && h / w >= 1.8f
+                && (h / w >= 1.8f || (h + 1 >= 1.8f * (w - 1) && filledTaper(g, width, above)))
                 && density > .45f
                 && density < .82f
                 && wedge(g, width, above)) return NoteArticulation.STACCATISSIMO;
