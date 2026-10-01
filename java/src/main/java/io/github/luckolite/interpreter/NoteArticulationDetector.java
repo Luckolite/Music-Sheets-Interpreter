@@ -398,6 +398,9 @@ final class NoteArticulationDetector {
                                         labels))) continue;
                 if (raw
                         && candidate == NoteArticulation.STACCATO
+                        && embeddedTextDot(glyph, glyphs, note.gap, labels)) continue;
+                if (raw
+                        && candidate == NoteArticulation.STACCATO
                         && initialsPunctuation(glyph, glyphs, note.gap, labels)) continue;
                 if (raw
                         && candidate == NoteArticulation.TENUTO
@@ -820,6 +823,47 @@ final class NoteArticulationDetector {
                         }
                     }
             }
+        return false;
+    }
+
+    /** A detached round serif inside the height and spacing of a word is text. */
+    private static boolean embeddedTextDot(
+            Glyph target, List<Glyph> glyphs, float gap, byte[] labels) {
+        List<Glyph> bodies = new ArrayList<>();
+        for (Glyph g : glyphs) {
+            float h = g.bottom - g.top + 1, w = g.right - g.left + 1;
+            if (g == target
+                    || Math.abs(g.x() - target.x()) > gap * 8
+                    || h < gap * .5f
+                    || h > gap * 2.2f
+                    || w < gap * .25f
+                    || w > gap * 2.2f
+                    || target.y() < g.top - gap * .1f
+                    || target.y() > g.bottom + gap * .1f) continue;
+            int notation = 0;
+            for (int pixel : g.pixels)
+                if (labels[pixel] == OmrMeasurePostProcessor.NOTEHEAD
+                        || labels[pixel] == OmrMeasurePostProcessor.STEM_OR_REST
+                        || labels[pixel] == OmrMeasurePostProcessor.CLEF_OR_KEY
+                        || labels[pixel] == OmrMeasurePostProcessor.STAFF) notation++;
+            if (notation <= g.count * .25f) bodies.add(g);
+        }
+        bodies.sort(java.util.Comparator.comparingInt(Glyph::left));
+        for (int i = 0; i < bodies.size(); i++) {
+            Glyph first = bodies.get(i), last = first;
+            int count = 0;
+            boolean left = false, right = false;
+            for (int j = i; j < bodies.size(); j++) {
+                Glyph next = bodies.get(j);
+                if (Math.abs(next.bottom - first.bottom) > gap * .35f) continue;
+                if (next.left - last.right > gap * .65f) break;
+                count++;
+                left |= next.right < target.left;
+                right |= next.left > target.right;
+                last = next;
+            }
+            if (count >= 4 && left && right) return true;
+        }
         return false;
     }
 

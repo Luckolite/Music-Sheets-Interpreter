@@ -249,10 +249,10 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "ba86aabff419148d2ca9687c473c5d87fee63008baeab0aac0e2b3fe075dab04",
+      "source_sha256": "48660c4341b9e159a28ba3fe3cdb544fab905c898539e350b927187c4dfb90a4",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed package-only standalone port: raw glyph ownership, complete open angular marks with available raster bins, bounded beam-covered staff-rule recovery, tapered filled-wedge false-mask recovery and two-initial punctuation including italic overhangs. Accepted heads, complete two-arm geometry, crossbars, text runs and shaft/beam endpoints remain guarded. Original generated positive and negative regressions; no private imagery, new dependencies or model changes. Includes one physical raster pixel for rounded caret strokes with embedded/bidirectional text guards, a single partial wedge face inside its solid next row, and independently thin staff-tip wedge recovery. Reject accepted heads, open arms and ink continuing toward the head through a stripped rule; original geometry and OFL font regressions only. No new dependencies or changed weights.",
-      "source_normalized_sha256": "6c894ab6831668bd5a6da811862dcfb094d770420cbd3df19a2f4413a82c76ab"
+      "review_note": "Reviewed package-only standalone port: raw glyph ownership, complete open angular marks with available raster bins, bounded beam-covered staff-rule recovery, tapered filled-wedge false-mask recovery and two-initial punctuation including italic overhangs. Accepted heads, complete two-arm geometry, crossbars, text runs and shaft/beam endpoints remain guarded. Original generated positive and negative regressions; no private imagery, new dependencies or model changes. Includes one physical pixel for caret strokes, embedded/bidirectional word guards, a single partial wedge face and staff-tip wedge recovery with headward-continuation veto. A detached dot inside four aligned word bodies is a serif; short disconnected letter pieces do not break their baseline. Original geometry/OFL font regressions, unchanged dependencies and models.",
+      "source_normalized_sha256": "1b2cfa6addbf50e6fce1a09feaf49d5ea64ada2322d1b2569e30abf0c6053286"
     },
     "OpenChevron.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",
