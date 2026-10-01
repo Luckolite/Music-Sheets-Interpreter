@@ -88,3 +88,10 @@ Public regressions use original procedural drawings and shareable examples.
 Commercial scores, user libraries, device logs, internal checkpoints and private
 source-review fixtures are not distributed. Passing tests does not certify every
 pitch, rhythm, symbol or expressive playback behavior on arbitrary scores.
+
+Long and shallow connecting slides retain straight-ink residual and correlation
+checks and require a unique immediate printed source in the same staff and
+measure. The original generated `WideConnectedSlideTest` covers ascending,
+descending and shallow strokes plus absent, displaced, ambiguous and intervening
+source attacks, curved ink and excessive length. No private page imagery or
+score-specific rules are included. Model weights and record layouts are unchanged.

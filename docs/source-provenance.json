@@ -699,10 +699,10 @@
     },
     "NoteSlideDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteSlideDetector.java",
-      "source_sha256": "6c38b10ee6227485e43b90bc2b7de4cd72d5496807d8ebc6b07883643101433d",
+      "source_sha256": "29b276f9eadc900a9c326f3f1cdb9c1107fd53794aa0e626262ba37e22cc3c88",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "4d0d78aa50a5b066ba53f6573c770b30f633e956601b2a2195fd247e5cb99171",
-      "review_note": "Reviewed unique immediate printed source-pitch binding after straight-stroke detection. Same physical staff/measure, bounded endpoint agreement and attack adjacency; isolated, intervening, wrong-part and ambiguous chord controls preserve unbound approaches. Package-only full source parity; existing FROM_PREVIOUS metadata and audio realization unchanged. Original synthetic regression; no private score, new helper/dependency/model or record layout."
+      "source_normalized_sha256": "6eefc1ed411f31b384bdb32e715306bc0855f5045fcd110e59cd6e26c9fdce7b",
+      "review_note": "Reviewed package-only standalone port. Long or shallow straight connecting ink requires its unique immediate same-staff same-measure printed source, bounded endpoints and length, unchanged correlation and residual guards. Original generated positive and rejection controls; no private score, model change or new dependency."
     },
     "OutlinedBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OutlinedBeamInk.java",

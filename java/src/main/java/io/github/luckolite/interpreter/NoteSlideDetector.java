@@ -86,8 +86,7 @@ final class NoteSlideDetector {
                         }
                     }
             }
-            if (end < 8 || r - l < 6 || b - t < 5 || b - t < (r - l) * .2 || b - t > (r - l) * 5)
-                continue;
+            if (end < 8 || r - l < 6 || b - t < 5 || b - t > (r - l) * 5) continue;
             double cx = sx / end,
                     cy = sy / end,
                     vx = sxx / end - cx * cx,
@@ -108,7 +107,7 @@ final class NoteSlideDetector {
             boolean steep = Math.abs(slope) > 1.5;
             if (Math.abs(correlation) < (steep ? .85 : .90)
                     || residual > (steep ? 1.4 : 1.3)
-                    || Math.abs(slope) < .2
+                    || Math.abs(slope) < .08
                     || Math.abs(slope) > 5) continue;
             double rightY = cy + (r - cx) * slope;
             int owner = -1;
@@ -117,12 +116,19 @@ final class NoteSlideDetector {
                 var n = heads.get(i);
                 float g = n.gap;
                 double dx = (n.x - r) / g, dy = (n.y - rightY) / g;
+                // Long or very shallow ink is meaningful only between two uniquely
+                // proved consecutive attacks. Keep isolated approach limits unchanged.
+                boolean extended = r - l > g * 6 || Math.abs(slope) < .2;
                 if (n.staff < 0
                         || dx < .5
                         || dx > 3
                         || Math.abs(dy) > 1
                         || r - l < g * .65
-                        || r - l > g * 6) continue;
+                        || r - l > g * 12
+                        || (b - t < (r - l) * .2 && !extended)
+                        || (extended
+                                && !immediateSource(heads, n, l, cy + (l - cx) * slope, slope)))
+                    continue;
                 boolean touchesHead = false;
                 for (int j = 0; j < heads.size(); j++)
                     if (j != i) {
