@@ -282,11 +282,12 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "d1bf0b01f1780839d739b430d2e3f8cd2a05499e699375feb6ef3b670baa37cf",
+      "source_sha256": "e4d9d81125258ef1e19f195e33b8e071a76d370114fffbb64a949a671170d4b7",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Reviewed global raw returning-curve evidence through overwide semantic staff bands, plus bounded antialiased shoulders through genuine raw rules. Actual straight rows stay occluded; raw thin-stroke centers, continuity, curvature, dark-core and local-contrast checks remain. Original synthetic above/below mislabeled crests reject rules, partial straight rules, nonreturning beams, one shoulder and missing middles. Ultimate matcher token parity verified; models/dependencies/wire layouts unchanged; private score evidence excluded.",
-      "source_normalized_sha256": "edbe4e873512732a160de3ba4d9d98bdd93b11a6d83a79e8cf1e40fcfc534b92"
+      "review_note": "Reviewed behavior-preserving tie search: reset per-call scratch arrays for each candidate and hoist invariant reach; preserves curve ordering, thresholds and recursive contrast calls. Original generated differential/isolation regressions; no new dependencies or private raster.",
+      "source_normalized_sha256": "cf640e28b0610af6daee42ed4a2ef845cfc077f9cdde61f94478e121610c7c51",
+      "reviewed_app_state": "Uncommitted reviewed speedup snapshot derived from guide266 Android release source; baseline app commit recorded separately and exact source hashes pin the changes."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -585,9 +586,11 @@
     },
     "ClosedHeadBarlineGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ClosedHeadBarlineGuard.java",
-      "source_sha256": "d12178085eea58d98e25a8e73428616e5a5d9ac1e2ddabbb752a7830e4c73ab0",
+      "source_sha256": "ec4b787d7eda85ba88caf5207a9ee3ff9c88833b1c5691873d10fdec3d3ed3a9",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "d12178085eea58d98e25a8e73428616e5a5d9ac1e2ddabbb752a7830e4c73ab0"
+      "source_normalized_sha256": "47d8f6a291eabcaf3867b5ba36489a11d500778e35156b39912b47b770671568",
+      "review_note": "Reviewed equivalent connected components: capture excluded threshold ink once and visit identical left/right/up/down neighbors through local offsets. Original generated clipped/gray/noisy ownership regression; source pixels unchanged, no musical thresholds altered.",
+      "reviewed_app_state": "Uncommitted reviewed speedup snapshot derived from guide266 Android release source; baseline app commit recorded separately and exact source hashes pin the changes."
     },
     "ClosedHeadFragmentJoiner.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ClosedHeadFragmentJoiner.java",
@@ -965,5 +968,18 @@
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Original shared fermata notation ownership planner; exact package-only parity. One surviving outer chord member per proved printed symbol, preserving orientation and final written release rather than a tie-chain sound alias. Original procedural target/filter/tie tests. Actual app XML adapter reviewed separately; no private score, model, dependency or wire-layout change."
     }
+  },
+  "interpreter_speedup_review": {
+    "base_public_commit": "2098c83b9c4e70fd669e39598edb2deff9b5c2b1",
+    "changes": [
+      "OmrScoreInterpreter.java",
+      "ClosedHeadBarlineGuard.java"
+    ],
+    "new_tests": [
+      "TieScratchIsolationTest.java",
+      "BarlineThresholdMembershipTest.java"
+    ],
+    "boundary": "Only local scratch allocation and connected-component bookkeeping; no model, format, musical threshold or Android adapter changes. All new fixtures are original generated geometry under Apache-2.0.",
+    "baseline_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
   }
 }

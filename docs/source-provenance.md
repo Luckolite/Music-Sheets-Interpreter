@@ -168,3 +168,5 @@ recheck cannot recurse. Original `StaffCrossingSlideTest` examples cover both
 directions, curves, part/measure ownership, source ambiguity, intervening attacks
 and genuinely absent ink. No private score or model/dependency/wire changes
 are included.
+
+The interpreter speedup review preserves tie candidate ordering and component connectivity. Per-call scratch buffers are reset for each curve, and component membership is captured before local-offset flood filling. The new isolation and membership tests use original generated geometry; no source scans, device data, models or dependencies were added.

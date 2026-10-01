@@ -17776,6 +17776,10 @@ final class OmrScoreInterpreter {
             for (int x = left; x <= right; x++) if ((gray[y * width + x] & 255) <= inkLimit) dark++;
             straightRows[y] = dark >= (right - left + 1) * .85f;
         }
+        // Each candidate is evaluated synchronously; scratch arrays belong to this call.
+        int[] bins = new int[5], coveredBins = new int[5];
+        float[] centers = new float[50], supportedCenters = new float[50], strokeCenters = new float[50];
+        int reach = Math.max(2, Math.round(gap * .4f));
         for (int side : requiredSide == 0 ? new int[] {-1, 1} : new int[] {requiredSide})
             for (float offset = .2f; offset <= 1.15f; offset += .15f)
                 for (float bend = -.75f; bend <= 1.8f; bend += .1f) {
@@ -17787,10 +17791,8 @@ final class OmrScoreInterpreter {
                             && Math.abs(centerY + side * gap * (offset + bend) - target.centerY)
                                     > gap * .25f) continue;
                     int hits = 0, obscured = 0, strong = 0;
-                    int[] bins = new int[5], coveredBins = new int[5];
-                    float[] centers = new float[50],
-                            supportedCenters = new float[50],
-                            strokeCenters = new float[50];
+                    java.util.Arrays.fill(bins, 0);
+                    java.util.Arrays.fill(coveredBins, 0);
                     java.util.Arrays.fill(centers, Float.NaN);
                     java.util.Arrays.fill(supportedCenters, Float.NaN);
                     java.util.Arrays.fill(strokeCenters, Float.NaN);
@@ -17846,9 +17848,7 @@ final class OmrScoreInterpreter {
                                 // Measure the printed stroke center, not whichever edge
                                 // best fits the requested curve. Alternating between the
                                 // top and bottom edges can bend a thick straight rule.
-                                int inkTop = yy,
-                                        inkBottom = yy,
-                                        reach = Math.max(2, Math.round(gap * .4f));
+                                int inkTop = yy, inkBottom = yy;
                                 while (inkTop > Math.max(0, yy - reach)
                                         && (gray[(inkTop - 1) * width + x] & 255) <= inkLimit)
                                     inkTop--;

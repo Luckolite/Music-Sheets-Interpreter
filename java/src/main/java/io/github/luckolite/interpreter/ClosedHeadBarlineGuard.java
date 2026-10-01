@@ -146,9 +146,14 @@ final class ClosedHeadBarlineGuard {
         if (w < 1 || h < 1) return false;
         boolean[] seen = new boolean[w * h];
         int[] queue = new int[w * h];
+        // Excluded ink is never part of a bright connected component.
+        // Capture membership once so every flood-fill neighbor uses local indexing.
+        for (int y = 0; y < h; y++) {
+            int sourceRow = (top + y) * width + left, localRow = y * w;
+            for (int x = 0; x < w; x++) seen[localRow + x] = (gray[sourceRow + x] & 255) <= outline;
+        }
         for (int seed = 0; seed < queue.length; seed++) {
-            if (seen[seed] || (gray[(top + seed / w) * width + left + seed % w] & 255) <= outline)
-                continue;
+            if (seen[seed]) continue;
             int read = 0, end = 1;
             queue[0] = seed;
             seen[seed] = true;
@@ -159,15 +164,22 @@ final class ClosedHeadBarlineGuard {
                 maxX = Math.max(maxX, x);
                 minY = Math.min(minY, y);
                 maxY = Math.max(maxY, y);
-                for (int d = 0; d < 4; d++) {
-                    int nx = x + (d == 0 ? -1 : d == 1 ? 1 : 0),
-                            ny = y + (d == 2 ? -1 : d == 3 ? 1 : 0);
-                    if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-                    int next = ny * w + nx;
-                    if (!seen[next] && (gray[(top + ny) * width + left + nx] & 255) > outline) {
-                        seen[next] = true;
-                        queue[end++] = next;
-                    }
+                // Preserve left/right/up/down visit order using local offsets.
+                if (x > 0 && !seen[p - 1]) {
+                    seen[p - 1] = true;
+                    queue[end++] = p - 1;
+                }
+                if (x + 1 < w && !seen[p + 1]) {
+                    seen[p + 1] = true;
+                    queue[end++] = p + 1;
+                }
+                if (y > 0 && !seen[p - w]) {
+                    seen[p - w] = true;
+                    queue[end++] = p - w;
+                }
+                if (y + 1 < h && !seen[p + w]) {
+                    seen[p + w] = true;
+                    queue[end++] = p + w;
                 }
             }
             int pw = maxX - minX + 1, ph = maxY - minY + 1;
