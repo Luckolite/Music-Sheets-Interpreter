@@ -120,7 +120,11 @@ final class ScoreDynamicsDetector {
 
     static float level(String text) {
         if (text == null) return Float.NaN;
-        return switch (text.trim().toLowerCase(Locale.ROOT).replaceAll("[.,:;]$", "")) {
+        String token = text.trim().toLowerCase(Locale.ROOT).replaceAll("[.,:;]$", "");
+        // OCR can merge the sudden-dynamic qualifier with its level. Only accept
+        // a complete qualified level, so ordinary words and lyrics stay excluded.
+        token = token.replaceFirst("^(?:subito|sub)\\.?\\s*(?=(?:ppp|pp|p|mp|mf|fff|ff|f)$)", "");
+        return switch (token) {
             case "ppp" -> -18;
             case "pp" -> -12;
             case "p" -> -8;
@@ -139,7 +143,7 @@ final class ScoreDynamicsDetector {
                 && text.trim()
                         .toLowerCase(Locale.ROOT)
                         .matches(
-                                "(?:(?:subito|sempre|poco|a|più|piu|cantabile|sostenuto|marcato|dolce|tranquillo|espressivo|crescendo|diminuendo|cresc|dim|decresc|ppp|pp|p|mp|m|mf|fff|ff|f)[.,:;]?\\s*)+");
+                                "(?:(?:subito|sub|sempre|poco|a|più|piu|cantabile|sostenuto|marcato|dolce|tranquillo|espressivo|crescendo|diminuendo|cresc|dim|decresc|ppp|pp|p|mp|m|mf|fff|ff|f)[.,:;]?\\s*)+");
     }
 
     static List<String> packedLevels(String text) {

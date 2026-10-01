@@ -306,10 +306,10 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "6bc7b64e52171bb6abb1bef8be0d755f297dcd2a77467decef4c61e94cc5a24c",
+      "source_sha256": "b6db3da0edaf50925365549b077e6b0f30d4b112f417bd353b0797a1ae2658ac",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Package-only code/literal parity. Ledger-note envelope ownership and bounded italic bar overlap preserve template confidence; original synthetic ownership controls, no new dependencies.",
-      "source_normalized_sha256": "6bc7b64e52171bb6abb1bef8be0d755f297dcd2a77467decef4c61e94cc5a24c"
+      "review_note": "Reviewed package-only standalone port of complete sudden-dynamic OCR tokens: abbreviated sub and merged sub/subito levels retain their printed level. Whole-token qualification, mixed-lyric rejection and raw ink requirements stay enforced. Original synthetic tests; no private score material, new dependencies or model changes.",
+      "source_normalized_sha256": "ccc3ca398b1f8b4feeba7d1dc39167ef9e99b6d876c76b7de704c42daf554693"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
