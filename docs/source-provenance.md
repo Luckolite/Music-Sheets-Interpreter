@@ -312,3 +312,14 @@ OCR stops idle thread spinning after each run while preserving model artifacts a
 thread counts; its generated regression compares every returned probability bit
 for both approved detector artifacts. No score scans, phone data, model changes,
 new production dependencies or record-layout changes accompany these optimizations.
+
+Tie endpoints with fragmented semantic outer rails can use independently printed
+complete five-rule groups at both heads. A majority of rules must retain semantic
+support; existing pitch-level, gap and ambiguity bounds remain. Curvature uses the
+actual stroke center, and a fitted straight centerline rejects inclined staff ink
+whose changing width makes an edge appear bowed. Original generated controls
+cover fragmented masks, slopes, compressed aliases, missing or extra rules,
+one-sided support and real bows above and below. Both shared classes retain full
+executable-token app parity after package/diagnostic adaptation, including the
+existing processing optimizations. No private source image, model, dependency or
+record-layout change is included.

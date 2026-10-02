@@ -1,5 +1,3 @@
-// Copyright 2026 Luckolite
-// SPDX-License-Identifier: Apache-2.0
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -5756,7 +5754,7 @@ final class OmrScoreInterpreter {
                             + " maxHeight="
                             + java.util.Arrays.toString(maxHeightByStaff));
         } catch (RuntimeException ignored) {
-            // Diagnostics are optional and must not fail recognition.
+            // android.util.Log is intentionally absent from plain JVM unit tests.
         }
     }
 
@@ -18368,7 +18366,7 @@ final class OmrScoreInterpreter {
                             && bins[2] >= 7
                             && bins[3] >= 7
                             && bins[4] >= 7
-                            && arcCurvature(centers, 0, 0, 49) >= Math.max(.8f, gap * .12f))
+                            && arcCurvature(strokeCenters, 0, 0, 49) >= Math.max(.8f, gap * .12f))
                         return true;
                     // A short returning arc can cross a staff rule at one end. Treat a
                     // few such pixels as occluded only when the remaining curve and
@@ -18508,8 +18506,26 @@ final class OmrScoreInterpreter {
     private static boolean hasFlatTieStrokeCenter(float[] centers, float gap) {
         float[] finite = new float[centers.length];
         int count = 0;
-        for (float value : centers) if (!Float.isNaN(value)) finite[count++] = value;
+        double sumX = 0, sumY = 0, sumXX = 0, sumXY = 0;
+        for (int i = 0; i < centers.length; i++)
+            if (Float.isFinite(centers[i])) {
+                count++;
+                sumX += i;
+                sumY += centers[i];
+                sumXX += (double) i * i;
+                sumXY += (double) i * centers[i];
+            }
         if (count < 34) return false;
+        // A photographed straight rule can incline. Compare its actual stroke
+        // center with a fitted line so changing edges cannot manufacture a bow.
+        double divisor = count * sumXX - sumX * sumX;
+        if (divisor <= 0) return false;
+        double slope = (count * sumXY - sumX * sumY) / divisor,
+                intercept = (sumY - slope * sumX) / count;
+        int at = 0;
+        for (int i = 0; i < centers.length; i++)
+            if (Float.isFinite(centers[i]))
+                finite[at++] = (float) (centers[i] - intercept - slope * i);
         java.util.Arrays.sort(finite, 0, count);
         return finite[count - 1 - count / 10] - finite[count / 10] <= Math.max(1.5f, gap * .13f);
     }
@@ -18524,6 +18540,7 @@ final class OmrScoreInterpreter {
         }
         return result;
     }
+
     private static final float[] FLAT_TIE_PROFILE = flatTieProfile();
 
     /** Long engraved ties have steep shoulders and a broad crest, rather than a parabola. */

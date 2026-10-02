@@ -44,6 +44,33 @@ final class LocalTieStaffAlignment {
         float[] b =
                 StaffPitchTrack.localRules(
                         labels, gray, width, height, bx, bl, br, by + step * bg * .5f, bg);
+        if (matching(gray, width, height, ax, ay, bx, by, gap, step, a, b)) return true;
+        // A photographed staff may lose a labelled outer rule. Retain the ordinary
+        // phase/pitch bounds, and recover only independently printed five-rule groups
+        // at both endpoints, each also supported by a majority of semantic rules.
+        a =
+                StaffPitchTrack.localCurledEdgeRules(
+                        gray, width, height, ax, al, ar, ay + step * ag * .5f, ag);
+        b =
+                StaffPitchTrack.localCurledEdgeRules(
+                        gray, width, height, bx, bl, br, by + step * bg * .5f, bg);
+        return semanticRules(labels, width, height, ax, al, ar, gap, a)
+                && semanticRules(labels, width, height, bx, bl, br, gap, b)
+                && matching(gray, width, height, ax, ay, bx, by, gap, step, a, b);
+    }
+
+    private static boolean matching(
+            byte[] gray,
+            int width,
+            int height,
+            float ax,
+            float ay,
+            float bx,
+            float by,
+            float gap,
+            int step,
+            float[] a,
+            float[] b) {
         if (a == null || b == null || Math.abs(a[1] - b[1]) > gap * .08f) return false;
         if (ambiguous(gray, width, height, ax, a) || ambiguous(gray, width, height, bx, b))
             return false;
@@ -51,6 +78,38 @@ final class LocalTieStaffAlignment {
         return Math.abs(ap - bp) <= .22f
                 && Math.abs(ap - step * .5f) <= .22f
                 && Math.abs(bp - step * .5f) <= .22f;
+    }
+
+    private static boolean semanticRules(
+            byte[] labels,
+            int width,
+            int height,
+            float x,
+            int headLeft,
+            int headRight,
+            float gap,
+            float[] rules) {
+        if (rules == null) return false;
+        int left = Math.max(0, Math.round(x - gap * 3)),
+                right = Math.min(width - 1, Math.round(x + gap * 3));
+        int exclusion = Math.max(1, Math.round(gap * .45f)), supported = 0;
+        for (int rule = 0; rule < 5; rule++) {
+            int hits = 0, samples = 0;
+            float y = rules[0] - rule * rules[1];
+            for (int xx = left; xx <= right; xx++) {
+                if (xx >= headLeft - exclusion && xx <= headRight + exclusion) continue;
+                samples++;
+                for (int yy = Math.max(0, Math.round(y - gap * .35f));
+                        yy <= Math.min(height - 1, Math.round(y + gap * .35f));
+                        yy++)
+                    if (labels[yy * width + xx] == 4) {
+                        hits++;
+                        break;
+                    }
+            }
+            if (samples >= 8 && hits >= Math.max(4, samples * .45f)) supported++;
+        }
+        return supported >= 3;
     }
 
     private static boolean ambiguous(byte[] gray, int width, int height, float x, float[] rules) {
