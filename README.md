@@ -11,14 +11,10 @@ and timing with the original score before relying on playback or exported notati
 
 ## What it supports
 
-- Standard notation: pitches, accidentals, chords, rests, ties and written timing.
-- Multi-staff piano, violin and ensemble pages, including independently barred staves.
-- Printed meter and numeric tempo changes.
-
-- Six & seven-string guitar tabs
-- Printed tuning headers, including alternate tunings carried across PDF pages.
-- Detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations.
-- Explicit hammer-on, pull-off, tapping, slide, bend, vibrato and harmonic symbols.
+- Standard notation: pitches, accidentals, chords, rests, ties, tempo and key changes.
+- Multi-staff piano, 6- and 7 string guitar tabs, violin and ensemble pages, including independently barred staves.
+- Tuning headers, detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations.
+- Hammer-on, pull-off, tapping, slide, bend, vibrato and harmonic symbols.
 
 - JSON for integration, MIDI/MP3 for preview, and MusicXML for editing in notation software.
 - MusicXML reconstructs a concert-pitch score, not the original layout or tab placement.
