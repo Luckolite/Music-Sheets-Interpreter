@@ -77,16 +77,31 @@ final class OmrMeasurePostProcessor {
                     if (deskewedY >= 0 && deskewedY < height) rowStrength[deskewedY]++;
                 }
         int minimumStrength = Math.max(10, width / 80);
+        byte[] semanticGray = gray;
+        if (gray != null && slope != 0f) {
+            semanticGray = new byte[gray.length];
+            Arrays.fill(semanticGray, (byte) 255);
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++) {
+                    int originalY = y + Math.round(slope * (x - width * .5f));
+                    if (originalY >= 0 && originalY < height)
+                        semanticGray[y * width + x] = gray[originalY * width + x];
+                }
+        }
         List<RawStaffLineDetector.StaffLines> semanticStaffs =
-                RawStaffLineDetector.detectFromStrength(
-                        rowStrength, minimumStrength, height, slope == 0f ? gray : null, width);
+                slope == 0f
+                        ? RawStaffLineDetector.detectFromStrength(
+                                rowStrength, minimumStrength, height, gray, width)
+                        : RawStaffLineDetector.detectValidatedFromStrength(
+                                rowStrength, minimumStrength, height, semanticGray, width);
 
         List<StaffRun> result = new ArrayList<>();
         List<StaffRun> shortCandidates = new ArrayList<>();
         for (RawStaffLineDetector.StaffLines semantic : semanticStaffs) {
             int[] rows = semantic.rows();
             float gap = semantic.gap();
-            StaffPitchTrack track = null;
+            StaffPitchTrack track =
+                    StaffPitchTrack.detectForMeasures(gray, width, height, rows[0], rows[4], gap);
             int top = Math.max(0, Math.round(rows[0] - gap * 0.65f));
             int bottom = Math.min(height - 1, Math.round(rows[4] + gap * 0.65f));
             int[] columns = new int[width];
@@ -127,6 +142,14 @@ final class OmrMeasurePostProcessor {
                         CurvedStaffTail.closingBar(gray, width, height, right, rows[4], gap, slope);
                 if (clippedClosingHead(labels, width, height, right, curvedRight, rows, gap, slope))
                     right = curvedRight;
+                if (track != null) {
+                    int[] trackedColumns =
+                            rawStaffColumns(gray, width, height, rows, gap, slope, track);
+                    int trackedRight = continuousPrintedRight(trackedColumns, right, gap);
+                    if (clippedClosingHead(
+                            labels, width, height, right, trackedRight, rows, gap, slope))
+                        right = trackedRight;
+                }
             }
             if (right - left >= Math.max(width / 4, Math.round(gap * 18f))
                     || ShortFinalStaff.proved(gray, width, height, rows, gap, left, right, slope)) {
@@ -166,6 +189,41 @@ final class OmrMeasurePostProcessor {
                                     Math.round(cue.top - cue.gap * 2),
                                     Math.round(cue.bottom + cue.gap * 2))
                             >= cue.gap * cue.gap * .4f) result.add(cue);
+        }
+        List<StaffRun> snapshot = List.copyOf(result);
+        for (StaffRun proved : snapshot) {
+            if (proved.track == null) continue;
+            float minimumTop = Float.MAX_VALUE, maximumBottom = -Float.MAX_VALUE;
+            for (float fraction :
+                    new float[] {
+                        proved.left / (float) width,
+                        .15f,
+                        .35f,
+                        .5f,
+                        .65f,
+                        .85f,
+                        proved.right / (float) width
+                    }) {
+                float[] at = proved.track.at(width * fraction);
+                minimumTop = Math.min(minimumTop, at[0] - 4 * at[1]);
+                maximumBottom = Math.max(maximumBottom, at[0]);
+            }
+            float topLimit = minimumTop - proved.gap * .7f,
+                    bottomLimit = maximumBottom + proved.gap * .7f;
+            for (StaffRun other : snapshot) {
+                if (other == proved
+                        || other.track != null
+                        || other.top < topLimit
+                        || other.bottom > bottomLimit) continue;
+                // A cue can occupy the vertical envelope without sharing the curved printed rules.
+                // Duplicate projections must cover most of the same horizontal staff span.
+                int overlap =
+                        Math.min(other.right, proved.right) - Math.max(other.left, proved.left);
+                if (overlap < (proved.right - proved.left) * .75f) continue;
+                if (other.gap < proved.gap * .68f
+                        || Math.abs(other.gap - proved.gap) < proved.gap * .18f)
+                    result.remove(other);
+            }
         }
         result.sort(Comparator.comparingInt(StaffRun::top));
         return result;
@@ -251,7 +309,7 @@ final class OmrMeasurePostProcessor {
                                 <= Math.max(raw.gap() * 2.2f, height * .008f)) continue;
                 StaffPitchTrack track =
                         existing.track == null
-                                ? StaffPitchTrack.detect(
+                                ? StaffPitchTrack.detectForMeasures(
                                         gray,
                                         width,
                                         height,
@@ -317,11 +375,37 @@ final class OmrMeasurePostProcessor {
                     labels, width, height, right, continuedRight, raw.rows(), raw.gap(), slope))
                 right = continuedRight;
             if (right - left < Math.max(width / 4, Math.round(raw.gap() * 18f))) continue;
+            StaffPitchTrack rawTrack =
+                    StaffPitchTrack.detectForMeasures(
+                            gray, width, height, raw.top(), raw.bottom(), raw.gap());
             List<Integer> boundaries =
                     findBoundaries(
-                            labels, gray, width, height, raw.rows(), raw.gap(), left, right, slope);
+                            labels,
+                            gray,
+                            width,
+                            height,
+                            raw.rows(),
+                            raw.gap(),
+                            left,
+                            right,
+                            slope,
+                            rawTrack);
             if (representedIndex >= 0) {
                 StaffRun existing = result.get(representedIndex);
+                if (existing.gap < raw.gap() * .68f && rawTrack != null && boundaries.size() >= 2) {
+                    result.set(
+                            representedIndex,
+                            new StaffRun(
+                                    raw.top(),
+                                    raw.bottom(),
+                                    raw.gap(),
+                                    left,
+                                    right,
+                                    boundaries,
+                                    slope,
+                                    rawTrack));
+                    continue;
+                }
                 // A nearby complete raw staff can independently recover a bar
                 // rejected by the shifted semantic frame. Both raw and tracked
                 // five-rule frames must prove the same new bar; retain every
@@ -332,7 +416,7 @@ final class OmrMeasurePostProcessor {
                         && Math.abs(raw.top() - existing.top) <= existing.gap * 1.5f
                         && Math.abs(raw.gap() - existing.gap) <= existing.gap * .18f) {
                     StaffPitchTrack local =
-                            StaffPitchTrack.detect(
+                            StaffPitchTrack.detectForMeasures(
                                     gray,
                                     width,
                                     height,
@@ -436,7 +520,8 @@ final class OmrMeasurePostProcessor {
                                 left,
                                 right,
                                 boundaries,
-                                slope));
+                                slope,
+                                rawTrack));
         }
     }
 
@@ -483,14 +568,30 @@ final class OmrMeasurePostProcessor {
 
     private static int[] rawStaffColumns(
             byte[] gray, int width, int height, int[] rows, float gap, float slope) {
+        return rawStaffColumns(gray, width, height, rows, gap, slope, null);
+    }
+
+    private static int[] rawStaffColumns(
+            byte[] gray,
+            int width,
+            int height,
+            int[] rows,
+            float gap,
+            float slope,
+            StaffPitchTrack track) {
         int[] columns = new int[width];
         int radius = Math.max(2, Math.round(gap * .30f));
-        for (int x = 0; x < width; x++)
-            for (int row : rows) {
-                int printedRow = Math.round(row + slope * (x - width * .5f));
+        for (int x = 0; x < width; x++) {
+            float[] physical = track == null ? null : track.at(x);
+            for (int line = 0; line < 5; line++) {
+                int printedRow =
+                        physical == null
+                                ? Math.round(rows[line] + slope * (x - width * .5f))
+                                : Math.round(physical[0] - (4 - line) * physical[1]);
                 if (thinHorizontalInk(gray, width, height, x, printedRow, radius, gap))
                     columns[x]++;
             }
+        }
         return columns;
     }
 
@@ -794,7 +895,7 @@ final class OmrMeasurePostProcessor {
                                     shift);
                 if (!attachedHead)
                     attachedHead =
-                            distantHeadOnSameStem(labels, width, height, x, top, bottom, gap);
+                            distantHeadOnSameStem(labels, gray, width, height, x, top, bottom, gap);
                 if (!attachedHead
                         && gray != null
                         && countLabel(
@@ -815,7 +916,8 @@ final class OmrMeasurePostProcessor {
             // A semantic halo can lie a pixel beyond the long stem's labelled edge.
             if (semanticBar && !attachedHead && rawSpansStaff && rawColumn != x)
                 attachedHead =
-                        distantHeadOnSameStem(labels, width, height, rawColumn, top, bottom, gap);
+                        distantHeadOnSameStem(
+                                labels, gray, width, height, rawColumn, top, bottom, gap);
             if (semanticBar
                     && !attachedHead
                     && rawSpansStaff
@@ -1003,6 +1105,18 @@ final class OmrMeasurePostProcessor {
     /** High ledger heads still veto their own long stem, but not an unrelated bar on the next row. */
     private static boolean distantHeadOnSameStem(
             byte[] labels, int width, int height, int x, int top, int bottom, float gap) {
+        return distantHeadOnSameStem(labels, null, width, height, x, top, bottom, gap);
+    }
+
+    private static boolean distantHeadOnSameStem(
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            int x,
+            int top,
+            int bottom,
+            float gap) {
         for (int direction : new int[] {-1, 1}) {
             int start = direction < 0 ? top : bottom;
             int misses = 0;
@@ -1023,16 +1137,53 @@ final class OmrMeasurePostProcessor {
                 else if (++misses > Math.max(2, gap * .28f)) break;
                 if (distance < gap * 1.4f || !headTouchesStem) continue;
                 if (countLabel(
-                                labels,
-                                width,
-                                height,
-                                NOTEHEAD,
-                                Math.round(x - gap * .88f),
-                                Math.round(x + gap * .88f),
-                                y - 2,
-                                y + 2)
-                        >= Math.max(3, Math.round(gap * .65f))) return true;
+                                        labels,
+                                        width,
+                                        height,
+                                        NOTEHEAD,
+                                        Math.round(x - gap * .88f),
+                                        Math.round(x + gap * .88f),
+                                        y - 2,
+                                        y + 2)
+                                >= Math.max(3, Math.round(gap * .65f))
+                        && (gray == null || rawDistantStem(gray, width, height, x, start, y, gap)))
+                    return true;
             }
+        }
+        return false;
+    }
+
+    /** A semantic bridge through paper cannot claim ownership of a separately printed barline. */
+    private static boolean rawDistantStem(
+            byte[] gray, int width, int height, int x, int from, int to, float gap) {
+        int first = Math.min(from, to),
+                last = Math.max(from, to),
+                surround = Math.max(4, Math.round(gap * 2));
+        if (first < 0 || last >= height) return false;
+        int[] tones = new int[256], limits = new int[last - first + 1];
+        for (int y = first; y <= last; y++) {
+            Arrays.fill(tones, 0);
+            int n = 0;
+            for (int xx = Math.max(0, x - surround);
+                    xx <= Math.min(width - 1, x + surround);
+                    xx++) {
+                tones[gray[y * width + xx] & 255]++;
+                n++;
+            }
+            int paper = 0, seen = tones[0], target = (n * 3 + 3) / 4;
+            while (seen < target && paper < 255) seen += tones[++paper];
+            limits[y - first] = Math.min(RAW_BARLINE_DARK, Math.max(0, paper - 12));
+        }
+        for (int origin = Math.max(0, x - 2); origin <= Math.min(width - 1, x + 2); origin++) {
+            int hits = 0, longest = 0, run = 0;
+            for (int y = first; y <= last; y++) {
+                if ((gray[y * width + origin] & 255) <= limits[y - first]) {
+                    hits++;
+                    longest = Math.max(longest, ++run);
+                } else run = 0;
+            }
+            int span = last - first + 1;
+            if (hits >= span * .8f && longest >= span * .5f) return true;
         }
         return false;
     }

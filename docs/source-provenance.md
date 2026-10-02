@@ -218,3 +218,16 @@ the absolute core, paired-chevron and physical-staff guards. Original generated
 positive and rejection controls include the existing licensed Bravura templates.
 The two new helpers use the JDK only; weights, dependencies and record fields
 are unchanged, and no private source imagery is included.
+
+Printed five-rule frames can replace compressed semantic aliases on tilted pages.
+Measure geometry follows independently validated curved rules; its one-pixel
+projection quantization tolerance does not alter strict pitch tracking. A
+duplicate curve projection must cover most of the same horizontal staff span,
+preserving short independent cue staffs. Existing extents remain in charge;
+continuation extends the closing edge only when printed rules and a clipped
+head independently prove it. A distant semantic head can veto a bar only with
+a continuous locally contrasting printed stem. Ten original generated cases
+cover compressed frames, genuine separate staffs, white/shaded semantic bridges,
+real long stems and independent cues. Three pure-JDK classes have package-only
+app behavior parity; no private source raster, new dependency, weight or record
+field is included.

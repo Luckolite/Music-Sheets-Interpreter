@@ -268,10 +268,10 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "7532c12204cb1f0c35517296341bb19dd8f097392f7ae31c4c49a6302b6ab4db",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "9509c2b9ba89eb48de7c54dc987b5886782ee066070540d46618788cb124e294",
-      "review_note": "Global original geometric repair ported with reviewed token parity and synthetic positive and rejection regressions; no new dependencies or private source imagery."
+      "source_sha256": "c7f49b0370097e4f75a3e8e65d44f6bfb0016d1baafb47ec93c3dd44dcc6df42",
+      "source_normalized_sha256": "c7f49b0370097e4f75a3e8e65d44f6bfb0016d1baafb47ec93c3dd44dcc6df42",
+      "review_note": "Reviewed app 1.18.375 global printed staff/bar geometry repair. Complete package-only behavior parity; original procedural compressed-staff, connected-stem and independent-cue controls. Pitch tracking retains its strict path. No private pixels, dependencies, weights or record fields changed.",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
     },
     "ShortFinalStaff.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShortFinalStaff.java",
@@ -297,8 +297,10 @@
     },
     "RawStaffLineDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RawStaffLineDetector.java",
-      "source_sha256": "5be77411feee48c869c4a963354f039b7d6fb36cc32e8a7dc1614bcadffb25ee",
-      "source_normalized_sha256": "d86db4139894fea68e57883d6019150928bd152040bd9d715c45fa1d0caf15b9"
+      "source_sha256": "4d2c98004793d3bb6c75928958d8e9900251812ee1684e4edbeec5c468eec5c4",
+      "source_normalized_sha256": "4d2c98004793d3bb6c75928958d8e9900251812ee1684e4edbeec5c468eec5c4",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Reviewed app 1.18.375 global printed staff/bar geometry repair. Complete package-only behavior parity; original procedural compressed-staff, connected-stem and independent-cue controls. Pitch tracking retains its strict path. No private pixels, dependencies, weights or record fields changed."
     },
     "ScoreDynamicChange.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicChange.java",
@@ -407,9 +409,10 @@
     },
     "StaffPitchTrack.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
-      "source_sha256": "84ff973ac99a05b96d5204079b0ed5740e346110a8c75ba22326dbce467b3882",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "cef9c375d3b4d40c5a1c084d8625412638d1e41cff06be0b4c967fb499d8c82d"
+      "source_sha256": "0010ec35bafc8ac4f6e7f8507e489415c34675490e9cd963246ea6f317e0e402",
+      "source_normalized_sha256": "0010ec35bafc8ac4f6e7f8507e489415c34675490e9cd963246ea6f317e0e402",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "review_note": "Reviewed app 1.18.375 global printed staff/bar geometry repair. Complete package-only behavior parity; original procedural compressed-staff, connected-stem and independent-cue controls. Pitch tracking retains its strict path. No private pixels, dependencies, weights or record fields changed."
     },
     "OpeningMeasureLayout.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpeningMeasureLayout.java",

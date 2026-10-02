@@ -38,6 +38,12 @@ final class StaffPitchTrack {
         return detect(gray, width, height, top, bottom, gap, true);
     }
 
+    /** Measure geometry permits a single pixel of projection quantization; pitch tracking stays strict. */
+    static StaffPitchTrack detectForMeasures(
+            byte[] gray, int width, int height, float top, float bottom, float gap) {
+        return detect(gray, width, height, top, bottom, gap, false, true);
+    }
+
     private static StaffPitchTrack detect(
             byte[] gray,
             int width,
@@ -46,6 +52,18 @@ final class StaffPitchTrack {
             float bottom,
             float gap,
             boolean subtle) {
+        return detect(gray, width, height, top, bottom, gap, subtle, false);
+    }
+
+    private static StaffPitchTrack detect(
+            byte[] gray,
+            int width,
+            int height,
+            float top,
+            float bottom,
+            float gap,
+            boolean subtle,
+            boolean measures) {
         if (gray == null || gap < 3) return null;
         if (!subtle && straightRules(gray, width, height, bottom, gap, true)) return null;
         boolean broadlyStraight = straightRules(gray, width, height, bottom, gap);
@@ -151,7 +169,7 @@ final class StaffPitchTrack {
                 slopes.add((b[1] - a[1]) / (b[0] - a[0]));
             }
         float slope = median(slopes);
-        if (Math.abs(slope) * width > typicalGap * 8) return null;
+        if (Math.abs(slope) * width > typicalGap * 8 + (measures ? 1 : 0)) return null;
         List<Float> intercepts = new ArrayList<>();
         for (float[] sample : samples) intercepts.add(sample[1] - slope * sample[0]);
         float intercept = median(intercepts);

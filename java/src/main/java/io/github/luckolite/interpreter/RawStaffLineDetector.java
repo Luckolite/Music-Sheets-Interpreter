@@ -77,6 +77,33 @@ final class RawStaffLineDetector {
         return List.copyOf(result);
     }
 
+    /** Replace only compressed semantic aliases independently contradicted by five printed rules. */
+    static List<StaffLines> detectValidatedFromStrength(
+            int[] strength, int minimum, int height, byte[] gray, int width) {
+        List<StaffLines> original = detectFromStrength(strength, minimum, height);
+        List<StaffLines> printed =
+                detectFromStrength(strength, minimum, height, false, gray, width);
+        List<StaffLines> result = new ArrayList<>(original);
+        for (StaffLines proof : printed) {
+            List<StaffLines> aliases = new ArrayList<>();
+            for (StaffLines existing : result)
+                if (existing.gap() < proof.gap() * .68f
+                        && existing.top() >= proof.top() - proof.gap() * 2.2f
+                        && existing.bottom() <= proof.bottom() + proof.gap() * 2.2f)
+                    aliases.add(existing);
+            if (aliases.isEmpty()) continue;
+            result.removeAll(aliases);
+            boolean represented = false;
+            for (StaffLines existing : result)
+                if (Math.abs(existing.center() - proof.center()) <= proof.gap() * 2.2f
+                        && Math.abs(existing.gap() - proof.gap()) <= proof.gap() * .18f)
+                    represented = true;
+            if (!represented) result.add(proof);
+        }
+        result.sort(Comparator.comparingInt(StaffLines::top));
+        return List.copyOf(result);
+    }
+
     private static List<StaffLines> detectFromStrength(
             int[] rowStrength, int minimumStrength, int height, boolean filterScale) {
         return detectFromStrength(rowStrength, minimumStrength, height, filterScale, null, 0);
