@@ -6,9 +6,6 @@ a Java decoder and a Python interface. Exports JSON, MIDI, MP3 and MusicXML.
 **Code and weights are Apache-2.0 licensed, including commercial and closed-source use.**
 You do not need to publish your own code. Follow the [license and notice requirements](docs/licensing.md).
 
-This is experimental software. Always compare recognized notes, octaves, measure boundaries
-and timing with the original score before relying on playback or exported notation.
-
 ## What it supports 🎹🎸🎻🎷
 
 - Standard notation: pitches, accidentals, chords, rests, ties, tempo and key changes.
