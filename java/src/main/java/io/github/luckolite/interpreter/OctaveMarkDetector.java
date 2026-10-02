@@ -291,6 +291,8 @@ final class OctaveMarkDetector {
                     var box = boxes.get(i);
                     int left = box.left, right = box.right, a = box.top, b = box.bottom;
                     used[i] = true;
+                    var members = new ArrayList<InkBox>();
+                    members.add(box);
                     for (int j = i + 1; j < boxes.size(); j++) {
                         var next = boxes.get(j);
                         if (next.left > right + gap * .7f) break;
@@ -302,8 +304,52 @@ final class OctaveMarkDetector {
                         right = Math.max(right, next.right);
                         a = Math.min(a, next.top);
                         b = Math.max(b, next.bottom);
+                        members.add(next);
                     }
                     int shift = OctaveWordShapes.match(gray, width, left, a, right, b);
+                    if (shift == 0 && members.size() >= 4) {
+                        InkBox first = members.get(0), last = members.get(members.size() - 1);
+                        if (parenthesis(gray, width, first, gap, true)
+                                && parenthesis(gray, width, last, gap, false)
+                                && Math.abs(first.top - last.top) <= gap * .3f
+                                && Math.abs(first.bottom - last.bottom) <= gap * .3f) {
+                            int innerLeft = width,
+                                    innerRight = -1,
+                                    innerTop = height,
+                                    innerBottom = -1;
+                            for (int j = 1; j < members.size() - 1; j++) {
+                                var inner = members.get(j);
+                                innerLeft = Math.min(innerLeft, inner.left);
+                                innerRight = Math.max(innerRight, inner.right);
+                                innerTop = Math.min(innerTop, inner.top);
+                                innerBottom = Math.max(innerBottom, inner.bottom);
+                            }
+                            int innerShift =
+                                    OctaveWordShapes.match(
+                                            gray,
+                                            width,
+                                            innerLeft,
+                                            innerTop,
+                                            innerRight,
+                                            innerBottom);
+                            if (innerShift != 0
+                                    && dashEnd(
+                                                    gray,
+                                                    width,
+                                                    height,
+                                                    last.right + 1,
+                                                    innerTop,
+                                                    innerBottom,
+                                                    gap)
+                                            >= 0) {
+                                shift = innerShift;
+                                left = innerLeft;
+                                right = innerRight;
+                                a = innerTop;
+                                b = innerBottom;
+                            }
+                        }
+                    }
                     if (shift == 0 || (below ? shift > 0 : shift < 0)) continue;
                     String text =
                             switch (shift) {
@@ -339,6 +385,34 @@ final class OctaveMarkDetector {
                                                         && other.bottom() * height
                                                                 >= word.bottom() * height - 1));
         return words;
+    }
+
+    /** Balanced thin curved brackets may enclose a printed continuation word. */
+    private static boolean parenthesis(
+            byte[] gray, int width, InkBox box, float gap, boolean left) {
+        int w = box.right - box.left + 1, h = box.bottom - box.top + 1;
+        if (w < gap * .25f
+                || w > gap * .9f
+                || h < gap * 1.3f
+                || h > gap * 3.2f
+                || box.area > h * gap * .4f) return false;
+        float[] centers = new float[3];
+        int[] counts = new int[3];
+        for (int y = box.top; y <= box.bottom; y++)
+            for (int x = box.left; x <= box.right; x++)
+                if ((gray[y * width + x] & 255) < 165) {
+                    int band = Math.min(2, (y - box.top) * 3 / h);
+                    centers[band] += x;
+                    counts[band]++;
+                }
+        for (int band = 0; band < 3; band++) {
+            if (counts[band] == 0) return false;
+            centers[band] /= counts[band];
+        }
+        float sign = left ? 1 : -1;
+        // Italic brackets lean across their height; compare curvature after removing that slope.
+        return ((centers[0] + centers[2]) * .5f - centers[1]) * sign + .5f > gap * .06f
+                && Math.abs(centers[0] - centers[2]) < gap * .65f;
     }
 
     private static List<InkBox> attachedEightBoxes(

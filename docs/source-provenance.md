@@ -231,3 +231,22 @@ cover compressed frames, genuine separate staffs, white/shaded semantic bridges,
 real long stems and independent cues. Three pure-JDK classes have package-only
 app behavior parity; no private source raster, new dependency, weight or record
 field is included.
+
+Reduced metrical heads keep their written timing when a continuous printed beam
+connects them to an established ordinary attack. A complete pair of attached
+shafts can recover a third beam only through the existing five-column proof of
+three uninterrupted cores. Original generated mixed-size attacks and short or
+ledger shafts preserve genuine isolated grace prefixes, two rails and broken
+third-rail rejection.
+
+Balanced thin curved brackets can surround an octave continuation. The inner
+word still needs the existing numeral/suffix proof and a following printed dash
+span. Original procedural brackets use the existing original rendered control
+words; bare numerals and absent dashes cannot transpose notes.
+
+Shaded-paper islands need a locally contrasting printed core before they become
+augmentation dots. A long-rule veto beside a tenuto needs contrasting rule ink on
+both flanks; broad shaded paper cannot supply it. Original generated uniform and
+graded paper controls preserve real dots, double dots and pale rules. These
+changes remain inside three mapped JDK classes, with package/diagnostic adapters
+only; no private source raster, new dependency, weight or record field is included.

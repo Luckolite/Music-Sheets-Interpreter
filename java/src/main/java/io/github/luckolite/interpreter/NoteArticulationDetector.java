@@ -1,6 +1,5 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -497,7 +496,14 @@ final class NoteArticulationDetector {
                                 Math.round(glyph.y()),
                                 note.gap,
                                 235,
-                                .50f)) continue;
+                                .50f)
+                        && contrastedHorizontalRule(
+                                gray,
+                                width,
+                                height,
+                                Math.round(glyph.x()),
+                                Math.round(glyph.y()),
+                                note.gap)) continue;
                 if (candidate == NoteArticulation.STACCATO
                         && (durationDot(glyph, notes)
                                 || (raw
@@ -1691,6 +1697,39 @@ final class NoteArticulationDetector {
         return hits >= (right - left + 1) * .9f
                 && shaft <= gap * .65f
                 && thin >= (hits - shaft) * .8f;
+    }
+
+    /** Broad shaded paper is not a printed rule across the flanks of a thin dash. */
+    private static boolean contrastedHorizontalRule(
+            byte[] gray, int width, int height, int x, int y, float gap) {
+        int near = Math.max(3, Math.round(gap * 1.5f)),
+                far = Math.round(gap * 4f),
+                flank = Math.max(2, Math.round(gap * .3f));
+        for (int direction : new int[] {-1, 1}) {
+            int hits = 0, samples = 0;
+            for (int d = near; d <= far; d++) {
+                int xx = x + direction * d;
+                if (xx < 0 || xx >= width) return false;
+                samples++;
+                boolean ink = false;
+                for (int yy = Math.max(flank, y - 1);
+                        yy <= Math.min(height - 1 - flank, y + 1);
+                        yy++) {
+                    int tone = gray[yy * width + xx] & 255;
+                    int paper =
+                            Math.max(
+                                    gray[(yy - flank) * width + xx] & 255,
+                                    gray[(yy + flank) * width + xx] & 255);
+                    if (tone < 235 && paper >= tone + 12) {
+                        ink = true;
+                        break;
+                    }
+                }
+                if (ink) hits++;
+            }
+            if (samples == 0 || hits < samples * .50f) return false;
+        }
+        return true;
     }
 
     private static boolean horizontalRuleInk(

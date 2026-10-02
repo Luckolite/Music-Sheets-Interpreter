@@ -249,10 +249,11 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "88a6edb65723a47814395ae914db9fbc222d1409944f0bdd66a944e5313c8ff3",
-      "review_note": "Reviewed uncommitted app 1.18.373 expression source. Complete package-only port; original procedural geometry and existing licensed font regressions. No private source, model, dependency or record layout changes.",
-      "source_normalized_sha256": "24649699f526936c2131c76e762d399d8701d2dc71356a8d0476ca9657e43280",
-      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "source_sha256": "2a236f9c683eaabb449358adf9acef9021f97649176c2540f17b1b219ece0a85",
+      "review_note": "Reviewed tenuto rule veto requires independently contrasting printed rule ink on both horizontal flanks; broad shaded paper cannot supply a staff stripe. Original procedural shaded/graded paper and genuine pale-rule positives/negatives, above and below heads. Package-only parity; no model, dependency, record field or private score imagery.",
+      "source_normalized_sha256": "b5eb16b7af4dfc3a9ca89e7bb4b8f5b2882e1592ec45277ca2f6674056c789a7",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_state": "Reviewed scoped recognition revision272 source; original base commits are retained separately and exact source hashes pin the standalone extraction."
     },
     "OpenChevron.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",
@@ -282,13 +283,12 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "4f71087bbad6cb4da8d30e22637747125842e84b29bdb3aed5027245d1ceab39",
+      "source_sha256": "7b1901bccbd704a5f9d8ebbf9ce2c6acf5509cb41c83c261bdf67f5981cbd9f9",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Reviewed locally contrasted finite beam endpoints with uninterrupted thin-rule and full body guards; standalone package/diagnostics adapter preserved. Fifteen original generated beam controls; no model, dependency or private source imagery added.",
-      "source_normalized_sha256": "8590a5604728d8ebd9fab3c2450eed11ee6a9327e58eebf6e6416239a342cb75",
-      "reviewed_app_state": "Uncommitted reviewed speedup snapshot derived from guide266 Android release source; baseline app commit recorded separately and exact source hashes pin the changes.",
-      "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-tie-845-release-source"
+      "review_note": "Reviewed continuous raw beam ownership prevents reduced metrical heads being treated as grace prefixes. Complete attached shafts and existing five-column three-rail proof recover reduced-mask thirty-seconds; disconnected or broken rails remain rejected. Tiny augmentation candidates need a local-paper contrasting printed core. Original procedural beam, mixed-size grace and shaded-paper dot regressions; standalone package/diagnostics adapter only. No new helpers outside the mapped class, weights, dependencies, record fields or private score pixels.",
+      "source_normalized_sha256": "7ccf28b3c87292e8c8d037715f78604a771214a6ea1f9e92f9018f6bdc8ddd7b",
+      "reviewed_app_state": "Reviewed scoped recognition revision272 source; original base commits are retained separately and exact source hashes pin the standalone extraction."
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -433,10 +433,11 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "e33d2db5ccc1fdbe18c239dbe77a9ba5e7fcb86d8435e9ca9e467f0e58461e8d",
+      "source_sha256": "6617f8b53fa9ef3389d9903bd9e66b81adf300d4fe78626f27e8c6f73e217c8f",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "58fdf228db1ff61d3aa6faf6eeea07b2b088591030f9fc2d07239d3c69ccf9e1",
-      "review_note": "Reviewed global local-paper contrast for octave numeral, suffix and dash evidence. High-contrast scans preserve exact pixels; shaded-paper texture must clear a 24-level contrast margin against the local 85th percentile. Caller pixels are preserved. Original generated ring/stipple negative and dark-ink flat/gradient positive controls; complete octave suite passes. Entire class token parity checked with the standalone package adapter. No weights, dependencies or wire-layout changes; private evidence excluded."
+      "source_normalized_sha256": "aac442b4e2d6aa1a8602f91559bf23703e57846124c8735f9d683f839ee790a9",
+      "review_note": "Reviewed balanced thin curved brackets permit inner octave-word matching only with existing suffix proof and a following printed dash span. Original procedural brackets around existing original control words exercise the complete detector and rejection cases. Package-only standalone parity; no private source pixels, model, dependency or record fields.",
+      "reviewed_app_state": "Reviewed scoped recognition revision272 source; original base commits are retained separately and exact source hashes pin the standalone extraction."
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",

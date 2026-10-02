@@ -8036,8 +8036,9 @@ final class OmrScoreInterpreter {
                         int at = (y + dy) * width + x;
                         if ((gray[at] & 255) <= 165) {
                             ink = true;
-                            if (labels[at] != OmrMeasurePostProcessor.STAFF
-                                    && labels[at] != OmrMeasurePostProcessor.NOTEHEAD)
+                            if (labels == null
+                                    || labels[at] != OmrMeasurePostProcessor.STAFF
+                                            && labels[at] != OmrMeasurePostProcessor.NOTEHEAD)
                                 nonStaff = true;
                         }
                     }
@@ -9727,6 +9728,7 @@ final class OmrScoreInterpreter {
                     previous = next;
                     continue;
                 }
+                if (extendsMetricalBeam(gray, width, height, detected, i)) break;
                 boolean compactGroup = prefix.size() >= 2;
                 for (int k = 0; k < prefix.size() && compactGroup; k++) {
                     DetectedNote member = detected.get(prefix.get(k));
@@ -9868,10 +9870,36 @@ final class OmrScoreInterpreter {
                     || principal.head.maxX - principal.head.minX + 1 <= gap * 1.05f
                     || principal.head.area <= a.head.area * 1.65f
                     || principal.head.area <= b.head.area * 1.65f) continue;
+            if (extendsMetricalBeam(gray, width, height, detected, i)) continue;
             events.set(i, asEngravedGrace(events.get(i), provedBeams));
             events.set(bIndex, asEngravedGrace(events.get(bIndex), provedBeams));
             if (bIndex == i + 1) i++;
         }
+    }
+
+    /** A continuous beam from an ordinary attack keeps its smaller heads metrical. */
+    private static boolean extendsMetricalBeam(
+            byte[] gray, int width, int height, List<DetectedNote> detected, int index) {
+        if (gray == null) return false;
+        DetectedNote first = detected.get(index), next = first;
+        int cursor = index;
+        for (int count = 0; count < 8; count++) {
+            int prior = adjacentGraceVoiceIndex(detected, cursor, -1);
+            if (prior < 0) return false;
+            DetectedNote previous = detected.get(prior);
+            if (!graceStemsShareBeam(
+                    null, gray, width, height, previous.head, next.head, first.staffGap))
+                return false;
+            int[] stem = attachedRawStem(gray, width, height, previous.head, first.staffGap * .65f);
+            if (stem != null && Math.abs(stem[1] - previous.head.centerY) > first.staffGap * 4.8f)
+                return true;
+            if (previous.head.area > first.head.area * 1.65f
+                    && previous.head.maxX - previous.head.minX + 1 > first.staffGap * 1.05f)
+                return true;
+            next = previous;
+            cursor = prior;
+        }
+        return false;
     }
 
     /** Accompaniment on another staff cannot split an ornamental pair. */
@@ -13326,8 +13354,15 @@ final class OmrScoreInterpreter {
         if (complete == null && shaded)
             complete =
                     ClosedStaffBarPhase.resolve(
-                            gray, width, height, head.centerX, head.centerY,
-                            head.minX, head.maxX, referenceBottom, gap);
+                            gray,
+                            width,
+                            height,
+                            head.centerX,
+                            head.centerY,
+                            head.minX,
+                            head.maxX,
+                            referenceBottom,
+                            gap);
         if (complete != null
                 && !curved
                 && Math.abs(Math.abs(complete[0] - referenceBottom) - gap) < gap * .2f) {
@@ -13639,6 +13674,7 @@ final class OmrScoreInterpreter {
                     // Run's dotted half has a round 8x8, 52-pixel dot at a 13.75-pixel staff gap.
                     // Allow that slightly heavier ink only beside a verified hollow head.
                     || dot.area > gap * gap * (hollowHead ? .34f : .26f)) continue;
+            if (gray != null && !augmentationDotContrast(gray, width, height, dot, gap)) continue;
             if (gray != null && fadedRuleFragment(gray, width, height, dot, gap)) continue;
             if (gray != null && fadedStemFragment(gray, width, height, dot, gap)) continue;
             if (gray != null
@@ -13669,6 +13705,28 @@ final class OmrScoreInterpreter {
                         && Math.abs(second.centerY - first.centerY) <= gap * .40f
                 ? 2
                 : 1;
+    }
+
+    /** A tiny threshold island in shaded paper needs an independently contrasting printed core. */
+    private static boolean augmentationDotContrast(
+            byte[] gray, int width, int height, Component dot, float gap) {
+        int radius = Math.max(4, Math.round(gap)),
+                cx = Math.round(dot.centerX),
+                cy = Math.round(dot.centerY);
+        int[] tones = new int[256];
+        int count = 0;
+        for (int y = Math.max(0, cy - radius); y <= Math.min(height - 1, cy + radius); y++)
+            for (int x = Math.max(0, cx - radius); x <= Math.min(width - 1, cx + radius); x++) {
+                tones[gray[y * width + x] & 255]++;
+                count++;
+            }
+        int target = (count * 3 + 3) / 4, paper = 0, seen = tones[0];
+        while (seen < target && paper < 255) seen += tones[++paper];
+        int core = 0;
+        for (int y = dot.minY; y <= dot.maxY; y++)
+            for (int x = dot.minX; x <= dot.maxX; x++)
+                if ((gray[y * width + x] & 255) <= paper - 30) core++;
+        return core >= Math.max(1, Math.round(dot.area * .20f));
     }
 
     private static boolean staccatoAtNextHead(
@@ -14338,14 +14396,7 @@ final class OmrScoreInterpreter {
             int[] pale = paleStemToDoubleBeam(labels, gray, width, height, head, staff);
             if (pale != null
                     && rootedPaleFlag(
-                            labels,
-                            gray,
-                            width,
-                            height,
-                            head,
-                            staff.gap,
-                            pale[0],
-                            pale[1],
+                            labels, gray, width, height, head, staff.gap, pale[0], pale[1],
                             pale[2] < 0)) count = 1;
         }
         if (count == 2
@@ -14477,6 +14528,52 @@ final class OmrScoreInterpreter {
                         own = local;
                 }
             }
+            // Reduced segmentation ovals also occur on long metrical shafts.
+            // Recover a third rail only from two attached, complete shafts and
+            // the existing five-column proof of three continuous beam cores.
+            if (count == 2) {
+                int ownLimit =
+                        head.centerY < staff.top - staff.gap * 2.5f
+                                        || head.centerY > staff.bottom + staff.gap * 2.5f
+                                ? 12
+                                : 9;
+                int[] fullOwn =
+                        attachedRawStem(
+                                gray,
+                                width,
+                                height,
+                                head,
+                                staff.gap,
+                                Math.max(1, Math.round(staff.gap * .16f)),
+                                threshold,
+                                ownLimit);
+                if (fullOwn != null && Math.abs(fullOwn[1] - head.centerY) >= staff.gap * 4.8f)
+                    for (Component other : heads) {
+                        if (other == head
+                                || Math.abs(other.centerX - head.centerX) < staff.gap * .95f
+                                || Math.abs(other.centerX - head.centerX) > staff.gap * 3
+                                || Math.abs(other.centerY - head.centerY) > staff.gap * 2.5f)
+                            continue;
+                        int pairLimit =
+                                other.centerY < staff.top - staff.gap * 2.5f
+                                                || other.centerY > staff.bottom + staff.gap * 2.5f
+                                        ? 12
+                                        : 9;
+                        int[] fullPair =
+                                attachedRawStem(
+                                        gray,
+                                        width,
+                                        height,
+                                        other,
+                                        staff.gap,
+                                        Math.max(1, Math.round(staff.gap * .16f)),
+                                        threshold,
+                                        pairLimit);
+                        if (PairedGraceBeamInk.countFullSize(
+                                        gray, width, height, fullOwn, fullPair, staff.gap)
+                                == 3) return 3;
+                    }
+            }
             boolean pairedGrace = false;
             if (own != null && Math.abs(own[1] - head.centerY) < staff.gap * 4.8f)
                 for (Component other : heads) {
@@ -14502,6 +14599,43 @@ final class OmrScoreInterpreter {
                         continue;
                     int paired =
                             PairedGraceBeamInk.count(gray, width, height, own, pair, staff.gap);
+                    // A compact head mask can belong to an ordinary long-stemmed run.
+                    // Three full-size cores at five columns outrank a compact two-core fit.
+                    if (paired > 0 && count >= 2) {
+                        int ownLimit =
+                                head.centerY < staff.top - staff.gap * 2.5f
+                                                || head.centerY > staff.bottom + staff.gap * 2.5f
+                                        ? 12
+                                        : 9;
+                        int pairLimit =
+                                other.centerY < staff.top - staff.gap * 2.5f
+                                                || other.centerY > staff.bottom + staff.gap * 2.5f
+                                        ? 12
+                                        : 9;
+                        int[] fullOwn =
+                                attachedRawStem(
+                                        gray,
+                                        width,
+                                        height,
+                                        head,
+                                        staff.gap,
+                                        Math.max(1, Math.round(staff.gap * .16f)),
+                                        threshold,
+                                        ownLimit);
+                        int[] fullPair =
+                                attachedRawStem(
+                                        gray,
+                                        width,
+                                        height,
+                                        other,
+                                        staff.gap,
+                                        Math.max(1, Math.round(staff.gap * .16f)),
+                                        threshold,
+                                        pairLimit);
+                        if (PairedGraceBeamInk.countFullSize(
+                                        gray, width, height, fullOwn, fullPair, staff.gap)
+                                == 3) return 3;
+                    }
                     if (paired > 0) return paired;
                 }
             if (!pairedGrace
@@ -14908,6 +15042,9 @@ final class OmrScoreInterpreter {
                 int near = Math.max(0, stemEnd - (upward ? Math.round(gap * .2f) : rootSpan));
                 int far =
                         Math.min(height - 1, stemEnd + (upward ? rootSpan : Math.round(gap * .2f)));
+                // Narrow curved flags can return before the usual outer sample.
+                // Two distinct thick roots at both inner columns prove a pair;
+                // one returning flag has only one root next to the shaft.
                 if (adjacentFlagRoots(
                         gray, labels, width, height, bestX, near, far, staff, !smallHead))
                     thick = 2;
@@ -14916,8 +15053,9 @@ final class OmrScoreInterpreter {
                                 gray, labels, width, height, head, staff, bestX, stemEnd, upward,
                                 near, far)) thick = 2;
             }
-            // Three curved flags extend beyond the two-root window. Require thick
-            // roots in adjacent columns, not a returning flag or detached curve.
+            // Three curved flags extend farther toward the head than the two-beam
+            // window. Require three thick roots beside the shaft in adjacent columns;
+            // a returning eighth flag or a detached curve cannot establish this count.
             if (thick <= 2
                     && Math.abs(stemEnd - head.centerY) < gap * 7
                     && hasCurvedFlag(
@@ -15637,6 +15775,7 @@ final class OmrScoreInterpreter {
                     inner = pale[0] + Math.round(Math.copySign(.4f, distance) * gap);
             if (thickNonHeadBands(gray, labels, width, height, x, top, bottom, staff, inner, true)
                     != 1) return false;
+            // A lighter second rooted band makes the single-beam override ambiguous.
             for (int threshold : new int[] {175, 185})
                 if (thickNonHeadBandsAtThreshold(
                                 gray, labels, width, height, x, top, bottom, staff, threshold,
@@ -16610,8 +16749,8 @@ final class OmrScoreInterpreter {
                     // A beam's dark core can stop just before the lighter rule's center.
                     // Include its antialiased fringe, still requiring a narrow local core.
                     int fringe = Math.max(1, Math.round(gap * .15f));
-                    int ruleFirst = first + shift - beamShift - fringe;
-                    int ruleLast = last + shift - beamShift + fringe;
+                    int ruleFirst = first + shift - beamShift - fringe,
+                            ruleLast = last + shift - beamShift + fringe;
                     if (ruleFirst < 0 || ruleLast >= height) return false;
                     int minimum = 255;
                     for (int y = ruleFirst; y <= ruleLast; y++)
@@ -17806,7 +17945,9 @@ final class OmrScoreInterpreter {
         }
         // Each candidate is evaluated synchronously; scratch arrays belong to this call.
         int[] bins = new int[5], coveredBins = new int[5];
-        float[] centers = new float[50], supportedCenters = new float[50], strokeCenters = new float[50];
+        float[] centers = new float[50],
+                supportedCenters = new float[50],
+                strokeCenters = new float[50];
         int reach = Math.max(2, Math.round(gap * .4f));
         for (int side : requiredSide == 0 ? new int[] {-1, 1} : new int[] {requiredSide})
             for (float offset = .2f; offset <= 1.15f; offset += .15f)
