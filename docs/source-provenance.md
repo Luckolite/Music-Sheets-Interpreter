@@ -346,3 +346,10 @@ one-sided support and real bows above and below. Both shared classes retain full
 executable-token app parity after package/diagnostic adaptation, including the
 existing processing optimizations. No private source image, model, dependency or
 record-layout change is included.
+
+Rest detection caches each requested row's sorted dark-column indices for one
+call, reusing them across overlapping masks and bands. Original generated
+regressions cover threshold boundaries and changing caller-owned ink across
+erasure, restoration and interleaved detections. The standalone port preserves
+all existing arithmetic, thresholds and record layouts. Models and production
+dependencies are unchanged; no private score or device data is included.

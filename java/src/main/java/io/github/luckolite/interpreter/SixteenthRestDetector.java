@@ -322,6 +322,7 @@ final class SixteenthRestDetector {
                                         s.index(),
                                         s.count()),
                                 (s.top() + s.bottom()) * .5f));
+        int[][] rowColumns = null;
         int[] columnInk = null, rowDark = null, rowLongest = null;
         for (Placement placement : placements) {
             Staff staff = placement.staff();
@@ -377,6 +378,7 @@ final class SixteenthRestDetector {
                 rowDark = new int[height];
                 rowLongest = new int[height];
                 java.util.Arrays.fill(rowDark, -1);
+                rowColumns = new int[height][];
             }
             for (int y = top; y <= bottom; y++) {
                 if (rowDark[y] < 0) {
@@ -450,9 +452,15 @@ final class SixteenthRestDetector {
                     else java.util.Arrays.fill(columnInk, 0);
                     for (int y = scanTop; y <= scanBottom; y++) {
                         if (mask[y - scanTop]) continue;
-                        int row = y * width;
-                        for (int x = 0; x < width; x++)
-                            if ((gray[row + x] & 255) < 170) columnInk[x]++;
+                        int[] dark = rowColumns[y];
+                        if (dark == null) {
+                            dark = new int[rowDark[y]];
+                            int count = 0, row = y * width;
+                            for (int x = 0; x < width; x++)
+                                if ((gray[row + x] & 255) < 170) dark[count++] = x;
+                            rowColumns[y] = dark;
+                        }
+                        for (int x : dark) columnInk[x]++;
                     }
                     int start = -1;
                     for (int x = 0; x <= width; x++) {

@@ -380,10 +380,10 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "6eef12d0831f46f3a6bd955a80c40c228973657f31f718daa847155242b5346b",
+      "source_sha256": "18b7b34e1304f83711931e9910b344ab4808463e5711dfa241e9254674e48ca6",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change.",
-      "source_normalized_sha256": "6eef12d0831f46f3a6bd955a80c40c228973657f31f718daa847155242b5346b",
+      "review_note": "Reviewed release869 snapshot based on accepted868: cache sorted dark-column indices locally within one rest-detection call. Same row/column projections, thresholds and float expressions; method-only standalone port with original threshold and changing-caller ink regressions. No tie scratch, private score, model, dependency or record-layout change.",
+      "source_normalized_sha256": "6abeaa058d4d90e2f0e878af625ba098753e419ff664a5a1d67e37a07e3d3b39",
       "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-rest-tuplet-841-source",
       "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02"
     },
