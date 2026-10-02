@@ -74,6 +74,23 @@ old private runtime DLLs that shadow a newer system installation; an ONNX librar
 load failure is not evidence of model failure. Use a compatible supported JDK/runtime
 installation rather than replacing DLLs inside another application's installation.
 
+To check the optional binding against the previous session configuration, run
+the generated-tensor regression after the normal Java build:
+
+```sh
+python scripts/test_portable_ocr.py --onnx-jar /path/to/onnxruntime-1.25.1.jar \
+  --detector /path/to/ch_PP-OCRv5_det_mobile.onnx \
+  --recognizer /path/to/latin_PP-OCRv5_rec_mobile.onnx
+```
+
+Repeat `--detector` with the supported v4 detector path to check both artifacts.
+`--java /path/to/java` selects a runtime separately from the build JDK.
+The test compares every returned probability float bit on 27 generated tensors
+per detector, including repeated calls, the dictionary and unchanged caller
+inputs. It uses the original two-intra/one-inter-thread configuration as its
+reference. No images, model downloads or interpretation caches are involved.
+This checks output compatibility on generated inputs, not OCR accuracy.
+
 Model lineage and redistribution terms:
 [RapidOCR registry](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr/default_models.yaml),
 [RapidOCR model licensing](https://github.com/RapidAI/RapidOCR/blob/main/README.md),

@@ -135,9 +135,11 @@
     },
     "OnnxOcrInference.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OnnxOcrInference.java",
-      "source_sha256": "0d27a8c9e1b8778dc176cabecba98d940a140412bdf6fcf68b13f7bd02dd83d4",
+      "source_sha256": "25b30ec4f42a5672d98cea42ee1c41aef3c0b1c58b0c6188620d8dd2620cc0f0",
       "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
-      "source_normalized_sha256": "0d27a8c9e1b8778dc176cabecba98d940a140412bdf6fcf68b13f7bd02dd83d4"
+      "source_normalized_sha256": "516f2786f6e880e4d67d41bb9d14a7e5d246361c2a3b4bd8baed55369880aaed",
+      "reviewed_source_state": "Reviewed Music Sheets 1.18.383 source; parent is accepted 1.18.382",
+      "review_note": "Reviewed force_spinning_stop session option retains existing thread counts, approved models, shapes, ownership and exact probability bits; optional original generated regression covers both approved detector artifacts. Original synthetic regressions; unchanged models/dependencies/layouts, no private source images or device data."
     },
     "PortableOcrProbe.java": {
       "source_path": "tools/native-worker/PortableOcrProbe.java",
@@ -270,10 +272,11 @@
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
-      "source_sha256": "c7f49b0370097e4f75a3e8e65d44f6bfb0016d1baafb47ec93c3dd44dcc6df42",
-      "source_normalized_sha256": "c7f49b0370097e4f75a3e8e65d44f6bfb0016d1baafb47ec93c3dd44dcc6df42",
-      "review_note": "Reviewed app 1.18.375 global printed staff/bar geometry repair. Complete package-only behavior parity; original procedural compressed-staff, connected-stem and independent-cue controls. Pitch tracking retains its strict path. No private pixels, dependencies, weights or record fields changed.",
-      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "source_sha256": "bbb05db411bcb6241fff40ea36d4966394aca8d8d5c521fa1ca690e8e70e6032",
+      "source_normalized_sha256": "cabbfb8007c815356f0240bf3d276dec18c810d4fe89cdecd964748a5bbde8c8",
+      "review_note": "Reviewed irreversible printed-rule rejection and per-estimate projection scratch preserve accepted arithmetic, angle ordering and strict comparisons; local buffers only. Original synthetic regressions; unchanged models/dependencies/layouts, no private source images or device data.",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Reviewed Music Sheets 1.18.383 source; parent is accepted 1.18.382"
     },
     "ShortFinalStaff.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ShortFinalStaff.java",
@@ -284,13 +287,13 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "57282bdcf2bb97fc44754360a92cd3c1f88573efc7251e7e740b76a0b2eac363",
+      "source_sha256": "ca56fbc42b54316b433dd2d9e8dad849c2c4c31f219e2f279314273be2ee76c8",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change.",
-      "source_normalized_sha256": "57282bdcf2bb97fc44754360a92cd3c1f88573efc7251e7e740b76a0b2eac363",
+      "review_note": "Reviewed bounded eight-neighbor spans retain component order, counts, long sums and float centers with malformed-input pixel fallback. Tie sample columns/profile retain all original float operations and decisions; unrelated recognition methods preserved. Original synthetic regressions; unchanged models/dependencies/layouts, no private source images or device data.",
+      "source_normalized_sha256": "fb231c21515863bd46333b00665a8d5882341028ba63c1016f22e90d7363def0",
       "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit",
-      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02"
+      "reviewed_source_state": "Reviewed Music Sheets 1.18.383 source; parent is accepted 1.18.382"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -417,10 +420,11 @@
     },
     "StaffPitchTrack.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/StaffPitchTrack.java",
-      "source_sha256": "0010ec35bafc8ac4f6e7f8507e489415c34675490e9cd963246ea6f317e0e402",
-      "source_normalized_sha256": "0010ec35bafc8ac4f6e7f8507e489415c34675490e9cd963246ea6f317e0e402",
+      "source_sha256": "de59cbace0322593f72848f844a9edeb482be37505dc39e8156e5ffe9224feb4",
+      "source_normalized_sha256": "c01452dabdf80704a869618806ee1fadcd00de5b666e4395123d20b365ebf7e8",
       "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed app 1.18.375 global printed staff/bar geometry repair. Complete package-only behavior parity; original procedural compressed-staff, connected-stem and independent-cue controls. Pitch tracking retains its strict path. No private pixels, dependencies, weights or record fields changed."
+      "review_note": "Reviewed column shift hoist retains exact original float operands and Math.round order. Original synthetic regressions; unchanged models/dependencies/layouts, no private source images or device data.",
+      "reviewed_source_state": "Reviewed Music Sheets 1.18.383 source; parent is accepted 1.18.382"
     },
     "OpeningMeasureLayout.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpeningMeasureLayout.java",
@@ -441,11 +445,12 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "6617f8b53fa9ef3389d9903bd9e66b81adf300d4fe78626f27e8c6f73e217c8f",
+      "source_sha256": "fa976c5b47bf5f81ba08e36291a6a562b8e063ea113e7367cfc0c505c7c97fea",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "aac442b4e2d6aa1a8602f91559bf23703e57846124c8735f9d683f839ee790a9",
-      "review_note": "Reviewed balanced thin curved brackets permit inner octave-word matching only with existing suffix proof and a following printed dash span. Original procedural brackets around existing original control words exercise the complete detector and rejection cases. Package-only standalone parity; no private source pixels, model, dependency or record fields.",
-      "reviewed_app_state": "Reviewed scoped recognition revision272 source; original base commits are retained separately and exact source hashes pin the standalone extraction."
+      "source_normalized_sha256": "9c2a4bd48ed1f11f7090b9528c26490fc45dac5d8dfdcb2abca05cdc07968834",
+      "review_note": "Reviewed paper-component horizontal runs retain original component origin, order, area and box thresholds; narrow widths retain original behavior. Original synthetic regressions; unchanged models/dependencies/layouts, no private source images or device data.",
+      "reviewed_app_state": "Reviewed scoped recognition revision272 source; original base commits are retained separately and exact source hashes pin the standalone extraction.",
+      "reviewed_source_state": "Reviewed Music Sheets 1.18.383 source; parent is accepted 1.18.382"
     },
     "OctaveWordShapes.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveWordShapes.java",
@@ -1104,6 +1109,12 @@
       "source_normalized_sha256": "47c2d98c4de852aa8a4567bb40e1d35f33218a848747145dd5ce9db99265e44b",
       "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
       "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "ExactWhiteTileInput.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ExactWhiteTileInput.java",
+      "source_sha256": "ccf6589a12e568b7a19a89472b085d297940ce79d11a42f9c0873b3b52ba8107",
+      "source_normalized_sha256": "ae52d748c567a79c250b9672f406169e4b5552ca3e09e93bbbf776a8055648ce",
+      "review_note": "Original Apache-2.0 JDK-only complete-input exact-white predicate. Package/format-only port; synthetic near-white, all-plane, padding and input-ownership tests. Reviewed app adapters and Python predict cache actual owned output only for fixed deterministic approved weights."
     }
   },
   "interpreter_speedup_review": {

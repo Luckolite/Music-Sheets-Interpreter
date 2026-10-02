@@ -612,12 +612,13 @@ final class OmrMeasurePostProcessor {
                 }
         float bestSlope = 0f;
         float centerX = width / 2f;
-        long horizontalScore = staffProjectionScore(xs, ys, height, centerX, 0f);
+        int[] projection = new int[height];
+        long horizontalScore = staffProjectionScore(xs, ys, height, centerX, 0f, projection);
         long bestScore = horizontalScore;
         // Camera angles and book gutters can exceed the old roughly three-degree range.
         for (int step = -24; step <= 24; step++) {
             float slope = step * 0.006f;
-            long score = staffProjectionScore(xs, ys, height, centerX, slope);
+            long score = staffProjectionScore(xs, ys, height, centerX, slope, projection);
             if (score > bestScore) {
                 bestScore = score;
                 bestSlope = slope;
@@ -628,7 +629,7 @@ final class OmrMeasurePostProcessor {
         float coarseSlope = bestSlope;
         for (int step = -5; step <= 5; step++) {
             float slope = coarseSlope + step * .0006f;
-            long score = staffProjectionScore(xs, ys, height, centerX, slope);
+            long score = staffProjectionScore(xs, ys, height, centerX, slope, projection);
             if (score > bestScore) {
                 bestScore = score;
                 bestSlope = slope;
@@ -640,6 +641,18 @@ final class OmrMeasurePostProcessor {
     private static long staffProjectionScore(
             int[] xs, int[] ys, int height, float centerX, float slope) {
         int[] projection = new int[height];
+        for (int i = 0; i < xs.length; i++) {
+            int row = Math.round(ys[i] - slope * (xs[i] - centerX));
+            if (row >= 0 && row < height) projection[row]++;
+        }
+        long score = 0;
+        for (int value : projection) score += (long) value * value;
+        return score;
+    }
+
+    private static long staffProjectionScore(
+            int[] xs, int[] ys, int height, float centerX, float slope, int[] projection) {
+        Arrays.fill(projection, 0);
         for (int i = 0; i < xs.length; i++) {
             int row = Math.round(ys[i] - slope * (xs[i] - centerX));
             if (row >= 0 && row < height) projection[row]++;
@@ -1289,6 +1302,8 @@ final class OmrMeasurePostProcessor {
                 }
                 double coverage = samples == 0 ? 0 : ink / (double) samples;
                 minimum = Math.min(minimum, coverage);
+                // A later line cannot raise the minimum coverage of this candidate.
+                if (minimum < .55) break;
                 total += coverage;
             }
             if (minimum < .55) continue;

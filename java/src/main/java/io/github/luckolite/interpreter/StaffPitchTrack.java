@@ -809,8 +809,9 @@ final class StaffPitchTrack {
         for (int xx = left; xx <= right; xx++) {
             if (xx >= headLeft - exclusion && xx <= headRight + exclusion) continue;
             samples++;
+            int columnShift = Math.round((xx - x) * slope);
             for (int y = Math.max(flank, top); y <= Math.min(height - 1 - flank, bottom); y++) {
-                int row = y + Math.round((xx - x) * slope);
+                int row = y + columnShift;
                 if (row < flank || row + flank >= height) continue;
                 int ink = gray[row * width + xx] & 255;
                 if (ink <= inkThreshold

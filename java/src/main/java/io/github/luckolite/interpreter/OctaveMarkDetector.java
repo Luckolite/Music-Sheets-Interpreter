@@ -421,33 +421,67 @@ final class OctaveMarkDetector {
         boolean[] seen = new boolean[w * band];
         int[] queue = new int[w * band];
         var holes = new ArrayList<InkBox>();
+        int[] neighbors = {-1, 1, -w, w};
         for (int seed = 0; seed < seen.length; seed++) {
             if (seen[seed] || (gray[top * w + seed] & 255) < 165) continue;
-            int take = 0, size = 1, x0 = w, x1 = -1, y0 = band, y1 = -1;
+            int take = 0, size = 1, pixels = 0, x0 = w, x1 = -1, y0 = band, y1 = -1;
             boolean edge = false;
             seen[seed] = true;
             queue[0] = seed;
             while (take < size) {
                 int at = queue[take++], x = at % w, y = at / w;
-                x0 = Math.min(x0, x);
-                x1 = Math.max(x1, x);
-                y0 = Math.min(y0, y);
-                y1 = Math.max(y1, y);
-                if (x == 0 || x == w - 1 || y == 0 || y == band - 1) edge = true;
-                for (int d : new int[] {-1, 1, -w, w}) {
-                    int next = at + d;
-                    if (next < 0 || next >= seen.length || Math.abs(next % w - x) > 1) continue;
-                    if (!seen[next] && (gray[top * w + next] & 255) >= 165) {
-                        seen[next] = true;
-                        queue[size++] = next;
+                if (w > 2) {
+                    int left = x, right = x, row = y * w;
+                    while (left > 0
+                            && !seen[row + left - 1]
+                            && (gray[top * w + row + left - 1] & 255) >= 165) left--;
+                    while (right + 1 < w
+                            && !seen[row + right + 1]
+                            && (gray[top * w + row + right + 1] & 255) >= 165) right++;
+                    java.util.Arrays.fill(seen, row + left, row + right + 1, true);
+                    pixels += right - left + 1;
+                    x0 = Math.min(x0, left);
+                    x1 = Math.max(x1, right);
+                    y0 = Math.min(y0, y);
+                    y1 = Math.max(y1, y);
+                    if (left == 0 || right == w - 1 || y == 0 || y == band - 1) edge = true;
+                    for (int direction = -1; direction <= 1; direction += 2) {
+                        int nextY = y + direction;
+                        if (nextY < 0 || nextY >= band) continue;
+                        int nextRow = nextY * w;
+                        for (int nextX = left; nextX <= right; nextX++) {
+                            int next = nextRow + nextX;
+                            if (seen[next] || (gray[top * w + next] & 255) < 165) continue;
+                            seen[next] = true;
+                            queue[size++] = next;
+                            while (nextX < right
+                                    && !seen[nextRow + nextX + 1]
+                                    && (gray[top * w + nextRow + nextX + 1] & 255) >= 165) nextX++;
+                        }
+                    }
+                } else {
+                    // Preserve the original neighbor convention for one- and two-column inputs.
+                    pixels++;
+                    x0 = Math.min(x0, x);
+                    x1 = Math.max(x1, x);
+                    y0 = Math.min(y0, y);
+                    y1 = Math.max(y1, y);
+                    if (x == 0 || x == w - 1 || y == 0 || y == band - 1) edge = true;
+                    for (int d : neighbors) {
+                        int next = at + d;
+                        if (next < 0 || next >= seen.length || Math.abs(next % w - x) > 1) continue;
+                        if (!seen[next] && (gray[top * w + next] & 255) >= 165) {
+                            seen[next] = true;
+                            queue[size++] = next;
+                        }
                     }
                 }
             }
             if (!edge
-                    && size >= gap * gap * .015f
-                    && size <= gap * gap * .65f
+                    && pixels >= gap * gap * .015f
+                    && pixels <= gap * gap * .65f
                     && x1 - x0 < gap
-                    && y1 - y0 < gap) holes.add(new InkBox(x0, top + y0, x1, top + y1, size));
+                    && y1 - y0 < gap) holes.add(new InkBox(x0, top + y0, x1, top + y1, pixels));
         }
         var result = new ArrayList<InkBox>();
         int pad = Math.max(2, Math.round(gap * .2f));

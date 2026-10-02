@@ -125,14 +125,27 @@ class Interpreter:
             raise ValueError("Invalid image dimensions")
         labels = np.zeros_like(gray)
         confidence = np.zeros_like(gray)
+        white_prediction = None
+        # Only the reviewed bundled graph has the deterministic-output contract.
+        # Custom models keep one inference call per tile, including stateful models.
+        reuse_white = getattr(self, "model_sha256", None) == MODEL_SHA256
         for top in tile_starts(height):
             for left in tile_starts(width):
                 ch, cw = min(320, height - top), min(320, width - left)
                 tile = np.full((320, 320), 255, np.float32)
                 tile[:ch, :cw] = gray[top:top + ch, left:left + cw]
-                self.runtime.set_tensor(self.input["index"], np.repeat(tile[None, None], 3, axis=1))
-                self.runtime.invoke()
-                prediction = self.runtime.get_tensor(self.output["index"])[0]
+                # Every channel is an exact repeat of this padded float plane.
+                exact_white = reuse_white and bool(np.all(tile == np.float32(255)))
+                if exact_white and white_prediction is not None:
+                    prediction = white_prediction
+                else:
+                    tensor = np.repeat(tile[None, None], 3, axis=1)
+                    self.runtime.set_tensor(self.input["index"], tensor)
+                    self.runtime.invoke()
+                    prediction = self.runtime.get_tensor(self.output["index"])[0]
+                    if exact_white:
+                        # Backends may expose a reused output buffer. Own the cached values.
+                        white_prediction = prediction.copy()
                 if prediction.min() < 0 or prediction.max() > 5:
                     raise ValueError("Model returned classes outside 0..5")
                 wins = self.edge[:ch, :cw] >= confidence[top:top + ch, left:left + cw]

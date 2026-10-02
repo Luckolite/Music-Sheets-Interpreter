@@ -300,3 +300,15 @@ attack timing. All seventeen reviewed shared classes retain full executable-toke
 parity after package/diagnostic adaptation. Musical OCR keeps standalone
 caller-owned inference. No private score, new dependency, weight or guide record
 field is included.
+
+Output-preserving processing optimizations use horizontal component spans, exact
+column/tie sample reuse, local staff-projection scratch and irreversible rejection
+shortcuts. Original generated controls preserve traversal order, integer sums,
+float bits, caller arrays and malformed-input behavior. Exact-white segmentation
+reuse owns the first actual prediction and applies only to reviewed deterministic
+weights; custom Python models retain every invocation. The app LiteRT/native
+adapters were reviewed separately from the portable Python adapter. Optional Java
+OCR stops idle thread spinning after each run while preserving model artifacts and
+thread counts; its generated regression compares every returned probability bit
+for both approved detector artifacts. No score scans, phone data, model changes,
+new production dependencies or record-layout changes accompany these optimizations.

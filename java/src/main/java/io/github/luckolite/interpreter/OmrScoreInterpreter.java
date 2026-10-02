@@ -7610,6 +7610,82 @@ final class OmrScoreInterpreter {
 
     private static List<Component> findComponents(
             byte[] labels, int width, int height, byte target) {
+        // Keep the prior behavior for non-raster arguments, including partial rows.
+        if (width <= 0 || height <= 0 || (long) width * height != labels.length)
+            return findComponentsByPixel(labels, width, height, target);
+        boolean[] visited = new boolean[labels.length];
+        int[] stack = new int[Math.min(labels.length, 256)];
+        List<Component> result = new ArrayList<>();
+        for (int origin = 0; origin < labels.length; origin++) {
+            if (visited[origin] || labels[origin] != target) continue;
+            int stackSize = 0;
+            stack[stackSize++] = origin;
+            visited[origin] = true;
+            int area = 0, minX = width, minY = height, maxX = 0, maxY = 0;
+            long sumX = 0, sumY = 0;
+            while (stackSize > 0) {
+                int current = stack[--stackSize];
+                int x = current % width, y = current / width, row = y * width;
+                int left = x, right = x;
+                while (left > 0 && !visited[row + left - 1] && labels[row + left - 1] == target)
+                    left--;
+                while (right + 1 < width
+                        && !visited[row + right + 1]
+                        && labels[row + right + 1] == target) right++;
+                java.util.Arrays.fill(visited, row + left, row + right + 1, true);
+                int count = right - left + 1;
+                area += count;
+                sumX += ((long) left + right) * count / 2;
+                sumY += (long) y * count;
+                minX = Math.min(minX, left);
+                maxX = Math.max(maxX, right);
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+                int first = Math.max(0, left - 1), last = Math.min(width - 1, right + 1);
+                for (int dy = -1; dy <= 1; dy += 2) {
+                    int ny = y + dy;
+                    if (ny < 0 || ny >= height) continue;
+                    int nextRow = ny * width;
+                    for (int nx = first; nx <= last; nx++) {
+                        int next = nextRow + nx;
+                        if (visited[next] || labels[next] != target) continue;
+                        visited[next] = true;
+                        if (stackSize == stack.length) {
+                            int capacity;
+                            if (stack.length < 65536)
+                                capacity = (int) Math.min(labels.length, stack.length * 2L);
+                            else {
+                                // Each target pixel supplies at most one queued seed.
+                                capacity = 0;
+                                for (byte label : labels) if (label == target) capacity++;
+                            }
+                            stack = java.util.Arrays.copyOf(stack, capacity);
+                        }
+                        stack[stackSize++] = next;
+                        // One queued seed covers this as-yet-unvisited horizontal run.
+                        while (nx < last && !visited[next + 1] && labels[next + 1] == target) {
+                            nx++;
+                            next++;
+                        }
+                    }
+                }
+            }
+            if (area >= 3)
+                result.add(
+                        new Component(
+                                area,
+                                minX,
+                                maxX,
+                                minY,
+                                maxY,
+                                sumX / (float) area,
+                                sumY / (float) area));
+        }
+        return result;
+    }
+
+    private static List<Component> findComponentsByPixel(
+            byte[] labels, int width, int height, byte target) {
         boolean[] visited = new boolean[labels.length];
         int[] stack = new int[labels.length];
         List<Component> result = new ArrayList<>();
@@ -18166,6 +18242,12 @@ final class OmrScoreInterpreter {
                 supportedCenters = new float[50],
                 strokeCenters = new float[50];
         int reach = Math.max(2, Math.round(gap * .4f));
+        // Pixel columns are identical for every candidate curve in this call.
+        int[] sampleColumns = new int[50];
+        for (int sample = 0; sample < sampleColumns.length; sample++) {
+            float t = (sample + .5f) / 50f;
+            sampleColumns[sample] = Math.round(left + t * (right - left));
+        }
         for (int side : requiredSide == 0 ? new int[] {-1, 1} : new int[] {requiredSide})
             for (float offset = .2f; offset <= 1.15f; offset += .15f)
                 candidate:
@@ -18196,8 +18278,7 @@ final class OmrScoreInterpreter {
                         // visited sample; abandoned candidates never read their stale tail.
                         centers[sample] =
                                 supportedCenters[sample] = strokeCenters[sample] = Float.NaN;
-                        float t = (sample + .5f) / 50f;
-                        int x = Math.round(left + t * (right - left));
+                        int x = sampleColumns[sample];
                         int y =
                                 Math.round(
                                         centerY
@@ -18208,10 +18289,8 @@ final class OmrScoreInterpreter {
                                                                         * (flatProfile
                                                                                 ? FLAT_TIE_PROFILE[
                                                                                         sample]
-                                                                                : 4
-                                                                                        * t
-                                                                                        * (1
-                                                                                                - t))));
+                                                                                : PARABOLIC_TIE_PROFILE[
+                                                                                        sample])));
                         boolean ink = false;
                         int obscuredY = -1;
                         for (int search = 0; search <= radius * 2; search++) {
@@ -18435,6 +18514,16 @@ final class OmrScoreInterpreter {
         return finite[count - 1 - count / 10] - finite[count / 10] <= Math.max(1.5f, gap * .13f);
     }
 
+    private static final float[] PARABOLIC_TIE_PROFILE = parabolicTieProfile();
+
+    private static float[] parabolicTieProfile() {
+        float[] result = new float[50];
+        for (int sample = 0; sample < result.length; sample++) {
+            float t = (sample + .5f) / 50f;
+            result[sample] = 4 * t * (1 - t);
+        }
+        return result;
+    }
     private static final float[] FLAT_TIE_PROFILE = flatTieProfile();
 
     /** Long engraved ties have steep shoulders and a broad crest, rather than a parabola. */
