@@ -84,7 +84,8 @@ final class SixteenthRestDetector {
             List<MeasureRegion> measures,
             List<Staff> staffs,
             ScoreRestEvent rest) {
-        if (rest.durationBeats() != .25 && rest.durationBeats() != .5) return false;
+        if (rest.durationBeats() != .25 && rest.durationBeats() != .5 && rest.durationBeats() != 1)
+            return false;
         if (rest.measureIndex() < 0 || rest.measureIndex() >= measures.size()) return false;
         MeasureRegion region = measures.get(rest.measureIndex());
         float x =
@@ -1699,7 +1700,7 @@ final class SixteenthRestDetector {
         return Float.isFinite(gap)
                 && gap >= 4
                 && peak - start + .5 > gap * .14
-                && peak - valley > gap * .18
+                && peak - valley + .5 > gap * .18
                 && hookRight - valley > gap * .08
                 && hookRight - hookLeft + .5 > gap * .10
                 && foot - hookLeft >= -gap * .06

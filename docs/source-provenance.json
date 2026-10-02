@@ -282,11 +282,11 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "9f3cdb1b1d44983ff7eb39eb70a48e6098a4d6cc4520dd8cfb4fd46b5b53a756",
+      "source_sha256": "4f71087bbad6cb4da8d30e22637747125842e84b29bdb3aed5027245d1ceab39",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Reviewed behavior-preserving tie search: reset per-call scratch arrays for each candidate and hoist invariant reach; preserves curve ordering, thresholds and recursive contrast calls. Original generated differential/isolation regressions; no new dependencies or private raster. Tie search abandons only candidates whose remaining samples cannot meet any existing acceptance path; per-visited-sample NaN initialization preserves completed candidate curvature data. Reviewed six unchanged acceptance paths and original1024-case returning/noisy/faint/flat/straight-rule decision golden; no private imagery, model, thresholds, output layout or dependencies changed.",
-      "source_normalized_sha256": "9f3cdb1b1d44983ff7eb39eb70a48e6098a4d6cc4520dd8cfb4fd46b5b53a756",
+      "review_note": "Reviewed locally contrasted finite beam endpoints with uninterrupted thin-rule and full body guards; standalone package/diagnostics adapter preserved. Fifteen original generated beam controls; no model, dependency or private source imagery added.",
+      "source_normalized_sha256": "8590a5604728d8ebd9fab3c2450eed11ee6a9327e58eebf6e6416239a342cb75",
       "reviewed_app_state": "Uncommitted reviewed speedup snapshot derived from guide266 Android release source; baseline app commit recorded separately and exact source hashes pin the changes.",
       "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-tie-845-release-source"
     },
@@ -369,10 +369,10 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "7a30583591571f1919a432f09838536d7ed1eb322334624adb182b5c1bccff00",
+      "source_sha256": "a47ed3c2d7d06a22a0078f888d6845140785e9d03df867dd33e8d2752e5fa8de",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed original row-major projection with per-call raw row statistics and scratch reuse; staff-specific masks and detection order unchanged. Package-only standalone adapter, original synthetic parity regression, no private scores, new dependencies or model changes. Immutable app snapshot based on released 840.",
-      "source_normalized_sha256": "7a30583591571f1919a432f09838536d7ed1eb322334624adb182b5c1bccff00",
+      "review_note": "Reviewed half-pixel quarter-hook rounding and dark-seeded complete quarter glyph recovery. Original numeric contour controls and full SIL-OFL Bravura-generated faded glyph/accidental/stem controls; no private score geometry or pixels included.",
+      "source_normalized_sha256": "ec35dc6bb88a3290c5898b49832b4a765b661df3aa3e9a307eeb83a2048052d1",
       "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-rest-tuplet-841-source"
     },
     "TempoChangeDetector.java": {

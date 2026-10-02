@@ -16616,8 +16616,31 @@ final class OmrScoreInterpreter {
                     int minimum = 255;
                     for (int y = ruleFirst; y <= ruleLast; y++)
                         minimum = Math.min(minimum, gray[y * width + column] & 255);
-                    if (minimum < 220) {
-                        int cutoff = Math.min(220, minimum + 6);
+                    int paper = 255;
+                    if (minimum >= 220) {
+                        int[] histogram = new int[256];
+                        int total = 0;
+                        int margin = Math.max(3, Math.round(gap * .6f));
+                        for (int y = Math.max(0, ruleFirst - margin);
+                                y <= Math.min(height - 1, ruleLast + margin);
+                                y++) {
+                            histogram[gray[y * width + column] & 255]++;
+                            total++;
+                        }
+                        int target = (total * 3 + 3) / 4, seen = 0;
+                        for (int shade = 0; shade < 256; shade++) {
+                            seen += histogram[shade];
+                            if (seen >= target) {
+                                paper = shade;
+                                break;
+                            }
+                        }
+                    }
+                    if (minimum < 220 || minimum <= paper - 24) {
+                        int cutoff =
+                                minimum < 220
+                                        ? Math.min(220, minimum + 6)
+                                        : Math.min(paper - 20, minimum + 6);
                         for (int y = ruleFirst; y <= ruleLast; y++)
                             if ((gray[y * width + column] & 255) < cutoff) ink++;
                     }
