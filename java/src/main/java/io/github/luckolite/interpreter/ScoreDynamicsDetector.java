@@ -132,6 +132,89 @@ final class ScoreDynamicsDetector {
         return result;
     }
 
+    /** Coordinate-free, complete letter bodies for supplemental bounded dynamic OCR.
+     * Original OCR and glyph decisions stay authoritative; these boxes carry no level. */
+    static List<PlayingTechniqueDetector.Word> paperSymbolBoxes(
+            byte[] gray,
+            List<PlayingTechniqueDetector.Staff> staffs,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes,
+            int width,
+            int height) {
+        if (gray == null || gray.length != (long) width * height || staffs.isEmpty())
+            return List.of();
+        byte[] normalized = RestPaperTone.normalize(gray, width, height, staffs.get(0).gap());
+        if (normalized == gray) return List.of();
+        List<PlayingTechniqueDetector.Word> result = new ArrayList<>();
+        for (var measure : measures)
+            for (var staff : staffs) {
+                float gap = staff.gap(), center = (staff.top() + staff.bottom()) * .5f / height;
+                if (center < measure.top() - gap / height
+                        || center > measure.bottom() + gap / height) continue;
+                int left = Math.max(0, (int) Math.floor(measure.left() * width - gap * .75f));
+                int right = Math.min(width, (int) Math.ceil(measure.right() * width + gap * .75f));
+                if (right <= left) continue;
+                var local =
+                        PrintedDirectionStaff.local(
+                                staff, measures, notes, gray, width, height, (left + right) * .5f);
+                if (local == null) continue;
+                int top = Math.max(0, (int) Math.floor(local.bottom() - gap * .5f));
+                int bottom = Math.min(height, (int) Math.ceil(local.bottom() + gap * 8));
+                if (bottom <= top) continue;
+                int w = right - left, h = bottom - top;
+                byte[] crop = new byte[w * h];
+                for (int y = 0; y < h; y++)
+                    System.arraycopy(normalized, (top + y) * width + left, crop, y * w, w);
+                var localCrop =
+                        new PlayingTechniqueDetector.Staff(
+                                local.top() - top,
+                                local.bottom() - top,
+                                local.gap(),
+                                local.index(),
+                                local.count());
+                for (var box : symbolBoxes(crop, List.of(localCrop), w, h)) {
+                    float x0 = left + box.left() * w, x1 = left + box.right() * w;
+                    float y0 = top + box.top() * h, y1 = top + box.bottom() * h;
+                    if (x0 <= left + 1 || x1 >= right - 1 || y0 <= top + 1 || y1 >= bottom - 1)
+                        continue;
+                    boolean head = false;
+                    for (var note : notes) {
+                        if (note.measureIndex() < 0
+                                || note.measureIndex() >= measures.size()
+                                || note.staffIndex() != staff.index()
+                                || note.staffCount() != staff.count()) continue;
+                        var region = measures.get(note.measureIndex());
+                        float nx =
+                                (region.left()
+                                                + note.positionInMeasure()
+                                                        * (region.right() - region.left()))
+                                        * width;
+                        float ny = note.pageY() * height;
+                        if (nx >= x0 - gap * .65f
+                                && nx <= x1 + gap * .65f
+                                && ny >= y0 - gap * .65f
+                                && ny <= y1 + gap * .65f) {
+                            head = true;
+                            break;
+                        }
+                    }
+                    if (head) continue;
+                    var proposal =
+                            new PlayingTechniqueDetector.Word(
+                                    "", x0 / width, y0 / height, x1 / width, y1 / height);
+                    boolean duplicate = false;
+                    for (var old : result)
+                        if (Math.abs(old.left() - proposal.left()) * width < gap * .5f
+                                && Math.abs(old.top() - proposal.top()) * height < gap * .5f
+                                && Math.abs(old.right() - proposal.right()) * width < gap * .5f
+                                && Math.abs(old.bottom() - proposal.bottom()) * height < gap * .5f)
+                            duplicate = true;
+                    if (!duplicate) result.add(proposal);
+                }
+            }
+        return List.copyOf(result);
+    }
+
     static float level(String text) {
         if (text == null) return Float.NaN;
         String token = text.trim().toLowerCase(Locale.ROOT).replaceAll("[.,:;]$", "");
@@ -299,8 +382,27 @@ final class ScoreDynamicsDetector {
             byte[] gray,
             int width,
             int height) {
+        return detectDirectionCore(words, staffs, measures, notes, gray, width, height, gray, true);
+    }
+
+    static Detection detectDirectionCore(
+            List<PlayingTechniqueDetector.Word> words,
+            List<PlayingTechniqueDetector.Staff> staffs,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes,
+            byte[] gray,
+            int width,
+            int height,
+            byte[] ownershipGray,
+            boolean paperProposals) {
         List<ScoreDynamicChange> result = new ArrayList<>();
         Map<ScoreDynamicChange, PlayingTechniqueDetector.Word> openWords = new HashMap<>();
+        float minimumGap = Float.MAX_VALUE, maximumGap = 0;
+        for (var staff : staffs)
+            if (Float.isFinite(staff.gap()) && staff.gap() > 0) {
+                minimumGap = Math.min(minimumGap, staff.gap());
+                maximumGap = Math.max(maximumGap, staff.gap());
+            }
         var shared = GrandStaffDynamics.bracedPairs(staffs, measures, gray, width, height);
         for (var word : words) {
             float db = level(word.text());
@@ -314,6 +416,18 @@ final class ScoreDynamicsDetector {
                             notes,
                             measures,
                             height);
+            if (owner == null)
+                owner =
+                        PrintedDirectionStaff.at(
+                                staffs,
+                                measures,
+                                notes,
+                                ownershipGray,
+                                width,
+                                height,
+                                (word.left() + word.right()) * width * .5f,
+                                word.top() * height,
+                                word.bottom() * height);
             if (owner == null || word.bottom() - word.top() > owner.gap() * 3 / height) continue;
             var common =
                     GrandStaffDynamics.between(shared, word.top() * height, word.bottom() * height);
@@ -361,6 +475,21 @@ final class ScoreDynamicsDetector {
                         }
                 }
                 var owner = directionOwner(staffs, top, bottom, notes, measures, height);
+                if (owner == null
+                        && right - left + 1 >= minimumGap * 3
+                        && bottom - top + 1 <= maximumGap * 3
+                        && right - left + 1 >= (bottom - top + 1) * 2.5f)
+                    owner =
+                            PrintedDirectionStaff.at(
+                                    staffs,
+                                    measures,
+                                    notes,
+                                    ownershipGray,
+                                    width,
+                                    height,
+                                    (left + right) * .5f,
+                                    top,
+                                    bottom);
                 if (owner == null) owner = HairpinContinuation.distantOwner(staffs, top, bottom);
                 if (owner == null) continue;
                 float gap = owner.gap();
@@ -405,6 +534,18 @@ final class ScoreDynamicsDetector {
                                         notes,
                                         measures,
                                         height);
+                        if (recoveredOwner == null)
+                            recoveredOwner =
+                                    PrintedDirectionStaff.at(
+                                            staffs,
+                                            measures,
+                                            notes,
+                                            ownershipGray,
+                                            width,
+                                            height,
+                                            (left + right) * .5f,
+                                            faint.top(),
+                                            faint.bottom());
                         if (recoveredOwner == null)
                             recoveredOwner =
                                     HairpinContinuation.distantOwner(
@@ -531,70 +672,73 @@ final class ScoreDynamicsDetector {
         }
         // Written cresc./dim. continues across systems until the next printed level (or
         // the page boundary). Do not invent geometry-sized note durations for the ramp.
-        for (var word : words) {
-            int direction = textDirection(word.text());
-            if (direction == 0) continue;
-            var owner =
-                    directionOwner(
-                            staffs,
-                            word.top() * height,
-                            word.bottom() * height,
-                            notes,
-                            measures,
-                            height);
-            if (owner == null) continue;
-            var common =
-                    GrandStaffDynamics.between(shared, word.top() * height, word.bottom() * height);
-            if (common != null) owner = common;
-            Slot a = slot(word.left(), owner, measures, notes, width, height);
-            if (a == null) continue;
-            // A direction printed beside an absolute level begins with that level.
-            for (var c : result)
-                if (c.direction() == 0
-                        && c.measureIndex() == a.measure
-                        && c.staffIndex() == owner.index()
-                        && c.positionInMeasure() <= a.position
-                        && a.position - c.positionInMeasure()
-                                < owner.gap()
-                                        * 5
-                                        / (width
-                                                * (measures.get(a.measure).right()
-                                                        - measures.get(a.measure).left())))
-                    a = new Slot(a.measure, c.positionInMeasure());
-            Slot end = new Slot(measures.size() - 1, 1);
-            for (var c : result)
-                if (c.direction() == 0
-                        && sameDynamicPart(c, owner, common != null)
-                        && (c.measureIndex() > a.measure
-                                || c.measureIndex() == a.measure
-                                        && c.positionInMeasure() > a.position + .025f)
-                        && (c.measureIndex() < end.measure
-                                || c.measureIndex() == end.measure
-                                        && c.positionInMeasure() < end.position))
-                    end = new Slot(c.measureIndex(), c.positionInMeasure());
-            boolean duplicate = false;
-            for (var c : result)
-                if (c.direction() == direction
-                        && c.measureIndex() == a.measure
-                        && c.staffIndex() == owner.index()
-                        && Math.abs(c.positionInMeasure() - a.position) < .025f) duplicate = true;
-            if (!duplicate && (end.measure > a.measure || end.position > a.position)) {
-                var change =
-                        new ScoreDynamicChange(
-                                a.measure,
-                                a.position,
-                                owner.index(),
-                                owner.count(),
-                                end.measure,
-                                end.position,
-                                0,
-                                direction,
-                                common != null);
-                result.add(change);
-                if (end.measure == measures.size() - 1 && end.position == 1)
-                    openWords.put(change, word);
+        if (paperProposals)
+            for (var word : words) {
+                int direction = textDirection(word.text());
+                if (direction == 0) continue;
+                var owner =
+                        directionOwner(
+                                staffs,
+                                word.top() * height,
+                                word.bottom() * height,
+                                notes,
+                                measures,
+                                height);
+                if (owner == null) continue;
+                var common =
+                        GrandStaffDynamics.between(
+                                shared, word.top() * height, word.bottom() * height);
+                if (common != null) owner = common;
+                Slot a = slot(word.left(), owner, measures, notes, width, height);
+                if (a == null) continue;
+                // A direction printed beside an absolute level begins with that level.
+                for (var c : result)
+                    if (c.direction() == 0
+                            && c.measureIndex() == a.measure
+                            && c.staffIndex() == owner.index()
+                            && c.positionInMeasure() <= a.position
+                            && a.position - c.positionInMeasure()
+                                    < owner.gap()
+                                            * 5
+                                            / (width
+                                                    * (measures.get(a.measure).right()
+                                                            - measures.get(a.measure).left())))
+                        a = new Slot(a.measure, c.positionInMeasure());
+                Slot end = new Slot(measures.size() - 1, 1);
+                for (var c : result)
+                    if (c.direction() == 0
+                            && sameDynamicPart(c, owner, common != null)
+                            && (c.measureIndex() > a.measure
+                                    || c.measureIndex() == a.measure
+                                            && c.positionInMeasure() > a.position + .025f)
+                            && (c.measureIndex() < end.measure
+                                    || c.measureIndex() == end.measure
+                                            && c.positionInMeasure() < end.position))
+                        end = new Slot(c.measureIndex(), c.positionInMeasure());
+                boolean duplicate = false;
+                for (var c : result)
+                    if (c.direction() == direction
+                            && c.measureIndex() == a.measure
+                            && c.staffIndex() == owner.index()
+                            && Math.abs(c.positionInMeasure() - a.position) < .025f)
+                        duplicate = true;
+                if (!duplicate && (end.measure > a.measure || end.position > a.position)) {
+                    var change =
+                            new ScoreDynamicChange(
+                                    a.measure,
+                                    a.position,
+                                    owner.index(),
+                                    owner.count(),
+                                    end.measure,
+                                    end.position,
+                                    0,
+                                    direction,
+                                    common != null);
+                    result.add(change);
+                    if (end.measure == measures.size() - 1 && end.position == 1)
+                        openWords.put(change, word);
+                }
             }
-        }
         // A keyboard brace inside an ensemble shares only its two staves, not the
         // soloist or every other part. Materialize those lanes in the existing wire format.
         List<ScoreDynamicChange> scoped = new ArrayList<>();
@@ -623,6 +767,34 @@ final class ScoreDynamicsDetector {
                     events.add(
                             ScoreDynamicContinuation.evidence(
                                     scoped.get(i), word.text(), word.left()));
+        }
+        if (paperProposals && gray != null && !staffs.isEmpty()) {
+            byte[] normalized = RestPaperTone.normalize(gray, width, height, staffs.get(0).gap());
+            if (normalized != gray) {
+                var proposed =
+                        detectDirectionCore(
+                                words,
+                                staffs,
+                                measures,
+                                notes,
+                                normalized,
+                                width,
+                                height,
+                                gray,
+                                false);
+                for (var change : proposed.changes()) {
+                    if (change.direction() == 0) continue;
+                    boolean claimed = false;
+                    for (var old : scoped)
+                        if (old.direction() == change.direction()
+                                && old.measureIndex() == change.measureIndex()
+                                && old.staffIndex() == change.staffIndex()
+                                && old.staffCount() == change.staffCount()
+                                && Math.abs(old.positionInMeasure() - change.positionInMeasure())
+                                        < .06f) claimed = true;
+                    if (!claimed) scoped.add(change);
+                }
+            }
         }
         scoped.sort(
                 Comparator.comparingInt(ScoreDynamicChange::measureIndex)

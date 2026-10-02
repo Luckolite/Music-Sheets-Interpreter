@@ -439,6 +439,8 @@ final class OmrScoreInterpreter {
         heads.removeAll(detachedFingeringHeads(gray, width, height, heads, staffs));
         byte[] beamLabels = withoutBeamHeadIslands(labels, width, rejectedBeamHeads);
         heads.removeAll(entranceStrokeFragments(gray, width, height, heads, staffs));
+        var curvedExits = curvedExitHeadFragments(labels, gray, width, height, heads, staffs);
+        heads.removeAll(curvedExits.heads());
         List<Component> shortTies = shortTieBowlHeads(labels, gray, width, height, heads, staffs);
         shortTies.addAll(graceSlurHeads(gray, width, height, heads, staffs));
         heads.removeAll(shortTies);
@@ -1243,11 +1245,14 @@ final class OmrScoreInterpreter {
                     for (int x = head.minX; x <= head.maxX; x++)
                         tieLabels[y * width + x] = OmrMeasurePostProcessor.NOTEHEAD;
         }
+        var tieInk = CurvedExitInk.withoutOwnedCurves(tieLabels, gray, curvedExits.marks());
+        tieLabels = tieInk.labels();
+        byte[] tieGray = tieInk.gray();
         List<DetectedNote> joined =
                 applyAccidentalState(
                         markTieContinuations(
                                 tieLabels,
-                                gray,
+                                tieGray,
                                 width,
                                 height,
                                 removeSplitDuplicates(detected),
@@ -1640,7 +1645,7 @@ final class OmrScoreInterpreter {
                         printedAccidental);
         return new Analysis(
                 markBoundaryTieEvidence(
-                        tieLabels, gray, width, height, joined, finalNotes, measures.size()),
+                        tieLabels, tieGray, width, height, joined, finalNotes, measures.size()),
                 keyChanges,
                 rests);
     }
@@ -1798,7 +1803,12 @@ final class OmrScoreInterpreter {
                 findComponents(labels, width, height, OmrMeasurePostProcessor.SYMBOL);
         byte[] result = labels;
         for (Component head : heads) {
-            int[] bounds = uprightTextBowlBounds(gray, width, height, head, staffs);
+            int[] bounds =
+                    PrintedNoteContrast.paperTexture(
+                                    gray, width, height, head.minX, head.minY, head.maxX, head.maxY)
+                            ? new int[] {head.minX, head.maxX, head.minY, head.maxY}
+                            : null;
+            if (bounds == null) bounds = uprightTextBowlBounds(gray, width, height, head, staffs);
             if (bounds == null && staffTextBounds(gray, width, height, head, staffs) != null)
                 bounds = new int[] {head.minX, head.maxX, head.minY, head.maxY};
             if (bounds == null)
@@ -9168,6 +9178,65 @@ final class OmrScoreInterpreter {
         if (far.size() < gap * .5f) return true;
         far.sort(Integer::compare);
         return near > far.get(far.size() / 2) + Math.max(2, Math.round(gap * .18f));
+    }
+
+    private record CurvedExitHeads(List<Component> heads, List<CurvedExitInk.Mark> marks) {}
+
+    private static CurvedExitHeads curvedExitHeadFragments(
+            byte[] labels,
+            byte[] gray,
+            int width,
+            int height,
+            List<Component> heads,
+            List<Staff> staffs) {
+        List<Component> result = new ArrayList<>();
+        List<CurvedExitInk.Mark> marks = new ArrayList<>();
+        if (gray == null) return new CurvedExitHeads(result, marks);
+        for (Component head : heads) {
+            Staff staff = nearestHeadStaff(staffs, head.centerY);
+            if (staff == null) continue;
+            float gap = staff.gap;
+            if (head.area > gap * gap * .8f
+                    || head.maxX - head.minX + 1 > gap * 1.3f
+                    || head.maxY - head.minY + 1 > gap * 1.1f) continue;
+            for (Component main : heads) {
+                if (main == head
+                        || main.centerX >= head.centerX
+                        || nearestHeadStaff(staffs, main.centerY) != staff
+                        || head.centerX - main.centerX < gap
+                        || head.centerX - main.centerX > gap * 3
+                        || main.maxX - main.minX + 1 < gap * 1.4f
+                        || !hasOpenCenter(labels, gray, width, height, main, gap)) continue;
+                float[] local = localStaffPitch(labels, gray, width, height, staff, main);
+                var mark =
+                        CurvedExitInk.find(
+                                gray,
+                                width,
+                                height,
+                                new CurvedExitInk.Box(
+                                        head.minX,
+                                        head.minY,
+                                        head.maxX,
+                                        head.maxY,
+                                        head.centerX,
+                                        head.centerY),
+                                new CurvedExitInk.Box(
+                                        main.minX,
+                                        main.minY,
+                                        main.maxX,
+                                        main.maxY,
+                                        main.centerX,
+                                        main.centerY),
+                                local[0],
+                                local[1]);
+                if (mark != null) {
+                    result.add(head);
+                    marks.add(mark);
+                    break;
+                }
+            }
+        }
+        return new CurvedExitHeads(result, marks);
     }
 
     /** A small mask island on a straight or curved entrance stroke is not a separate attack. */
@@ -16766,8 +16835,43 @@ final class OmrScoreInterpreter {
                         && thinAtInnerProbe(
                                 gray, width, height, stemwardX, y - run, y - 1, gap, threshold))
                     onlyStaff = true;
+                boolean locallyAlignedRule = false;
+                if (!onlyStaff && onStaff && run <= gap * .55f) {
+                    Float slope =
+                            BeamRuleLocalSlope.find(
+                                    gray, width, height, x, lineTop, gap, threshold, bandCenter);
+                    if (slope != null && Math.abs(slope) * span >= 1) {
+                        int alignedRows = 0;
+                        for (int row = y - run; row < y; row++) {
+                            int leftInk = 0, rightInk = 0;
+                            for (int i = 0; i < span; i++) {
+                                int dx = firstOffset + i;
+                                if (bandRuleInk(
+                                        gray,
+                                        width,
+                                        height,
+                                        x - dx,
+                                        row - Math.round(slope * dx),
+                                        threshold,
+                                        true)) leftInk++;
+                                if (bandRuleInk(
+                                        gray,
+                                        width,
+                                        height,
+                                        x + dx,
+                                        row + Math.round(slope * dx),
+                                        threshold,
+                                        true)) rightInk++;
+                            }
+                            if (leftInk >= span * .85f && rightInk >= span * .85f) alignedRows++;
+                        }
+                        locallyAlignedRule =
+                                alignedRows == run || (alignedRows >= 3 && alignedRows + 1 == run);
+                        if (locallyAlignedRule) onlyStaff = true;
+                    }
+                }
                 if (onlyStaff
-                        && run >= Math.ceil(gap * .4f)
+                        && (locallyAlignedRule || run >= Math.ceil(gap * .4f))
                         && finiteBeamOverRule(
                                 gray, width, height, x, y - run, y - 1, staff, threshold))
                     onlyStaff = false;
@@ -16825,7 +16929,7 @@ final class OmrScoreInterpreter {
         float gap = staff.gap;
         float[] origin = staff.pitchTrack == null ? null : staff.pitchTrack.at(x);
         if (origin != null) gap = origin[1];
-        int thickMinimum = Math.max(3, (int) Math.ceil(gap * .3f));
+        int thickMinimum = Math.max(3, Math.min(last - first + 1, (int) Math.ceil(gap * .3f)));
         int thinMaximum = Math.max(1, (int) Math.floor(gap * .24f));
         int witnessLength = Math.max(4, Math.round(gap * .75f));
         for (int direction : new int[] {-1, 1}) {

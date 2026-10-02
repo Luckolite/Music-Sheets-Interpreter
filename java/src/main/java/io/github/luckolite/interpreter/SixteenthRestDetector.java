@@ -51,6 +51,78 @@ final class SixteenthRestDetector {
         List<RestDot> dots = new ArrayList<>(original.dots());
         dots.addAll(additional.dots());
         Detection stable = collected(rests, dots);
+        List<Float> gaps = new ArrayList<>();
+        for (Staff staff : staffs) gaps.add(staff.gap());
+        gaps.sort(Float::compare);
+        byte[] paper =
+                gaps.isEmpty()
+                        ? gray
+                        : RestPaperTone.normalize(gray, width, height, gaps.get(gaps.size() / 2));
+        if (paper != gray) {
+            Detection isolated =
+                    detectWithDots(paper, width, height, measures, staffs, notes, true);
+            List<ScoreRestEvent> complete = new ArrayList<>(isolated.rests());
+            List<RestDot> completeDots = new ArrayList<>(isolated.dots());
+            java.util.Set<ScoreRestEvent> localSeeds = new java.util.HashSet<>();
+            for (var body : QuarterRestLocalBody.find(paper, gray, width, height, staffs)) {
+                List<ScoreRestEvent> local = new ArrayList<>();
+                List<RestDot> localDots = new ArrayList<>();
+                inspect(
+                        paper,
+                        width,
+                        height,
+                        measures,
+                        notes,
+                        body.staff(),
+                        body.top(),
+                        body.bottom(),
+                        new boolean[body.bottom() - body.top() + 1],
+                        body.left(),
+                        body.right(),
+                        local,
+                        localDots,
+                        true,
+                        false,
+                        false,
+                        false,
+                        false,
+                        true,
+                        false,
+                        (body.staff().top() + body.staff().bottom()) * .5f / height,
+                        false);
+                for (ScoreRestEvent rest : local)
+                    if (seededOrdinaryRest(
+                            gray, width, height, measures, List.of(body.staff()), rest)) {
+                        complete.add(rest);
+                        localSeeds.add(rest);
+                        for (RestDot dot : localDots)
+                            if (dot.rest().equals(rest)) completeDots.add(dot);
+                    }
+            }
+            isolated = new Detection(complete, completeDots);
+            rests = new ArrayList<>(stable.rests());
+            dots = new ArrayList<>(stable.dots());
+            for (ScoreRestEvent rest : isolated.rests()) {
+                if (!seededOrdinaryRest(gray, width, height, measures, staffs, rest)
+                        && !localSeeds.contains(rest)) continue;
+                if (continuedRecoveredTail(paper, width, height, measures, staffs, rest)) continue;
+                boolean duplicate = false;
+                for (ScoreRestEvent old : rests)
+                    if (old.measureIndex() == rest.measureIndex()
+                            && old.staffIndex() == rest.staffIndex()
+                            && old.staffCount() == rest.staffCount()
+                            && Math.abs(old.positionInMeasure() - rest.positionInMeasure()) < .025f
+                            && Math.abs(old.pageY() - rest.pageY())
+                                    < Math.max(old.pageHeight(), rest.pageHeight())) {
+                        duplicate = true;
+                        break;
+                    }
+                if (duplicate) continue;
+                rests.add(rest);
+                for (RestDot dot : isolated.dots()) if (dot.rest().equals(rest)) dots.add(dot);
+            }
+            stable = collected(rests, dots);
+        }
         byte[] faint = contrastedRestInk(gray, width, height, staffs, 205);
         if (faint == gray) return stable;
         Detection recovered =
@@ -75,6 +147,33 @@ final class SixteenthRestDetector {
             for (RestDot dot : recovered.dots()) if (dot.rest().equals(rest)) dots.add(dot);
         }
         return collected(rests, dots);
+    }
+
+    /** A cropped crossed head must retain the connected stem below its putative foot. */
+    private static boolean continuedRecoveredTail(
+            byte[] gray,
+            int width,
+            int height,
+            List<MeasureRegion> measures,
+            List<Staff> staffs,
+            ScoreRestEvent rest) {
+        if (rest.durationBeats() != .5) return false;
+        MeasureRegion region = measures.get(rest.measureIndex());
+        float centerX =
+                (region.left() + rest.positionInMeasure() * (region.right() - region.left()))
+                        * width;
+        int end = Math.round((rest.pageY() + rest.pageHeight() * .5f) * height) - 1;
+        for (Staff staff : staffs)
+            if (staff.index() == rest.staffIndex() && staff.count() == rest.staffCount()) {
+                float gap =
+                        staff.pitchTrack() == null
+                                ? staff.gap()
+                                : staff.pitchTrack().at(centerX)[1];
+                int left = Math.max(0, Math.round(centerX - gap * .9f));
+                int right = Math.min(width - 1, Math.round(centerX + gap * .9f));
+                if (continuedRestTail(gray, width, height, left, right, end, gap)) return true;
+            }
+        return false;
     }
 
     private static boolean seededOrdinaryRest(
@@ -272,12 +371,13 @@ final class SixteenthRestDetector {
             if (bottom < top) continue;
             boolean[] line = new boolean[bottom - top + 1];
             boolean[] narrowLine = new boolean[line.length];
-            // Raw row statistics are independent of the staff's position and gap.
+            // Remove only long horizontal ink rows, including a line's antialiased edge.
+            // Raw row counts are shared; each placement still builds its own staff mask.
             if (rowDark == null) {
-                rowDark = new int[height]; rowLongest = new int[height];
+                rowDark = new int[height];
+                rowLongest = new int[height];
                 java.util.Arrays.fill(rowDark, -1);
             }
-            // Remove only long horizontal ink rows, including a line's antialiased edge.
             for (int y = top; y <= bottom; y++) {
                 if (rowDark[y] < 0) {
                     int dark = 0, longest = 0, run = 0;
@@ -287,7 +387,8 @@ final class SixteenthRestDetector {
                             longest = Math.max(longest, ++run);
                         } else run = 0;
                     }
-                    rowDark[y] = dark; rowLongest[y] = longest;
+                    rowDark[y] = dark;
+                    rowLongest[y] = longest;
                 }
                 int dark = rowDark[y], longest = rowLongest[y];
                 float nearestLine = staff.top() + Math.round((y - staff.top()) / gap) * gap;
@@ -1000,7 +1101,8 @@ final class SixteenthRestDetector {
         return lobes;
     }
 
-    /** Split only separately visible rounded flags at their printed spacing. */
+    /** A broad mask can keep the valley above the width threshold. Separately
+     * rounded, visible peaks still prove two flags at the printed spacing. */
     private static void appendRestBulbs(
             List<Integer> lobes,
             int[] ink,

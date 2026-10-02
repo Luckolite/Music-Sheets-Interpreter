@@ -186,6 +186,9 @@ public final class SheetInterpreter {
                                     token, word.left(), word.top(), word.right(), word.bottom()));
             }
             if (ocr != null) ornamentWords.addAll(ocr.ornamentWords(gray, width, height, staffs));
+            if (ocr != null)
+                ornamentWords.addAll(
+                        ocr.crossRowPortWords(gray, width, height, staffs, measures, notes));
             notes =
                     PortableNoteOrnaments.apply(
                             GlyphResources.ornaments(),
@@ -208,6 +211,13 @@ public final class SheetInterpreter {
                         ? words
                         : GlyphResources.dynamics()
                                 .recognize(gray, width, height, staffs, dynamicEvidence);
+        if (ocr != null)
+            dynamicWords =
+                    ocr.supplementDynamics(
+                            gray, width, height, staffs, measures, notes, dynamicWords);
+        var techniqueWords = new java.util.ArrayList<>(words);
+        if (ocr != null)
+            techniqueWords.addAll(ocr.techniques(gray, width, height, staffs, measures, notes));
         var meters = new java.util.ArrayList<>(annotations.meters);
         if (ocr != null)
             for (var meter : ocr.meters(labels, gray, width, height, measures, notes))
@@ -247,7 +257,7 @@ public final class SheetInterpreter {
                                 meters,
                                 rhythm.rests(),
                                 PlayingTechniqueDetector.detect(
-                                        words, staffs, measures, notes, width, height),
+                                        techniqueWords, staffs, measures, notes, width, height),
                                 dynamicDetection.changes()),
                         tabs,
                         width,

@@ -358,8 +358,13 @@ final class NoteArticulationDetector {
         }
         List<Glyph> faintAccents =
                 raw ? faintAccentGlyphs(gray, width, height, seen, queue) : List.of();
+        List<Glyph> originalGlyphs = List.copyOf(glyphs);
+        List<Glyph> paperCandidates =
+                raw ? paperGlyphs(gray, width, height, notes, seen, queue) : List.of();
+        glyphs.addAll(paperCandidates);
         List<Glyph> candidates = new ArrayList<>(faintAccents), claimedAccents = new ArrayList<>();
         candidates.addAll(glyphs);
+        List<Glyph> printedClaims = new ArrayList<>();
         // A peak-shaped first letter needs word context on its right as well.
         // Reflect positions once; semantic pixel references remain unchanged.
         List<Glyph> reflectedGlyphs =
@@ -372,7 +377,23 @@ final class NoteArticulationDetector {
                                                         g.pixels))
                                 .toList()
                         : List.of();
+        List<Glyph> originalReflected =
+                raw
+                        ? originalGlyphs.stream()
+                                .map(
+                                        g ->
+                                                new Glyph(
+                                                        -g.right, g.top, -g.left, g.bottom, g.count,
+                                                        g.pixels))
+                                .toList()
+                        : List.of();
         for (Glyph glyph : candidates) {
+            List<Glyph> context = paperCandidates.contains(glyph) ? glyphs : originalGlyphs;
+            List<Glyph> reflectedContext =
+                    paperCandidates.contains(glyph) ? reflectedGlyphs : originalReflected;
+            // A clearer subset cannot add a second meaning to an already accepted printed body.
+            if (paperCandidates.contains(glyph) && overlapsPrintedClaim(glyph, printedClaims))
+                continue;
             // A dark arm belongs to the recovered complete mark, not a separate dash.
             boolean fragment = false;
             for (Glyph accent : claimedAccents) {
@@ -401,6 +422,7 @@ final class NoteArticulationDetector {
                         || label == OmrMeasurePostProcessor.STAFF) notation++;
             }
             boolean semanticNotation = notation > glyph.count * .25f;
+            Glyph printedCore = raw ? printedCore(glyph, gray, width, height) : null;
             int best = -1, mark = 0;
             double distance = Double.MAX_VALUE;
             for (int n = 0; n < notes.size(); n++) {
@@ -428,6 +450,39 @@ final class NoteArticulationDetector {
                 // extender several spaces beyond the staff.
                 if (candidate == 0 && dy <= 3f && roundedTenuto(glyph, width, note.gap))
                     candidate = NoteArticulation.TENUTO;
+                // A blurred detached body must prove its existing shape again on dark ink.
+                // Keep all ownership, semantic notation, word, staff and dot guards below.
+                boolean recoveredCore = false;
+                if (candidate == 0 && printedCore != null) {
+                    candidate = classify(printedCore, width, note.gap, glyph.y() < note.y);
+                    if (candidate == 0)
+                        candidate =
+                                roundedAngular(printedCore, width, note.gap, glyph.y() < note.y);
+                    if (candidate == 0) {
+                        int raster = rasterCoreMark(printedCore, width, note.gap);
+                        // Horizontal recovery still needs close note ownership, not a lyric
+                        // extender.
+                        if (raster != NoteArticulation.TENUTO || dy <= 3f) candidate = raster;
+                    }
+                    if (candidate == NoteArticulation.MARCATO
+                            && (interiorCrossbar(printedCore, width, .45f)
+                                    || interiorCrossbar(glyph, width, .45f))) candidate = 0;
+                    recoveredCore = candidate != 0;
+                }
+                if (raw
+                        && !faint
+                        && candidate != 0
+                        && !printedBodyContrast(glyph, gray, width, height)) continue;
+                if (recoveredCore
+                        && candidate == NoteArticulation.TENUTO
+                        && continuedPrintedCurve(
+                                printedCore, gray, labels, width, height, note.gap)) continue;
+                if (raw
+                        && candidate == NoteArticulation.STACCATISSIMO
+                        && descenderWord(glyph, context, labels, note.gap)) continue;
+                if (recoveredCore
+                        && candidate == NoteArticulation.STACCATISSIMO
+                        && embeddedFragmentWord(glyph, context, labels, note.gap)) continue;
                 boolean stemOwnedDot =
                         raw
                                 && candidate == NoteArticulation.STACCATO
@@ -446,11 +501,12 @@ final class NoteArticulationDetector {
                         && (candidate == NoteArticulation.TENUTO
                                 || candidate == NoteArticulation.STACCATO
                                 || candidate == NoteArticulation.STACCATISSIMO)
-                        && directionText(glyph, glyphs, note.gap, labels)) continue;
+                        && directionText(glyph, context, note.gap, labels)) continue;
                 if (raw
-                        && candidate == NoteArticulation.MARCATO
-                        && (embeddedDirectionWord(glyph, glyphs, note.gap, labels, width)
-                                || directionText(glyph, glyphs, note.gap, labels)
+                        && (candidate == NoteArticulation.MARCATO
+                                || candidate == NoteArticulation.STACCATISSIMO)
+                        && (embeddedDirectionWord(glyph, context, note.gap, labels, width)
+                                || directionText(glyph, context, note.gap, labels)
                                 || directionText(
                                         new Glyph(
                                                 -glyph.right,
@@ -459,21 +515,21 @@ final class NoteArticulationDetector {
                                                 glyph.bottom,
                                                 glyph.count,
                                                 glyph.pixels),
-                                        reflectedGlyphs,
+                                        reflectedContext,
                                         note.gap,
                                         labels))) continue;
                 if (raw
                         && candidate == NoteArticulation.STACCATO
-                        && embeddedTextDot(glyph, glyphs, note.gap, labels)) continue;
+                        && embeddedTextDot(glyph, context, note.gap, labels)) continue;
                 if (raw
                         && candidate == NoteArticulation.STACCATO
-                        && initialsPunctuation(glyph, glyphs, note.gap, labels)) continue;
+                        && initialsPunctuation(glyph, context, note.gap, labels)) continue;
                 if (raw
                         && candidate == NoteArticulation.TENUTO
-                        && continuedDashRow(glyph, glyphs, notes, note)) continue;
+                        && continuedDashRow(glyph, context, notes, note)) continue;
                 if (raw
                         && candidate == NoteArticulation.STACCATO
-                        && endingNumberDot(glyph, glyphs, note.gap, gray, labels, width, height))
+                        && endingNumberDot(glyph, context, note.gap, gray, labels, width, height))
                     continue;
                 if (semanticNotation
                         && (!raw
@@ -484,7 +540,8 @@ final class NoteArticulationDetector {
                 if (candidate == NoteArticulation.TENUTO && nearHead(glyph, notes)) continue;
                 if (raw
                         && candidate == NoteArticulation.TENUTO
-                        && ledgerStackDash(glyph, note, gray, width, height)) continue;
+                        && (ledgerStackDash(glyph, note, gray, width, height)
+                                || compactLedgerStaff(glyph, note, gray, width, height))) continue;
                 if (raw
                         && candidate == NoteArticulation.TENUTO
                         && glyph.bottom - glyph.top + 1 <= Math.max(2, Math.round(note.gap * .23f))
@@ -508,7 +565,7 @@ final class NoteArticulationDetector {
                         && (durationDot(glyph, notes)
                                 || (raw
                                         && shelteredDot(
-                                                glyph,
+                                                recoveredCore ? printedCore : glyph,
                                                 labels,
                                                 gray,
                                                 width,
@@ -517,7 +574,7 @@ final class NoteArticulationDetector {
                                                 dy,
                                                 stemOwnedDot
                                                         || pairedTenuto(
-                                                                glyph, glyphs, note, width)))))
+                                                                glyph, context, note, width)))))
                     continue;
                 // A small off-axis dot beside a head is a duration dot, not staccato.
                 if (candidate == NoteArticulation.STACCATO && dx > .35f) continue;
@@ -530,6 +587,7 @@ final class NoteArticulationDetector {
             }
             if (best < 0) continue;
             if (faintAccents.contains(glyph)) claimedAccents.add(glyph);
+            if (!paperCandidates.contains(glyph)) printedClaims.add(glyph);
             Anchor owner = notes.get(best);
             // One mark on a chord affects that chord, never another staff or another onset.
             for (int n = 0; n < notes.size(); n++) {
@@ -548,13 +606,14 @@ final class NoteArticulationDetector {
                                 && Math.abs(notes.get(j).x - note.x) < note.gap * .45f)
                             result[j] |= NoteArticulation.MARCATO;
                 if ((result[i] & NoteArticulation.STACCATISSIMO) == 0
-                        && ruleJoinedWedge(note, notes, glyphs, gray, labels, width, height))
+                        && ruleJoinedWedge(
+                                note, notes, originalGlyphs, gray, labels, width, height))
                     for (int j = 0; j < notes.size(); j++)
                         if (notes.get(j).staff == note.staff
                                 && Math.abs(notes.get(j).x - note.x) < note.gap * .45f)
                             result[j] |= NoteArticulation.STACCATISSIMO;
                 if ((result[i] & NoteArticulation.STACCATO) == 0
-                        && textJoinedDot(note, glyphs, labels, gray, width, height))
+                        && textJoinedDot(note, originalGlyphs, labels, gray, width, height))
                     for (int j = 0; j < notes.size(); j++)
                         if (notes.get(j).staff == note.staff
                                 && Math.abs(notes.get(j).x - note.x) < note.gap * .45f)
@@ -997,7 +1056,7 @@ final class NoteArticulationDetector {
                     || w < gap * .25f
                     || w > gap * 3f
                     || g.top > target.y() + gap * .15f
-                    || g.bottom < target.y() - gap * .15f) continue;
+                    || g.bottom + 1 < target.y() - gap * .15f) continue;
             int notation = 0;
             for (int p : g.pixels)
                 if (labels[p] == OmrMeasurePostProcessor.NOTEHEAD
@@ -1205,6 +1264,392 @@ final class NoteArticulationDetector {
                     if (vertical >= (bottom - top + 1) * .95f) return true;
                 }
             }
+        }
+        return false;
+    }
+
+    /** Paper shade must not supply the body of an otherwise plausible mark.
+     * Dark printed cores and uniformly faint printed ink retain their evidence. */
+    private static boolean printedBodyContrast(Glyph glyph, byte[] gray, int width, int height) {
+        int padding =
+                Math.max(
+                        3,
+                        Math.max(glyph.right - glyph.left + 1, glyph.bottom - glyph.top + 1) / 2);
+        int[] background = new int[256], tones = new int[glyph.count];
+        int samples = 0;
+        for (int y = Math.max(0, glyph.top - padding);
+                y <= Math.min(height - 1, glyph.bottom + padding);
+                y++)
+            for (int x = Math.max(0, glyph.left - padding);
+                    x <= Math.min(width - 1, glyph.right + padding);
+                    x++) {
+                background[gray[y * width + x] & 255]++;
+                samples++;
+            }
+        int paper = 255, cumulative = 0;
+        for (int tone = 0; tone < 256; tone++) {
+            cumulative += background[tone];
+            if (cumulative >= Math.ceil(samples * .75)) {
+                paper = tone;
+                break;
+            }
+        }
+        for (int i = 0; i < tones.length; i++) tones[i] = gray[glyph.pixels[i]] & 255;
+        java.util.Arrays.sort(tones);
+        int minimum = tones[0], median = tones[tones.length / 2];
+        return minimum <= paper * .5f
+                || (median - minimum <= Math.max(8, Math.round(paper * .05f))
+                        && paper - median >= 25);
+    }
+
+    /** Antialiased letters can split into peak-shaped arms on one word baseline.
+     * A recovered wedge inside a close word needs both flanks and a multi-letter span. */
+    private static boolean embeddedFragmentWord(
+            Glyph target, List<Glyph> glyphs, byte[] labels, float gap) {
+        List<Glyph> letters = new ArrayList<>();
+        letters.add(target);
+        for (Glyph g : glyphs) {
+            int w = g.right - g.left + 1, h = g.bottom - g.top + 1;
+            if (g == target
+                    || Math.abs(g.x() - target.x()) > gap * 6
+                    || Math.abs(g.bottom - target.bottom) > gap * .45f
+                    || h < gap * .5f
+                    || h > gap * 2.2f
+                    || w < gap * .25f
+                    || w > gap * 3f) continue;
+            int notation = 0;
+            for (int p : g.pixels)
+                if (labels[p] == OmrMeasurePostProcessor.NOTEHEAD
+                        || labels[p] == OmrMeasurePostProcessor.STEM_OR_REST
+                        || labels[p] == OmrMeasurePostProcessor.STAFF
+                        || labels[p] == OmrMeasurePostProcessor.CLEF_OR_KEY) notation++;
+            if (notation <= g.count * .25f) letters.add(g);
+        }
+        letters.sort(java.util.Comparator.comparingInt(Glyph::left));
+        for (int i = 0; i < letters.size(); i++) {
+            Glyph first = letters.get(i), last = first;
+            int count = 0;
+            boolean includes = false, left = false, right = false;
+            for (int j = i; j < letters.size(); j++) {
+                Glyph next = letters.get(j);
+                if (next.left - last.right > gap * .65f) break;
+                count++;
+                includes |= next == target;
+                left |= next.right < target.left;
+                right |= next.left > target.right;
+                if (includes && left && right && count >= 4 && next.right - first.left >= gap * 3)
+                    return true;
+                last = next;
+            }
+        }
+        return false;
+    }
+
+    /** A lower serif/shaft beneath three adjacent letter bodies remains text.
+     * Descenders share the word's baseline even when their detached stroke sits below it. */
+    private static boolean descenderWord(
+            Glyph target, List<Glyph> glyphs, byte[] labels, float gap) {
+        if (target.right - target.left + 1 > gap * .85f
+                || target.bottom - target.top + 1 < gap * .6f) return false;
+        List<Glyph> letters = new ArrayList<>();
+        for (Glyph g : glyphs) {
+            float w = g.right - g.left + 1, h = g.bottom - g.top + 1;
+            if (g == target
+                    || Math.abs(g.x() - target.x()) > gap * 6
+                    || w < gap * .25f
+                    || w > gap * 3
+                    || h < gap * .5f
+                    || h > gap * 2.2f
+                    || target.bottom - g.bottom < gap * .2f
+                    || target.bottom - g.bottom > gap * .9f
+                    || g.top > target.top + gap * .25f
+                    || Math.min(g.bottom, target.bottom) - Math.max(g.top, target.top) + 1
+                            < gap * .2f) continue;
+            int notation = 0;
+            for (int p : g.pixels)
+                if (labels[p] == OmrMeasurePostProcessor.NOTEHEAD
+                        || labels[p] == OmrMeasurePostProcessor.STEM_OR_REST
+                        || labels[p] == OmrMeasurePostProcessor.STAFF
+                        || labels[p] == OmrMeasurePostProcessor.CLEF_OR_KEY) notation++;
+            if (notation <= g.count * .25f) letters.add(g);
+        }
+        letters.add(target);
+        letters.sort(java.util.Comparator.comparingInt(Glyph::left));
+        for (int i = 0; i < letters.size(); i++) {
+            Glyph last = letters.get(i);
+            int bodies = 0, minBottom = Integer.MAX_VALUE, maxBottom = 0;
+            boolean includes = false;
+            for (int j = i; j < letters.size(); j++) {
+                Glyph next = letters.get(j);
+                if (next.left - last.right > gap * .65f) break;
+                includes |= next == target;
+                if (next != target) {
+                    bodies++;
+                    minBottom = Math.min(minBottom, next.bottom);
+                    maxBottom = Math.max(maxBottom, next.bottom);
+                }
+                if (includes && bodies >= 3 && maxBottom - minBottom <= gap * .4f) return true;
+                last = next;
+            }
+        }
+        return false;
+    }
+
+    /** A dark slur island is still part of one pale curve on both sides.
+     * Follow connected, locally contrasted ink rather than manufacturing a detached dash. */
+    private static boolean continuedPrintedCurve(
+            Glyph core, byte[] gray, byte[] labels, int width, int height, float gap) {
+        int pad = Math.max(3, Math.round(gap * 2));
+        int l = Math.max(0, core.left - pad), r = Math.min(width - 1, core.right + pad);
+        int t = Math.max(0, core.top - Math.round(gap * .8f));
+        int b = Math.min(height - 1, core.bottom + Math.round(gap * .8f));
+        int w = r - l + 1, h = b - t + 1;
+        int[] histogram = new int[256];
+        int samples = 0, cumulative = 0, paper = 255;
+        for (int y = t; y <= b; y++)
+            for (int x = l; x <= r; x++) {
+                histogram[gray[y * width + x] & 255]++;
+                samples++;
+            }
+        for (int tone = 0; tone < 256; tone++) {
+            cumulative += histogram[tone];
+            if (cumulative >= Math.ceil(samples * .75)) {
+                paper = tone;
+                break;
+            }
+        }
+        int cutoff = paper - Math.max(25, Math.round(paper * .2f));
+        boolean[] seen = new boolean[w * h];
+        int[] queue = new int[w * h];
+        int take = 0, size = 0;
+        for (int p : core.pixels) {
+            int at = (p / width - t) * w + p % width - l;
+            if (!seen[at] && (gray[p] & 255) < cutoff) {
+                seen[at] = true;
+                queue[size++] = at;
+            }
+        }
+        boolean left = false, right = false;
+        while (take < size) {
+            int at = queue[take++], x = at % w, y = at / w;
+            left |= x + l <= core.left - gap;
+            right |= x + l >= core.right + gap;
+            if (left && right) return true;
+            for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++) {
+                    int nx = x + dx, ny = y + dy;
+                    if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                    int next = ny * w + nx, p = (ny + t) * width + nx + l;
+                    if (!seen[next]
+                            && (gray[p] & 255) < cutoff
+                            && labels[p] != OmrMeasurePostProcessor.NOTEHEAD) {
+                        seen[next] = true;
+                        queue[size++] = next;
+                    }
+                }
+        }
+        return false;
+    }
+
+    /** A detached printed core may lose one boundary pixel to antialiasing.
+     * Keep the existing scaled dot bounds and require a compact filled body. */
+    private static int rasterCoreMark(Glyph g, int width, float gap) {
+        int w = g.right - g.left + 1, h = g.bottom - g.top + 1;
+        float density = g.count / (float) (w * h);
+        if (w >= gap * .26f
+                && w <= gap * .62f
+                && h >= gap * .26f
+                && h <= gap * .62f
+                && g.count + 1 >= gap * gap * .065f
+                && w / (float) h > .65f
+                && w / (float) h < 1.55f
+                && density >= .75f) return NoteArticulation.STACCATO;
+        // The fitted column thickness below proves a dash even when tilt expands its box.
+        if (w < gap * .65f || w > gap * 1.65f + 1 || h > gap * .4f + 1 || density < .45f) return 0;
+        int[] low = new int[w], high = new int[w], count = new int[w];
+        java.util.Arrays.fill(low, h);
+        for (int p : g.pixels) {
+            int x = p % width - g.left, y = p / width - g.top;
+            low[x] = Math.min(low[x], y);
+            high[x] = Math.max(high[x], y);
+            count[x]++;
+        }
+        double sx = 0, sy = 0, sxx = 0, sxy = 0;
+        int columns = 0, thick = 0;
+        for (int x = 1; x < w - 1; x++) {
+            if (count[x] == 0 || high[x] - low[x] + 1 != count[x] || w / (float) count[x] < 3.5f)
+                return 0;
+            double y = (low[x] + high[x]) * .5;
+            sx += x;
+            sy += y;
+            sxx += x * x;
+            sxy += x * y;
+            columns++;
+            if (count[x] >= 2) thick++;
+        }
+        if (columns < 3 || thick < columns * .8) return 0;
+        double denominator = columns * sxx - sx * sx;
+        double slope = denominator == 0 ? 0 : (columns * sxy - sx * sy) / denominator;
+        if (Math.abs(slope) * (w - 1) > gap * .25f) return 0;
+        double intercept = (sy - slope * sx) / columns;
+        for (int x = 1; x < w - 1; x++) {
+            if (Math.abs((low[x] + high[x]) * .5 - (intercept + slope * x)) > .65
+                    || high[x] - low[x] + 1 > Math.max(3, Math.ceil(gap * .25f))) return 0;
+        }
+        return NoteArticulation.TENUTO;
+    }
+
+    /** Recover one complete dark body inside a detached blurred component. */
+    private static Glyph printedCore(Glyph glyph, byte[] gray, int width, int height) {
+        int padding =
+                Math.max(
+                        3,
+                        Math.max(glyph.right - glyph.left + 1, glyph.bottom - glyph.top + 1) / 2);
+        int[] histogram = new int[256];
+        int samples = 0, minimum = 255;
+        for (int y = Math.max(0, glyph.top - padding);
+                y <= Math.min(height - 1, glyph.bottom + padding);
+                y++)
+            for (int x = Math.max(0, glyph.left - padding);
+                    x <= Math.min(width - 1, glyph.right + padding);
+                    x++) {
+                histogram[gray[y * width + x] & 255]++;
+                samples++;
+            }
+        int paper = 255, cumulative = 0;
+        for (int tone = 0; tone < 256; tone++) {
+            cumulative += histogram[tone];
+            if (cumulative >= Math.ceil(samples * .75)) {
+                paper = tone;
+                break;
+            }
+        }
+        for (int pixel : glyph.pixels) minimum = Math.min(minimum, gray[pixel] & 255);
+        if (paper - minimum < 60 || minimum > paper * .5f) return null;
+        int cutoff = Math.min(154, minimum + Math.round((paper - minimum) * .50f));
+        int w = glyph.right - glyph.left + 1, h = glyph.bottom - glyph.top + 1;
+        boolean[] ink = new boolean[w * h], seen = new boolean[w * h];
+        int total = 0;
+        for (int pixel : glyph.pixels)
+            if ((gray[pixel] & 255) < cutoff) {
+                ink[(pixel / width - glyph.top) * w + pixel % width - glyph.left] = true;
+                total++;
+            }
+        if (total < 3) return null;
+        int[] queue = new int[w * h], best = null;
+        int bestSize = 0;
+        for (int seed = 0; seed < ink.length; seed++) {
+            if (!ink[seed] || seen[seed]) continue;
+            int read = 0, size = 1;
+            queue[0] = seed;
+            seen[seed] = true;
+            while (read < size) {
+                int at = queue[read++], x = at % w, y = at / w;
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++) {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                        int next = ny * w + nx;
+                        if (ink[next] && !seen[next]) {
+                            seen[next] = true;
+                            queue[size++] = next;
+                        }
+                    }
+            }
+            if (size > bestSize) {
+                bestSize = size;
+                best = java.util.Arrays.copyOf(queue, size);
+            }
+        }
+        if (bestSize < 3 || bestSize < total * .85f) return null;
+        int left = width, right = 0, top = height, bottom = 0;
+        for (int i = 0; i < best.length; i++) {
+            int x = glyph.left + best[i] % w, y = glyph.top + best[i] / w;
+            left = Math.min(left, x);
+            right = Math.max(right, x);
+            top = Math.min(top, y);
+            bottom = Math.max(bottom, y);
+            best[i] = y * width + x;
+        }
+        return new Glyph(left, top, right, bottom, bestSize, best);
+    }
+
+    /** Recover detached dark bodies when photographed paper joined the raw component.
+     * Original components and all later shape, notation and ownership proofs remain in force. */
+    private static List<Glyph> paperGlyphs(
+            byte[] gray, int width, int height, List<Anchor> notes, boolean[] seen, int[] queue) {
+        float[] gaps = new float[notes.size()];
+        int valid = 0;
+        for (Anchor note : notes)
+            if (Float.isFinite(note.gap) && note.gap > 0) gaps[valid++] = note.gap;
+        if (valid == 0) return List.of();
+        java.util.Arrays.sort(gaps, 0, valid);
+        byte[] normalized = RestPaperTone.normalize(gray, width, height, gaps[valid / 2]);
+        if (normalized == gray) return List.of();
+        java.util.Arrays.fill(seen, false);
+        List<Glyph> result = new ArrayList<>();
+        for (int seed = 0; seed < gray.length; seed++) {
+            if (seen[seed] || (normalized[seed] & 255) >= 200) continue;
+            int read = 0, size = 1;
+            queue[0] = seed;
+            seen[seed] = true;
+            int left = seed % width, right = left, top = seed / width, bottom = top;
+            while (read < size) {
+                int at = queue[read++], x = at % width, y = at / width;
+                left = Math.min(left, x);
+                right = Math.max(right, x);
+                top = Math.min(top, y);
+                bottom = Math.max(bottom, y);
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++) {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+                        int next = ny * width + nx;
+                        if (!seen[next] && (normalized[next] & 255) < 200) {
+                            seen[next] = true;
+                            queue[size++] = next;
+                        }
+                    }
+            }
+            if (size < 3 || right - left > width * .025f || bottom - top > height * .018f) continue;
+            Glyph glyph =
+                    new Glyph(left, top, right, bottom, size, java.util.Arrays.copyOf(queue, size));
+            // This additional path needs shaded paper and an original dark seed.
+            int padding = Math.max(3, Math.max(right - left + 1, bottom - top + 1) / 2);
+            int[] histogram = new int[256];
+            int samples = 0;
+            for (int y = Math.max(0, top - padding);
+                    y <= Math.min(height - 1, bottom + padding);
+                    y++)
+                for (int x = Math.max(0, left - padding);
+                        x <= Math.min(width - 1, right + padding);
+                        x++) {
+                    histogram[gray[y * width + x] & 255]++;
+                    samples++;
+                }
+            int total = 0, paper = 255;
+            for (int tone = 0; tone < 256; tone++)
+                if ((total += histogram[tone]) >= Math.ceil(samples * .75)) {
+                    paper = tone;
+                    break;
+                }
+            if (paper < 96 || paper >= 185) continue;
+            int dark = 0;
+            for (int pixel : glyph.pixels) if ((gray[pixel] & 255) < 155) dark++;
+            if (dark < 3) continue;
+            result.add(glyph);
+        }
+        return result;
+    }
+
+    private static boolean overlapsPrintedClaim(Glyph candidate, List<Glyph> claimed) {
+        for (Glyph body : claimed) {
+            if (candidate.right < body.left
+                    || candidate.left > body.right
+                    || candidate.bottom < body.top
+                    || candidate.top > body.bottom) continue;
+            for (int pixel : candidate.pixels)
+                for (int accepted : body.pixels) if (pixel == accepted) return true;
         }
         return false;
     }
@@ -1657,8 +2102,80 @@ final class NoteArticulationDetector {
                     glyph.y() + direction * line * gap,
                     gap,
                     stemTop,
-                    stemBottom)) return false;
+                    stemBottom,
+                    gap)) return false;
         return true;
+    }
+
+    /** Compact outer ledgers must continue into a complete, thin five-rule staff.
+     * Isolated short dashes retain their articulation meaning without that evidence. */
+    private static boolean compactLedgerStaff(
+            Glyph glyph, Anchor note, byte[] gray, int width, int height) {
+        float gap = note.gap;
+        if (!Float.isFinite(gap)
+                || gap < 6
+                || glyph.bottom - glyph.top + 1 > gap * .25f
+                || glyph.right - glyph.left + 1 < gap * 1.3f
+                || Math.abs(glyph.x() - note.x) > gap * .5f) return false;
+        float distance = (glyph.y() - note.y) / gap;
+        if (Math.abs(distance) < .7f
+                || Math.abs(distance) > 3.2f
+                || Math.abs(distance * 2 - Math.round(distance * 2)) > .25f) return false;
+        int direction = distance < 0 ? -1 : 1;
+        float span = Math.min(gap, Math.max(gap * .6f, (glyph.right - glyph.left) * .5f));
+        int stemTop = Math.round(Math.min(glyph.y(), glyph.y() + direction * 2 * gap) - gap * .5f);
+        int stemBottom =
+                Math.round(Math.max(glyph.y(), glyph.y() + direction * 2 * gap) + gap * .5f);
+        for (int start = 1; start <= 3; start++) {
+            boolean complete = true;
+            for (int line = 0; line < start; line++)
+                if (!shortLedgerStroke(
+                        gray,
+                        width,
+                        height,
+                        note.x,
+                        glyph.y() + direction * line * gap,
+                        gap,
+                        stemTop,
+                        stemBottom,
+                        span)) {
+                    complete = false;
+                    break;
+                }
+            if (!complete) continue;
+            for (int line = 0; line < 5; line++) {
+                int x = Math.round(note.x),
+                        y = Math.round(glyph.y() + direction * (start + line) * gap);
+                // Raw broad rails need both horizontal continuity and bright vertical flanks.
+                if (!completeStaffRail(gray, width, height, x, y, gap, stemTop, stemBottom)) {
+                    complete = false;
+                    break;
+                }
+            }
+            if (complete) return true;
+        }
+        return false;
+    }
+
+    private static boolean completeStaffRail(
+            byte[] gray,
+            int width,
+            int height,
+            int x,
+            int y,
+            float gap,
+            int stemTop,
+            int stemBottom) {
+        int radius = Math.max(1, Math.round(gap * .15f));
+        for (int dy = -radius; dy <= radius; dy++) {
+            int row = y + dy;
+            if (horizontalRuleInk(gray, width, height, x, row, gap, 225, .85f)
+                    && contrastedHorizontalRule(gray, width, height, x, row, gap)
+                    && shortLedgerStroke(
+                            gray, width, height, x, row, gap, stemTop, stemBottom, gap))
+                return true;
+        }
+        return false;
     }
 
     private static boolean shortLedgerStroke(
@@ -1669,9 +2186,10 @@ final class NoteArticulationDetector {
             float cy,
             float gap,
             int stemTop,
-            int stemBottom) {
-        int left = Math.round(cx - gap),
-                right = Math.round(cx + gap),
+            int stemBottom,
+            float halfSpan) {
+        int left = Math.round(cx - halfSpan),
+                right = Math.round(cx + halfSpan),
                 y = Math.round(cy),
                 off = Math.max(2, Math.round(gap * .25f));
         if (left < 0 || right >= width || y - off - 1 < 0 || y + off + 1 >= height) return false;
@@ -1830,8 +2348,10 @@ final class NoteArticulationDetector {
                 && h >= gap * .35f
                 && h <= gap * 1.25f
                 && w / h >= 1.25f
-                && RoundedAngularArticulation.matches(
-                        g.pixels, width, g.left, g.top, g.right, g.bottom, 0))
+                && (RoundedAngularArticulation.matches(
+                                g.pixels, width, g.left, g.top, g.right, g.bottom, 0)
+                        || TiltedOpenChevron.matches(
+                                g.pixels, width, g.left, g.top, g.right, g.bottom)))
             return NoteArticulation.ACCENT;
         if (w >= gap * .5f
                 && w <= gap * 1.3f

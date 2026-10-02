@@ -182,6 +182,15 @@ final class PortableNoteOrnaments {
                     }
                 }
             }
+        for (var found : CrossRowPortamento.find(gray, w, h, staffs, measures, notes, trills)) {
+            int target = found.targetIndex();
+            if (marks[target] == 0
+                    && NoteOrnament.type(notes.get(target).articulations()) == NoteOrnament.NONE)
+                marks[target] =
+                        NoteOrnament.SLIDE
+                                | NoteOrnament.FROM_PREVIOUS
+                                | (found.fromAbove() ? NoteOrnament.FROM_ABOVE : 0);
+        }
         List<ScoreNoteEvent> result = new ArrayList<>(notes.size());
         for (int i = 0; i < notes.size(); i++)
             if (!textHeads[i])

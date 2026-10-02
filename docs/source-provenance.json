@@ -249,11 +249,12 @@
     },
     "NoteArticulationDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteArticulationDetector.java",
-      "source_sha256": "2a236f9c683eaabb449358adf9acef9021f97649176c2540f17b1b219ece0a85",
-      "review_note": "Reviewed tenuto rule veto requires independently contrasting printed rule ink on both horizontal flanks; broad shaded paper cannot supply a staff stripe. Original procedural shaded/graded paper and genuine pale-rule positives/negatives, above and below heads. Package-only parity; no model, dependency, record field or private score imagery.",
-      "source_normalized_sha256": "b5eb16b7af4dfc3a9ca89e7bb4b8f5b2882e1592ec45277ca2f6674056c789a7",
+      "source_sha256": "65e179a0e357c1cc4d608dfa0e918efa203f1b7fc8a9ec4a319f309bc4581147",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change.",
+      "source_normalized_sha256": "65e179a0e357c1cc4d608dfa0e918efa203f1b7fc8a9ec4a319f309bc4581147",
       "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "reviewed_app_state": "Reviewed scoped recognition revision272 source; original base commits are retained separately and exact source hashes pin the standalone extraction."
+      "reviewed_app_state": "Reviewed scoped recognition revision272 source; original base commits are retained separately and exact source hashes pin the standalone extraction.",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02"
     },
     "OpenChevron.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OpenChevron.java",
@@ -283,17 +284,20 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "f4a47f858e3ed877c1e8c3d5fc4ac908169ffb51ef95f0fb582b5a781743837c",
+      "source_sha256": "57282bdcf2bb97fc44754360a92cd3c1f88573efc7251e7e740b76a0b2eac363",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Six global geometry repairs including complete paired printed-rail recovery with39 original generated controls. Full token parity with package and existing diagnostics adapters. Existing compact rail APIs retain their three-gap bound; written rails use five unchanged aligned-core probes within five gaps. Model, dependencies and full framed record layout unchanged; no private score or device material.",
-      "source_normalized_sha256": "8539e56218c2549978a9aba67c48e865fb58f7fdaa41f15c02af1c7df8ec79d8",
-      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit"
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change.",
+      "source_normalized_sha256": "57282bdcf2bb97fc44754360a92cd3c1f88573efc7251e7e740b76a0b2eac363",
+      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
-      "source_sha256": "fc4fb6baffafdfaf7f27520af61f5b28ebeb556e212ffeff84900dd4abe7ac60",
-      "source_normalized_sha256": "fc4fb6baffafdfaf7f27520af61f5b28ebeb556e212ffeff84900dd4abe7ac60"
+      "source_sha256": "e03fb168e1b5c412d3114bc459f74ca5ffb8b1f9cda7a75a7c539a34d4976809",
+      "source_normalized_sha256": "e03fb168e1b5c412d3114bc459f74ca5ffb8b1f9cda7a75a7c539a34d4976809",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
     },
     "RawStaffLineDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/RawStaffLineDetector.java",
@@ -310,12 +314,13 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "7c7a53ef8dd99f5738a2403bc10f38a7f85e2472b71d2585607ca88ea63a8c04",
-      "source_normalized_sha256": "e91124ec9027973095f0c32b67b9e63939d09fd16ab7efebca82bad03510d209",
-      "review_note": "Six global geometry repairs including complete paired printed-rail recovery with39 original generated controls. Full token parity with package and existing diagnostics adapters. Existing compact rail APIs retain their three-gap bound; written rails use five unchanged aligned-core probes within five gaps. Model, dependencies and full framed record layout unchanged; no private score or device material.",
+      "source_sha256": "0d5c77935c37fd0d018dc7268f5ea7b78b4518c493b1fc2508c92593b15c5c07",
+      "source_normalized_sha256": "0d5c77935c37fd0d018dc7268f5ea7b78b4518c493b1fc2508c92593b15c5c07",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change.",
       "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit"
+      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
@@ -371,11 +376,12 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "a47ed3c2d7d06a22a0078f888d6845140785e9d03df867dd33e8d2752e5fa8de",
+      "source_sha256": "6eef12d0831f46f3a6bd955a80c40c228973657f31f718daa847155242b5346b",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed half-pixel quarter-hook rounding and dark-seeded complete quarter glyph recovery. Original numeric contour controls and full SIL-OFL Bravura-generated faded glyph/accidental/stem controls; no private score geometry or pixels included.",
-      "source_normalized_sha256": "ec35dc6bb88a3290c5898b49832b4a765b661df3aa3e9a307eeb83a2048052d1",
-      "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-rest-tuplet-841-source"
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change.",
+      "source_normalized_sha256": "6eef12d0831f46f3a6bd955a80c40c228973657f31f718daa847155242b5346b",
+      "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-rest-tuplet-841-source",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02"
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -687,9 +693,11 @@
     },
     "MusicalOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MusicalOcrEvidence.java",
-      "source_sha256": "353658468e2b7ba4592f0a91ecc69555604b02dd2964e553209b4c55143e6f36",
+      "source_sha256": "6174cce90270f04cc3f7ebe2c5f08d971e8b0fdc9c76e56b60b747d3a5a6351c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "353658468e2b7ba4592f0a91ecc69555604b02dd2964e553209b4c55143e6f36"
+      "source_normalized_sha256": "7b88d4d7f681113de04da3c04ad5129f540da7e7512c31a08a373316286a7cac",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
     },
     "NavigationSegnoGlyphs.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NavigationSegnoGlyphs.java",
@@ -757,9 +765,11 @@
     },
     "PortableNoteOrnaments.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableNoteOrnaments.java",
-      "source_sha256": "56badd9eedaae9dc30fc853c7b6628b5bbfefed7ed860c23dd4be518d1ec0e0a",
+      "source_sha256": "19161bcdd1ed35a72a750f109fe6ab2c0f4cf71bd919067fed2ecd0aec72e9b3",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "56badd9eedaae9dc30fc853c7b6628b5bbfefed7ed860c23dd4be518d1ec0e0a"
+      "source_normalized_sha256": "19161bcdd1ed35a72a750f109fe6ab2c0f4cf71bd919067fed2ecd0aec72e9b3",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
     },
     "FaintSharpInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/FaintSharpInk.java",
@@ -891,9 +901,11 @@
     },
     "MusicalOcr.java": {
       "source_path": "tools/native-worker/NativeMusicalOcr.java",
-      "source_sha256": "2b54ea5c5b4b8cdcb6e943bbd41a6e08bdd11769a7076a3612e4bd6433a8a3bc",
+      "source_sha256": "dec1353c2bcb761c63fbdf69eb591f8434386422e400b46c166756c577df6a15",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "2b54ea5c5b4b8cdcb6e943bbd41a6e08bdd11769a7076a3612e4bd6433a8a3bc"
+      "source_normalized_sha256": "dec1353c2bcb761c63fbdf69eb591f8434386422e400b46c166756c577df6a15",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source",
+      "review_note": "Explicit reviewed OCR method port: two-scale complete-word dynamics and cross-row portamento, bounded local playing directions, original raw nearest-replicated crops. Preserve standalone caller-owned inference and meter font; public dynamic supplement follows existing glyph refinement to protect original whole-word claims. No model/dependency changes."
     },
     "NativeDynamicGlyphs.java": {
       "source_path": "tools/native-worker/NativeDynamicGlyphs.java",
@@ -1022,6 +1034,76 @@
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit",
       "review_note": "Six global geometry repairs including complete paired printed-rail recovery with39 original generated controls. Full token parity with package and existing diagnostics adapters. Existing compact rail APIs retain their three-gap bound; written rails use five unchanged aligned-core probes within five gaps. Model, dependencies and full framed record layout unchanged; no private score or device material."
+    },
+    "BeamRuleLocalSlope.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/BeamRuleLocalSlope.java",
+      "source_sha256": "0f79a674979b7bb41afb3be5ab6ed528dc2cc5b3f688dcb06675a4cf0a334ac5",
+      "source_normalized_sha256": "0f79a674979b7bb41afb3be5ab6ed528dc2cc5b3f688dcb06675a4cf0a334ac5",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "CrossRowPortamento.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/CrossRowPortamento.java",
+      "source_sha256": "693a5bea4691b82645411a588e52495d78139ff477ce56f598b45eaa6c5e8d92",
+      "source_normalized_sha256": "693a5bea4691b82645411a588e52495d78139ff477ce56f598b45eaa6c5e8d92",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "CurvedExitInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/CurvedExitInk.java",
+      "source_sha256": "f13fd8c45271bc39fbb790f993690b4fcc32fbcf6ab303745ae49d975ad06b75",
+      "source_normalized_sha256": "f13fd8c45271bc39fbb790f993690b4fcc32fbcf6ab303745ae49d975ad06b75",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "PaperDynamicWord.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PaperDynamicWord.java",
+      "source_sha256": "d60d17be0c93ddbebfcada69cea4ef1bf9dbe6c43df0df75adb0351f738ba6fd",
+      "source_normalized_sha256": "d60d17be0c93ddbebfcada69cea4ef1bf9dbe6c43df0df75adb0351f738ba6fd",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "PrintedDirectionStaff.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedDirectionStaff.java",
+      "source_sha256": "6683eedae3b44abbfa6e7654f686aa96a1e90b640909eaf8f46a50816610af4e",
+      "source_normalized_sha256": "6683eedae3b44abbfa6e7654f686aa96a1e90b640909eaf8f46a50816610af4e",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "QuarterRestLocalBody.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/QuarterRestLocalBody.java",
+      "source_sha256": "cc954e2d510b4d3fa0347673647f9c2c6a81678dad788577065b73783084c4ea",
+      "source_normalized_sha256": "cc954e2d510b4d3fa0347673647f9c2c6a81678dad788577065b73783084c4ea",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "RestPaperTone.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/RestPaperTone.java",
+      "source_sha256": "289f6204e0dc83f14fe4c28d26b074e0bcdd8a156bfdae7b889ddcc006ddd307",
+      "source_normalized_sha256": "289f6204e0dc83f14fe4c28d26b074e0bcdd8a156bfdae7b889ddcc006ddd307",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "TechniqueTextRegions.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TechniqueTextRegions.java",
+      "source_sha256": "a609d2a6c3d46dd6fa4ba2b46d46b72d629d759ff7402449ee36142acbe09c8a",
+      "source_normalized_sha256": "a609d2a6c3d46dd6fa4ba2b46d46b72d629d759ff7402449ee36142acbe09c8a",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "TiltedOpenChevron.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TiltedOpenChevron.java",
+      "source_sha256": "b7b8de5ca0869fbab57a4e01231125796d0e62e2fb1dab027a3d6a80ee55e9a6",
+      "source_normalized_sha256": "b7b8de5ca0869fbab57a4e01231125796d0e62e2fb1dab027a3d6a80ee55e9a6",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+    },
+    "SlidePitchSource.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/SlidePitchSource.java",
+      "source_sha256": "47c2d98c4de852aa8a4567bb40e1d35f33218a848747145dd5ce9db99265e44b",
+      "source_normalized_sha256": "47c2d98c4de852aa8a4567bb40e1d35f33218a848747145dd5ce9db99265e44b",
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
     }
   },
   "interpreter_speedup_review": {
@@ -1048,5 +1130,49 @@
     ],
     "existing_fixture_review": "The prior interior-beam fixture contains both surviving outer rails, four complete semantic/raw thin rules, and a genuine thick middle beam. Its expected phase now reflects that complete bounded proof. Missing, one-sided, semantically unsupported and sixth-rule rejection controls are preserved.",
     "boundary": "Original generated Java geometry only. No commercial source, private evidence, phone logs, score rules, weights, model lineage, dependencies or record layout changes."
+  },
+  "shaded_raster_and_cross_row_review": {
+    "public_base": "8813cad046e94aaebd49bae341306409aafa231f",
+    "reviewed_app_version": "1.18.382",
+    "decoder_source_sha256": "264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+    "new_pure_jdk_helpers": [
+      "BeamRuleLocalSlope.java",
+      "CrossRowPortamento.java",
+      "CurvedExitInk.java",
+      "PaperDynamicWord.java",
+      "PrintedDirectionStaff.java",
+      "QuarterRestLocalBody.java",
+      "RestPaperTone.java",
+      "TechniqueTextRegions.java",
+      "TiltedOpenChevron.java",
+      "SlidePitchSource.java"
+    ],
+    "whole_file_parity_classes": [
+      "BeamRuleLocalSlope.java",
+      "CrossRowPortamento.java",
+      "CurvedExitInk.java",
+      "NoteArticulationDetector.java",
+      "OmrScoreInterpreter.java",
+      "PaperDynamicWord.java",
+      "PlayingTechniqueDetector.java",
+      "PortableNoteOrnaments.java",
+      "PrintedDirectionStaff.java",
+      "QuarterRestLocalBody.java",
+      "RestPaperTone.java",
+      "ScoreDynamicsDetector.java",
+      "SixteenthRestDetector.java",
+      "TechniqueTextRegions.java",
+      "TiltedOpenChevron.java",
+      "SlidePitchSource.java",
+      "MusicalOcrEvidence.java"
+    ],
+    "reviewed_adapters": [
+      "NativeMusicalOcr.java to MusicalOcr.java",
+      "NativePageGuide.java to SheetInterpreter.java",
+      "OmrMeasureAnalyzer.java shared evidence and raw crop methods",
+      "SheetInterpreterAudio.java to shared SlidePitchSource selection API"
+    ],
+    "license": "Apache-2.0; original generated geometry and text records only",
+    "boundary": "No app history, private page pixels, commercial coordinates, phone logs, weights, runtime dependencies or new guide fields. Full framed263 guide and audio input layouts retained; cache revisions refresh changed interpretation and slide pitch binding."
   }
 }

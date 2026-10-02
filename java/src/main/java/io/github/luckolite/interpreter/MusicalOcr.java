@@ -308,6 +308,137 @@ public final class MusicalOcr {
         return List.copyOf(words);
     }
 
+    /** Supplement original dynamic words with full-body, two-scale literal agreement. */
+    List<PlayingTechniqueDetector.Word> dynamics(
+            byte[] gray,
+            int width,
+            int height,
+            List<PlayingTechniqueDetector.Staff> staffs,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes)
+            throws Exception {
+        return supplementDynamics(
+                gray,
+                width,
+                height,
+                staffs,
+                measures,
+                notes,
+                dynamics(gray, width, height, staffs));
+    }
+
+    /** Original whole-word claims remain authoritative after the glyph refinement pass. */
+    List<PlayingTechniqueDetector.Word> supplementDynamics(
+            byte[] gray,
+            int width,
+            int height,
+            List<PlayingTechniqueDetector.Staff> staffs,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes,
+            List<PlayingTechniqueDetector.Word> accepted)
+            throws Exception {
+        var words = new ArrayList<>(accepted);
+        for (var proposal :
+                ScoreDynamicsDetector.paperSymbolBoxes(
+                        gray, staffs, measures, notes, width, height)) {
+            if (!PaperDynamicWord.unclaimed(proposal, words)) continue;
+            var crop = PaperDynamicWord.crop(proposal, width, height);
+            if (crop == null) continue;
+            var twice =
+                    readCrop(
+                            gray,
+                            width,
+                            height,
+                            crop.left(),
+                            crop.top(),
+                            crop.right(),
+                            crop.bottom(),
+                            2);
+            var thrice =
+                    readCrop(
+                            gray,
+                            width,
+                            height,
+                            crop.left(),
+                            crop.top(),
+                            crop.right(),
+                            crop.bottom(),
+                            3);
+            var agreed =
+                    PaperDynamicWord.agree(proposal, twice, thrice, crop, width, height, words);
+            if (agreed != null && ScoreDynamicsDetector.containsInk(agreed, gray, width, height))
+                words.add(agreed);
+        }
+        return List.copyOf(words);
+    }
+
+    List<PlayingTechniqueDetector.Word> crossRowPortWords(
+            byte[] gray,
+            int width,
+            int height,
+            List<PlayingTechniqueDetector.Staff> staffs,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes)
+            throws Exception {
+        var words = new ArrayList<PlayingTechniqueDetector.Word>();
+        for (var r : CrossRowPortamento.regions(gray, width, height, staffs, measures, notes)) {
+            var twice = readCrop(gray, width, height, r.left(), r.top(), r.right(), r.bottom(), 2);
+            var thrice = readCrop(gray, width, height, r.left(), r.top(), r.right(), r.bottom(), 3);
+            var word = CrossRowPortamento.consensus(twice, thrice, r, width, height);
+            if (word != null) words.add(word);
+        }
+        return List.copyOf(words);
+    }
+
+    /** Read complete playing words in bounded, independently supported local staff strips. */
+    List<PlayingTechniqueDetector.Word> techniques(
+            byte[] gray,
+            int width,
+            int height,
+            List<PlayingTechniqueDetector.Staff> staffs,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes)
+            throws Exception {
+        var words = new ArrayList<PlayingTechniqueDetector.Word>();
+        for (var region : TechniqueTextRegions.above(staffs, measures, notes, width, height)) {
+            var first =
+                    TechniqueTextRegions.readings(
+                            readCrop(
+                                    gray,
+                                    width,
+                                    height,
+                                    region.left(),
+                                    region.top(),
+                                    region.right(),
+                                    region.bottom(),
+                                    1),
+                            region,
+                            1,
+                            width,
+                            height);
+            if (first.isEmpty()) continue;
+            var second =
+                    TechniqueTextRegions.readings(
+                            readCrop(
+                                    gray,
+                                    width,
+                                    height,
+                                    region.left(),
+                                    region.top(),
+                                    region.right(),
+                                    region.bottom(),
+                                    2),
+                            region,
+                            2,
+                            width,
+                            height);
+            words.addAll(
+                    TechniqueTextRegions.consensus(
+                            first, second, region.staff().gap(), width, height));
+        }
+        return List.copyOf(words);
+    }
+
     private OcrText readCrop(
             byte[] gray, int width, int height, int left, int top, int right, int bottom, int scale)
             throws Exception {

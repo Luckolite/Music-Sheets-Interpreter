@@ -277,3 +277,26 @@ The compact grace classifier retains its original three-gap bound. Thirteen
 original generated controls cover mixed masks, broken third rails, wide written
 rails, exact span bounds, single cores, bends and opposed shafts. No private
 score, model change, dependency or framed record field is included.
+
+
+Shaded-paper articulation and rest proposals require independently contrasting
+printed bodies and bounded ownership. Tilted chevrons and hairpins use fitted
+raw staff rails; compact ledger chains cannot act as independent tenuto glyphs.
+Secondary-beam rejection uses continuing thin rules with independent slope proof.
+Owned curved exit ink is excluded from false note and tie proposals.
+
+Playing directions retain compound line anchors and require local OCR agreement.
+Additional dynamic words require complete-body literal agreement at two integer
+scales, bounded word coverage, and absence of an existing whole-word claim.
+Existing glyph thresholds, original dynamics, models and weights are unchanged.
+
+Cross-row portamento requires the printed word, a unique terminal/initial attack
+pair, and two independently contrasted straight fragments with matching direction.
+The shared slide pitch-source API can bind the immediately preceding bar on the
+same part; chords, skipped bars and intervening rests cannot supply that source.
+The app playback adapter uses that source's key context, accidental and register.
+Original synthetic regressions cover rejection boundaries and preserve written
+attack timing. All seventeen reviewed shared classes retain full executable-token
+parity after package/diagnostic adaptation. Musical OCR keeps standalone
+caller-owned inference. No private score, new dependency, weight or guide record
+field is included.

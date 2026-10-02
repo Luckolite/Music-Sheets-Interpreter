@@ -1,6 +1,5 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -18,6 +17,11 @@ final class PlayingTechniqueDetector {
     static int technique(String word) {
         if (word == null) return -1;
         String clean = word.trim().toLowerCase(Locale.ROOT).replaceAll("^[.,:;]+|[.,:;]+$", "");
+        // A dynamic and an expression can share one OCR line. Accept only a
+        // complete two-token direction, never arbitrary prose or negation.
+        String[] phrase = clean.split("\\s+");
+        if (phrase.length == 2 && phrase[0].matches("ppp|pp|p|mp|mf|fff|ff|f"))
+            clean = phrase[1].replaceAll("^[.,:;]+|[.,:;]+$", "");
         return switch (clean) {
             case "pizz", "pizzicato" -> ScoreTechniqueChange.PIZZICATO;
             case "arco" -> ScoreTechniqueChange.ARCO;
@@ -37,20 +41,38 @@ final class PlayingTechniqueDetector {
             int width,
             int height) {
         List<ScoreTechniqueChange> result = new ArrayList<>();
+        var localRegions = TechniqueTextRegions.above(staffs, measures, notes, width, height);
         for (Word word : words) {
             int technique = technique(word.text);
             if (technique < 0) continue;
             Staff owner = null;
-            float best = Float.MAX_VALUE;
+            float best = Float.MAX_VALUE, second = Float.MAX_VALUE;
+            boolean ownerBelow = false;
             for (Staff staff : staffs) {
-                float distance = (staff.top - word.bottom * height) / staff.gap;
-                if (distance < -.6f || distance > 4.2f) continue;
-                if (Math.abs(distance) < best) {
-                    best = Math.abs(distance);
+                var frame = TechniqueTextRegions.local(staff, word.left * width, localRegions);
+                float above = (frame.top - word.bottom * height) / staff.gap;
+                float below = (word.top * height - frame.bottom) / staff.gap;
+                boolean upper = above >= -.6f && above <= 4.2f;
+                // OCR boxes and the row-wide staff frame can differ by half a gap.
+                // Require the expression to extend beyond the bottom rule too.
+                boolean lower =
+                        technique >= ScoreTechniqueChange.CANTABILE
+                                && below >= -.6f
+                                && below <= 4.2f
+                                && word.bottom * height >= frame.bottom + staff.gap * .5f;
+                if (!upper && !lower) continue;
+                boolean isBelow = lower && (!upper || Math.abs(below) < Math.abs(above));
+                float distance = isBelow ? Math.abs(below) : Math.abs(above);
+                if (distance < best) {
+                    second = best;
+                    best = distance;
                     owner = staff;
-                }
+                    ownerBelow = isBelow;
+                } else second = Math.min(second, distance);
             }
-            if (owner == null) continue;
+            // A below-staff expression must have an unambiguous nearest lane.
+            // Keep the established above-staff attachment behavior otherwise.
+            if (owner == null || (ownerBelow && second - best < .6f)) continue;
             int measure = -1;
             float closest = Float.MAX_VALUE;
             for (int m = 0; m < measures.size(); m++) {
