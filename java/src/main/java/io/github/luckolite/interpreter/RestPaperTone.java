@@ -34,6 +34,65 @@ final class RestPaperTone {
             }
         if (!shaded) return gray;
         byte[] result = gray.clone();
+        // Bound coordinate storage; unusually wide images keep the original traversal.
+        if (width > 16384)
+            return interpolateWide(gray, width, height, tile, columns, rows, paper, result);
+        int[] leftColumns = new int[width], rightColumns = new int[width];
+        float[] fractions = new float[width];
+        for (int x = 0; x < width; x++) {
+            float gx = Math.max(0, Math.min(columns - 1, (x + .5f) / tile - .5f));
+            int x0 = (int) gx;
+            leftColumns[x] = x0;
+            rightColumns[x] = Math.min(columns - 1, x0 + 1);
+            fractions[x] = gx - x0;
+        }
+        float[] upperRow = new float[width], lowerRow = new float[width];
+        int upperRowIndex = -1, lowerRowIndex = -1;
+        for (int y = 0; y < height; y++) {
+            float gy = Math.max(0, Math.min(rows - 1, (y + .5f) / tile - .5f));
+            int y0 = (int) gy, y1 = Math.min(rows - 1, y0 + 1);
+            float fy = gy - y0;
+            if (upperRowIndex != y0) {
+                for (int x = 0; x < width; x++) {
+                    int x0 = leftColumns[x], x1 = rightColumns[x];
+                    float fx = fractions[x];
+                    upperRow[x] =
+                            paper[y0 * columns + x0] * (1 - fx) + paper[y0 * columns + x1] * fx;
+                }
+                upperRowIndex = y0;
+            }
+            if (lowerRowIndex != y1) {
+                for (int x = 0; x < width; x++) {
+                    int x0 = leftColumns[x], x1 = rightColumns[x];
+                    float fx = fractions[x];
+                    lowerRow[x] =
+                            paper[y1 * columns + x0] * (1 - fx) + paper[y1 * columns + x1] * fx;
+                }
+                lowerRowIndex = y1;
+            }
+            for (int x = 0; x < width; x++) {
+                float upper = upperRow[x], lower = lowerRow[x];
+                float tone = upper * (1 - fy) + lower * fy;
+                if (tone < 240)
+                    result[y * width + x] =
+                            (byte)
+                                    Math.min(
+                                            255,
+                                            Math.round((gray[y * width + x] & 255) * 340f / tone));
+            }
+        }
+        return result;
+    }
+
+    private static byte[] interpolateWide(
+            byte[] gray,
+            int width,
+            int height,
+            int tile,
+            int columns,
+            int rows,
+            int[] paper,
+            byte[] result) {
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++) {
                 float gx = Math.max(0, Math.min(columns - 1, (x + .5f) / tile - .5f));

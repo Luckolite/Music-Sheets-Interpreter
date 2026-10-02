@@ -12,6 +12,14 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Paper shading normalization reuses horizontal interpolants while their two grid
+rows remain the same. Float expressions and evaluation order, histogram thresholds,
+input ownership and unshaded reference identity are preserved. Unusually wide images
+retain the original interpolation traversal. The private method introduces no
+helper file or dependency. The standalone class has package-only executable parity;
+three original procedural regressions cover ordinary shading, invalid inputs and
+wide boundary cases. Models and record layouts remain unchanged.
+
 Closed-head ownership reuses bounded per-thread flood-fill buffers. Every current
 crop cell is overwritten, iteration uses current crop size, and paired growth
 commits only after both allocations succeed. Oversized crops retain the original
