@@ -10670,6 +10670,14 @@ final class OmrScoreInterpreter {
                 if ((gray[index] & 0xff) >= 185) brightHole++;
             }
         if (samples >= 3 && brightHole >= Math.max(2, Math.round(samples * .34f))) return true;
+        // A full-size oval crossed by a rule can retain only two tiny pockets.
+        // Prove closed raw-ink topology instead of counting exterior corner pixels.
+        if (headWidth >= gap * .95f
+                && headWidth <= gap * 1.3f
+                && headHeight >= gap * .65f
+                && headHeight <= gap * 1.1f
+                && centralHeadRule(gray, width, height, head, gap)
+                && enclosedHollowInk(gray, width, head, true)) return true;
         // A tiny grace head or a fragmented model component can enclose a few antialiased
         // corner pixels without being a hollow half. Expanded pocket recovery is full-size only.
         if (headWidth < gap * 1.05f
@@ -10772,6 +10780,11 @@ final class OmrScoreInterpreter {
 
     /** A closed white pocket, not the exterior beside a diagonal tremolo stroke. */
     private static boolean enclosedHollowInk(byte[] gray, int width, Component head) {
+        return enclosedHollowInk(gray, width, head, false);
+    }
+
+    private static boolean enclosedHollowInk(
+            byte[] gray, int width, Component head, boolean interiorOnly) {
         int w = head.maxX - head.minX + 1, h = head.maxY - head.minY + 1, total = 0;
         boolean[] seen = new boolean[w * h];
         int[] queue = new int[w * h];
@@ -10798,7 +10811,17 @@ final class OmrScoreInterpreter {
                         }
                     }
             }
-            if (!edge && size >= 2) total += size;
+            if (!edge && size >= 2) {
+                if (!interiorOnly) total += size;
+                else
+                    for (int i = 0; i < size; i++) {
+                        int x = head.minX + queue[i] % w, y = head.minY + queue[i] / w;
+                        // Adjacent filled heads can enclose an exterior corner. Only the
+                        // central oval supplies this ruled-head recovery evidence.
+                        if (Math.abs(x - head.centerX) <= w * .3f
+                                && Math.abs(y - head.centerY) <= h * .3f) total++;
+                    }
+            }
         }
         return total >= 5;
     }
@@ -14399,6 +14422,8 @@ final class OmrScoreInterpreter {
                             labels, gray, width, height, head, staff.gap, pale[0], pale[1],
                             pale[2] < 0)) count = 1;
         }
+        // A reduced neighboring mask does not invalidate three complete printed rails.
+        if (count == 2 && pairedPrintedRails(gray, width, height, head, staff, heads, 3)) return 3;
         if (count == 2
                 && gray != null
                 && head.maxX - head.minX + 1 > staff.gap * 1.05f
@@ -14650,7 +14675,31 @@ final class OmrScoreInterpreter {
                                     head.centerY,
                                     own[0],
                                     staff.gap)
-                            == 1) return 1;
+                            == 1) {
+                // A thick straight rail can imitate both miniature flag diagonals.
+                // Preserve an established double beam only with the existing complete
+                // attached-rail proof and its independent curved-flag rejection.
+                int[] doubleBeam =
+                        count >= 2
+                                ? paleStemToDoubleBeam(labels, gray, width, height, head, staff)
+                                : null;
+                boolean straightPair =
+                        count == 2
+                                && doubleBeam == null
+                                && pairedPrintedRails(gray, width, height, head, staff, heads, 2);
+                if (!straightPair
+                        && (doubleBeam == null
+                                || rootedPaleFlag(
+                                        labels,
+                                        gray,
+                                        width,
+                                        height,
+                                        head,
+                                        staff.gap,
+                                        doubleBeam[0],
+                                        doubleBeam[1],
+                                        doubleBeam[2] < 0))) return 1;
+            }
         }
         if (gray != null && !hasOpenCenter(labels, gray, width, height, head, staff.gap)) {
             int[] own = attachedRawStem(gray, width, height, head, staff.gap);
@@ -14697,6 +14746,69 @@ final class OmrScoreInterpreter {
                 return common;
         }
         return count;
+    }
+
+    /** Five-column full-size rail evidence between two independently attached shafts. */
+    private static boolean pairedPrintedRails(
+            byte[] gray,
+            int width,
+            int height,
+            Component head,
+            Staff staff,
+            List<Component> heads,
+            int expected) {
+        if (gray == null || heads == null) return false;
+        float gap = staff.gap;
+        int threshold =
+                BeamInkThreshold.at(
+                                gray,
+                                width,
+                                height,
+                                Math.round(head.centerX),
+                                Math.round(head.centerY - gap * 5),
+                                Math.round(head.centerY + gap * 5),
+                                gap)
+                        + 5;
+        int ownLimit =
+                head.centerY < staff.top - gap * 2.5f || head.centerY > staff.bottom + gap * 2.5f
+                        ? 12
+                        : 9;
+        int[] own =
+                attachedRawStem(
+                        gray,
+                        width,
+                        height,
+                        head,
+                        gap,
+                        Math.max(1, Math.round(gap * .16f)),
+                        threshold,
+                        ownLimit);
+        if (own == null) return false;
+        for (Component other : heads) {
+            if (other == head
+                    || Math.abs(other.centerX - head.centerX) < gap * .95f
+                    || Math.abs(other.centerX - head.centerX) > gap * 5
+                    || Math.abs(other.centerY - head.centerY) > gap * 5
+                    || expected == 2 && other.maxX - other.minX + 1 <= gap * 1.05f) continue;
+            int pairLimit =
+                    other.centerY < staff.top - gap * 2.5f
+                                    || other.centerY > staff.bottom + gap * 2.5f
+                            ? 12
+                            : 9;
+            int[] pair =
+                    attachedRawStem(
+                            gray,
+                            width,
+                            height,
+                            other,
+                            gap,
+                            Math.max(1, Math.round(gap * .16f)),
+                            threshold,
+                            pairLimit);
+            if (PairedGraceBeamInk.countPrintedSize(gray, width, height, own, pair, gap)
+                    == expected) return true;
+        }
+        return false;
     }
 
     private static int detectBeamCount(
@@ -17532,7 +17644,8 @@ final class OmrScoreInterpreter {
                         blank = 0;
                     } else if (++blank > maxBlank) break;
                 }
-                if (Math.abs(end - Math.round(head.centerY)) >= gap * 2.3f)
+                // Shaft lengths are measured in integer pixels, including their endpoint.
+                if (Math.abs(end - Math.round(head.centerY)) >= Math.round(gap * 2.3f))
                     directions |= direction < 0 ? 1 : 2;
             }
         }

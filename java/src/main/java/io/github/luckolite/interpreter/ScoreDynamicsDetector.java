@@ -305,6 +305,7 @@ final class ScoreDynamicsDetector {
         for (var word : words) {
             float db = level(word.text());
             if (!Float.isFinite(db)) continue;
+            if (PrintedDynamicNoteOwnership.containsBeamedHead(word, measures, notes)) continue;
             var owner =
                     directionOwner(
                             staffs,
@@ -813,6 +814,12 @@ final class ScoreDynamicsDetector {
         if (word.right() - word.left() > gap * 4) return word.left();
         Slot left = slot(word.left(), staff, measures, notes, width, height);
         Slot middle = slot(center, staff, measures, notes, width, height);
+        if (left == null && middle != null) {
+            var first = measures.get(middle.measure);
+            // A leading italic mark can end beside the opening bar while its serif is
+            // outside the left-anchor tolerance. Its body must still reach that bar.
+            if (word.right() <= first.left() && first.left() - word.right() <= gap) return center;
+        }
         if (left == null || middle == null || middle.measure != left.measure + 1)
             return word.left();
         var next = measures.get(middle.measure);

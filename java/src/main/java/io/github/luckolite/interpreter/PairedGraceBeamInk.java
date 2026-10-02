@@ -10,21 +10,35 @@ final class PairedGraceBeamInk {
     private PairedGraceBeamInk() {}
 
     static int count(byte[] gray, int width, int height, int[] a, int[] b, float gap) {
-        return count(gray, width, height, a, b, gap, 1.5f);
+        return count(gray, width, height, a, b, gap, 1.5f, 3f);
     }
 
     static int countFullSize(byte[] gray, int width, int height, int[] a, int[] b, float gap) {
-        return count(gray, width, height, a, b, gap, 2.2f);
+        return count(gray, width, height, a, b, gap, 2.2f, 3f);
+    }
+
+    /** Full-size written rails may join neighboring pitches across five staff gaps.
+     * Every accepted core still crosses all five existing shaft-to-shaft probes. */
+    static int countPrintedSize(byte[] gray, int width, int height, int[] a, int[] b, float gap) {
+        return count(gray, width, height, a, b, gap, 2.2f, 5f);
     }
 
     private static int count(
-            byte[] gray, int width, int height, int[] a, int[] b, float gap, float inside) {
+            byte[] gray,
+            int width,
+            int height,
+            int[] a,
+            int[] b,
+            float gap,
+            float inside,
+            float maximumSpan) {
         if (gray == null || a == null || b == null || gap < 4 || a[2] != b[2]) return 0;
         int span = Math.abs(a[0] - b[0]);
         // Compact ornaments can rise one staff space between their stems. The
         // sampled cores below must still follow that same slope at every column.
         float maximumRise = inside == 1.5f ? gap : gap * .75f;
-        if (span < gap * .95f || span > gap * 3 || Math.abs(a[1] - b[1]) > maximumRise) return 0;
+        if (span < gap * .95f || span > gap * maximumSpan || Math.abs(a[1] - b[1]) > maximumRise)
+            return 0;
         int maximum = 0;
         float edge = Math.min(.2f, 2f / span);
         float[] probes =

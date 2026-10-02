@@ -283,12 +283,12 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "7b1901bccbd704a5f9d8ebbf9ce2c6acf5509cb41c83c261bdf67f5981cbd9f9",
+      "source_sha256": "f4a47f858e3ed877c1e8c3d5fc4ac908169ffb51ef95f0fb582b5a781743837c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Reviewed continuous raw beam ownership prevents reduced metrical heads being treated as grace prefixes. Complete attached shafts and existing five-column three-rail proof recover reduced-mask thirty-seconds; disconnected or broken rails remain rejected. Tiny augmentation candidates need a local-paper contrasting printed core. Original procedural beam, mixed-size grace and shaded-paper dot regressions; standalone package/diagnostics adapter only. No new helpers outside the mapped class, weights, dependencies, record fields or private score pixels.",
-      "source_normalized_sha256": "7ccf28b3c87292e8c8d037715f78604a771214a6ea1f9e92f9018f6bdc8ddd7b",
-      "reviewed_app_state": "Reviewed scoped recognition revision272 source; original base commits are retained separately and exact source hashes pin the standalone extraction."
+      "review_note": "Six global geometry repairs including complete paired printed-rail recovery with39 original generated controls. Full token parity with package and existing diagnostics adapters. Existing compact rail APIs retain their three-gap bound; written rails use five unchanged aligned-core probes within five gaps. Model, dependencies and full framed record layout unchanged; no private score or device material.",
+      "source_normalized_sha256": "8539e56218c2549978a9aba67c48e865fb58f7fdaa41f15c02af1c7df8ec79d8",
+      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit"
     },
     "PlayingTechniqueDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PlayingTechniqueDetector.java",
@@ -310,10 +310,12 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "983d06ab7327592bb89b1c3ca27a4f49164239e5bd6a7bb4d9f4e1dbd68e9870",
-      "source_normalized_sha256": "1e7277fd9a8d2103c93a7d2ae403b51decb5f2b285624c05881481a6812bcde9",
-      "review_note": "Reviewed uncommitted app 1.18.373 expression source. Complete package-only port; original procedural geometry and existing licensed font regressions. No private source, model, dependency or record layout changes.",
-      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd"
+      "source_sha256": "7c7a53ef8dd99f5738a2403bc10f38a7f85e2472b71d2585607ca88ea63a8c04",
+      "source_normalized_sha256": "e91124ec9027973095f0c32b67b9e63939d09fd16ab7efebca82bad03510d209",
+      "review_note": "Six global geometry repairs including complete paired printed-rail recovery with39 original generated controls. Full token parity with package and existing diagnostics adapters. Existing compact rail APIs retain their three-gap bound; written rails use five unchanged aligned-core probes within five gaps. Model, dependencies and full framed record layout unchanged; no private score or device material.",
+      "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
@@ -722,10 +724,11 @@
     },
     "PairedGraceBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PairedGraceBeamInk.java",
-      "source_sha256": "9a230dbbc7fc38d82fc2c709af1b52b877778d21eda9eeadd42fbaa354615ac4",
+      "source_sha256": "c90c97a52247e6b2cd355360ef44f364807e05ce646272941bc43e870cd42d57",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "a123b92c31a3bee9c2d1e793be977a478fcf869fea597862413330bb9c8c1be8",
-      "review_note": "Global original geometric repair ported with reviewed token parity and synthetic positive and rejection regressions; no new dependencies or private source imagery."
+      "source_normalized_sha256": "26adff9b6301d2e7d1ce128e63989d592ca37339f39e0e4f602a487b9559b99d",
+      "review_note": "Six global geometry repairs including complete paired printed-rail recovery with39 original generated controls. Full token parity with package and existing diagnostics adapters. Existing compact rail APIs retain their three-gap bound; written rails use five unchanged aligned-core probes within five gaps. Model, dependencies and full framed record layout unchanged; no private score or device material.",
+      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit"
     },
     "WideTripleBeamInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/WideTripleBeamInk.java",
@@ -1011,6 +1014,14 @@
       "source_normalized_sha256": "6236a7416a78b9d4e85caea4bcce83441478bc67a35ff9789c6ba6666d98b846",
       "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "review_note": "Reviewed uncommitted app 1.18.373 expression source. Complete package-only port; original procedural geometry and existing licensed font regressions. No private source, model, dependency or record layout changes."
+    },
+    "PrintedDynamicNoteOwnership.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedDynamicNoteOwnership.java",
+      "source_sha256": "fbb67fcdbf842c8ded81ff2075af8b7f61b971a381d1c8e724dfc62b2139f886",
+      "source_normalized_sha256": "826de27c4e36e1dd00d4d2a1b6b1709c3ef80b8e99f7d77783f2d4b470021e9b",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit",
+      "review_note": "Six global geometry repairs including complete paired printed-rail recovery with39 original generated controls. Full token parity with package and existing diagnostics adapters. Existing compact rail APIs retain their three-gap bound; written rails use five unchanged aligned-core probes within five gaps. Model, dependencies and full framed record layout unchanged; no private score or device material."
     }
   },
   "interpreter_speedup_review": {

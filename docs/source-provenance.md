@@ -258,3 +258,22 @@ both flanks; broad shaded paper cannot supply it. Original generated uniform and
 graded paper controls preserve real dots, double dots and pale rules. These
 changes remain inside three mapped JDK classes, with package/diagnostic adapters
 only; no private source raster, new dependency, weight or record field is included.
+
+Literal OCR dynamics cannot claim a beamed head inside their own word box. A
+printed opening-margin dynamic may use its center anchor within one staff gap
+of the opening edge. Full-size ruled ovals can use existing closed raw-ink
+topology; integer tie shafts round their existing minimum to raster pixels.
+Reduced heads retain an established double beam only with complete attached
+rail evidence and independent curved-flag rejection. Twenty-six original
+generated controls cover positive geometry, boundaries and rejection cases; the ruled-head fallback requires enclosed pixels in the central oval to reject exterior pockets between filled heads.
+The new ownership helper uses only the JDK. Full app token parity retains the
+existing package and diagnostic adapters. No private score, new dependency,
+weight or framed record field is included.
+
+Complete full-size rail evidence can use a reduced neighboring head mask. A
+written double beam can connect neighboring pitches within five staff gaps;
+all five existing shaft-to-shaft probes must agree on straight separated cores.
+The compact grace classifier retains its original three-gap bound. Thirteen
+original generated controls cover mixed masks, broken third rails, wide written
+rails, exact span bounds, single cores, bends and opposed shafts. No private
+score, model change, dependency or framed record field is included.
