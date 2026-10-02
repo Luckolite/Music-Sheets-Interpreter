@@ -5754,7 +5754,7 @@ final class OmrScoreInterpreter {
                             + " maxHeight="
                             + java.util.Arrays.toString(maxHeightByStaff));
         } catch (RuntimeException ignored) {
-            // android.util.Log is intentionally absent from plain JVM unit tests.
+            // Optional platform diagnostics may be absent from plain JVM unit tests.
         }
     }
 
