@@ -13,35 +13,21 @@ and timing with the original score before relying on playback or exported notati
 
 - Standard notation: pitches, accidentals, chords, rests, ties and written timing.
 - Multi-staff piano, violin and ensemble pages, including independently barred staves.
-- Printed meter and numeric tempo changes when the symbols can be read confidently.
-- Six- and seven-string guitar tabs, using embedded PDF text or built-in offline OCR.
+- Printed meter and numeric tempo changes.
+
+- Six & seven-string guitar tabs
 - Printed tuning headers, including alternate tunings carried across PDF pages.
 - Detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations.
 - Explicit hammer-on, pull-off, tapping, slide, bend, vibrato and harmonic symbols.
-- JSON for integration, MIDI/MP3 for preview, and MusicXML for editing in notation software.
 
+- JSON for integration, MIDI/MP3 for preview, and MusicXML for editing in notation software.
 - MusicXML reconstructs a concert-pitch score, not the original layout or tab placement.
   Guitar effects are text annotations in MusicXML.
-- Recognition can miss symbols, and missing tab rhythm remains estimated. Graphical
-  bends, quarter-tone bends, whammy-bar directions and strum direction are not
-  reconstructed.
-- Scanned tabs are read with the installed local OCR engine; small or faint fret
-  numbers can still be missed.
-- The decoder uses conservative visual checks to keep arpeggio marks from becoming
-  barlines, ordinary hollow chord heads from becoming artificial harmonics, and tiny
-  notation fragments from becoming implausible whole-note-denominator meters. It also
-  preserves barlines drawn separately through multiple staves and beams briefly crossed
-  by articulation marks. It rejects a false staff row when ledger lines overlap an
-  existing staff and cross several of its measure separators. These safeguards reduce
-  known false readings, but they are not a guarantee that every note or rhythm in a score
-  is correct.
-- Note-equals-number tempo marks are supported. Note-equals-note metric modulations are
-  not yet interpreted, so passages using them can play at the wrong relative tempo.
-- Relative directions such as rit., rall., riten. and a tempo are not yet represented
-  as playback tempo curves. Fermata holds, breath pauses and sforzando attacks also
-  remain unsupported.
-- Ornament and dynamic metadata from the Java OCR pipeline does not imply that every
-  expressive marking is performed by the Python MIDI exporter.
+- Missing tab rhythm is estimated. Graphical bends, quarter-tone bends, whammy-bar directions and strum direction aren't supported.
+
+- preserves seperately drawn barlines
+- Note-equals-number tempo marks are supported. Note-equals-note metric modulations aren't interpreted yet
+- rit., rall., riten tempo. & Fermata holds, breath pauses and sforzando aren't interpreted yet.
 
 ## Install and use
 
