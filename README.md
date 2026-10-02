@@ -9,7 +9,7 @@ You do not need to publish your own code. Follow the [license and notice require
 This is experimental software. Always compare recognized notes, octaves, measure boundaries
 and timing with the original score before relying on playback or exported notation.
 
-## What it supports 🎹🎸🎻🎷🎺
+## What it supports 🎹🎸🎻🎷
 
 - Standard notation: pitches, accidentals, chords, rests, ties, tempo and key changes.
 
