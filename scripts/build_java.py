@@ -41,6 +41,17 @@ def jdk_tool(name):
     return found
 
 
+def compile_sources(sources, classes, argument_file):
+    """Keep the javac command bounded even in long Windows checkout paths."""
+    arguments = ['--release', '17', '-encoding', 'UTF-8', '-d', str(classes),
+                 *map(str, sources)]
+    # javac argument files use their own quoting rules, not shell quoting.
+    argument_file.write_text('\n'.join('"' + argument.replace('\\', '\\\\')
+                                      .replace('"', '\\"') + '"'
+                                      for argument in arguments), encoding='utf-8')
+    subprocess.run([jdk_tool('javac'), '@' + str(argument_file)], check=True)
+
+
 def main():
     sources = sorted((ROOT / 'java/src/main/java').rglob('*.java'))
     classes = ROOT / 'build/classes'
@@ -67,8 +78,7 @@ def main():
         destination=classes/source.relative_to(ROOT/'java/src/main/resources')
         destination.parent.mkdir(parents=True,exist_ok=True)
         destination.write_bytes(data)
-    subprocess.run([jdk_tool('javac'), '--release', '17', '-encoding', 'UTF-8', '-d', str(classes),
-                    *map(str, compiled)], check=True)
+    compile_sources(compiled, classes, ROOT / 'build/javac-args.txt')
     target = ROOT / 'src/sheet_interpreter/interpreter.jar'
     subprocess.run([jdk_tool('jar'), '--create', '--file', str(target), '--main-class',
                     'io.github.luckolite.interpreter.Main', '-C', str(classes), '.',
