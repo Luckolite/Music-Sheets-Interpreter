@@ -23,7 +23,7 @@ and timing with the original score before relying on playback or exported notati
 
 - preserves seperately drawn barlines
 - Note-equals-number tempo marks are supported. Note-equals-note metric modulations aren't interpreted yet
-- rit., rall., riten tempo. & Fermata holds, breath pauses and sforzando aren't interpreted yet.
+- rit., rall., riten tempo.
 
 ## Install and use
 
