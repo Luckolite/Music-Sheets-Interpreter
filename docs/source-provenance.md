@@ -12,6 +12,21 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Re-engraving preserves the printed metronome pulse and scales later tempo changes
+relative to the selected opening tempo, including changes within the opening bar.
+The pure-JDK tempo selection and printed-mark helpers have package-only app parity.
+The pure-JDK rhythm projection resolves each value-owned selected note against all
+original staves before removing accompaniment. Android and desktop attach these
+placements to synthesis, navigation and the deterministic audio identity. A combined
+unison without a single original owner retains its existing clock. Original
+synthetic accompaniment alignment, selection order and validation controls cover
+the projection; Android renderer controls cover cloning, navigation and cache keys.
+Original synthetic pulse, dotted-pulse, fractional-rate and clock regressions contain
+no private score material. The app adapters use the retained conversion source for
+playback tempo, print the same pulse in Canvas and MusicXML, and refresh older
+generated presentations losslessly. These Android presentation adapters are not
+part of the standalone API. No model, dependency or guide record layout changed.
+
 Paper shading normalization reuses horizontal interpolants while their two grid
 rows remain the same. Float expressions and evaluation order, histogram thresholds,
 input ownership and unshaded reference identity are preserved. Unusually wide images

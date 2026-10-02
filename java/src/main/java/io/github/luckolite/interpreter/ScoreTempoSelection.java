@@ -40,4 +40,30 @@ public final class ScoreTempoSelection {
                             mark.beatUnit()));
         return List.copyOf(result);
     }
+
+    /** Re-engraving uses the selected tempo without losing the printed pulse or later changes. */
+    public static List<ScoreTempoChange> forEngraving(
+            double selectedMarkedBpm,
+            double fallbackQuarterBpm,
+            double fallbackBeatUnit,
+            List<ScoreTempoChange> printed) {
+        var ordered =
+                (printed == null ? List.<ScoreTempoChange>of() : printed)
+                        .stream()
+                                .sorted(
+                                        java.util.Comparator.comparingInt(
+                                                        ScoreTempoChange::measureIndex)
+                                                .thenComparingDouble(
+                                                        ScoreTempoChange::positionInMeasure))
+                                .toList();
+        if (selectedMarkedBpm <= 0) return ordered;
+        double quarterBpm = selectedQuarterBpm(selectedMarkedBpm, fallbackQuarterBpm, ordered);
+        if (ordered.stream()
+                .anyMatch(mark -> mark.measureIndex() == 0 && mark.positionInMeasure() == 0))
+            return atOpeningTempo(quarterBpm, ordered);
+        var result = new java.util.ArrayList<ScoreTempoChange>();
+        result.add(new ScoreTempoChange(0, 0, quarterBpm, fallbackBeatUnit));
+        result.addAll(ordered);
+        return List.copyOf(result);
+    }
 }

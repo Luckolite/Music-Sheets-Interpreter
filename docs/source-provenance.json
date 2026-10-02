@@ -583,9 +583,10 @@
     },
     "ScoreTempoSelection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/playback/ScoreTempoSelection.java",
-      "source_sha256": "e507a82d4313befb20ac377503e49c9ff86ec90c229a7a1684e36315eda54587",
-      "reviewed_app_commit": "008a324c060a5768d90cd0fd29f7318b169a5cf5",
-      "source_normalized_sha256": "e507a82d4313befb20ac377503e49c9ff86ec90c229a7a1684e36315eda54587"
+      "source_sha256": "2f8a5db98ab3c85aed7641530885e1c61fbbe8f326bbb34aa6d9574ddfa7afce",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "source_normalized_sha256": "2f8a5db98ab3c85aed7641530885e1c61fbbe8f326bbb34aa6d9574ddfa7afce",
+      "reviewed_source_state": "Music Sheets1.18.389 reviewed conversion tempo staging, preserving accepted1.18.388"
     },
     "AttachedTremoloInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/AttachedTremoloInk.java",
@@ -1117,6 +1118,21 @@
       "source_sha256": "ccf6589a12e568b7a19a89472b085d297940ce79d11a42f9c0873b3b52ba8107",
       "source_normalized_sha256": "ae52d748c567a79c250b9672f406169e4b5552ca3e09e93bbbf776a8055648ce",
       "review_note": "Original Apache-2.0 JDK-only complete-input exact-white predicate. Package/format-only port; synthetic near-white, all-plane, padding and input-ownership tests. Reviewed app adapters and Python predict cache actual owned output only for fixed deterministic approved weights."
+    },
+    "ScoreTempoMark.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTempoMark.java",
+      "source_sha256": "267b91269b1decfe42d2e80067ded5e909138d2dace3d3a154992555d5bd444f",
+      "source_normalized_sha256": "267b91269b1decfe42d2e80067ded5e909138d2dace3d3a154992555d5bd444f",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Music Sheets1.18.389 reviewed conversion tempo staging, preserving accepted1.18.388"
+    },
+    "ScoreRhythmProjection.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreRhythmProjection.java",
+      "source_sha256": "4b4e7264c016adc7656b8f187fe455a0150567fa855212911702ddaeaef54fa3",
+      "source_normalized_sha256": "4b4e7264c016adc7656b8f187fe455a0150567fa855212911702ddaeaef54fa3",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Music Sheets1.18.389 reviewed conversion tempo and complete-source rhythm staging, preserving accepted1.18.388",
+      "review_note": "Pure-JDK full-source onset/duration/independent-duration projection before part selection. Value-owned original notes retain their clock; a combined unison without a single owner keeps its existing clock. Original procedural incomplete-melody/complete-accompaniment, order, immutability and invalid-placement controls. No private score, dependency, model or guide record change."
     }
   },
   "interpreter_speedup_review": {
