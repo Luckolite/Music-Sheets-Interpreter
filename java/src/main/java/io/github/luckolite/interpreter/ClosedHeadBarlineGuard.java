@@ -4,6 +4,25 @@ package io.github.luckolite.interpreter;
 
 /** A closed printed head owns its stem even when the model omitted the grey interior. */
 final class ClosedHeadBarlineGuard {
+    // Bounded per-thread flood-fill storage; no array escapes this synchronous helper.
+    private static final int MAX_CACHED_PIXELS = 65536;
+    private static final ThreadLocal<Workspace> WORKSPACE = ThreadLocal.withInitial(Workspace::new);
+
+    private static final class Workspace {
+        boolean[] seen = new boolean[0];
+        int[] queue = new int[0];
+
+        void ensure(int pixels) {
+            if (seen.length < pixels) {
+                boolean[] replacementSeen = new boolean[pixels];
+                int[] replacementQueue = new int[pixels];
+                // Commit both buffers only after allocation succeeds, preserving retry safety.
+                seen = replacementSeen;
+                queue = replacementQueue;
+            }
+        }
+    }
+
     private ClosedHeadBarlineGuard() {}
 
     static java.util.List<Integer> withoutOwnedByOtherStaff(
@@ -144,15 +163,25 @@ final class ClosedHeadBarlineGuard {
                 bottom = Math.min(height - 1, staffBottom + Math.round(gap * 1.5f));
         int w = right - left + 1, h = bottom - top + 1;
         if (w < 1 || h < 1) return false;
-        boolean[] seen = new boolean[w * h];
-        int[] queue = new int[w * h];
+        int pixels = w * h;
+        boolean[] seen;
+        int[] queue;
+        if (pixels > 0 && pixels <= MAX_CACHED_PIXELS) {
+            Workspace workspace = WORKSPACE.get();
+            workspace.ensure(pixels);
+            seen = workspace.seen;
+            queue = workspace.queue;
+        } else {
+            seen = new boolean[pixels];
+            queue = new int[pixels];
+        }
         // Excluded ink is never part of a bright connected component.
         // Capture membership once so every flood-fill neighbor uses local indexing.
         for (int y = 0; y < h; y++) {
             int sourceRow = (top + y) * width + left, localRow = y * w;
             for (int x = 0; x < w; x++) seen[localRow + x] = (gray[sourceRow + x] & 255) <= outline;
         }
-        for (int seed = 0; seed < queue.length; seed++) {
+        for (int seed = 0; seed < pixels; seed++) {
             if (seen[seed]) continue;
             int read = 0, end = 1;
             queue[0] = seed;

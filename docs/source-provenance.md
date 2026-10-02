@@ -12,6 +12,14 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Closed-head ownership reuses bounded per-thread flood-fill buffers. Every current
+crop cell is overwritten, iteration uses current crop size, and paired growth
+commits only after both allocations succeed. Oversized crops retain the original
+uncached path. Original generated tone, edge, changing-crop and concurrent tests
+preserve baseline decisions; the sorted median and recognition thresholds remain.
+The helper has package-only app parity. No model, dependency, record layout or
+private source material is included.
+
 An in-staff triplet numeral may use a bounded secondary beam as context. Three
 equal double-beamed attacks need distinct connected stems, two separated thick
 rails, a secondary rail ending at both group edges and a continuing main rail.

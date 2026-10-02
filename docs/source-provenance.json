@@ -593,11 +593,11 @@
     },
     "ClosedHeadBarlineGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ClosedHeadBarlineGuard.java",
-      "source_sha256": "ec4b787d7eda85ba88caf5207a9ee3ff9c88833b1c5691873d10fdec3d3ed3a9",
+      "source_sha256": "c6c6eaa26498beb5bbbbd2d2eeab26c3ed23aa97a384a78df0d5aeb8192cc135",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "47d8f6a291eabcaf3867b5ba36489a11d500778e35156b39912b47b770671568",
-      "review_note": "Reviewed equivalent connected components: capture excluded threshold ink once and visit identical left/right/up/down neighbors through local offsets. Original generated clipped/gray/noisy ownership regression; source pixels unchanged, no musical thresholds altered.",
-      "reviewed_app_state": "Uncommitted reviewed speedup snapshot derived from guide266 Android release source; baseline app commit recorded separately and exact source hashes pin the changes."
+      "source_normalized_sha256": "4afc5853117746e15ba42e4ac9c74e2ef72be51d0bfc7a4d44607f2d26841a52",
+      "review_note": "Reviewed frozen app 1.18.379/code852 source: bounded per-thread flood-fill workspace with atomic paired growth and current-crop iteration. Full package-only parity. Original procedural tone, crop, large fallback and concurrent-caller regressions preserve baseline outputs. Original sorted median, models, dependencies and wire layout unchanged; no private score or device data.",
+      "reviewed_app_state": "Frozen app 1.18.379/code852 based on released851; baseline app commit recorded separately and exact source hashes pin this reviewed helper."
     },
     "ClosedHeadFragmentJoiner.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ClosedHeadFragmentJoiner.java",
