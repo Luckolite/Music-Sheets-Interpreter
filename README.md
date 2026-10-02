@@ -13,17 +13,13 @@ and timing with the original score before relying on playback or exported notati
 
 - Standard notation: pitches, accidentals, chords, rests, ties, tempo and key changes.
 - Multi-staff piano, 6- and 7 string guitar tabs, violin and ensemble pages, including independently barred staves.
-- Tuning headers, detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations.
-- Hammer-on, pull-off, tapping, slide, bend, vibrato and harmonic symbols.
+- Tuning headers, detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations. Hammer-on, pull-off, tapping, slide, bend, vibrato and harmonic symbols. Missing tab rhythm is estimated. Graphical bends, quarter-tone bends, whammy-bar directions and strum direction aren't supported.
 
 - JSON for integration, MIDI/MP3 for preview, and MusicXML for editing in notation software.
 - MusicXML reconstructs a concert-pitch score, not the original layout or tab placement.
   Guitar effects are text annotations in MusicXML.
-- Missing tab rhythm is estimated. Graphical bends, quarter-tone bends, whammy-bar directions and strum direction aren't supported.
 
-- preserves seperately drawn barlines
-- Note-equals-number tempo marks are supported. Note-equals-note metric modulations aren't interpreted yet
-- rit., rall., riten tempo.
+- Note-equals-number tempo marks. Note-equals-note metric modulations aren't interpreted yet
 
 ## Install and use
 
