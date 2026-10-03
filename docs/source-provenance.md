@@ -454,3 +454,12 @@ Existing ensemble projection materializes only the two keyboard lanes. Both
 shared sources retain executable-token parity after package/format adaptation,
 with six original generated ownership and detector regressions. No score scans,
 private MIDI, models, weights or production dependencies are included.
+
+Short literal dynamics preserve their established bar and staff owner while using
+one unambiguous note column through the printed glyph body. Nearby chord heads
+share a column; multiple attack columns, wide words and sudden levels retain the
+established anchoring rules. The detector has full package-only executable app
+parity and seven original generated controls. Android clef, octave, pedal and
+glissando engraving helpers are presentation adapters reviewed separately; they
+do not change interpreter input or output. No model, dependency, record layout,
+private score or device material is included.

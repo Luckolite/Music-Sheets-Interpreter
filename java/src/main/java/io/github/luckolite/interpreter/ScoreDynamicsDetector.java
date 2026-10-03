@@ -952,7 +952,8 @@ final class ScoreDynamicsDetector {
             int width,
             int height) {
         float anchor = printedLiteralAnchor(word, staff, measures, notes, width, height);
-        if (!isSuddenLevel(word.text())) return anchor;
+        if (!isSuddenLevel(word.text()))
+            return narrowLiteralAttack(word, staff, measures, notes, width, height, anchor);
         Slot target = slot(anchor, staff, measures, notes, width, height);
         if (target == null) return anchor;
         var region = measures.get(target.measure);
@@ -974,6 +975,55 @@ final class ScoreDynamicsDetector {
             }
         }
         return ambiguous ? anchor : best;
+    }
+
+    // A short engraved dynamic can be centered under a note while its left serif
+    // lies just beyond the ordinary one-gap tolerance. Require one unambiguous
+    // note column through the glyph body, and retain the established bar owner.
+    static float narrowLiteralAttack(
+            PlayingTechniqueDetector.Word word,
+            PlayingTechniqueDetector.Staff staff,
+            List<MeasureRegion> measures,
+            List<ScoreNoteEvent> notes,
+            int width,
+            int height,
+            float anchor) {
+        if (width <= 0
+                || !Float.isFinite(word.left())
+                || !Float.isFinite(word.right())
+                || !Float.isFinite(staff.gap())
+                || staff.gap() <= 0
+                || word.right() <= word.left()
+                || (word.right() - word.left()) * width > staff.gap() * 4) return anchor;
+        var target = slot(anchor, staff, measures, notes, width, height);
+        var middle =
+                slot((word.left() + word.right()) * .5f, staff, measures, notes, width, height);
+        if (target == null || middle == null || target.measure != middle.measure) return anchor;
+        var region = measures.get(target.measure);
+        float center = (word.left() + word.right()) * .5f;
+        float best = anchor, bestDistance = staff.gap() * .6f;
+        boolean found = false, ambiguous = false;
+        for (var note : notes) {
+            if (note.measureIndex() != target.measure
+                    || note.staffIndex() != staff.index()
+                    || note.staffCount() != staff.count()
+                    || !Float.isFinite(note.positionInMeasure())) continue;
+            float x = region.left() + note.positionInMeasure() * (region.right() - region.left());
+            if (x < word.left() || x > word.right()) continue;
+            float distance = Math.abs(x - center) * width;
+            if (!found && distance < bestDistance) {
+                best = x;
+                bestDistance = distance;
+                found = true;
+            } else if (found && distance < staff.gap() * .6f) {
+                if (Math.abs(x - best) * width > staff.gap() * .1f) ambiguous = true;
+                else if (distance < bestDistance) {
+                    best = x;
+                    bestDistance = distance;
+                }
+            }
+        }
+        return found && !ambiguous ? best : anchor;
     }
 
     private static float printedLiteralAnchor(

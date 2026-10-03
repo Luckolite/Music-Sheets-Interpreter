@@ -328,13 +328,13 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "fde7403d7f4de3976efb05d6fd81a515faa029514215a78e96f79e856c57763d",
-      "source_normalized_sha256": "fde7403d7f4de3976efb05d6fd81a515faa029514215a78e96f79e856c57763d",
-      "review_note": "Full package-only executable parity. Brace-proved keyboard dynamics below the owned lower staff use the part, with physical row/lane identity guarding other parts and later systems. Original generated ownership and detector controls; no private score, model or dependency changes.",
+      "source_sha256": "fc9b85ff511ccdcd279b733b6b6278a83d808fe3cc0d9437801d0f6c5b71e7e9",
+      "source_normalized_sha256": "fc9b85ff511ccdcd279b733b6b6278a83d808fe3cc0d9437801d0f6c5b71e7e9",
+      "review_note": "Full package-only executable parity. A short literal level snaps to one unambiguous note column inside its glyph body and established bar/staff owner; wide, ambiguous and sudden levels retain their established rules. Seven original generated regressions. No song rules, private fixtures, model, dependency or record layout changes.",
       "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit",
-      "reviewed_source_state": "Isolated piano dynamic part successor to frozen875"
+      "reviewed_app_state": "Reviewed isolated app877 candidate based on exact frozen876 source; working source is uncommitted",
+      "reviewed_source_state": "Isolated literal-attack successor to frozen876"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",
