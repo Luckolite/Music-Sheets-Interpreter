@@ -444,3 +444,13 @@ pickup and closing spans, repeated levels, active-time hairpins and disagreement
 rejection. Existing shared mappings, model assets and dependencies are unchanged.
 The CLI does not yet render these continuous dynamic curves; this public API
 accepts already resolved source curves for integrating renderers.
+
+Dynamics already owned by the lower staff of a proved curly-braced keyboard
+part now use that part when printed below its lower staff, as well as between
+the staves. Ownership binds both the staff lane and physical row; later systems
+reuse lane IDs. Missing or ambiguous braces, unrelated ensemble owners and
+markings inside or above the outer staff do not obtain this added sharing.
+Existing ensemble projection materializes only the two keyboard lanes. Both
+shared sources retain executable-token parity after package/format adaptation,
+with six original generated ownership and detector regressions. No score scans,
+private MIDI, models, weights or production dependencies are included.

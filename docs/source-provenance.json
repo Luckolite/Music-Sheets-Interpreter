@@ -220,9 +220,11 @@
     },
     "GrandStaffDynamics.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/GrandStaffDynamics.java",
-      "source_sha256": "9cfd54c464187ea5613674b8a6bc91558f0cc2fea063ee1e6d3508ee93b4a94b",
+      "source_sha256": "b1f76f8628379c55868dd05a38f8401d726569eb12311fc04ba52306dac05eca",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "9cfd54c464187ea5613674b8a6bc91558f0cc2fea063ee1e6d3508ee93b4a94b"
+      "source_normalized_sha256": "b1f76f8628379c55868dd05a38f8401d726569eb12311fc04ba52306dac05eca",
+      "reviewed_source_state": "Isolated piano dynamic part successor to frozen875",
+      "review_note": "Full package-only executable parity. Brace-proved keyboard dynamics below the owned lower staff use the part, with physical row/lane identity guarding other parts and later systems. Original generated ownership and detector controls; no private score, model or dependency changes."
     },
     "MeasureNumberReconciler.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MeasureNumberReconciler.java",
@@ -326,13 +328,13 @@
     },
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
-      "source_sha256": "0d5c77935c37fd0d018dc7268f5ea7b78b4518c493b1fc2508c92593b15c5c07",
-      "source_normalized_sha256": "0d5c77935c37fd0d018dc7268f5ea7b78b4518c493b1fc2508c92593b15c5c07",
-      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change.",
+      "source_sha256": "fde7403d7f4de3976efb05d6fd81a515faa029514215a78e96f79e856c57763d",
+      "source_normalized_sha256": "2e200c03de146cc0750cc81abf0d7c74593bb3e9eceb9bee559234f3bb01582b",
+      "review_note": "Full package-only executable parity. Brace-proved keyboard dynamics below the owned lower staff use the part, with physical row/lane identity guarding other parts and later systems. Original generated ownership and detector controls; no private score, model or dependency changes.",
       "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit",
-      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02"
+      "reviewed_source_state": "Isolated piano dynamic part successor to frozen875"
     },
     "HairpinContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HairpinContinuation.java",

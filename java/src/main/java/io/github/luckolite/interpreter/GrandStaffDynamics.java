@@ -1,6 +1,5 @@
 // Copyright 2026 Luckolite
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 import java.util.*;
@@ -42,6 +41,30 @@ final class GrandStaffDynamics {
         for (var pair : pairs)
             if (top > pair.upper.bottom() && bottom < pair.lower.top()) return pair.upper;
         return null;
+    }
+
+    /** A dynamic below a braced keyboard belongs to its part, just as one between its staves. */
+    static PlayingTechniqueDetector.Staff directionPart(
+            List<Pair> pairs, PlayingTechniqueDetector.Staff owner, float top, float bottom) {
+        if (!Float.isFinite(top) || !Float.isFinite(bottom) || bottom <= top) return null;
+        var between = between(pairs, top, bottom);
+        if (between != null) return between;
+        if (owner == null) return null;
+        PlayingTechniqueDetector.Staff found = null;
+        for (var pair : pairs) {
+            var lower = pair.lower();
+            // Direction ownership may refine curved printed rails by a fraction of a gap.
+            // Match their physical row as well as their lane; later systems reuse lane IDs.
+            float centers =
+                    Math.abs((owner.top() + owner.bottom() - lower.top() - lower.bottom()) * .5f);
+            if (owner.index() != lower.index()
+                    || owner.count() != lower.count()
+                    || centers > Math.max(owner.gap(), lower.gap()) * 1.5f
+                    || top <= lower.bottom()) continue;
+            if (found != null) return null;
+            found = pair.upper();
+        }
+        return found;
     }
 
     static boolean hasBrace(

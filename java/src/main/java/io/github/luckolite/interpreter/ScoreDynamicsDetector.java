@@ -240,7 +240,7 @@ final class ScoreDynamicsDetector {
                 && text.trim()
                         .toLowerCase(Locale.ROOT)
                         .matches(
-                                "(?:(?:subito|sub|sempre|poco|a|più|piu|cantabile|sostenuto|marcato|dolce|tranquillo|espressivo|crescendo|diminuendo|cresc|dim|decresc|ppp|pp|p|mp|m|mf|fff|ff|f)[.,:;]?\\s*)+");
+                                "(?:(?:subito|sub|sempre|poco|a|piÃ¹|piu|cantabile|sostenuto|marcato|dolce|tranquillo|espressivo|crescendo|diminuendo|cresc|dim|decresc|ppp|pp|p|mp|m|mf|fff|ff|f)[.,:;]?\\s*)+");
     }
 
     static List<String> packedLevels(String text) {
@@ -430,7 +430,8 @@ final class ScoreDynamicsDetector {
                                 word.bottom() * height);
             if (owner == null || word.bottom() - word.top() > owner.gap() * 3 / height) continue;
             var common =
-                    GrandStaffDynamics.between(shared, word.top() * height, word.bottom() * height);
+                    GrandStaffDynamics.directionPart(
+                            shared, owner, word.top() * height, word.bottom() * height);
             var target = common == null ? owner : common;
             float anchor = literalAnchor(word, target, measures, notes, width, height);
             add(
@@ -559,7 +560,7 @@ final class ScoreDynamicsDetector {
                         }
                     }
                 }
-                var common = GrandStaffDynamics.between(shared, top, bottom);
+                var common = GrandStaffDynamics.directionPart(shared, owner, top, bottom);
                 if (direction != 0) {
                     add(
                             result,
@@ -686,8 +687,8 @@ final class ScoreDynamicsDetector {
                                 height);
                 if (owner == null) continue;
                 var common =
-                        GrandStaffDynamics.between(
-                                shared, word.top() * height, word.bottom() * height);
+                        GrandStaffDynamics.directionPart(
+                                shared, owner, word.top() * height, word.bottom() * height);
                 if (common != null) owner = common;
                 Slot a = slot(word.left(), owner, measures, notes, width, height);
                 if (a == null) continue;
