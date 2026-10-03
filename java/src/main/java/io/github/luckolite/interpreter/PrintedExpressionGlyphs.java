@@ -47,8 +47,12 @@ final class PrintedExpressionGlyphs {
                 int kind = in.readInt(), w = in.readInt(), h = in.readInt();
                 if (kind < 1 || kind > 14 || w < 1 || h < 1 || w > 256 || h > 256)
                     throw new IOException("Invalid expression template");
-                byte[] gray = in.readNBytes(w * h);
-                if (gray.length != w * h) throw new EOFException("Truncated expression template");
+                byte[] gray = new byte[w * h];
+                try {
+                    in.readFully(gray);
+                } catch (EOFException error) {
+                    throw new EOFException("Truncated expression template");
+                }
                 (kind >= 13 ? result.breaths : result.pulses).add(gray, w, h, kind, false);
             }
             if (in.read() != -1) throw new IOException("Trailing expression template data");

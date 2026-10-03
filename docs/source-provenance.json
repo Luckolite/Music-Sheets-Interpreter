@@ -1213,8 +1213,8 @@
     },
     "PrintedExpressionGlyphs.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedExpressionGlyphs.java",
-      "source_sha256": "1a56f0168f55dfaa601d48c203f2f017279cdc72598282d8468fec851bee987a",
-      "source_normalized_sha256": "89b96525078f4e092135b74f759096ee49d00b3a3164675a71ceadcbf1eb3ae1",
+      "source_sha256": "1d923f4a3caf74e5672dfa431a2c3325500b1c3d1ce0d8a9ca2050d082ca2313",
+      "source_normalized_sha256": "bbdac94ec5fd3e0a28803fd793654f0f5152764571f8e1c75b8bef46ced11064",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
       "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
