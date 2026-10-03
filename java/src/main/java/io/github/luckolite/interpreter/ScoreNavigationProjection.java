@@ -340,7 +340,8 @@ public final class ScoreNavigationProjection {
                 n.leadingRestBeats(),
                 n.compactOpening(),
                 n.octaveShift(),
-                n.boundaryTies());
+                n.boundaryTies(),
+                n.tupletNormalNotes());
     }
 
     // Source dynamics are evaluated below in musical time, not page distance or bar count.

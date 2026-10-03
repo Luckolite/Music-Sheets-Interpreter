@@ -1,6 +1,3 @@
-// Copyright 2026 Luckolite
-// SPDX-License-Identifier: Apache-2.0
-// Adapted from Music Sheets: standalone package and platform-independent diagnostics.
 package io.github.luckolite.interpreter;
 
 /** Per-note performance metadata stored alongside articulation; never part of written rhythm. */
@@ -11,7 +8,8 @@ public final class NoteOrnament {
             INVERTED_TURN = 3 << 5,
             MORDENT = 4 << 5,
             INVERTED_MORDENT = 5 << 5,
-            SLIDE = 6 << 5;
+            SLIDE = 6 << 5,
+            GLISSANDO = 7 << 5;
     public static final int TYPE_MASK = 7 << 5, DELAYED = 1 << 8;
 
     /** Small printed grace heads borrow playback time from their principal note. */
@@ -74,6 +72,7 @@ public final class NoteOrnament {
             case MORDENT -> "mordent";
             case INVERTED_MORDENT -> "inverted_mordent";
             case SLIDE -> "slide";
+            case GLISSANDO -> "glissando";
             default -> "none";
         };
     }

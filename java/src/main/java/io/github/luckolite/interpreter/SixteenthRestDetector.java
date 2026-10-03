@@ -1,5 +1,3 @@
-// Copyright 2026 Luckolite
-// SPDX-License-Identifier: Apache-2.0
 package io.github.luckolite.interpreter;
 
 import java.util.ArrayList;
@@ -635,24 +633,25 @@ final class SixteenthRestDetector {
             float y = (flatY(staff, x, n.pageY() * height) - first) / bandHeight;
             mappedNotes.add(
                     new ScoreNoteEvent(
-                            n.measureIndex(),
-                            n.positionInMeasure(),
-                            n.staffStep(),
-                            n.staffIndex(),
-                            n.staffCount(),
-                            y,
-                            n.tiedFromPrevious(),
-                            n.augmentationDots(),
-                            n.beamCount(),
-                            n.writtenAccidental(),
-                            n.unbeamedDurationBeats(),
-                            n.tupletDivisor(),
-                            n.followingRestBeats(),
-                            n.articulations(),
-                            n.clefBottomDiatonic(),
-                            n.crossStaffBeam(),
-                            n.leadingRestBeats(),
-                            n.compactOpening()));
+                                    n.measureIndex(),
+                                    n.positionInMeasure(),
+                                    n.staffStep(),
+                                    n.staffIndex(),
+                                    n.staffCount(),
+                                    y,
+                                    n.tiedFromPrevious(),
+                                    n.augmentationDots(),
+                                    n.beamCount(),
+                                    n.writtenAccidental(),
+                                    n.unbeamedDurationBeats(),
+                                    n.tupletDivisor(),
+                                    n.followingRestBeats(),
+                                    n.articulations(),
+                                    n.clefBottomDiatonic(),
+                                    n.crossStaffBeam(),
+                                    n.leadingRestBeats(),
+                                    n.compactOpening())
+                            .withTupletRatio(n.tupletDivisor(), n.tupletNormalNotes()));
         }
         Staff rectified =
                 new Staff(

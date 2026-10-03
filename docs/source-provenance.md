@@ -354,9 +354,30 @@ erasure, restoration and interleaved detections. The standalone port preserves
 all existing arithmetic, thresholds and record layouts. Models and production
 dependencies are unchanged; no private score or device data is included.
 
-Curved-rest rectification reads and writes contiguous destination rows while
-retaining the exact per-column staff frames, float expressions, rounding and
-pixel bounds. Original generated regressions cover both slopes, half-pixel
-translations, augmentation dots and caller ink erasure/restoration. The original
-malformed-raster path remains in place. Models, dependencies and record layouts
-are unchanged.
+Explicit tuplets retain both actual and normal counts through note copies and
+the framed decoder transport. Legacy constructors retain conventional ratios.
+Five sixteenths followed by a regular closing attack require a printed numeral,
+two bounded beam rails, and an independent staff clock before acquiring a 5:3
+ratio. Octave bracket endpoints retain their owning staff across adjacent systems.
+Short outward branches reject printed letters as tie contours while independently
+proved long staff/stem crossings remain valid.
+
+Wavy glissandos require elongated raw ink with at least four alternating turns
+and unique same-staff endpoints. Straight slides, ordinary slurs, intervening
+heads, chords and missing endpoints cannot supply that proof. The source note
+holds two thirds of its duration, followed by finite intervening white-key
+attacks; the target keeps its ordinary onset and pitch, including an accidental.
+App playback and standalone MIDI share this bounded policy. MusicXML exports
+paired wavy endpoints and explicit tuplet normal counts. Original generated
+regressions cover these positive and rejection boundaries.
+
+All eighteen shared files retain full executable-token parity after the existing
+package/diagnostic adapters. New helpers use only the JDK; models and dependencies
+are unchanged. The recorded app base commit remains accurate, and reviewed source
+hashes pin the additional candidate changes beyond that base. No private score,
+device data, library, signing material or app history accompanies this port.
+
+Curved rest rectification computes each requested printed bottom once, then
+reads valid source rasters in contiguous rows. Pixel lookup retains the original
+float association and rounding, including exact half-pixel boundaries. Malformed
+input retains its prior access path. Original parity controls cover both cases.

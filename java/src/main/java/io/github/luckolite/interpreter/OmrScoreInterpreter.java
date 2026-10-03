@@ -1568,6 +1568,7 @@ final class OmrScoreInterpreter {
                                     silence,
                                     event.articulations(),
                                     event.clefBottomDiatonic())
+                            .withTupletRatio(event.tupletDivisor(), event.tupletNormalNotes())
                             .withLeadingRest(leading));
         }
         // Rest exclusion revalidates dots beside individual ovals. A displaced
@@ -1738,7 +1739,8 @@ final class OmrScoreInterpreter {
                             current.leadingRestBeats(),
                             current.compactOpening(),
                             current.octaveShift(),
-                            current.boundaryTies()));
+                            current.boundaryTies(),
+                            current.tupletNormalNotes()));
         }
         return result;
     }
@@ -4025,7 +4027,8 @@ final class OmrScoreInterpreter {
                                             e.leadingRestBeats(),
                                             e.compactOpening(),
                                             e.octaveShift(),
-                                            e.boundaryTies()),
+                                            e.boundaryTies(),
+                                            e.tupletNormalNotes()),
                                     n.head,
                                     n.staffGap));
                 }
@@ -5754,7 +5757,7 @@ final class OmrScoreInterpreter {
                             + " maxHeight="
                             + java.util.Arrays.toString(maxHeightByStaff));
         } catch (RuntimeException ignored) {
-            // Optional platform diagnostics may be absent from plain JVM unit tests.
+            // Optional diagnostics may be unavailable in a standalone caller.
         }
     }
 
@@ -10134,7 +10137,8 @@ final class OmrScoreInterpreter {
                 e.leadingRestBeats(),
                 e.compactOpening(),
                 e.octaveShift(),
-                e.boundaryTies());
+                e.boundaryTies(),
+                e.tupletNormalNotes());
     }
 
     private static boolean sameGraceVoice(DetectedNote a, DetectedNote b) {
@@ -16612,7 +16616,8 @@ final class OmrScoreInterpreter {
                                 e.leadingRestBeats(),
                                 e.compactOpening(),
                                 e.octaveShift(),
-                                e.boundaryTies());
+                                e.boundaryTies(),
+                                e.tupletNormalNotes());
                 result.set(j, new DetectedNote(corrected, n.head, n.staffGap));
             }
         }
@@ -17518,21 +17523,22 @@ final class OmrScoreInterpreter {
             if (accidental != event.writtenAccidental()) {
                 event =
                         new ScoreNoteEvent(
-                                event.measureIndex(),
-                                event.positionInMeasure(),
-                                event.staffStep(),
-                                event.staffIndex(),
-                                event.staffCount(),
-                                event.pageY(),
-                                event.tiedFromPrevious(),
-                                event.augmentationDots(),
-                                event.beamCount(),
-                                accidental,
-                                event.unbeamedDurationBeats(),
-                                event.tupletDivisor(),
-                                event.followingRestBeats(),
-                                event.articulations(),
-                                event.clefBottomDiatonic());
+                                        event.measureIndex(),
+                                        event.positionInMeasure(),
+                                        event.staffStep(),
+                                        event.staffIndex(),
+                                        event.staffCount(),
+                                        event.pageY(),
+                                        event.tiedFromPrevious(),
+                                        event.augmentationDots(),
+                                        event.beamCount(),
+                                        accidental,
+                                        event.unbeamedDurationBeats(),
+                                        event.tupletDivisor(),
+                                        event.followingRestBeats(),
+                                        event.articulations(),
+                                        event.clefBottomDiatonic())
+                                .withTupletRatio(event.tupletDivisor(), event.tupletNormalNotes());
                 note = new DetectedNote(event, note.head, note.staffGap);
             }
             result.add(note);
@@ -17621,25 +17627,27 @@ final class OmrScoreInterpreter {
                     currentIndex,
                     new DetectedNote(
                             new ScoreNoteEvent(
-                                    event.measureIndex(),
-                                    event.positionInMeasure(),
-                                    event.staffStep(),
-                                    event.staffIndex(),
-                                    event.staffCount(),
-                                    event.pageY(),
-                                    true,
-                                    event.augmentationDots(),
-                                    event.beamCount(),
-                                    event.writtenAccidental(),
-                                    event.unbeamedDurationBeats(),
-                                    event.tupletDivisor(),
-                                    event.followingRestBeats(),
-                                    event.articulations(),
-                                    event.clefBottomDiatonic(),
-                                    event.crossStaffBeam(),
-                                    event.leadingRestBeats(),
-                                    event.compactOpening(),
-                                    event.octaveShift()),
+                                            event.measureIndex(),
+                                            event.positionInMeasure(),
+                                            event.staffStep(),
+                                            event.staffIndex(),
+                                            event.staffCount(),
+                                            event.pageY(),
+                                            true,
+                                            event.augmentationDots(),
+                                            event.beamCount(),
+                                            event.writtenAccidental(),
+                                            event.unbeamedDurationBeats(),
+                                            event.tupletDivisor(),
+                                            event.followingRestBeats(),
+                                            event.articulations(),
+                                            event.clefBottomDiatonic(),
+                                            event.crossStaffBeam(),
+                                            event.leadingRestBeats(),
+                                            event.compactOpening(),
+                                            event.octaveShift())
+                                    .withTupletRatio(
+                                            event.tupletDivisor(), event.tupletNormalNotes()),
                             current.head,
                             current.staffGap));
         }
@@ -18366,8 +18374,18 @@ final class OmrScoreInterpreter {
                             && bins[2] >= 7
                             && bins[3] >= 7
                             && bins[4] >= 7
-                            && arcCurvature(strokeCenters, 0, 0, 49) >= Math.max(.8f, gap * .12f))
-                        return true;
+                            && arcCurvature(strokeCenters, 0, 0, 49) >= Math.max(.8f, gap * .12f)) {
+                        if (!TieArcBranchInk.outwardStems(
+                                gray,
+                                width,
+                                height,
+                                left,
+                                right,
+                                strokeCenters,
+                                side,
+                                gap,
+                                inkLimit)) return true;
+                    }
                     // A short returning arc can cross a staff rule at one end. Treat a
                     // few such pixels as occluded only when the remaining curve and
                     // both endpoints are independently visible away from the rule.
@@ -18383,7 +18401,18 @@ final class OmrScoreInterpreter {
                             && coveredBins[3] >= 7
                             && coveredBins[4] >= 7
                             && arcCurvature(supportedCenters, 0, 0, 49)
-                                    >= Math.max(1.2f, gap * .15f)) return true;
+                                    >= Math.max(1.2f, gap * .15f)) {
+                        if (!TieArcBranchInk.outwardStems(
+                                gray,
+                                width,
+                                height,
+                                left,
+                                right,
+                                strokeCenters,
+                                side,
+                                gap,
+                                inkLimit)) return true;
+                    }
                     // Both ends of a short tie can merge into the same thick staff rule.
                     // Require an almost complete curve and an independently visible middle
                     // and returning shoulders; a straight rule or one-sided beam cannot pass.
@@ -18398,8 +18427,19 @@ final class OmrScoreInterpreter {
                             && bins[3] >= 9
                             && coveredBins[0] >= 9
                             && coveredBins[4] >= 9
-                            && arcCurvature(strokeCenters, 0, 0, 49) >= Math.max(1.2f, gap * .15f))
-                        return true;
+                            && arcCurvature(strokeCenters, 0, 0, 49)
+                                    >= Math.max(1.2f, gap * .15f)) {
+                        if (!TieArcBranchInk.outwardStems(
+                                gray,
+                                width,
+                                height,
+                                left,
+                                right,
+                                strokeCenters,
+                                side,
+                                gap,
+                                inkLimit)) return true;
+                    }
                     // A long, deeply bowed tie can cross several distinct staff rules.
                     // Require every sampled bin to be fully covered, both returning
                     // shoulders and a dark core; unrelated straight fragments cannot qualify.
@@ -18429,7 +18469,18 @@ final class OmrScoreInterpreter {
                                             target,
                                             inkLimit,
                                             requiredSide,
-                                            true))) return true;
+                                            true))) {
+                        if (!TieArcBranchInk.outwardStems(
+                                gray,
+                                width,
+                                height,
+                                left,
+                                right,
+                                strokeCenters,
+                                side,
+                                gap,
+                                inkLimit)) return true;
+                    }
                     // Antialiased shoulders can reduce the dark count while staff rules
                     // obscure a returning curve. Require nearly complete coverage in
                     // every bin, both shoulders, an independently dark core and contrast.
@@ -18465,7 +18516,18 @@ final class OmrScoreInterpreter {
                                             target,
                                             inkLimit,
                                             requiredSide,
-                                            true))) return true;
+                                            true))) {
+                        if (!TieArcBranchInk.outwardStems(
+                                gray,
+                                width,
+                                height,
+                                left,
+                                right,
+                                strokeCenters,
+                                side,
+                                gap,
+                                inkLimit)) return true;
+                    }
                     // A compact tie can touch a staff rule at its crest instead of
                     // at the endpoints. Both returning shoulders must remain visible;
                     // the rule only supplies the small occluded central section.
@@ -18498,7 +18560,18 @@ final class OmrScoreInterpreter {
                                             target,
                                             inkLimit,
                                             requiredSide,
-                                            true))) return true;
+                                            true))) {
+                        if (!TieArcBranchInk.outwardStems(
+                                gray,
+                                width,
+                                height,
+                                left,
+                                right,
+                                strokeCenters,
+                                side,
+                                gap,
+                                inkLimit)) return true;
+                    }
                 }
         return false;
     }

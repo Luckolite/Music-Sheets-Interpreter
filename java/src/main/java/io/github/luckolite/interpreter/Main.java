@@ -233,6 +233,7 @@ public final class Main {
                 events.add(event);
             }
         }
+        attachNotePerformance(score.notes(), events);
         var result = new LinkedHashMap<String, Object>();
         result.put("schemaVersion", 1);
         result.put("width", width);
@@ -243,6 +244,28 @@ public final class Main {
         result.put("measureBeats", beats);
         result.put("totalBeats", starts[beats.length]);
         Files.writeString(Path.of(args[1]), json(result) + "\n", StandardCharsets.UTF_8);
+    }
+
+    static void attachNotePerformance(
+            List<ScoreNoteEvent> notes, List<Map<String, Object>> events) {
+        for (int index = 0; index < notes.size(); index++) {
+            var note = notes.get(index);
+            if (note.tupletDivisor() != 1) {
+                events.get(index).put("tupletActualNotes", note.tupletDivisor());
+                events.get(index).put("tupletNormalNotes", note.tupletNormalNotes());
+            }
+            var target = GlissPitchTarget.next(note, notes);
+            if (target == null) continue;
+            var sourceEvent = events.get(index);
+            var targetEvent = events.get(notes.indexOf(target));
+            double end =
+                    ((Number) sourceEvent.get("startBeat")).doubleValue()
+                            + ((Number) sourceEvent.get("durationBeats")).doubleValue();
+            if (Math.abs(end - ((Number) targetEvent.get("startBeat")).doubleValue()) <= .04)
+                sourceEvent.put(
+                        "glissando",
+                        Map.of("style", "white_keys", "targetMidi", targetEvent.get("midi")));
+        }
     }
 
     private static int readCount(DataInputStream in) throws IOException {

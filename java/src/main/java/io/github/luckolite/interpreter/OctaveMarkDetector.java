@@ -201,13 +201,13 @@ final class OctaveMarkDetector {
                                 Math.round(
                                         below
                                                 ? staff.bottom() + gap * .3f
-                                                : staff.top() - gap * 9));
+                                                : staff.top() - gap * 12));
                 int bottom =
                         Math.min(
                                 height - 1,
                                 Math.round(
                                         below
-                                                ? staff.bottom() + gap * 9
+                                                ? staff.bottom() + gap * 12
                                                 : staff.top() - gap * .3f));
                 if (top >= bottom) continue;
                 int h = bottom - top + 1;
@@ -257,8 +257,19 @@ final class OctaveMarkDetector {
                             || bh < bw * .9f
                             || OctaveClefDigit.holes(gray, width, box.left, box.top, bw, bh) != 2)
                         continue;
-                    if (dashEnd(gray, width, height, box.right + 1, box.top, box.bottom, gap, 6)
-                            < 0) continue;
+                    float dashRight =
+                            dashEnd(
+                                    gray,
+                                    width,
+                                    height,
+                                    box.right + 1,
+                                    box.top,
+                                    box.bottom,
+                                    gap,
+                                    6);
+                    if (dashRight < 0) continue;
+                    int hookDirection =
+                            hookDirection(gray, width, height, dashRight, box.top, box.bottom, gap);
                     // A bare numeral has no va/vb suffix. Use only the nearest stave;
                     // do not apply the same inter-system mark to both adjacent rows.
                     PlayingTechniqueDetector.Staff nearest = null;
@@ -267,17 +278,24 @@ final class OctaveMarkDetector {
                     for (var candidate : staffs) {
                         float above = (candidate.top() - box.bottom) / candidate.gap();
                         float under = (box.top - candidate.bottom()) / candidate.gap();
-                        float distance = above > 0 ? above : under;
-                        if (distance >= .25f && distance < nearestDistance) {
+                        // Between systems a lower-octave line can be closer to the next treble
+                        // stave. Its terminal hook points back toward the actual owning stave.
+                        if (hookDirection < 0 && under <= 0 || hookDirection > 0 && above <= 0)
+                            continue;
+                        float distance =
+                                hookDirection < 0
+                                        ? under
+                                        : hookDirection > 0 ? above : above > 0 ? above : under;
+                        if (distance >= .25f && distance <= 12 && distance < nearestDistance) {
                             nearest = candidate;
                             nearestDistance = distance;
                             nearestBelow = under > 0;
                         }
                     }
                     if (!staff.equals(nearest) || below != nearestBelow) continue;
-                    // An attached fragment between systems cannot establish a lower octave
-                    // for the preceding staff without an explicit vb direction.
-                    if (below && !boxes.contains(box)) continue;
+                    // An attached fragment needs either a suffix or a proved upward end hook
+                    // before it can establish a lower octave for the preceding staff.
+                    if (below && !boxes.contains(box) && hookDirection >= 0) continue;
                     words.add(
                             new PlayingTechniqueDetector.Word(
                                     below ? "8vb" : "8va",
@@ -559,7 +577,7 @@ final class OctaveMarkDetector {
                     shift > 0
                             ? (staff.top() - word.bottom() * height) / staff.gap()
                             : (word.top() * height - staff.bottom()) / staff.gap();
-            if (d < .25f || d > 9 || d >= distance) continue;
+            if (d < .25f || d > 12 || d >= distance) continue;
             distance = d;
             best = staff;
         }
@@ -676,5 +694,38 @@ final class OctaveMarkDetector {
             }
         }
         return hook;
+    }
+
+    /** The terminal vertical stroke points toward its staff: upward for 8vb, downward for 8va. */
+    private static int hookDirection(
+            byte[] gray,
+            int width,
+            int height,
+            float dashRight,
+            float top,
+            float bottom,
+            float gap) {
+        int end = Math.round(dashRight - gap * .55f), direction = 0;
+        int y1 = Math.max(0, Math.round(top - gap * .15f)),
+                y2 = Math.min(height - 1, Math.round(bottom + gap * .4f));
+        for (int x = Math.max(3, end - 1); x <= Math.min(width - 1, end + 1); x++)
+            for (int y = y1; y <= y2; y++) {
+                if ((gray[y * width + x] & 255) >= 165
+                        || (gray[y * width + x - 2] & 255) >= 165
+                        || (gray[y * width + x - 3] & 255) >= 165) continue;
+                int a = y, b = y;
+                while (a > 0 && (gray[(a - 1) * width + x] & 255) < 165) a--;
+                while (b + 1 < height && (gray[(b + 1) * width + x] & 255) < 165) b++;
+                int up = y - a, down = b - y;
+                if (b - a + 1 > gap * 1.3f) continue;
+                int candidate =
+                        up >= Math.max(3, gap * .35f) && up > down * 2 + 1
+                                ? -1
+                                : down >= Math.max(3, gap * .35f) && down > up * 2 + 1 ? 1 : 0;
+                if (candidate == 0) continue;
+                if (direction != 0 && candidate != direction) return 0;
+                direction = candidate;
+            }
+        return direction;
     }
 }

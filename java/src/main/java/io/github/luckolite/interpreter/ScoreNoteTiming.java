@@ -986,7 +986,8 @@ public final class ScoreNoteTiming {
                     && other.staffCount() == note.staffCount()
                     && Math.abs(other.positionInMeasure() - note.positionInMeasure())
                             <= SAME_ONSET_POSITION
-                    && other.tupletDivisor() != note.tupletDivisor()) return true;
+                    && (other.tupletDivisor() != note.tupletDivisor()
+                            || other.tupletNormalNotes() != note.tupletNormalNotes())) return true;
         if (note.beamCount() != 0 || note.unbeamedDurationBeats() < 1) return false;
         for (ScoreNoteEvent a : notes) {
             if (a.measureIndex() != note.measureIndex()
@@ -1107,6 +1108,7 @@ public final class ScoreNoteTiming {
         if (next.beamCount() > 0
                 && first.beamCount() <= next.beamCount()
                 && first.tupletDivisor() == next.tupletDivisor()
+                && first.tupletNormalNotes() == next.tupletNormalNotes()
                 && gap >= following * .75
                 && gap <= following * 1.32) {
             double repaired = durationForBeam(rhythmicBeamCount(next), 0) * first.durationScale();

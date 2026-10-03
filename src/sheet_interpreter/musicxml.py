@@ -22,7 +22,25 @@ def ticks(value):
     return round(value * DIVISIONS)
 
 
-def note_type(node, duration):
+def note_type(node, duration, event=None):
+    actual = event.get('tupletActualNotes', 1) if event else 1
+    normal = event.get('tupletNormalNotes', 1) if event else 1
+    if (type(actual) is not int or type(normal) is not int or actual not in (1,3,5,6,7)
+            or not 1 <= normal <= 16 or actual == 1 and normal != 1):
+        raise ValueError('Unsupported explicit tuplet ratio')
+    if actual != 1:
+        for denominator, name in ((1,'whole'), (2,'half'), (4,'quarter'), (8,'eighth'),
+                                  (16,'16th'), (32,'32nd'), (64,'64th')):
+            base = DIVISIONS * 4 // denominator
+            for dots, scale in ((0,1), (1,1.5), (2,1.75)):
+                if abs(duration - base*scale*normal/actual) <= 1:
+                    element(node, 'type', name)
+                    for _ in range(dots):
+                        element(node, 'dot')
+                    modification = element(node, 'time-modification')
+                    element(modification, 'actual-notes', actual)
+                    element(modification, 'normal-notes', normal)
+                    return
     for denominator, name in ((1, 'whole'), (2, 'half'), (4, 'quarter'), (8, 'eighth'),
                               (16, '16th'), (32, '32nd'), (64, '64th')):
         base = DIVISIONS * 4 // denominator
@@ -41,7 +59,8 @@ def note_type(node, duration):
                 return
 
 
-def emit_note(measure, duration, voice, event=None, chord=False, stop=False, start=False, flats=False):
+def emit_note(measure, duration, voice, event=None, chord=False, stop=False, start=False, flats=False,
+              gliss_start=False, gliss_stop=False):
     node = element(measure, 'note')
     if chord:
         element(node, 'chord')
@@ -66,13 +85,17 @@ def emit_note(measure, duration, voice, event=None, chord=False, stop=False, sta
     if event and event.get('durationFallback'):
         element(node, 'footnote', 'Estimated duration from interpretation')
     element(node, 'voice', voice)
-    note_type(node, duration)
+    note_type(node, duration, event)
     effect = event.get('guitarEffect') if event else None
-    if stop or start or effect:
+    if stop or start or effect or gliss_start or gliss_stop:
         notation = element(node, 'notations')
         for active, kind in ((stop, 'stop'), (start, 'start')):
             if active:
                 element(notation, 'tied', type=kind)
+        for active, kind in ((gliss_stop, 'stop'), (gliss_start, 'start')):
+            if active:
+                element(notation, 'glissando', type=kind,
+                        number=event['gliss_'+kind], **{'line-type':'wavy'})
         if effect:
             # Preserve unsupported performance details explicitly without inventing endpoints/string numbers.
             description = effect.get('type', 'none')
@@ -141,6 +164,17 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
         element(element(part_list, 'score-part', id=part_id), 'part-name', f'Staff {staff+1}')
         part = element(root, 'part', id=part_id)
         notes = sorted((n for n in events if n.get('staffIndex', 0) == staff), key=lambda n: (n['start'], n['midi']))
+        for index, n in enumerate(notes):
+            gliss = n.get('glissando')
+            if gliss is None:
+                continue
+            if (not isinstance(gliss,dict) or gliss.get('style') != 'white_keys'
+                    or type(gliss.get('targetMidi')) is not int or not 0 <= gliss['targetMidi'] <= 127):
+                raise ValueError('Unsupported glissando notation')
+            targets = [target for target in notes if abs(target['start']-n['end']) <= 2]
+            if len(targets) == 1 and targets[0]['midi'] == gliss['targetMidi']:
+                n['gliss_start'] = index % 16 + 1
+                targets[0]['gliss_stop'] = n['gliss_start']
         previous = {}
         for n in notes:
             prior = previous.get(n['midi'])
@@ -201,7 +235,9 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
                         emit_note(measure, start-cursor, voice)
                     for ci, n in enumerate(chord):
                         emit_note(measure, end-start, voice, n, chord=ci>0,
-                                  stop=n['start']<a or n['tie_stop'], start=n['end']>b or n['tie_start'], flats=bar['key']<0)
+                                  stop=n['start']<a or n['tie_stop'], start=n['end']>b or n['tie_start'], flats=bar['key']<0,
+                                  gliss_start=end==n['end'] and 'gliss_start' in n,
+                                  gliss_stop=start==n['start'] and 'gliss_stop' in n)
                     cursor = end
                 if cursor < b:
                     emit_note(measure, b-cursor, voice)

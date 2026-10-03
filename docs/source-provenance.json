@@ -168,9 +168,11 @@
     },
     "NativeDecoderWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderWire.java",
-      "source_sha256": "ef86cc92c569cb3e6464e395e8007516699f98873396c6cd47aae4ada01a12da",
+      "source_sha256": "43d780236c5e7946907626de25a4ebc821e61855d63d4f51fa9b0d7893317e47",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "ef86cc92c569cb3e6464e395e8007516699f98873396c6cd47aae4ada01a12da"
+      "source_normalized_sha256": "43d780236c5e7946907626de25a4ebc821e61855d63d4f51fa9b0d7893317e47",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
     },
     "NativeDecoderStages.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NativeDecoderStages.java",
@@ -268,8 +270,11 @@
     },
     "NoteOrnament.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NoteOrnament.java",
-      "source_sha256": "c392a59c02a4271863c944f998888f7ab0113769d6efb710c4f1517b9bf9ce03",
-      "source_normalized_sha256": "c392a59c02a4271863c944f998888f7ab0113769d6efb710c4f1517b9bf9ce03"
+      "source_sha256": "eb401d1253e267b97da309b8adb818fe3154f797fa5d4ab879774a27a7e5fc3f",
+      "source_normalized_sha256": "b7e33d15679764d7925da86c730e249e3f602dc7457759dd219e821c054e4707",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
     },
     "OmrMeasurePostProcessor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrMeasurePostProcessor.java",
@@ -288,12 +293,12 @@
     },
     "OmrScoreInterpreter.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OmrScoreInterpreter.java",
-      "source_sha256": "5821a7ab3c5a31bba6b44b2a7a34f70b489e38e8189b299f7a9c946fc18bdab0",
+      "source_sha256": "c426fd150d2bcf0b15beb775e6e22a09033625a0855b44e652481484044354a6",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "scoped_reviewed_app_commit": "75c25e4349e7a27e5303dd0645c53dec58eb3353",
-      "review_note": "Reviewed fragmented semantic staff tie alignment and actual stroke-center curvature. Complete independent printed five-rule endpoint evidence with majority semantic support; sloping straight rules rejected by fitted stroke-center residual. Full executable token parity after package/logging adaptation; original generated Apache-2.0 controls. Existing processing optimizations, weights, dependencies and record layout retained.",
-      "source_normalized_sha256": "21d88bd3672b9aa3e12fa16720193fdb9b76dd2c74d32d15800f3cebfa283934",
-      "reviewed_app_state": "Reviewed frozen uncommitted app1.18.381/code854 source based on recorded app commit",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit.",
+      "source_normalized_sha256": "5510b5b56559d44644fde8a4fa1e014425116205be5d833d838dbd1109baafc1",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
       "reviewed_source_state": "Reviewed Music Sheets 1.18.383 source; parent is accepted 1.18.382"
     },
     "PlayingTechniqueDetector.java": {
@@ -345,16 +350,19 @@
     },
     "ScoreNoteEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteEvent.java",
-      "source_sha256": "52d5956afd4622c4c6897d8e4fbd7d7ac6228d02e6b550b0f6468e706109a6a4",
+      "source_sha256": "b8eda1ccafcd135256c06f4ee76c664f5cb672f12a13ecb8b1afda9e04556211",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "52d5956afd4622c4c6897d8e4fbd7d7ac6228d02e6b550b0f6468e706109a6a4"
+      "source_normalized_sha256": "b8eda1ccafcd135256c06f4ee76c664f5cb672f12a13ecb8b1afda9e04556211",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
     },
     "ScoreNoteTiming.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNoteTiming.java",
-      "source_sha256": "ee9dab6ad4a8147f9076446fd2541883789d568e644bd6a7c17ee021efe3667b",
+      "source_sha256": "4cc10004350f2c8ce3deadb84fba3f821122b07ddd92f41af267394a16030cf3",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed global written-grace clock API with exact package-only app parity; baseline canonical token parity checked before port. Original written beam/dot values, explicit principal source identity and before/after ordinal ownership; performance timing unchanged. Original synthetic prefix/trailing/unowned/fast-note/session/identity regressions. Scoped app MusicXML writer and layout reader reviewed separately; no model, asset, dependency or wire-layout change.",
-      "source_normalized_sha256": "955ae10a2d31efcd1c3215e36cd9df9472cc54428a91982e72ba3fe78ce01f28"
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit.",
+      "source_normalized_sha256": "9fce40720437f0eaae57ae9187ebd44f6b40e6ba51134deb0d58b1801484f0d6",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation."
     },
     "ScorePageInterpretation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePageInterpretation.java",
@@ -380,12 +388,13 @@
     },
     "SixteenthRestDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/SixteenthRestDetector.java",
-      "source_sha256": "4a8adfc2e2ad7a3039606869af20a6b3b2447cdcabd423aff47a15f01b375054",
+      "source_sha256": "030e50c5c7d720208a1d10020f4cb6b788a6e0c2458a4e5f2396828f1d8747fa",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed output-preserving curved-rest rectification on the accepted869 source snapshot. Scan contiguous destination rows using identical per-column staff frames and the unchanged float operands/parentheses, Math.round, pixel bounds and downstream decisions; retain the original loop for malformed rasters. Whole-class standalone parity verified after package/banner/format adaptation. Original half-pixel and erase/restore regressions pin every rest/dot result bit. No model, dependency, audio or record-layout change; no private score or device data included.",
-      "source_normalized_sha256": "2bf2ad5c72042b4bde3b1e86235bd411ac4b91af1587fea7fdb112f64a4862ef",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit.",
+      "source_normalized_sha256": "c9e9072e0123529fb7d092cc21cf921c67baab8705c1833efb4ee19f474b4db1",
       "reviewed_app_snapshot": "F:\\Codex-builds\\music-sheets-rest-tuplet-841-source",
-      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02"
+      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation."
     },
     "TempoChangeDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TempoChangeDetector.java",
@@ -396,10 +405,11 @@
     },
     "TripletRhythmDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TripletRhythmDetector.java",
-      "source_sha256": "ffd57ecc22aef5724dd2a3172c30bb383d00fae2d88b7a40074782975b72d532",
+      "source_sha256": "f3a91fa766f19cbe95d96caa867695806d9d683ba86904100df960970e9f6aea",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "ffd57ecc22aef5724dd2a3172c30bb383d00fae2d88b7a40074782975b72d532",
-      "review_note": "Original global three-attack secondary-beam context proof on untouched pixels. Requires distinct matching stems, two separated thick connected rails, secondary termination at both group edges and main continuation outside the group. Only three equal double-beamed attacks may use this additional in-staff numeral context; shape, contrast consistency, voice/system ownership and rest/fingering guards remain. Pure-JDK package-only parity and fourteen original procedural regressions. No score imagery, song rules, models, dependencies or wire-layout changes."
+      "source_normalized_sha256": "7c4c091e0870746352f56037e84f4ee2aba83515969766baa95104f0d5f718fe",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit.",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation."
     },
     "training/model.py": {
       "source_sha256": "ce25ed9ab60a1018e9b88a8a94edf9aa4b62e6c580a567c9132a41ff442afd46"
@@ -446,11 +456,11 @@
     },
     "OctaveMarkDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OctaveMarkDetector.java",
-      "source_sha256": "fa976c5b47bf5f81ba08e36291a6a562b8e063ea113e7367cfc0c505c7c97fea",
+      "source_sha256": "ac1ac67cfdb3c6cfb72d06a556bdeaf09d0f43b2e8d91bdf2c034fa3d3cc4fdc",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "9c2a4bd48ed1f11f7090b9528c26490fc45dac5d8dfdcb2abca05cdc07968834",
-      "review_note": "Reviewed paper-component horizontal runs retain original component origin, order, area and box thresholds; narrow widths retain original behavior. Original synthetic regressions; unchanged models/dependencies/layouts, no private source images or device data.",
-      "reviewed_app_state": "Reviewed scoped recognition revision272 source; original base commits are retained separately and exact source hashes pin the standalone extraction.",
+      "source_normalized_sha256": "23a580ff43a01c55f1e32dfb6381239304444b4076a178a2f4ad67d9d06fa5de",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit.",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
       "reviewed_source_state": "Reviewed Music Sheets 1.18.383 source; parent is accepted 1.18.382"
     },
     "OctaveWordShapes.java": {
@@ -493,9 +503,11 @@
     },
     "TablatureDecoder.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TablatureDecoder.java",
-      "source_sha256": "6fc3e859f4b6edd68f4b329563a4bb5d50c1e2660f91a6391d49b76c6f8e3914",
+      "source_sha256": "5e3bfe0429ef4ec0a4a17c97cef841ed9b442e5230f243462c63d859bf583621",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "87db12b3f5ef1d06542cbe40bd32aa421ab186a4b5e1a2361457ce3de974277b"
+      "source_normalized_sha256": "e5bab506d9c152ad19645c18640f5f38cfe7ce84c4f6581db7342148ff03bbfe",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
     },
     "TabNotation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/TabNotation.java",
@@ -577,9 +589,11 @@
     },
     "ScoreTiePitchGuard.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreTiePitchGuard.java",
-      "source_sha256": "03ef71f1b4ffa7b0b611d80cb80d76e1b16f4a6d6b0bfba49d7e561f3c9c4b4f",
+      "source_sha256": "73a0b257ba15152613c571105573e3cd81a9999bb690b4924d83be18409368f6",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "03ef71f1b4ffa7b0b611d80cb80d76e1b16f4a6d6b0bfba49d7e561f3c9c4b4f"
+      "source_normalized_sha256": "a9fdac2222ed5a5a24d1c8f1bbefc86e1a7eb025a414a26ca93833fdb5fc0681",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
     },
     "ScoreTempoSelection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/playback/ScoreTempoSelection.java",
@@ -772,11 +786,12 @@
     },
     "PortableNoteOrnaments.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableNoteOrnaments.java",
-      "source_sha256": "19161bcdd1ed35a72a750f109fe6ab2c0f4cf71bd919067fed2ecd0aec72e9b3",
+      "source_sha256": "76fd44d2639f51a21f9267365af4fc27a9a412977e8537e4a816f0556c754944",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "19161bcdd1ed35a72a750f109fe6ab2c0f4cf71bd919067fed2ecd0aec72e9b3",
+      "source_normalized_sha256": "76fd44d2639f51a21f9267365af4fc27a9a412977e8537e4a816f0556c754944",
       "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
-      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit.",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation."
     },
     "FaintSharpInk.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/FaintSharpInk.java",
@@ -864,9 +879,11 @@
     },
     "ScoreNavigationProjection.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreNavigationProjection.java",
-      "source_sha256": "7e22b8123f2cb539282d552c680843509110d0db2b5acb538198f209134604dc",
+      "source_sha256": "a1d54b061e064bd87f3e57645a3783842c5193b16fcb9abe0a0e4bcf6299976d",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "7e22b8123f2cb539282d552c680843509110d0db2b5acb538198f209134604dc"
+      "source_normalized_sha256": "58125aa62c5b8742baee17e84e282e17b57c94b8112f3c034b7c136c8ef7dcaa",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
     },
     "ScoreAnchor.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreAnchor.java",
@@ -950,9 +967,11 @@
     },
     "ScoreBoundaryTies.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreBoundaryTies.java",
-      "source_sha256": "11b403bae4d743df324edb9d5bb2fe1850d0d458b9398aa71a16cb0ed8cc0f21",
+      "source_sha256": "c8c3b6e2c2066e957050952c80f725fd091505bc4b8c51674cd341260a91c45c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "11b403bae4d743df324edb9d5bb2fe1850d0d458b9398aa71a16cb0ed8cc0f21"
+      "source_normalized_sha256": "7ab677176e369471ca46f0226395b0e999f08fdbc8463e00e3542fcc4d75be64",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
     },
     "DynamicStemCrop.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/DynamicStemCrop.java",
@@ -1133,6 +1152,46 @@
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "reviewed_source_state": "Music Sheets1.18.389 reviewed conversion tempo and complete-source rhythm staging, preserving accepted1.18.388",
       "review_note": "Pure-JDK full-source onset/duration/independent-duration projection before part selection. Value-owned original notes retain their clock; a combined unison without a single owner keeps its existing clock. Original procedural incomplete-melody/complete-accompaniment, order, immutability and invalid-placement controls. No private score, dependency, model or guide record change."
+    },
+    "BoundedTupletBeam.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/BoundedTupletBeam.java",
+      "source_sha256": "a16007ae653c4903d9ce9be437d96d474179f10891513087edb820d0e5fa66fe",
+      "source_normalized_sha256": "a16007ae653c4903d9ce9be437d96d474179f10891513087edb820d0e5fa66fe",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
+    },
+    "GlissPitchTarget.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/GlissPitchTarget.java",
+      "source_sha256": "96a57452f9a21e01e00eb966955909c2e4d9dda79bbaf3d0648abfe77c4fc7c4",
+      "source_normalized_sha256": "96a57452f9a21e01e00eb966955909c2e4d9dda79bbaf3d0648abfe77c4fc7c4",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
+    },
+    "GlissandoPerformance.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/GlissandoPerformance.java",
+      "source_sha256": "1ab9c359bd085fed2fdb1ccd70cee71eefcd54578a9a46886b267ac0f13bad63",
+      "source_normalized_sha256": "1ab9c359bd085fed2fdb1ccd70cee71eefcd54578a9a46886b267ac0f13bad63",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
+    },
+    "TieArcBranchInk.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/TieArcBranchInk.java",
+      "source_sha256": "f08c4a91c5c03e5d3549ab17eec4c85cf22eac0cfb06f5f630eeb5d213ea0e29",
+      "source_normalized_sha256": "f08c4a91c5c03e5d3549ab17eec4c85cf22eac0cfb06f5f630eeb5d213ea0e29",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
+    },
+    "WaveGlissDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/WaveGlissDetector.java",
+      "source_sha256": "93eeb2523cd6970bd68900ffce771559798bb899661fc000d80df431b118ec1d",
+      "source_normalized_sha256": "93eeb2523cd6970bd68900ffce771559798bb899661fc000d80df431b118ec1d",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
+      "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
     }
   },
   "interpreter_speedup_review": {
@@ -1203,5 +1262,11 @@
     ],
     "license": "Apache-2.0; original generated geometry and text records only",
     "boundary": "No app history, private page pixels, commercial coordinates, phone logs, weights, runtime dependencies or new guide fields. Full framed263 guide and audio input layouts retained; cache revisions refresh changed interpretation and slide pitch binding."
+  },
+  "nonbinary_tuplet_wavy_gliss_review": {
+    "base_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "accepted_app_version": "869 /1.18.396",
+    "shared_files": 18,
+    "boundary": "Reviewed hashes pin candidate source changes beyond the app base commit. New helpers use only JDK classes. No private score, device log, library, model, signing file or dependency is included. Standalone Main and Python export adapters preserve finite source-window white-key gliss and explicit normal counts."
   }
 }

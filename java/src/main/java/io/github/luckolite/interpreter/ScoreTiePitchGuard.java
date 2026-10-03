@@ -91,7 +91,8 @@ final class ScoreTiePitchGuard {
                             current.leadingRestBeats(),
                             current.compactOpening(),
                             current.octaveShift(),
-                            current.boundaryTies()));
+                            current.boundaryTies(),
+                            current.tupletNormalNotes()));
         }
         return result == null ? notes : result;
     }

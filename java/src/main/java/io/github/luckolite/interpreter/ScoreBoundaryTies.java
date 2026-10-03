@@ -68,7 +68,8 @@ final class ScoreBoundaryTies {
                                 current.leadingRestBeats(),
                                 current.compactOpening(),
                                 current.octaveShift(),
-                                current.boundaryTies()));
+                                current.boundaryTies(),
+                                current.tupletNormalNotes()));
                 break;
             }
         }

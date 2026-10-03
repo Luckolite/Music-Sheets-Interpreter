@@ -725,7 +725,8 @@ public final class TablatureDecoder {
                 n.leadingRestBeats(),
                 n.compactOpening(),
                 n.octaveShift(),
-                n.boundaryTies());
+                n.boundaryTies(),
+                n.tupletNormalNotes());
     }
 
     private static int printedMidi(ScoreNoteEvent n, ScorePageInterpretation score) {
@@ -754,24 +755,25 @@ public final class TablatureDecoder {
                 acc = {0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0};
         int step = (midi / 12 - 1) * 7 + letters[pc] - ScoreNoteEvent.CLEF_TREBLE;
         return new ScoreNoteEvent(
-                n.measureIndex(),
-                n.positionInMeasure(),
-                step,
-                n.staffIndex(),
-                n.staffCount(),
-                n.pageY(),
-                n.tiedFromPrevious(),
-                n.augmentationDots(),
-                n.beamCount(),
-                acc[pc],
-                n.unbeamedDurationBeats(),
-                n.tupletDivisor(),
-                n.followingRestBeats(),
-                n.articulations(),
-                ScoreNoteEvent.CLEF_TREBLE,
-                n.crossStaffBeam(),
-                n.leadingRestBeats(),
-                n.compactOpening(),
-                0);
+                        n.measureIndex(),
+                        n.positionInMeasure(),
+                        step,
+                        n.staffIndex(),
+                        n.staffCount(),
+                        n.pageY(),
+                        n.tiedFromPrevious(),
+                        n.augmentationDots(),
+                        n.beamCount(),
+                        acc[pc],
+                        n.unbeamedDurationBeats(),
+                        n.tupletDivisor(),
+                        n.followingRestBeats(),
+                        n.articulations(),
+                        ScoreNoteEvent.CLEF_TREBLE,
+                        n.crossStaffBeam(),
+                        n.leadingRestBeats(),
+                        n.compactOpening(),
+                        0)
+                .withTupletRatio(n.tupletDivisor(), n.tupletNormalNotes());
     }
 }

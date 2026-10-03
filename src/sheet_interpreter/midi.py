@@ -51,6 +51,13 @@ def performance_events(document, bpm=120):
             if subdivision not in (0, .5, .25, .125, .0625):
                 raise ValueError("Unsupported tremolo subdivision")
             step = round(subdivision * ppq)
+            gliss = note.get("glissando")
+            if gliss is not None:
+                if (not isinstance(gliss, dict) or gliss.get("style") != "white_keys"
+                        or type(gliss.get("targetMidi")) is not int or not 0 <= gliss["targetMidi"] <= 127):
+                    raise ValueError("Unsupported glissando performance")
+                if step or note.get("guitarEffect"):
+                    raise ValueError("Conflicting glissando performance")
             previous_tone = previous.get(lane)
             # Recognition has already verified both endpoints of this tie.
             # A hidden/restored lower staff must not force a second top-staff attack.
@@ -60,20 +67,24 @@ def performance_events(document, bpm=120):
                         and (previous_tone is None or previous_tone[1] < alternate[1])):
                     previous_tone = alternate
             if (note["tiedFromPrevious"] and previous_tone is not None
+                    and gliss is None and previous_tone[5] is None
                     and note.get("guitarEffect", {}) == previous_tone[4]
                     and (step == 0 or previous_tone[3] == step)
                     and abs(previous_tone[1] - start) <= ppq // 8):
                 previous_tone[1] = max(previous_tone[1], end)
                 previous[lane] = previous_tone
             else:
-                tone = [start, end, pitch, step, note.get("guitarEffect", {})]
+                tone = [start, end, pitch, step, note.get("guitarEffect", {}), gliss]
                 tones.append(tone)
                 previous[lane] = tone
         offset += page["totalBeats"]
     active = {}
     performed = []
-    for start, end, pitch, step, effect in tones:
-        if step:
+    for start, end, pitch, step, effect, gliss in tones:
+        if gliss is not None:
+            performed.extend((a, b, midi, effect) for a, b, midi in
+                             white_key_gliss(start, end, pitch, gliss["targetMidi"]))
+        elif step:
             performed.extend((tick, min(end, tick + step), pitch, effect) for tick in range(start, end, step))
         else:
             performed.append((start, end, pitch, effect))
@@ -114,6 +125,23 @@ def performance_events(document, bpm=120):
                        (sounding_end, 0, bytes([0x80 | channel, pitch, 0]))])
     ordered = sorted(events, key=lambda x: (x[0], x[1]))
     return ppq, ordered, max(ordered[-1][0], round(offset * ppq))
+
+
+def white_key_gliss(start, end, source, target):
+    """Hold two thirds, then play intervening white keys; target stays a written note."""
+    direction = 1 if target > source else -1
+    pitches = [midi for midi in range(source + direction, target, direction)
+               if midi % 12 in (0, 2, 4, 5, 7, 9, 11)]
+    if not pitches:
+        return [(start, end, source)]
+    hold = start + round((end-start)*2/3)
+    result = [(start, hold, source)] if hold > start else []
+    for index, midi in enumerate(pitches):
+        a = hold + round((end-hold)*index/len(pitches))
+        b = hold + round((end-hold)*(index+1)/len(pitches))
+        if b > a:
+            result.append((a, b, midi))
+    return result
 
 
 def write_midi(document, path, bpm=120):

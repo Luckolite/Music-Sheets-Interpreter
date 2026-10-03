@@ -48,7 +48,7 @@ final class TripletRhythmDetector {
                             beams <= 0 ? (float) value : 0,
                             beams < 0 ? 2 : 1));
         }
-        List<ScoreNoteEvent> marked = apply(slots, measures, gray, width, height);
+        List<ScoreNoteEvent> marked = apply(slots, measures, gray, width, height, notes.size());
         List<ScoreRestEvent> scaled = new ArrayList<>(rests);
         for (int i = 0; i < restIndices.size(); i++) {
             int index = restIndices.get(i);
@@ -134,7 +134,8 @@ final class TripletRhythmDetector {
                             (float) Math.max(0, note.leadingRestBeats() - before),
                             note.compactOpening(),
                             note.octaveShift(),
-                            note.boundaryTies()));
+                            note.boundaryTies(),
+                            note.tupletNormalNotes()));
         }
         return new Rhythm(List.copyOf(result), List.copyOf(scaled));
     }
@@ -233,6 +234,16 @@ final class TripletRhythmDetector {
             byte[] gray,
             int width,
             int height) {
+        return apply(notes, measures, gray, width, height, Integer.MAX_VALUE);
+    }
+
+    private static List<ScoreNoteEvent> apply(
+            List<ScoreNoteEvent> notes,
+            List<MeasureRegion> measures,
+            byte[] gray,
+            int width,
+            int height,
+            int virtualStart) {
         if (notes == null
                 || notes.size() < 2
                 || measures == null
@@ -422,6 +433,7 @@ final class TripletRhythmDetector {
         result = mixedBracketPairs(result, measures, gray, width, height);
         result = mixedBeamedTuplets(result, measures, gray, width, height, 5);
         result = mixedBeamedTuplets(result, measures, gray, width, height, 7);
+        result = boundedQuintuplets(result, measures, gray, width, height, virtualStart);
         return beamedTuplets(
                 beamedTuplets(
                         beamedTuplets(result, measures, gray, width, height, 7),
@@ -650,6 +662,141 @@ final class TripletRhythmDetector {
             }
         }
         return List.copyOf(result);
+    }
+
+    /** A non-binary ratio needs both printed membership and an independent complete staff clock. */
+    private static List<ScoreNoteEvent> boundedQuintuplets(
+            List<ScoreNoteEvent> notes,
+            List<MeasureRegion> measures,
+            byte[] gray,
+            int width,
+            int height,
+            int virtualStart) {
+        List<ScoreNoteEvent> result = new ArrayList<>(notes);
+        List<Onset> groups = onsets(notes);
+        for (int i = 0; i + 5 < groups.size(); i++) {
+            Onset opening = groups.get(i);
+            for (int index : opening.indices()) {
+                ScoreNoteEvent first = result.get(index);
+                if (first.staffCount() < 2
+                        || first.crossStaffBeam()
+                        || first.beamCount() != 2
+                        || first.tupletDivisor() != 1
+                        || first.augmentationDots() != 0
+                        || first.measureIndex() < 0
+                        || first.measureIndex() >= measures.size()) continue;
+                List<Onset> run = new ArrayList<>();
+                for (int j = 0; j < 5; j++) {
+                    Onset onset = matching(groups.get(i + j), result, first);
+                    if (onset == null
+                            || !run.isEmpty()
+                                    && onset.position() - run.get(run.size() - 1).position()
+                                            < .012f) break;
+                    run.add(onset);
+                }
+                if (run.size() != 5 || matching(groups.get(i + 5), result, first) == null) continue;
+                double own = staffClock(groups, result, first, first.staffIndex(), virtualStart);
+                double other = Double.NaN;
+                for (int staff = 0; staff < first.staffCount(); staff++) {
+                    if (staff == first.staffIndex()) continue;
+                    double clock = staffClock(groups, result, first, staff, virtualStart);
+                    if (Double.isFinite(clock) && Math.abs(clock - Math.rint(clock)) < .001) {
+                        if (Double.isFinite(other) && Math.abs(other - clock) > .001) {
+                            other = Double.NaN;
+                            break;
+                        }
+                        other = clock;
+                    }
+                }
+                double unit = ScoreNoteTiming.writtenDurationBeats(first);
+                // Five-in-three is distinguishable from five-in-four only with a full other voice.
+                if (!Double.isFinite(own)
+                        || !Double.isFinite(other)
+                        || other < 1
+                        || other > 16
+                        || Math.abs(own - other - unit * 2) > .001) continue;
+                MeasureRegion bar = measures.get(first.measureIndex());
+                float gap =
+                        Math.max(4, (bar.bottom() - bar.top()) * height / (8 * first.staffCount()));
+                float x1 = (bar.left() + opening.position() * (bar.right() - bar.left())) * width;
+                float x2 =
+                        (bar.left() + run.get(4).position() * (bar.right() - bar.left())) * width;
+                float nextX =
+                        (bar.left() + groups.get(i + 5).position() * (bar.right() - bar.left()))
+                                * width;
+                float top = Float.POSITIVE_INFINITY, bottom = Float.NEGATIVE_INFINITY;
+                for (Onset onset : run) {
+                    top = Math.min(top, onset.top() * height);
+                    bottom = Math.max(bottom, onset.bottom() * height);
+                }
+                Glyph glyph =
+                        findPrintedNumeral(
+                                gray, width, height, x1, x2, top, bottom, gap, true, Float.NaN,
+                                Float.NaN, 5);
+                if (glyph == null
+                        || insideOtherSystem(glyph, bar, measures, width, height)
+                        || !ownsNumeral(glyph, first, result, bar, gap, width, height)
+                        || !BoundedTupletBeam.five(
+                                gray,
+                                width,
+                                height,
+                                x1,
+                                x2,
+                                nextX,
+                                glyph.top(),
+                                glyph.bottom(),
+                                gap,
+                                glyph.bottom() < top)) continue;
+                for (Onset onset : run)
+                    for (int member : onset.indices())
+                        result.set(member, result.get(member).withTupletRatio(5, 3));
+                break;
+            }
+        }
+        return result;
+    }
+
+    /** Chords count once. Parallel durations and sustained voices cannot prove the other clock. */
+    private static double staffClock(
+            List<Onset> groups,
+            List<ScoreNoteEvent> notes,
+            ScoreNoteEvent first,
+            int staff,
+            int virtualStart) {
+        double total = 0;
+        boolean seen = false;
+        boolean explicitRests = false;
+        for (int index = virtualStart; index < notes.size(); index++) {
+            ScoreNoteEvent rest = notes.get(index);
+            if (rest.measureIndex() == first.measureIndex()
+                    && rest.staffIndex() == staff
+                    && rest.staffCount() == first.staffCount()) explicitRests = true;
+        }
+        for (Onset onset : groups) {
+            ScoreNoteEvent sample = notes.get(onset.indices().get(0));
+            if (sample.measureIndex() != first.measureIndex()
+                    || sample.staffIndex() != staff
+                    || sample.staffCount() != first.staffCount()) continue;
+            double duration = Double.NaN, before = 0, after = 0;
+            for (int index : onset.indices()) {
+                ScoreNoteEvent note = notes.get(index);
+                if (note.crossStaffBeam()
+                        || ScoreNoteTiming.hasIndependentSustain(note)
+                        || (note.articulations() & NoteOrnament.GRACE) != 0) return Double.NaN;
+                double value = ScoreNoteTiming.writtenDurationBeats(note);
+                if (Double.isFinite(duration) && Math.abs(duration - value) > .001)
+                    return Double.NaN;
+                duration = value;
+                before = Math.max(before, note.leadingRestBeats());
+                after = Math.max(after, note.followingRestBeats());
+            }
+            // The virtual slots already include attached silence. Direct note-only calls
+            // instead use the preceding/following rest metadata once per attack column.
+            if (!explicitRests) total += (seen ? 0 : before) + after;
+            total += duration;
+            seen = true;
+        }
+        return seen ? total : Double.NaN;
     }
 
     /** Subdividing a tuplet slot changes its attack count, not its printed ratio. */
@@ -1543,8 +1690,8 @@ final class TripletRhythmDetector {
                     max = Math.max(max, x);
                 }
             // Italic fives can have a narrower cap than their lower bowl.
-            if (y < h * .28f && max - min >= w * .5f) bars++;
-            if (y >= h * .18f && y < h * .42f && min <= w * .35f && max <= w * .55f && max >= min)
+            if (y < h * .28f && max - min >= w * .45f) bars++;
+            if (y >= h * .18f && y < h * .42f && min <= w * .4f && max <= w * .6f && max >= min)
                 leftStem++;
             if (y >= h * .48f && y < h * .82f) {
                 lowerEdge = Math.max(lowerEdge, max);

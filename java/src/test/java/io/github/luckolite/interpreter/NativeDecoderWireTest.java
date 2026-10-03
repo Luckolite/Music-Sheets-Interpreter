@@ -22,7 +22,8 @@ public class NativeDecoderWireTest {
                 new ScoreNoteEvent(
                                 0, .375f, -4, 1, 2, .75f, true, 2, 3, -1, .5f, 3, .25f, 12, 23,
                                 true, .125f, true, -2)
-                        .withBoundaryTies(10);
+                        .withBoundaryTies(10)
+                        .withTupletRatio(5, 3);
         var rest = new ScoreRestEvent(0, .5f, .2f, .07f, 1, 2, .125);
         var score =
                 new OmrScoreInterpreter.Analysis(

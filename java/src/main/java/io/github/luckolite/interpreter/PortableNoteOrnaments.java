@@ -107,6 +107,23 @@ final class PortableNoteOrnaments {
         int[] marks = new int[notes.size()];
         for (var found : detect(recognizer, gray, w, h, staffs, anchors, trills))
             marks[found.noteIndex()] |= found.marks();
+        for (var gliss :
+                WaveGlissDetector.detect(
+                        gray,
+                        w,
+                        h,
+                        staffs.stream()
+                                .map(s -> new NoteSlideDetector.Staff(s.top(), s.bottom(), s.gap()))
+                                .toList(),
+                        anchors.stream()
+                                .map(
+                                        n ->
+                                                new NoteSlideDetector.Head(
+                                                        n.x, n.y, n.gap, n.staff, n.measure))
+                                .toList()))
+            if (marks[gliss.sourceIndex()] == 0
+                    && NoteOrnament.type(notes.get(gliss.sourceIndex()).articulations()) == 0)
+                marks[gliss.sourceIndex()] = NoteOrnament.GLISSANDO;
         for (var slide :
                 NoteSlideDetector.detect(
                         gray,

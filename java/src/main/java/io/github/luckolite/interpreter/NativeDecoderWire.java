@@ -1,6 +1,3 @@
-// Copyright 2026 Luckolite
-// SPDX-License-Identifier: Apache-2.0
-
 package io.github.luckolite.interpreter;
 
 import java.io.*;
@@ -242,6 +239,7 @@ public final class NativeDecoderWire {
             out.writeBoolean(n.compactOpening());
             out.writeInt(n.octaveShift());
             out.writeInt(n.boundaryTies());
+            out.writeInt(n.tupletNormalNotes());
         }
         out.writeInt(score.keyChanges().size());
         for (var k : score.keyChanges()) {
@@ -286,7 +284,8 @@ public final class NativeDecoderWire {
                             finite(in),
                             in.readBoolean(),
                             in.readInt(),
-                            count(in, ScoreNoteEvent.BOUNDARY_TIES_ALL)));
+                            count(in, ScoreNoteEvent.BOUNDARY_TIES_ALL),
+                            normalCount(in)));
         count = count(in, MAX_MEASURES);
         var keys = new ArrayList<ScoreKeyChange>(count);
         for (int i = 0; i < count; i++) {
@@ -313,5 +312,11 @@ public final class NativeDecoderWire {
         int index = in.readInt();
         if (index < 0 || index >= measures) throw new IOException("Decoder measure index");
         return index;
+    }
+
+    private static int normalCount(DataInputStream in) throws IOException {
+        int normal = count(in, 16);
+        if (normal == 0) throw new IOException("Decoder tuplet ratio");
+        return normal;
     }
 }

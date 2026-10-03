@@ -24,7 +24,89 @@ public record ScoreNoteEvent(
         float leadingRestBeats,
         boolean compactOpening,
         int octaveShift,
-        int boundaryTies) {
+        int boundaryTies,
+        int tupletNormalNotes) {
+
+    /** Legacy tuplets retain their former ratios; explicit normal counts preserve 5:3 and other ratios. */
+    public ScoreNoteEvent(
+            int measureIndex,
+            float positionInMeasure,
+            int staffStep,
+            int staffIndex,
+            int staffCount,
+            float pageY,
+            boolean tiedFromPrevious,
+            int augmentationDots,
+            int beamCount,
+            int writtenAccidental,
+            float unbeamedDurationBeats,
+            int tupletDivisor,
+            float followingRestBeats,
+            int articulations,
+            int clefBottomDiatonic,
+            boolean crossStaffBeam,
+            float leadingRestBeats,
+            boolean compactOpening,
+            int octaveShift,
+            int boundaryTies) {
+        this(
+                measureIndex,
+                positionInMeasure,
+                staffStep,
+                staffIndex,
+                staffCount,
+                pageY,
+                tiedFromPrevious,
+                augmentationDots,
+                beamCount,
+                writtenAccidental,
+                unbeamedDurationBeats,
+                tupletDivisor,
+                followingRestBeats,
+                articulations,
+                clefBottomDiatonic,
+                crossStaffBeam,
+                leadingRestBeats,
+                compactOpening,
+                octaveShift,
+                boundaryTies,
+                defaultTupletNormalNotes(tupletDivisor));
+    }
+
+    public static int defaultTupletNormalNotes(int actual) {
+        return switch (actual) {
+            case 3 -> 2;
+            case 5, 6, 7 -> 4;
+            default -> 1;
+        };
+    }
+
+    public ScoreNoteEvent withTupletRatio(int actual, int normal) {
+        if (actual != 1 && actual != 3 && actual != 5 && actual != 6 && actual != 7)
+            throw new IllegalArgumentException("Unsupported tuplet actual count");
+        return new ScoreNoteEvent(
+                measureIndex,
+                positionInMeasure,
+                staffStep,
+                staffIndex,
+                staffCount,
+                pageY,
+                tiedFromPrevious,
+                augmentationDots,
+                beamCount,
+                writtenAccidental,
+                unbeamedDurationBeats,
+                actual,
+                followingRestBeats,
+                articulations,
+                clefBottomDiatonic,
+                crossStaffBeam,
+                leadingRestBeats,
+                compactOpening,
+                octaveShift,
+                boundaryTies,
+                normal);
+    }
 
     /** Optical evidence only: incoming above/below, then outgoing above/below. */
     public static final int BOUNDARY_TIES_ALL = 15;
@@ -93,7 +175,8 @@ public record ScoreNoteEvent(
                 leadingRestBeats,
                 compactOpening,
                 octaveShift,
-                evidence);
+                evidence,
+                tupletNormalNotes);
     }
 
     /** Compatibility constructor: notes without an octave mark keep their written register. */
@@ -161,7 +244,8 @@ public record ScoreNoteEvent(
                 leadingRestBeats,
                 compactOpening,
                 shift,
-                boundaryTies);
+                boundaryTies,
+                tupletNormalNotes);
     }
 
     /** Source-compatible constructor for callers without opening-measure geometry. */
@@ -225,7 +309,8 @@ public record ScoreNoteEvent(
                 leadingRestBeats,
                 true,
                 octaveShift,
-                boundaryTies);
+                boundaryTies,
+                tupletNormalNotes);
     }
 
     public ScoreNoteEvent(
@@ -286,7 +371,8 @@ public record ScoreNoteEvent(
                 beats,
                 compactOpening,
                 octaveShift,
-                boundaryTies);
+                boundaryTies,
+                tupletNormalNotes);
     }
 
     public ScoreNoteEvent(
@@ -345,7 +431,8 @@ public record ScoreNoteEvent(
                 leadingRestBeats,
                 compactOpening,
                 octaveShift,
-                boundaryTies);
+                boundaryTies,
+                tupletNormalNotes);
     }
 
     public static final int CLEF_UNKNOWN = -1;
@@ -407,7 +494,8 @@ public record ScoreNoteEvent(
                 leadingRestBeats,
                 compactOpening,
                 octaveShift,
-                boundaryTies);
+                boundaryTies,
+                tupletNormalNotes);
     }
 
     public int diatonicPitchIdentity() {
@@ -466,7 +554,8 @@ public record ScoreNoteEvent(
                 leadingRestBeats,
                 compactOpening,
                 octaveShift,
-                boundaryTies);
+                boundaryTies,
+                tupletNormalNotes);
     }
 
     public ScoreNoteEvent(
@@ -545,11 +634,9 @@ public record ScoreNoteEvent(
                 1);
     }
 
-    /** Supported printed tuplets: three in two, or five/six/seven in four. */
+    /** Quarter-beat multiplier from the printed actual and normal note counts. */
     public double durationScale() {
-        return (tupletDivisor == 3 || tupletDivisor == 6)
-                ? 2.0 / 3.0
-                : tupletDivisor == 5 ? 4.0 / 5.0 : tupletDivisor == 7 ? 4.0 / 7.0 : 1.0;
+        return tupletNormalNotes / (double) tupletDivisor;
     }
 
     public ScoreNoteEvent(
@@ -682,6 +769,10 @@ public record ScoreNoteEvent(
                 || followingRestBeats > 16) followingRestBeats = 0;
         if (tupletDivisor != 3 && tupletDivisor != 5 && tupletDivisor != 6 && tupletDivisor != 7)
             tupletDivisor = 1;
+        if (tupletNormalNotes < 1
+                || tupletNormalNotes > 16
+                || tupletDivisor == 1 && tupletNormalNotes != 1)
+            throw new IllegalArgumentException("Invalid tuplet normal count");
         augmentationDots = Math.max(0, Math.min(2, augmentationDots));
         beamCount = Math.max(0, Math.min(4, beamCount));
         if (writtenAccidental < ACCIDENTAL_DOUBLE_FLAT
