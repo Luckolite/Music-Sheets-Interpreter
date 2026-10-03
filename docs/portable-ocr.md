@@ -91,6 +91,16 @@ inputs. It uses the original two-intra/one-inter-thread configuration as its
 reference. No images, model downloads or interpretation caches are involved.
 This checks output compatibility on generated inputs, not OCR accuracy.
 
+The normal Python unittest suite also runs 27 original lifecycle fault controls
+against a fake public ORT API in an isolated temporary classpath. It checks
+partial constructor acquisition, options/dictionary failures, attempted cleanup,
+primary/suppressed exception identity, immutable dictionaries and unchanged
+inference input bits and caller arrays. Only the temporary test copy replaces
+checksum and dictionary IO; reversing those two hooks restores the exact binding.
+These controls require a JDK but no runtime binaries, models or images. They prove
+Java ownership and failure behavior, not native resource release after a failed
+native close or model accuracy.
+
 Model lineage and redistribution terms:
 [RapidOCR registry](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr/default_models.yaml),
 [RapidOCR model licensing](https://github.com/RapidAI/RapidOCR/blob/main/README.md),

@@ -170,6 +170,14 @@ New dependencies and adapters require separate review.
   disabled-page viewer selection.
 - Optional musical OCR accepts caller-owned inference and dictionaries. ONNX
   bindings are optional; they are not required by the default JDK-only decoder.
+- The optional ONNX OCR binding retains both sessions until construction succeeds.
+  Constructor and close failures attempt all acquired session cleanup while
+  preserving the primary exception. Original fake API controls exercise these
+  paths without loading ONNX Runtime or models.
+- Android `OmrMeasureAnalyzer` owns LiteRT `CompiledModel`, input/output tensor
+  collections and ML Kit recognition resources. Its failure-safe acquisition and
+  retirement were reviewed separately. The standalone native adapter uses ONNX
+  sessions and caller rasters; those Android owners are not imported or mapped.
 - Native decoder/OCR services use loopback transport and their own build
   fingerprints. App and Sync Hub lifecycle management remain outside this repo.
 - Glyph loading uses checksum-verified classpath resources. Bravura and Leland

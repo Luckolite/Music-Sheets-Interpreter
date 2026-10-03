@@ -139,11 +139,11 @@
     },
     "OnnxOcrInference.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/OnnxOcrInference.java",
-      "source_sha256": "25b30ec4f42a5672d98cea42ee1c41aef3c0b1c58b0c6188620d8dd2620cc0f0",
+      "source_sha256": "a1c30a3345bf234da876713dfacebfdfe5e342a5454fa88ab2c69088dd079cd3",
       "reviewed_app_commit": "38007cbb6226aedaea567cf64fc76cace4d3297c",
-      "source_normalized_sha256": "516f2786f6e880e4d67d41bb9d14a7e5d246361c2a3b4bd8baed55369880aaed",
-      "reviewed_source_state": "Reviewed Music Sheets 1.18.383 source; parent is accepted 1.18.382",
-      "review_note": "Reviewed force_spinning_stop session option retains existing thread counts, approved models, shapes, ownership and exact probability bits; optional original generated regression covers both approved detector artifacts. Original synthetic regressions; unchanged models/dependencies/layouts, no private source images or device data."
+      "source_normalized_sha256": "f057a35444937e9c59a16d21f80ac4f2fa57de6dd67a15d892d89692f5b3758b",
+      "reviewed_source_state": "Reviewed global lifecycle repair on the accepted Music Sheets versionCode 877 working tree",
+      "review_note": "Constructor cleanup now covers Exception and Error after either session opens, including options and dictionary failures. Close attempts both sessions and preserves primary and suppressed failures. Package-only executable-token parity; original 27-case fake ORT regression includes inference raw bits and caller ownership. Existing session options, approved checksums, dictionary, inference API and math remain unchanged. No private images, models, runtime binaries or device data."
     },
     "PortableOcrProbe.java": {
       "source_path": "tools/native-worker/PortableOcrProbe.java",

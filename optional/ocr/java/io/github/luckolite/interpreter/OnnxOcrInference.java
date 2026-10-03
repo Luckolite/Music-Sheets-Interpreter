@@ -24,28 +24,36 @@ public final class OnnxOcrInference implements PortableOcr.Inference, AutoClosea
         verify(
                 recognizerPath + ".dictionary",
                 Set.of("1169fb297871f7a14d6a0f20c14af56de789c48b170e59dfb66950448e31c062"));
-        try (var options = new OrtSession.SessionOptions()) {
-            options.setIntraOpNumThreads(2);
-            options.setInterOpNumThreads(1);
-            options.addConfigEntry("session.force_spinning_stop", "1");
-            detector = environment.createSession(detectorPath, options);
-            try {
-                recognizer = environment.createSession(recognizerPath, options);
-            } catch (Exception e) {
-                detector.close();
-                throw e;
-            }
-        }
+        OrtSession openedDetector = null, openedRecognizer = null;
         try {
+            try (var options = new OrtSession.SessionOptions()) {
+                options.setIntraOpNumThreads(2);
+                options.setInterOpNumThreads(1);
+                options.addConfigEntry("session.force_spinning_stop", "1");
+                openedDetector = environment.createSession(detectorPath, options);
+                openedRecognizer = environment.createSession(recognizerPath, options);
+            }
             dictionary =
                     List.copyOf(
                             java.nio.file.Files.readAllLines(
                                     new java.io.File(recognizerPath + ".dictionary").toPath(),
                                     java.nio.charset.StandardCharsets.UTF_8));
-        } catch (Exception error) {
-            close();
-            throw error;
+        } catch (Exception | Error failure) {
+            closeAfterFailure(openedDetector, failure);
+            closeAfterFailure(openedRecognizer, failure);
+            throw failure;
         }
+        detector = openedDetector;
+        recognizer = openedRecognizer;
+    }
+
+    private static void closeAfterFailure(OrtSession session, Throwable failure) {
+        if (session != null)
+            try {
+                session.close();
+            } catch (Exception | Error cleanup) {
+                if (cleanup != failure) failure.addSuppressed(cleanup);
+            }
     }
 
     private static void verify(String path, Set<String> allowed) throws Exception {
@@ -101,8 +109,10 @@ public final class OnnxOcrInference implements PortableOcr.Inference, AutoClosea
     public void close() throws OrtException {
         try {
             detector.close();
-        } finally {
-            recognizer.close();
+        } catch (OrtException | RuntimeException | Error failure) {
+            closeAfterFailure(recognizer, failure);
+            throw failure;
         }
+        recognizer.close();
     }
 }
