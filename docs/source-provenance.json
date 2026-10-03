@@ -1289,6 +1289,14 @@
       "source_normalized_sha256": "867011982a4472f9583fe2598e7ff7f7072a11d87bf4c9ea20b2cf203f53b50f",
       "reviewed_source_snapshot": "Accepted app874/1.18.401 native-only threadcap update; exactsame tested helper from872",
       "review_note": "Full optional Java17 standalone port, executable tokens identical after package/license/format adaptation. Existing ExactWhiteTileInput dependency182mappedcheck reviewed separately. Six original generated fullmodel/repeat/caller controls use the previous two-thread source; no private pixels, weights/runtime changes or mandatory dependencies."
+    },
+    "ScoreGainProjection.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreGainProjection.java",
+      "source_sha256": "6b0a28cb42e6bff9edcb84cadc78e6880bda6edc97056814e468b0e87e90fc22",
+      "source_normalized_sha256": "6b0a28cb42e6bff9edcb84cadc78e6880bda6edc97056814e468b0e87e90fc22",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Isolated source gain successor to frozen Music Sheets 1.18.401",
+      "review_note": "Package-only JDK source gain projection port. Authoritative source meter and active tempo are explicit inputs; original synthetic partial-bar/repeat/tempo/rejection tests. No model or dependency changes."
     }
   },
   "interpreter_speedup_review": {
@@ -1399,5 +1407,14 @@
       "app/src/main/java/com/musicsheets/app/pdf/SheetConversionState.java": "4e95406f3b7a4712f34abd01730aad6b4ae74cfad8956bc2217b70236928701f"
     },
     "boundary": "The Android retained writer now applies the unchanged shared partial-bar proofs and ScoreMeterMap before note placement and padding, preserving printed meter and marking proved partial bars implicit. Its render refresh is app-only. Standalone Main and MusicXML already implement this contract; original synthetic XML/MIDI regressions verify compatibility. No shared source hashes, weights, dependencies, private score content or app history changed."
+  },
+  "source_gain_boundary_clock_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "reviewed_app_state": "Isolated source gain successor to frozen Music Sheets 1.18.401",
+    "app_only_sources": {
+      "app/src/main/java/com/musicsheets/app/playback/SheetInterpreterAudio.java": "833221d1f9f025ca58943f9f3f3f1d1fd5f9e74dbfcbe1774bc808c52727e695",
+      "app/src/main/java/com/musicsheets/app/playback/ScoreDynamicsEnvelope.java": "b546c69013004a472a40ad0ae5cafe649412cce25385557c00bf431339cdfaa0"
+    },
+    "boundary": "The recorded-instrument adapters resolve source curves using an explicit clock retaining proved partial boundaries and active tempo, then call the newly shared ScoreGainProjection. They no longer manufacture a performed timing record without a performed grid. Validation of performed note schedules is unchanged. The public JDK API projects resolved source curves and is independently tested; CLI MIDI/MP3 does not yet consume continuous dynamic curves. No Android renderer, private score, phone data, library, signing material or app history is distributed."
   }
 }

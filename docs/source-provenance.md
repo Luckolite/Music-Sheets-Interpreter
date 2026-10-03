@@ -433,3 +433,14 @@ original two-thread helper is preserved as a test-only reference. Six generated
 rasters compare complete labels, repeats and caller arrays. Model/runtime hashes
 and converter lineage are recorded in portable-segmentation.md. No private
 score, model binary, new mandatory dependency or framed record change is included.
+
+Recorded-instrument playback now resolves source dynamics with the same proved
+partial-bar meter as the notes. Its source clock retains active tempo segments
+and excludes performed holds; it no longer creates an incomplete performed-grid
+record that falls back to nominal bars. The Android envelope and instrument
+renderer remain separately reviewed adapters. The JDK-only `ScoreGainProjection`
+is now shared with package-only executable parity. Original synthetic tests pin
+pickup and closing spans, repeated levels, active-time hairpins and disagreement
+rejection. Existing shared mappings, model assets and dependencies are unchanged.
+The CLI does not yet render these continuous dynamic curves; this public API
+accepts already resolved source curves for integrating renderers.

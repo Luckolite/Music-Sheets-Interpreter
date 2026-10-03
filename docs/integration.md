@@ -161,6 +161,16 @@ Use the retained geometry and raw score events to implement editing and richer p
 
 ## Bounded navigation and projected dynamics
 
+Java renderers can route already resolved dynamics with
+`ScoreGainProjection.project(curves, plan, meter, sourceTimeline)`. Supply the
+same authoritative `ScoreMeterMap` used to build the route, including proved
+partial opening and closing bars. Curves use source quarter beats and lane
+identity `staffCount * 16 + staffIndex`; projected pieces carry performed and
+source boundaries, source identity and decibel endpoints. Hairpins interpolate
+in active tempo time. A meter/route disagreement is rejected rather than silently
+padding partial bars. This API does not resolve printed geometry, synthesize
+audio or enable continuous dynamic curves in the CLI MIDI/MP3 writer.
+
 `ScorePlaybackDirection` retains stable wire values `0` segno, `1` to-coda,
 `2` D.S. al Coda, `3` coda. Values `4..13` add repeat-start, repeat-end, ending,
 plain D.C., plain D.S., D.C. al Fine, D.S. al Fine, D.C. al Coda, Fine and
