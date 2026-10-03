@@ -1383,5 +1383,14 @@
     "executable_token_parity": "All six changed shared files match after standalone package adaptation; existing strict rest-slot proof reused.",
     "standalone_adapters": "Final exported musical-column binding, shared Java navigation/pedal policy, part-isolated CC64, finite additive PCM damping, written MusicXML endpoints.",
     "app_only_adapters": "Raw app/native recognition entry points; combined page evidence and inherited/boundary meter; separate recorded-piano release gates; retained-score MusicXML writer."
+  },
+  "retained_partial_bar_export_review": {
+    "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "reviewed_app_state": "Uncommitted retained writer successor to frozen Music Sheets 1.18.400; candidate 1.18.401",
+    "app_only_sources": {
+      "app/src/main/java/com/musicsheets/app/pdf/SheetMusicXml.java": "003130c3fb19d931b02b71a9cc83f80bcd712c37db706401a37f59339c3305ba",
+      "app/src/main/java/com/musicsheets/app/pdf/SheetConversionState.java": "4e95406f3b7a4712f34abd01730aad6b4ae74cfad8956bc2217b70236928701f"
+    },
+    "boundary": "The Android retained writer now applies the unchanged shared partial-bar proofs and ScoreMeterMap before note placement and padding, preserving printed meter and marking proved partial bars implicit. Its render refresh is app-only. Standalone Main and MusicXML already implement this contract; original synthetic XML/MIDI regressions verify compatibility. No shared source hashes, weights, dependencies, private score content or app history changed."
   }
 }

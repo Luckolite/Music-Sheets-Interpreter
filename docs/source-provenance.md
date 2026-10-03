@@ -412,3 +412,13 @@ parts and finite PCM damping. All newly shared files retain package-only
 executable-token parity. Models, weights and production dependencies are
 unchanged. No commercial source scans, private library, phone logs or signing
 material are included.
+
+The retained Android MusicXML writer now uses the existing shared partial-bar
+proofs and meter map before placing notes, rests, voice padding and pedal
+directions. It preserves printed meter and marks proved partial boundary bars as
+implicit. This writer and its automatic retained-render refresh are app adapters,
+not shared recognition or model changes. The standalone entry point already
+uses the same proofs, and its MusicXML writer already distinguishes actual bar
+span from printed meter. Original synthetic regressions now pin its partial-bar
+XML lengths, unchanged meter, MIDI attacks and final extent. All mapped shared
+sources remain unchanged; no provenance hashes or weights were relabeled.
