@@ -225,7 +225,7 @@ public final class ScoreRestFermataDetector {
         return score.withExpressiveEvents(result);
     }
 
-    private static double provedOnset(
+    static double provedOnset(
             ScoreRestEvent target,
             List<ScoreRestEvent> rests,
             List<ScoreNoteEvent> notes,

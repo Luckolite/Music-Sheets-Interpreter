@@ -15,6 +15,7 @@ You do not need to publish your own code. Follow the [license and notice require
 - Note-equals-number tempo marks and note-equals-note metric modulations, including dotted pulses.
 
 - Expressive previews: rit./rall. slowing, rite/ritenuto, fermata holds, breath pauses and sf/sfz/sfp attacks. See [the shared playback policy](docs/expressive-performance.md) for timing defaults and evidence requirements.
+- Continuous pedal brackets with two upward hooks retain written columns. Complete, part-owned pairs supply ordered MIDI sustain controls, finite audio release gates and MusicXML bracket endpoints.
 
 - Tuning headers, detached tab stems, partial beams, rests, dots, triplets, grace frets, tied continuations, hammer-on, pull-off, tapping, slide, bend, vibrato, and harmonic symbols. Missing tab rhythm is estimated. Graphical bends, quarter-tone bends, whammy-bar directions and strum direction aren't supported.
 

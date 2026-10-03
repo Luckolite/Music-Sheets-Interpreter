@@ -103,6 +103,8 @@ public final class PerformanceBridge {
                             realized.holdOwnership(),
                             notes.targetMapper());
             var attacks = new ArrayList<ScoreExpressivePerformance.Attack>();
+            var pedal = PedalPerformance.resolve(expressions, meter, measures);
+            var pedalSpans = PedalPerformance.project(pedal.spans(), plan, meter);
             for (var occurrence : plan.traversal().occurrences()) {
                 double start = occurrence.start().absoluteBeat(meter),
                         end = occurrence.end().absoluteBeat(meter);
@@ -120,11 +122,16 @@ public final class PerformanceBridge {
             }
             output = new LinkedHashMap<>();
             output.put("policy", realized.policy());
-            output.put("diagnostics", realized.diagnostics());
+            var diagnostics = new ArrayList<>(realized.diagnostics());
+            diagnostics.addAll(pedal.diagnostics());
+            output.put("diagnostics", diagnostics);
             output.put("openingBpm", performed.timeline().openingBpm());
             output.put("segments", performed.timeline().tempoSegments());
             output.put("holds", performed.timeline().holds());
             output.put("attacks", attacks);
+            output.put("pedalPolicy", PedalPerformance.POLICY);
+            output.put("pedalSpans", pedalSpans);
+            output.put("pedalControls", PedalPerformance.controls(pedalSpans));
             output.put("notes", notes.notes());
             output.put("performedBeats", performed.performedBeats());
             output.put("durationSeconds", performed.durationSeconds());

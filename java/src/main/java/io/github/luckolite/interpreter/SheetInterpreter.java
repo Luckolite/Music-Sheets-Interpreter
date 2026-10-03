@@ -273,7 +273,7 @@ public final class SheetInterpreter {
                         width,
                         height,
                         !tabs.isEmpty());
-        return ScoreExpressionDetector.apply(
+        var withExpressions=ScoreExpressionDetector.apply(
                 ScoreFermataDetector.withFermatas(
                         finalScore
                                 .withExpressiveEvents(
@@ -300,5 +300,6 @@ public final class SheetInterpreter {
                 width,
                 height,
                 GlyphResources.expressions());
+        return ScorePedalDetector.apply(withExpressions,gray,width,height,staffs);
     }
 }

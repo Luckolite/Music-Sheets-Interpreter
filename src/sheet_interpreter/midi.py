@@ -79,34 +79,53 @@ def performance_events(document, bpm=120):
                 previous_tone[1] = max(previous_tone[1], end)
                 previous[lane] = previous_tone
             else:
-                tone = [start, end, pitch, step, note.get("guitarEffect", {}), gliss, note.get("performanceAttack")]
+                tone = [start, end, pitch, step, note.get("guitarEffect", {}), gliss, note.get("performanceAttack"), note['staffCount']]
                 tones.append(tone)
                 previous[lane] = tone
         offset += page["totalBeats"]
     active = {}
+    channel_parts = {}
+    pedal_controls = []
+    pedal_offset = 0.
+    for page in document['pages']:
+        pedal_controls.extend(dict(c, tick=round((pedal_offset+c['beat'])*ppq))
+                              for c in page.get('pedalControls', []))
+        pedal_offset += page['totalBeats']
+    has_pedal = bool(pedal_controls)
+    pedal_spans = []
+    held_parts = {}
+    for control in sorted(pedal_controls, key=lambda c: (c['tick'], c['value'])):
+        part = control['staffCount']
+        if control['value']:
+            held_parts[part] = control['tick']
+        elif part in held_parts:
+            pedal_spans.append((part, held_parts.pop(part), control['tick']))
     performed = []
-    for start, end, pitch, step, effect, gliss, attack in tones:
+    for start, end, pitch, step, effect, gliss, attack, part in tones:
         if gliss is not None:
-            performed.extend((a, b, midi, effect, attack if a == start else None) for a, b, midi in
+            performed.extend((a, b, midi, effect, attack if a == start else None, part) for a, b, midi in
                              white_key_gliss(start, end, pitch, gliss["targetMidi"]))
         elif step:
-            performed.extend((tick, min(end, tick + step), pitch, effect, attack if tick == start else None) for tick in range(start, end, step))
+            performed.extend((tick, min(end, tick + step), pitch, effect, attack if tick == start else None, part) for tick in range(start, end, step))
         else:
-            performed.append((start, end, pitch, effect, attack))
-    for start, end, pitch, effect, attack in sorted(performed, key=lambda n: (n[0], n[2])):
+            performed.append((start, end, pitch, effect, attack, part))
+    for start, end, pitch, effect, attack, part in sorted(performed, key=lambda n: (n[0], n[2])):
         kind = effect.get("type", "none")
         delta = effect.get("semitones", 0)
         if kind not in ("none", "slide", "hammer_on", "pull_off", "bend", "bend_release", "dead", "harmonic", "tap") or not isinstance(delta, (int, float)) or not math.isfinite(delta) or abs(delta) > 24:
             raise ValueError("Unsupported guitar performance effect")
         expressive = kind in ("slide", "bend", "bend_release") or effect.get("vibrato", False) or attack is not None
         # Pitch bend is channel-wide. Isolate it from every overlapping note, including other pitches.
-        channel = next((c for c in range(16) if c != 9 and all(
+        channel = next((c for c in range(16) if c != 9 and (not has_pedal or channel_parts.get(c, part) == part) and all(
             stop <= start or (not expressive and not bent and other != pitch)
             for stop, other, bent in active.get(c, []))), None)
         if channel is None:
             raise ValueError("MIDI channel capacity exceeded by overlapping voices/effects")
+        if has_pedal:
+            channel_parts[channel] = part
         active[channel] = [(stop, other, bent) for stop, other, bent in active.get(channel, []) if stop > start]
-        active[channel].append((end, pitch, expressive))
+        release = max([end]+[up for count, down, up in pedal_spans if count == part and down < end < up])
+        active[channel].append((release, pitch, expressive))
         velocity = 20 if kind == "dead" else 62 if kind in ("hammer_on", "pull_off", "tap") else 80
         if attack is not None:
             velocity = max(1, min(127, round(velocity*attack['gain'])))
@@ -138,9 +157,21 @@ def performance_events(document, bpm=120):
                 tick = start+round((end-start)*t)
                 if tick < sounding_end:
                     events.append((tick, 2, bytes([0xE0 | channel, bend & 127, bend >> 7])))
-            events.append((end, 1, bytes([0xE0 | channel, 0, 64])))
+            events.append((release, 1, bytes([0xE0 | channel, 0, 64])))
         events.extend([(start, 3, bytes([0x90 | channel, pitch, velocity])),
                        (sounding_end, 0, bytes([0x80 | channel, pitch, 0]))])
+    # Pedal is channel-wide too. Keep unrelated parts isolated and release before redepress.
+    for part in sorted({c['staffCount'] for c in pedal_controls}):
+        if part not in channel_parts.values():
+            channel = next((c for c in range(16) if c != 9 and c not in channel_parts), None)
+            if channel is None:
+                raise ValueError('MIDI channel capacity exceeded by pedal parts')
+            channel_parts[channel] = part
+    for control in sorted(pedal_controls, key=lambda c: (c['tick'], c['value'])):
+        for channel, part in channel_parts.items():
+            if part == control['staffCount']:
+                events.append((control['tick'], 1 if control['value'] == 0 else 2,
+                               bytes([0xb0 | channel, 64, control['value']])))
     ordered = sorted(events, key=lambda x: (x[0], x[1]))
     return ppq, ordered, max(ordered[-1][0], round(offset * ppq))
 

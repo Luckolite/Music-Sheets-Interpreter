@@ -1007,11 +1007,11 @@
     },
     "ScoreDynamicContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicContinuation.java",
-      "source_sha256": "2566284bf4d88268d0fad301406cd4cc837a68acfe8da277133991d6a5c73acb",
-      "source_normalized_sha256": "5f58ae4725c3a8a4f9de7ba168c9c406eddcd70b6353b4897ea40da896227392",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data.",
-      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension"
+      "source_sha256": "eb8a3b245cb0dc242c33d3b80d61c20cd40ddc9dcdd7360a9499010ca0e7c97f",
+      "source_normalized_sha256": "24df5a192077b28c668c08b3288ebac07f2d259e131cecca01683cfa59f1fc7a",
+      "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
+      "reviewed_source_state": "Isolated pedal candidate on accepted872 manifest ede2c2383426167237cb4da5d19afeb2f923d5daa581726e930c37b4b710ec45",
+      "review_note": "Whole-file package-only JDK port. Global continuous-rail geometry, persisted hook columns, musical anchors, navigation or rest-slot timing. Original synthetic regressions; no private score/model/log/library/signing data."
     },
     "ScoreFermataDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreFermataDetector.java",
@@ -1245,11 +1245,43 @@
     },
     "ScoreRestFermataDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreRestFermataDetector.java",
-      "source_sha256": "ec3aa866e9d6d901f87f69c4fde1dbe5afaeba83f07e8e13568dc0ab84373c38",
-      "source_normalized_sha256": "64b59699ed3f98cdc9e164c6c51988b9cf06fee28227140648e2ee53a9f478f5",
-      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
-      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
+      "source_sha256": "c71f9b14488f757971645d979f5e9d0ec2f24b47e0da303b418a3edd2ff8d0c5",
+      "source_normalized_sha256": "af5a76fa20216d69f01e58e37639b271aa10013206baad90d6391b4a5fb90e48",
+      "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
+      "reviewed_source_state": "Isolated pedal candidate on accepted872 manifest ede2c2383426167237cb4da5d19afeb2f923d5daa581726e930c37b4b710ec45",
+      "review_note": "Whole-file package-only JDK port. Global continuous-rail geometry, persisted hook columns, musical anchors, navigation or rest-slot timing. Original synthetic regressions; no private score/model/log/library/signing data."
+    },
+    "PedalBracketDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PedalBracketDetector.java",
+      "source_sha256": "8f9d010deb1ea93e351a01c48fcbdf431b04e856993eccbbe868cf760190e0c8",
+      "source_normalized_sha256": "8f9d010deb1ea93e351a01c48fcbdf431b04e856993eccbbe868cf760190e0c8",
+      "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
+      "reviewed_source_state": "Isolated pedal candidate on accepted872 manifest ede2c2383426167237cb4da5d19afeb2f923d5daa581726e930c37b4b710ec45",
+      "review_note": "Whole-file package-only JDK port. Global continuous-rail geometry, persisted hook columns, musical anchors, navigation or rest-slot timing. Original synthetic regressions; no private score/model/log/library/signing data."
+    },
+    "PedalBracketAnchors.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PedalBracketAnchors.java",
+      "source_sha256": "d0c00f5fe4d8b62d68c2eac6901a3e2ed520f52f208268c9d245e0fd6ede1ba0",
+      "source_normalized_sha256": "d0c00f5fe4d8b62d68c2eac6901a3e2ed520f52f208268c9d245e0fd6ede1ba0",
+      "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
+      "reviewed_source_state": "Isolated pedal candidate on accepted872 manifest ede2c2383426167237cb4da5d19afeb2f923d5daa581726e930c37b4b710ec45",
+      "review_note": "Whole-file package-only JDK port. Global continuous-rail geometry, persisted hook columns, musical anchors, navigation or rest-slot timing. Original synthetic regressions; no private score/model/log/library/signing data."
+    },
+    "PedalPerformance.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PedalPerformance.java",
+      "source_sha256": "77b37763ae041fe34c8d627fd5b9132e73668315c6f2223b808baeaef079276d",
+      "source_normalized_sha256": "77b37763ae041fe34c8d627fd5b9132e73668315c6f2223b808baeaef079276d",
+      "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
+      "reviewed_source_state": "Isolated pedal candidate on accepted872 manifest ede2c2383426167237cb4da5d19afeb2f923d5daa581726e930c37b4b710ec45",
+      "review_note": "Whole-file package-only JDK port. Global continuous-rail geometry, persisted hook columns, musical anchors, navigation or rest-slot timing. Original synthetic regressions; no private score/model/log/library/signing data."
+    },
+    "ScorePedalDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePedalDetector.java",
+      "source_sha256": "82f49e5d544c9debee743432e2ec7ba5d79ecce9e422764126a93264d8123497",
+      "source_normalized_sha256": "82f49e5d544c9debee743432e2ec7ba5d79ecce9e422764126a93264d8123497",
+      "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
+      "reviewed_source_state": "Isolated pedal candidate on accepted872 manifest ede2c2383426167237cb4da5d19afeb2f923d5daa581726e930c37b4b710ec45",
+      "review_note": "Whole-file package-only JDK port. Global continuous-rail geometry, persisted hook columns, musical anchors, navigation or rest-slot timing. Original synthetic regressions; no private score/model/log/library/signing data."
     }
   },
   "interpreter_speedup_review": {
@@ -1341,5 +1373,15 @@
       "ScoreRestFermataDetector"
     ],
     "adapters": "PerformanceBridge and Python exports port the shared policy; Android-only playback, OCR wrappers and XML UI routing remain outside standalone package. New glyphs are derived from Bravura under SIL OFL; exact font and raster checksums and source retained."
+  },
+  "pedal_bracket_review": {
+    "scope": "Bare continuous pedal rails with two upward hooks and proved written columns; finite part-owned release controls projected through navigation.",
+    "excludes": "No model weights, private imagery, libraries, diagnostics, signing material or app UI copied.",
+    "app_parent_manifest_sha256": "ede2c2383426167237cb4da5d19afeb2f923d5daa581726e930c37b4b710ec45",
+    "status": "Reviewed core and export adapters; original synthetic geometry/ownership/navigation/PCM/interchange regressions. Models and dependencies unchanged.",
+    "shared_files": 6,
+    "executable_token_parity": "All six changed shared files match after standalone package adaptation; existing strict rest-slot proof reused.",
+    "standalone_adapters": "Final exported musical-column binding, shared Java navigation/pedal policy, part-isolated CC64, finite additive PCM damping, written MusicXML endpoints.",
+    "app_only_adapters": "Raw app/native recognition entry points; combined page evidence and inherited/boundary meter; separate recorded-piano release gates; retained-score MusicXML writer."
   }
 }

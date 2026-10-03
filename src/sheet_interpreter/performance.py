@@ -13,7 +13,8 @@ from .semantic_wire import encode
 
 SUPPORTED = {'RITARDANDO', 'RALLENTANDO', 'RITENUTO', 'ACCELERANDO', 'A_TEMPO',
              'TEMPO_PRIMO', 'SAME_TEMPO', 'FERMATA', 'BREATH', 'CAESURA',
-             'SFORZANDO', 'SFORZATO', 'SFORZANDO_PIANO', 'METRIC_MODULATION'}
+             'SFORZANDO', 'SFORZATO', 'SFORZANDO_PIANO', 'METRIC_MODULATION',
+             'PEDAL_DOWN', 'PEDAL_UP'}
 
 
 def _bridge(data):
@@ -86,19 +87,23 @@ def _rest_span(expression, page):
     if not math.isfinite(position) or not 0 <= position <= 1 or not 0 <= m < len(page['measureBeats']) \
             or staff != expression['staffIndex'] or count != expression['staffCount']:
         return None
+    return _rest_column_span(page, m, staff, count, position, .018)
+
+
+def _rest_column_span(page, m, staff, count, position, tolerance):
     raw = page.get('score', {}).get('notes', [])
     if len(raw) != len(page['events']):
         return None
     belongs = lambda row: row['measureIndex'] == m and row['staffIndex'] == staff and row['staffCount'] == count
     rests = [r for r in page.get('score', {}).get('rests', []) if belongs(r)]
-    targets = [r for r in rests if abs(r['positionInMeasure']-position) <= .018]
+    targets = [r for r in rests if abs(r['positionInMeasure']-position) <= tolerance]
     if len(targets) != 1:
         return None
     target = targets[0]; duration = target['durationBeats']; beats = page['measureBeats'][m]
     if not math.isfinite(duration) or not 0 < duration <= beats:
         return None
     columns = [(r, n) for r, n in zip(raw, page['events']) if belongs(r)]
-    if any(abs(r['positionInMeasure']-position) <= .018 or n.get('durationFallback', False) for r, n in columns):
+    if any(abs(r['positionInMeasure']-position) <= tolerance or n.get('durationFallback', False) for r, n in columns):
         return None
     before = max((r['positionInMeasure'] for r, _ in columns if r['positionInMeasure'] < position), default=-1)
     after = min((r['positionInMeasure'] for r, _ in columns if r['positionInMeasure'] > position), default=2)
@@ -113,6 +118,75 @@ def _rest_span(expression, page):
         return None
     onset = start+sum(r['durationBeats'] for r in slot if r['positionInMeasure'] < position)
     return dict(measureIndex=m, quarterBeatOffset=onset), dict(measureIndex=m, quarterBeatOffset=onset+duration)
+
+
+def _pedal_span(expression, page):
+    """Resolve persisted hook columns using the final exported musical clock, never page spacing."""
+    target = expression.get('targetEventId') or ''
+    if expression['kind'] not in ('PEDAL_DOWN', 'PEDAL_UP') or not target.startswith('pedal-hooks-v1:'):
+        return None
+    try:
+        fields = list(map(int, target[len('pedal-hooks-v1:'):].split(':')))
+        if len(fields) != 10 or any(not -2147483648 <= value <= 2147483647 for value in fields):
+            return None
+        staff, count = fields[-2:]
+        if staff < 0 or count <= staff or staff != expression['staffIndex'] or count != expression['staffCount']:
+            return None
+        if not any(e['sourceId'] == 'printed-pedal-bracket' and e['staffIndex'] == staff
+                   and e['staffCount'] == count for e in expression.get('evidence', [])):
+            return None
+        anchors = []
+        raw = page.get('score', {}).get('notes', [])
+        starts = [0.]
+        for duration in page['measureBeats']:
+            starts.append(starts[-1]+duration)
+        for m, kind, bits, tolerance_bits in (fields[:4], fields[4:8]):
+            position, tolerance = (struct.unpack('>f', struct.pack('>I', v & 0xffffffff))[0]
+                                   for v in (bits, tolerance_bits))
+            if not 0 <= m <= len(page['measureBeats']) or kind not in (0, 1, 2) \
+                    or not math.isfinite(position) or not 0 <= position <= 1 \
+                    or not math.isfinite(tolerance) or not 0 <= tolerance <= .100000002:
+                return None
+            if kind == 0:
+                anchors.append(dict(measureIndex=m, quarterBeatOffset=0))
+                continue
+            if m == len(page['measureBeats']) or len(raw) != len(page['events']):
+                return None
+            if kind == 2:
+                span = _rest_column_span(page, m, staff, count, position, max(tolerance, .018))
+                if span is None:
+                    return None
+                anchors.append(span[0])
+                continue
+            notes = [n for r, n in zip(raw, page['events']) if r['measureIndex'] == m
+                     and r['staffIndex'] == staff and r['staffCount'] == count
+                     and not r.get('articulations', 0) & (1 << 15)
+                     and abs(r['positionInMeasure']-position) <= tolerance]
+            if not notes or any(n.get('durationFallback', False) or not math.isfinite(n['startBeat'])
+                                or not math.isclose(n['startBeat'], notes[0]['startBeat'], abs_tol=.001) for n in notes):
+                return None
+            beat = notes[0]['startBeat']
+            if not starts[m] <= beat <= starts[m+1]:
+                return None
+            anchors.append(_anchor(beat, starts))
+        if (anchors[0]['measureIndex'], anchors[0]['quarterBeatOffset']) >= \
+                (anchors[1]['measureIndex'], anchors[1]['quarterBeatOffset']):
+            return None
+        return tuple(anchors)
+    except (ValueError, struct.error, KeyError, TypeError):
+        return None
+
+
+def _resolve_pedal(expression, page):
+    # Revalidate cached columns even when old anchors claim to be resolved.
+    if (expression.get('targetEventId') or '').startswith('pedal-hooks-v1:') \
+            and expression['kind'] in ('PEDAL_DOWN', 'PEDAL_UP'):
+        span = _pedal_span(expression, page)
+        down = expression['kind'] == 'PEDAL_DOWN'
+        expression['start'] = span[0 if down else 1] if span else None
+        expression['end'] = span[1] if span and down else None
+        expression['scope'] = 'PART' if span else 'UNRESOLVED'
+    return expression
 
 
 def _active_seconds(performance, beat):
@@ -169,7 +243,7 @@ def _perform_one(pages, bpm):
         for supplied in page.get('score', {}).get('expressiveEvents', []):
             if supplied['kind'] not in SUPPORTED:
                 continue
-            expression = copy.deepcopy(supplied); members = _column_members(expression, page)
+            expression = _resolve_pedal(copy.deepcopy(supplied), page); members = _column_members(expression, page)
             expression['eventId'] = f'page:{page_index}/'+expression['eventId']
             if _rest_owned(expression):
                 span = _rest_span(expression, page)
@@ -237,7 +311,8 @@ def _perform_one(pages, bpm):
             events.append(note)
     duration = result['durationSeconds']*2
     return dict(events=events, measureBeats=[duration] if duration else [], totalBeats=duration,
-                score=dict(tempoChanges=[])), result
+                score=dict(tempoChanges=[]), pedalControls=[dict(control,
+                    beat=_seconds(result, control['beat'], True)*2) for control in result['pedalControls']]), result
 
 
 def perform_expressions(document, bpm):

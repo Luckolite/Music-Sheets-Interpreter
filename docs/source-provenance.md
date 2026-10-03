@@ -394,3 +394,21 @@ Curved rest rectification computes each requested printed bottom once, then
 reads valid source rasters in contiguous rows. Pixel lookup retains the original
 float association and rounding, including exact half-pixel boundaries. Malformed
 input retains its prior access path. Original parity controls cover both cases.
+
+Continuous pedal rails require two independently proved upward hooks, staff/bar
+ownership and complete raw-ink coverage. Persisted hook columns resolve only from
+written attack placement or exactly accounted silent rest slots. Shared JDK
+helpers preserve deferred resolution, inherited meter, page identity and finite
+part-owned pedal pairs. Navigation projects separate resonance spans without
+changing notes, tempo or written/performed score extent.
+
+The standalone adapter binds exported musical columns to those shared semantics,
+then emits ordered CC64 controls on part-isolated channels. Its original additive
+audio preview honors release gates, and MusicXML retains written bracket
+endpoints. The app's retained-score writer and recorded-piano playback adapters
+were reviewed separately. Original synthetic regressions cover geometry,
+ownership, ambiguity, stale anchors, navigation, release/repress order, unrelated
+parts and finite PCM damping. All newly shared files retain package-only
+executable-token parity. Models, weights and production dependencies are
+unchanged. No commercial source scans, private library, phone logs or signing
+material are included.

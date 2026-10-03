@@ -19,9 +19,9 @@ and can emit both crescendo and slowing semantics from one compound phrase.
 shortcut. Curated unsupported expressive wording remains explicit; arbitrary
 prose is not treated as a direction. No BPM, pause duration or scope is invented.
 
-The page model can carry these events and its `with` methods preserve them.
-This is a semantic API, not completed page recognition or expressive playback.
-Existing copy/projection/export paths and persisted guide/JSON/MIDI fields still
-need integration before recognition is activated. Current guide layouts are
-unchanged; do not advertise future-format support or reinterpret old tempo
-positions based on the existence of these records.
+The page model and its copy methods preserve these events. Supported recognition,
+navigation and exports use the evidence and timing rules described in
+[the preview policy](expressive-performance.md). Other semantic kinds remain
+explicit data until their own recognition and realization are implemented.
+Do not infer support or reinterpret old tempo positions from the existence of a
+kind alone.

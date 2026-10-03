@@ -69,9 +69,11 @@ def metric_pulse(value):
 
 def expression_direction(measure, mark, offset):
     kind = mark['kind']
-    direction = element(measure, 'direction', placement='above')
+    direction = element(measure, 'direction', placement='below' if kind in ('PEDAL_DOWN', 'PEDAL_UP') else 'above')
     type_node = element(direction, 'direction-type')
-    if kind == 'METRIC_MODULATION':
+    if kind in ('PEDAL_DOWN', 'PEDAL_UP'):
+        element(type_node, 'pedal', type='start' if kind == 'PEDAL_DOWN' else 'stop', line='yes', sign='no')
+    elif kind == 'METRIC_MODULATION':
         fields = mark.get('qualifierText', '').split(':')
         if len(fields) != 3 or fields[0] != 'metric-pulse-v1':
             raise ValueError('Metric relationship has no explicit pulse pair')
@@ -206,7 +208,7 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
                 raise ValueError('MusicXML note duration lies outside the page timeline')
             events.append(dict(n, start=offset+start, end=offset+min(local_start,start+duration), tie_stop=False, tie_start=False,
                                sourceIdentity=len(events)))
-        from .performance import _column_members, _rest_owned, _rest_span
+        from .performance import _column_members, _rest_owned, _rest_span, _resolve_pedal
         def absolute(anchor):
             if anchor is None:
                 return None
@@ -217,7 +219,7 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
                 raise ValueError('Expression anchor outside MusicXML measure')
             return offset+ticks(sum(page['measureBeats'][:m])+q)
         for supplied in score.get('expressiveEvents', []):
-            mark = dict(supplied)
+            mark = _resolve_pedal(dict(supplied), page)
             if _rest_owned(mark):
                 span = _rest_span(mark, page)
                 mark['start'], mark['end'] = span if span else (None, None)
@@ -263,7 +265,8 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
             if len(targets) == 1 and targets[0]['midi'] == gliss['targetMidi']:
                 n['gliss_start'] = index % 16 + 1
                 targets[0]['gliss_stop'] = n['gliss_start']
-        marks = [m for m in expressions if m.get('scope') == 'SCORE' or m['staffIndex'] == staff]
+        marks = sorted((m for m in expressions if m.get('scope') == 'SCORE' or m['staffIndex'] == staff),
+                       key=lambda m: (m['startTick'], 0 if m['kind'] == 'PEDAL_UP' else 1))
         rendered, rest_symbols = set(), []
         for mark in marks:
             if mark['kind'] not in ('FERMATA', 'BREATH', 'CAESURA'):
@@ -331,7 +334,8 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
                 element(direction, 'sound', tempo=str(tempo['bpm']))
             a, b = bar['start'], bar['start']+bar['length']
             for mark in marks:
-                if mark['identity'] not in rendered and a <= mark['startTick'] < b:
+                if mark['identity'] not in rendered and (a <= mark['startTick'] < b
+                        or index == len(bars)-1 and mark['kind'] == 'PEDAL_UP' and mark['startTick'] == b):
                     expression_direction(measure, mark, mark['startTick']-a)
             present = [n for n in notes if n['start'] < b and n['end'] > a]
             voices = sorted({n['voice'] for n in present}) or [1]
