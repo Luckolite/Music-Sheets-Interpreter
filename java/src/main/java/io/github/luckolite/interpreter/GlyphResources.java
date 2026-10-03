@@ -50,4 +50,23 @@ final class GlyphResources {
     static PortableOrnamentGlyphs ornaments() {
         return OrnamentHolder.INSTANCE.portable();
     }
+
+    private static final class ExpressionHolder {
+        static final PrintedExpressionGlyphs INSTANCE = create();
+
+        private static PrintedExpressionGlyphs create() {
+            try (var input =
+                    GlyphResources.class.getResourceAsStream(
+                            "glyphs/expression_templates/glyphs.bin")) {
+                if (input == null) throw new IOException("Missing expression templates");
+                return PrintedExpressionGlyphs.load(input);
+            } catch (IOException error) {
+                throw new IllegalStateException("Cannot load expression templates", error);
+            }
+        }
+    }
+
+    static PrintedExpressionGlyphs expressions() {
+        return ExpressionHolder.INSTANCE;
+    }
 }

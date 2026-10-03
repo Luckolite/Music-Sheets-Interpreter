@@ -9,7 +9,7 @@ from encodings.utf_16_le import encode as utf16_encode
 KINDS = ('UNRESOLVED_DIRECTION', 'RITARDANDO', 'RALLENTANDO', 'RITENUTO',
          'ACCELERANDO', 'A_TEMPO', 'TEMPO_PRIMO', 'SAME_TEMPO', 'FERMATA',
          'BREATH', 'CAESURA', 'SFORZANDO', 'SFORZATO', 'SFORZANDO_PIANO',
-         'PEDAL_DOWN', 'PEDAL_UP', 'ARPEGGIO', 'CRESCENDO', 'DIMINUENDO')
+         'PEDAL_DOWN', 'PEDAL_UP', 'ARPEGGIO', 'CRESCENDO', 'DIMINUENDO', 'METRIC_MODULATION')
 SCOPES = ('SCORE', 'PART', 'VOICE', 'NOTE', 'REST', 'UNRESOLVED')
 STRENGTHS = ('UNSPECIFIED', 'POCO', 'MOLTO')
 POLICIES = ('DEFAULT', 'SKIP', 'PLAY', 'UNKNOWN')
@@ -120,6 +120,16 @@ def expression(row, measures):
     if row['strength'] not in STRENGTHS:
         raise ValueError('Unknown expressive strength')
     text(row['qualifierText'], 4096)
+    if row['kind'] == 'METRIC_MODULATION':
+        values = row['qualifierText'].split(':')
+        try:
+            allowed = {base*factor for base in (.125,.25,.5,1,2,4) for factor in (1,1.5,1.75)}
+            valid = len(values) == 3 and values[0] == 'metric-pulse-v1' and all(float(v) in allowed for v in values[1:])
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ValueError('Metric modulation needs a validated pulse pair')
+
     evidence(row['evidence'], required=True)
     return dict(row, start=start, end=end)
 
@@ -152,11 +162,13 @@ class Writer:
         self.put('i', len(raw)); self.output.write(raw)
 
 
-def encode(directions, expressions, measures):
+def encode(directions, expressions, measures, guide_version=277):
     if not isinstance(directions, list) or len(directions) > min(100000, (measures + 1) * 64):
         raise ValueError('Too many navigation records')
     if not isinstance(expressions, list) or len(expressions) > min(250000, (measures + 1) * 256):
         raise ValueError('Too many expressions')
+    if guide_version < 277 and any(row['kind'] == 'METRIC_MODULATION' for row in expressions):
+        raise ValueError('Metric modulation requires guide277')
     out = Writer(); out.put('i', len(directions))
     for row in directions:
         row = direction(row, measures); d = row['details']; r = Writer()
@@ -230,7 +242,7 @@ class Reader:
             raise ValueError('Unexpected semantic bytes')
 
 
-def decode(data, measures):
+def decode(data, measures, guide_version=277):
     source = Reader(data); directions, expressions = [], []; ids = set()
     for _ in range(source.count(min(100000, (measures + 1) * 64))):
         r = source.frame(); boundary, kind, offset = r.take('iid')
@@ -243,6 +255,8 @@ def decode(data, measures):
         directions.append(direction(dict(measureBoundary=boundary, kind=kind, details=d), measures))
     for _ in range(source.count(min(250000, (measures + 1) * 256))):
         r = source.frame(); row = dict(eventId=r.text(256), kind=r.enum(KINDS), start=r.anchor(), end=r.anchor())
+        if guide_version < 277 and row['kind'] == 'METRIC_MODULATION':
+            raise ValueError('Metric modulation is outside this guide format')
         row['scope'] = r.enum(SCOPES); row['staffIndex'], row['staffCount'] = r.take('ii')
         row['targetEventId'] = r.text(256) if r.boolean() else None
         row['strength'] = r.enum(STRENGTHS); row['qualifierText'] = r.text(4096); row['evidence'] = r.evidence(); r.finish()

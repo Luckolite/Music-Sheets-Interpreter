@@ -24,7 +24,7 @@ public final class ExpressiveDirectionText {
             List.of(
                     rule(Kind.RITARDANDO, "ritardando|ritard\\.?|rit\\.?"),
                     rule(Kind.RALLENTANDO, "rallentando|rallent\\.?|rall\\.?"),
-                    rule(Kind.RITENUTO, "ritenuto|riten\\.?"),
+                    rule(Kind.RITENUTO, "ritenuto|riten\\.?|rite\\.?"),
                     rule(Kind.ACCELERANDO, "accelerando|accel\\.?"),
                     rule(Kind.A_TEMPO, "a\\s+tempo"),
                     rule(Kind.TEMPO_PRIMO, "tempo\\s+(?:primo|i)"),
@@ -34,6 +34,8 @@ public final class ExpressiveDirectionText {
                     rule(Kind.SFORZANDO_PIANO, "sfp"),
                     rule(Kind.SFORZATO, "sfz|sforzato"),
                     rule(Kind.SFORZANDO, "sf|sforzando"),
+                    rule(Kind.BREATH, "breath(?:\\s+mark)?"),
+                    rule(Kind.CAESURA, "caesura"),
                     rule(Kind.PEDAL_DOWN, "ped\\.?|pedale"),
                     PEDAL_RELEASE,
                     rule(
@@ -75,6 +77,15 @@ public final class ExpressiveDirectionText {
             String qualifiers = (before + " " + after).trim();
             result.add(new Direction(rule.kind(), strength, printed, qualifiers));
         }
+        MetricModulationText.parse(printed)
+                .ifPresent(
+                        pulses ->
+                                result.add(
+                                        new Direction(
+                                                Kind.METRIC_MODULATION,
+                                                Strength.UNSPECIFIED,
+                                                printed,
+                                                pulses.encode())));
         return List.copyOf(result);
     }
 }

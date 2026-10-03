@@ -60,6 +60,7 @@ def _pcm_blocks(events, end_sample):
     """Bounded mono blocks; keep phase continuous across bends and tempo changes."""
     import numpy as np
     bends, ranges = [0.0]*16, [2.0]*16
+    expression = [1.0]*16
     rpn = [[127, 127] for _ in range(16)]
     voices, cursor = [], 0
 
@@ -70,7 +71,7 @@ def _pcm_blocks(events, end_sample):
             indices = np.arange(count, dtype=np.float64)
             mix = np.zeros(count, dtype=np.float64)
             for voice in voices:
-                channel, pitch, velocity, start, released, phase = voice
+                channel, pitch, velocity, start, released, phase, release_expression = voice
                 age = (cursor-start+indices)/SAMPLE_RATE
                 frequency = 440 * 2**((pitch-69+bends[channel])/12)
                 angles = phase + indices*(2*math.pi*frequency/SAMPLE_RATE)
@@ -82,7 +83,7 @@ def _pcm_blocks(events, end_sample):
                 for harmonic, level in ((2, .3), (3, .12)):
                     if frequency*harmonic < SAMPLE_RATE/2:
                         tone += level*np.sin(angles*harmonic)
-                mix += tone*envelope*(.16*velocity/127)
+                mix += tone*envelope*(.16*velocity/127)*(expression[channel] if release_expression is None else release_expression)
                 voice[5] = (phase+count*2*math.pi*frequency/SAMPLE_RATE) % (2*math.pi)
             cursor += count
             voices = [v for v in voices if v[4] is None or cursor-v[4] < SAMPLE_RATE*RELEASE_SECONDS]
@@ -94,14 +95,17 @@ def _pcm_blocks(events, end_sample):
         if status == 0x90 and message[2]:
             if len(voices) >= 256:
                 raise ValueError("Audio preview exceeds 256 simultaneous voices")
-            voices.append([channel, message[1], message[2], at, None, 0.0])
+            voices.append([channel, message[1], message[2], at, None, 0.0, None])
         elif status == 0x80 or status == 0x90:
             for voice in voices:
                 if voice[0] == channel and voice[1] == message[1] and voice[4] is None:
                     voice[4] = at
+                    voice[6] = expression[channel]
         elif status == 0xb0:
             controller, value = message[1:]
-            if controller == 101:
+            if controller == 11:
+                expression[channel] = value/127
+            elif controller == 101:
                 rpn[channel][0] = value
             elif controller == 100:
                 rpn[channel][1] = value

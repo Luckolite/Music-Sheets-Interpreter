@@ -34,7 +34,8 @@ public final class ScoreSemanticWire {
                     ScoreExpressiveEvent.Kind.PEDAL_UP,
                     ScoreExpressiveEvent.Kind.ARPEGGIO,
                     ScoreExpressiveEvent.Kind.CRESCENDO,
-                    ScoreExpressiveEvent.Kind.DIMINUENDO);
+                    ScoreExpressiveEvent.Kind.DIMINUENDO,
+                    ScoreExpressiveEvent.Kind.METRIC_MODULATION);
     private static final List<ScoreExpressiveEvent.Scope> SCOPES =
             List.of(
                     ScoreExpressiveEvent.Scope.SCORE,
@@ -255,6 +256,17 @@ public final class ScoreSemanticWire {
     public static void writeExpressions(
             DataOutput out, List<ScoreExpressiveEvent> expressions, int measures)
             throws IOException {
+        writeExpressions(out, expressions, measures, 277);
+    }
+
+    /** Guide 277 adds kind 19; older guide headers cannot contain a metric relation. */
+    public static void writeExpressions(
+            DataOutput out, List<ScoreExpressiveEvent> expressions, int measures, int guideVersion)
+            throws IOException {
+        if (guideVersion < 277
+                && expressions.stream()
+                        .anyMatch(e -> e.kind() == ScoreExpressiveEvent.Kind.METRIC_MODULATION))
+            throw new IOException("Metric modulation requires guide 277");
         if (expressions.size() > Math.min(250000, (measures + 1L) * 256))
             throw new IOException("Too many expressive records");
         out.writeInt(expressions.size());
@@ -288,6 +300,11 @@ public final class ScoreSemanticWire {
 
     public static List<ScoreExpressiveEvent> readExpressions(DataInput in, int measures)
             throws IOException {
+        return readExpressions(in, measures, 277);
+    }
+
+    public static List<ScoreExpressiveEvent> readExpressions(
+            DataInput in, int measures, int guideVersion) throws IOException {
         int size = count(in, (int) Math.min(250000, (measures + 1L) * 256));
         var values = new ArrayList<ScoreExpressiveEvent>();
         var identities = new HashSet<String>();
@@ -296,6 +313,8 @@ public final class ScoreSemanticWire {
                 var record = frame(in);
                 String id = text(record, 256);
                 var kind = enumValue(EXPRESSION_KINDS, record);
+                if (guideVersion < 277 && kind == ScoreExpressiveEvent.Kind.METRIC_MODULATION)
+                    throw new IOException("Metric modulation is outside this guide format");
                 var start = anchor(record);
                 var end = anchor(record);
                 var scope = enumValue(SCOPES, record);

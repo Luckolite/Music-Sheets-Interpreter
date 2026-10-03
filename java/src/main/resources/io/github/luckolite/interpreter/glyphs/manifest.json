@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Recognition-only raster glyphs from Bravura and Leland; no score content. 27 PNGs plus complete SIL OFL notices.",
+  "description": "Recognition-only Bravura and Leland raster templates and complete SIL OFL notices; no score content.",
   "license": "SIL-OFL-1.1",
   "sources": {
     "Bravura": "https://github.com/steinbergmedia/bravura",
@@ -157,6 +157,16 @@
       "path": "ornament_templates/turn.png",
       "sha256": "49db9d7daa48827f0828e9fdb13a5f5593cd00488ae6365b434b66d535a509fc",
       "bytes": 2797
+    },
+    {
+      "path": "expression_templates/glyphs.bin",
+      "sha256": "5010e7da35f63a159ea485ffc1d53c25312225d87e2c3b9ca1d0f8a76781c969",
+      "bytes": 55272
+    },
+    {
+      "path": "expression_templates/glyphs.json",
+      "sha256": "6b95f24e810279c085203bdadbe28b5ca0fb26b30c188e09eb45083b771ed551",
+      "bytes": 3051
     }
   ]
 }

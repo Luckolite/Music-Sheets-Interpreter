@@ -19,12 +19,28 @@ def fixture():
         start=dict(measureIndex=0, quarterBeatOffset=.5),
         end=dict(measureIndex=3, quarterBeatOffset=0), scope='UNRESOLVED',
         staffIndex=0, staffCount=1, targetEventId=None, strength='POCO',
-        qualifierText='original wire fixture', evidence=evidence) for kind in wire.KINDS]
+        qualifierText='metric-pulse-v1:1.5:1.0' if kind == 'METRIC_MODULATION' else 'original wire fixture', evidence=evidence) for kind in wire.KINDS]
     expressions[5]['targetEventId'] = 'kind-RITARDANDO'
     return directions, expressions
 
 
 class SemanticWireTest(unittest.TestCase):
+    def test_metric_records_require277_while_legacy_bytes_remain_identical(self):
+        directions, expressions = fixture()
+        data = wire.encode(directions, expressions, 1, 277)
+        for version in (263, 275, 276):
+            with self.assertRaises(ValueError): wire.encode(directions, expressions, 1, version)
+            with self.assertRaises(ValueError): wire.decode(data, 1, version)
+            old = [e for e in expressions if e['kind'] != 'METRIC_MODULATION']
+            self.assertEqual(wire.encode(directions, old, 1, 277), wire.encode(directions, old, 1, version))
+            self.assertEqual((directions, old), wire.decode(wire.encode(directions, old, 1, version), 1, version))
+
+    def test_metric_payload_rejects_arbitrary_bpm_prose_and_nonfinite_pulses(self):
+        relation = fixture()[1][-1]
+        for qualifier in ('120', 'quarter equals quarter', 'metric-pulse-v1:NaN:1',
+                          'metric-pulse-v1:1:inf', 'metric-pulse-v1:0.3:1', 'metric-pulse-v1:1:1:1'):
+            with self.assertRaises(ValueError): wire.encode([], [dict(relation, qualifierText=qualifier)], 1, 277)
+
     def test_text_bounds_count_utf16_units_and_reject_unpaired_surrogates(self):
         self.assertEqual('café 🎵', wire.text('café 🎵', 7))
         with self.assertRaises(ValueError): wire.text('café 🎵', 6)

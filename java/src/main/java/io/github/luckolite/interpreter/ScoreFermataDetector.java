@@ -46,8 +46,19 @@ public final class ScoreFermataDetector {
                             best));
         }
         var events = new ArrayList<>(score.expressiveEvents());
+        anchors.addAll(ScoreRestFermataDetector.anchors(score, staffs, width, height));
         for (var mark :
                 NoteArticulationDetector.fermataMarks(labels, gray, width, height, anchors)) {
+            if (mark.noteIndex() >= score.notes().size()) {
+                var event =
+                        ScoreRestFermataDetector.event(
+                                score.rests().get(mark.noteIndex() - score.notes().size()),
+                                mark,
+                                width);
+                if (events.stream().noneMatch(e -> e.eventId().equals(event.eventId())))
+                    events.add(event);
+                continue;
+            }
             var note = score.notes().get(mark.noteIndex());
             String target =
                     target(
@@ -215,7 +226,7 @@ public final class ScoreFermataDetector {
                                 event.evidence()));
             }
         }
-        return score.withExpressiveEvents(events);
+        return ScoreRestFermataDetector.resolve(score.withExpressiveEvents(events), openingBeats);
     }
 
     /** Written members of one detector-owned column, before renderer tie/unison aliases. */

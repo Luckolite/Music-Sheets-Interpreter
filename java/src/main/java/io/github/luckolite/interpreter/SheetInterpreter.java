@@ -273,24 +273,32 @@ public final class SheetInterpreter {
                         width,
                         height,
                         !tabs.isEmpty());
-        return ScoreFermataDetector.withFermatas(
-                finalScore
-                        .withExpressiveEvents(
-                                finalScore.measures().isEmpty()
-                                        ? List.of()
-                                        : dynamicDetection.events())
-                        .withPlaybackDirections(
-                                ScoreNavigationDetector.detect(
-                                        words,
-                                        NavigationSegnoGlyphs.detect(gray, width, height, staffs),
-                                        staffs,
-                                        finalScore.measures(),
-                                        width,
-                                        height)),
-                labels,
+        return ScoreExpressionDetector.apply(
+                ScoreFermataDetector.withFermatas(
+                        finalScore
+                                .withExpressiveEvents(
+                                        finalScore.measures().isEmpty()
+                                                ? List.of()
+                                                : dynamicDetection.events())
+                                .withPlaybackDirections(
+                                        ScoreNavigationDetector.detect(
+                                                words,
+                                                NavigationSegnoGlyphs.detect(
+                                                        gray, width, height, staffs),
+                                                staffs,
+                                                finalScore.measures(),
+                                                width,
+                                                height)),
+                        labels,
+                        gray,
+                        width,
+                        height,
+                        staffs),
+                techniqueWords,
+                staffs,
                 gray,
                 width,
                 height,
-                staffs);
+                GlyphResources.expressions());
     }
 }

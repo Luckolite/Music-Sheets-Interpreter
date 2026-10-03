@@ -242,10 +242,15 @@ public final class MusicalOcr {
                             words.addAll(
                                     ScoreDynamicsDetector.ocrWords(
                                             line.text(), word, gray, width, height));
+                            if (!ExpressiveDirectionText.parse(value).isEmpty()) words.add(word);
                         }
             }
         if (TRACE) System.err.println("dynamic words=" + words.size());
-        return glyphs.recognize(gray, width, height, staffs, words);
+        var result = new ArrayList<>(glyphs.recognize(gray, width, height, staffs, words));
+        for (var word : words)
+            if (!ExpressiveDirectionText.parse(word.text()).isEmpty() && !result.contains(word))
+                result.add(word);
+        return List.copyOf(result);
     }
 
     /** Match Android's bounded raw/staff-cleared text passes for tr and port.

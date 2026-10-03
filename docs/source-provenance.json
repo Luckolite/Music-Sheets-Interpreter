@@ -33,15 +33,18 @@
     },
     "ScoreSemanticWire.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreSemanticWire.java",
-      "source_sha256": "2cfcb23b0395725c34f7a30efd556c5048eab99293992b51dfcb9059f02d3bca",
+      "source_sha256": "a93003a029c889bb140cf44f8128f03e637e256919c1dc36c67444b5a87bacd6",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "2cfcb23b0395725c34f7a30efd556c5048eab99293992b51dfcb9059f02d3bca"
+      "source_normalized_sha256": "8e2da4505a251db94b40635ac571c79de82cc09640db5719a3eb3f316af53259",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
     },
     "semantic_wire.py": {
       "source_path": "tools/native-worker/semantic_wire.py",
-      "source_sha256": "91b2702fe68a1d21d7db6d8d539f2e27457a7fac6e591ca5d2a440ef4b0f6793",
+      "source_sha256": "2d9428c7ac80e40e1bab703efba81167c864b3d8034cd142488af56b5c607abd",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "91b2702fe68a1d21d7db6d8d539f2e27457a7fac6e591ca5d2a440ef4b0f6793"
+      "source_normalized_sha256": "5755e32d726bf08aebf4ac0da629fc7cae11dc770b4dc33760f9eb3d354cd181",
+      "review_note": "Exact shared Python semantic implementation: append stable kind19, validate typed pulse payload, explicit277 reader/writer gating. Legacy bytes retained, old headers reject new kind; original wire regressions."
     },
     "HalfRestRuleBody.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/HalfRestRuleBody.java",
@@ -714,11 +717,11 @@
     },
     "MusicalOcrEvidence.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MusicalOcrEvidence.java",
-      "source_sha256": "6174cce90270f04cc3f7ebe2c5f08d971e8b0fdc9c76e56b60b747d3a5a6351c",
+      "source_sha256": "63e8edc25a484dbe50f8978a5f99fefa8c378c3932406acf2f3cabe687343186",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "7b88d4d7f681113de04da3c04ad5129f540da7e7512c31a08a373316286a7cac",
-      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source; decoder 264fa8e50554b08ef3e67cd9cc6554ba0fb3f625c0b7aedef540b71d31cf0b02",
-      "review_note": "Whole-file executable token parity; package and optional diagnostics adapter only. Original generated positive/rejection controls; JDK only; no private score, model or dependency change."
+      "source_normalized_sha256": "2242fa4079cf889e90ce5db6efd9767d5f1000ad16a4049d909129790c49b391",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
     },
     "NavigationSegnoGlyphs.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/NavigationSegnoGlyphs.java",
@@ -802,10 +805,11 @@
     },
     "PortableOrnamentGlyphs.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/PortableOrnamentGlyphs.java",
-      "source_sha256": "b9a5dd579567fd029db5e7bbe6f824e62fd0cbb2f00cbfca0215e1602e02f313",
+      "source_sha256": "93d88af01b2e976877b2b8771dae6119054b88b3506007c2eccec91d2485f80c",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Existing accepted template decisions have priority. Only an unaccepted, raw-contour-confirmed compact unslashed two-cycle mark with sufficient local contrast can compare an original procedural heavy-stroke template against existing ornament choices; original confidence and competing-kind margin remain unchanged. Complete app/standalone code-and-literal parity reviewed. Original generated photometric and ownership controls; no private pixels, new dependency or model change.",
-      "source_normalized_sha256": "b9a5dd579567fd029db5e7bbe6f824e62fd0cbb2f00cbfca0215e1602e02f313"
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data.",
+      "source_normalized_sha256": "ef1cab2ecde2ff716c21242c2ce822f7266470acdb21b363836b222aab33dd97",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension"
     },
     "MordentContour.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/MordentContour.java",
@@ -893,15 +897,19 @@
     },
     "ScoreExpressiveEvent.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreExpressiveEvent.java",
-      "source_sha256": "15b2aa18e1eac2bdef9c4ca6052c3ef7f21162d74b06e17be3f2d6ee690a1881",
+      "source_sha256": "df40ee554b6f33d26af54af8e88a351f07a373fdfd302852b9a74491ba8f5e41",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "15b2aa18e1eac2bdef9c4ca6052c3ef7f21162d74b06e17be3f2d6ee690a1881"
+      "source_normalized_sha256": "aa4c9278dfc865dc7773a535404eca6743ccbc2d8b714af38a869a121d5da83c",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
     },
     "ExpressiveDirectionText.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ExpressiveDirectionText.java",
-      "source_sha256": "a365b20c5354d9d42c328b2a3168b28f4fca2cc31471f666f448b52cb8eaa3c0",
+      "source_sha256": "55ce678dca2ffa0860ce46a517a43a6c3126654a40bed7326b566de38882a71a",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "a365b20c5354d9d42c328b2a3168b28f4fca2cc31471f666f448b52cb8eaa3c0"
+      "source_normalized_sha256": "625ccc40bb91b656f83bb1e40c93a29a26bc7a89e22912e29895ad6578190a08",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
     },
     "ScorePerformanceTimeline.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScorePerformanceTimeline.java",
@@ -925,11 +933,11 @@
     },
     "MusicalOcr.java": {
       "source_path": "tools/native-worker/NativeMusicalOcr.java",
-      "source_sha256": "dec1353c2bcb761c63fbdf69eb591f8434386422e400b46c166756c577df6a15",
+      "source_sha256": "82db5211cd83f813b076f67e814a05db1c719a12ecdd71abff2a4e9fd855d846",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "source_normalized_sha256": "dec1353c2bcb761c63fbdf69eb591f8434386422e400b46c166756c577df6a15",
-      "reviewed_source_state": "Music Sheets 1.18.382 frozen reviewed source",
-      "review_note": "Explicit reviewed OCR method port: two-scale complete-word dynamics and cross-row portamento, bounded local playing directions, original raw nearest-replicated crops. Preserve standalone caller-owned inference and meter font; public dynamic supplement follows existing glyph refinement to protect original whole-word claims. No model/dependency changes."
+      "source_normalized_sha256": "9a829435809e21c09cffe25aca69438951190afdcfdf519e41f7d735539f0e3d",
+      "reviewed_source_state": "Expressive candidate on frozen871; existing caller-owned standalone OCR adapter retained",
+      "review_note": "Reviewed two additions carry accepted expressive whole words before and after dynamic glyph refinement; identical additions ported to MusicalOcr.dynamics. Existing standalone caller-owned inference and supplement method adapters retained. Compound expression token rules shared in MusicalOcrEvidence. No model or new inference dependency."
     },
     "NativeDynamicGlyphs.java": {
       "source_path": "tools/native-worker/NativeDynamicGlyphs.java",
@@ -999,17 +1007,19 @@
     },
     "ScoreDynamicContinuation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicContinuation.java",
-      "source_sha256": "a4565910c14e1b15683ca6298f62ec763350a9982c7b305e9bf43cff342445a7",
-      "source_normalized_sha256": "569a7241060cc132bb95c86f2d98c48158d3573a38c65173fd87ea02a2f0f9c3",
+      "source_sha256": "2566284bf4d88268d0fad301406cd4cc837a68acfe8da277133991d6a5c73acb",
+      "source_normalized_sha256": "5f58ae4725c3a8a4f9de7ba168c9c406eddcd70b6353b4897ea40da896227392",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed detector-owned arc/dot recognition, written attack ownership and musical-meter resolution. Exact package-only parity. Original procedural ink and page-rebasing controls; no private score, model, new dependency or wire field."
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data.",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension"
     },
     "ScoreFermataDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreFermataDetector.java",
-      "source_sha256": "4d1c8be92e82652cb7a5dc65bbefea0a59abe70f2350af58d3a2c58378915bba",
-      "source_normalized_sha256": "e773da1543373ae1e2ffb330240910c8e32b4d1721a5022eee5106762dd4a2f4",
+      "source_sha256": "04ce0a9208d38d17aef3994c37b76da7678e41b57c931e55bef3508da6e8ba1e",
+      "source_normalized_sha256": "092cc466db37200bddec83a1da354113b437f5b21ad945acc3ca36ac788e2b5e",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
-      "review_note": "Reviewed detector-owned arc/dot recognition, written attack ownership and musical-meter resolution. Exact package-only parity. Original procedural ink and page-rebasing controls; no private score, model, new dependency or wire field."
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data.",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension"
     },
     "ScoreFermataNotation.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreFermataNotation.java",
@@ -1192,6 +1202,54 @@
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "reviewed_app_state": "Reviewed source snapshot based on accepted app869 /1.18.396; executable-token parity after standalone package/diagnostic adaptation.",
       "review_note": "Global explicit tuplet ratio, octave endpoint ownership, branched-letter tie rejection and bounded wavy gliss recognition/performance. Original synthetic tests; JDK-only new helpers, unchanged models/dependencies. Source snapshot hash identifies the uncommitted app changes beyond the recorded base commit."
+    },
+    "MetricModulationText.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/MetricModulationText.java",
+      "source_sha256": "94419215a7870cff54535567af68239be305f486721f88f43012ff6c8af6ca17",
+      "source_normalized_sha256": "94419215a7870cff54535567af68239be305f486721f88f43012ff6c8af6ca17",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
+    },
+    "PrintedExpressionGlyphs.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/PrintedExpressionGlyphs.java",
+      "source_sha256": "1a56f0168f55dfaa601d48c203f2f017279cdc72598282d8468fec851bee987a",
+      "source_normalized_sha256": "89b96525078f4e092135b74f759096ee49d00b3a3164675a71ceadcbf1eb3ae1",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
+    },
+    "ScoreExpressionDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreExpressionDetector.java",
+      "source_sha256": "4206ea33b5d18d0fde47365bd40eb5e486c9be682b52072c1bbcf335e0ea466b",
+      "source_normalized_sha256": "b5782006ccf90079e2d50ca5434fe807586deadeb71b537cdf7cc8657830bbf4",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
+    },
+    "ScoreExpressionNotation.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreExpressionNotation.java",
+      "source_sha256": "64c315b7287e6974631cf2c4fa07dd214f5696255d99172172252678fe8acd76",
+      "source_normalized_sha256": "909f3759e02340e8199c3560153c44e792aa4878ff4387d55c52f91155beb423",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
+    },
+    "ScoreExpressivePerformance.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreExpressivePerformance.java",
+      "source_sha256": "7f20521f30686f429470a7c737bc224d7d91e38bccefc34f8512dc4b8e73ea8c",
+      "source_normalized_sha256": "55d5ed48594aacd9f3b818e2245109658c2d8d2f1562f32cd5e0c92e08d9943b",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
+    },
+    "ScoreRestFermataDetector.java": {
+      "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreRestFermataDetector.java",
+      "source_sha256": "ec3aa866e9d6d901f87f69c4fde1dbe5afaeba83f07e8e13568dc0ab84373c38",
+      "source_normalized_sha256": "64b59699ed3f98cdc9e164c6c51988b9cf06fee28227140648e2ee53a9f478f5",
+      "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+      "reviewed_source_state": "Expressive candidate on frozen871 guide276/audio60 plus guide277/audio61 extension",
+      "review_note": "Whole-file executable token parity after package-only adaptation. Shared detection/ownership/performance or semantic validation; original generated regressions and licensed OFL glyphs. JDK only, no private score/model/signing/history data."
     }
   },
   "interpreter_speedup_review": {
@@ -1268,5 +1326,20 @@
     "accepted_app_version": "869 /1.18.396",
     "shared_files": 18,
     "boundary": "Reviewed hashes pin candidate source changes beyond the app base commit. New helpers use only JDK classes. No private score, device log, library, model, signing file or dependency is included. Standalone Main and Python export adapters preserve finite source-window white-key gliss and explicit normal counts."
+  },
+  "expressive_preview_review": {
+    "app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
+    "frozen_parent_public_commit": "c2de6a206ae7d0e0526ffa0e9c19cf28fa138d2b",
+    "policy": "expressive-preview-v1",
+    "scope": "rit/rall/rite, typed metric pulse relations, note/rest holds, breath releases, sf/sfz/sfp attacks; source notation immutable",
+    "new_helpers": [
+      "MetricModulationText",
+      "PrintedExpressionGlyphs",
+      "ScoreExpressionDetector",
+      "ScoreExpressionNotation",
+      "ScoreExpressivePerformance",
+      "ScoreRestFermataDetector"
+    ],
+    "adapters": "PerformanceBridge and Python exports port the shared policy; Android-only playback, OCR wrappers and XML UI routing remain outside standalone package. New glyphs are derived from Bravura under SIL OFL; exact font and raster checksums and source retained."
   }
 }

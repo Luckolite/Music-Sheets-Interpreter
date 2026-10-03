@@ -59,8 +59,45 @@ def note_type(node, duration, event=None):
                 return
 
 
+def metric_pulse(value):
+    for i, name in enumerate(('whole', 'half', 'quarter', 'eighth', '16th', '32nd')):
+        for dots, scale in enumerate((1, 1.5, 1.75)):
+            if value == math.ldexp(4, -i)*scale:
+                return name, dots
+    raise ValueError('Unsupported MusicXML metric pulse')
+
+
+def expression_direction(measure, mark, offset):
+    kind = mark['kind']
+    direction = element(measure, 'direction', placement='above')
+    type_node = element(direction, 'direction-type')
+    if kind == 'METRIC_MODULATION':
+        fields = mark.get('qualifierText', '').split(':')
+        if len(fields) != 3 or fields[0] != 'metric-pulse-v1':
+            raise ValueError('Metric relationship has no explicit pulse pair')
+        metronome = element(type_node, 'metronome')
+        for encoded in fields[1:]:
+            name, dots = metric_pulse(float(encoded))
+            element(metronome, 'beat-unit', name)
+            for _ in range(dots):
+                element(metronome, 'beat-unit-dot')
+    elif kind in ('SFORZANDO', 'SFORZATO', 'SFORZANDO_PIANO'):
+        name = {'SFORZANDO': 'sf', 'SFORZATO': 'sfz', 'SFORZANDO_PIANO': 'sfp'}[kind]
+        element(element(type_node, 'dynamics'), name)
+    else:
+        fallback = {'RITARDANDO': 'rit.', 'RALLENTANDO': 'rall.', 'RITENUTO': 'ritenuto',
+                    'ACCELERANDO': 'accel.', 'A_TEMPO': 'a tempo', 'TEMPO_PRIMO': 'tempo primo',
+                    'SAME_TEMPO': "l'istesso tempo", 'FERMATA': 'fermata', 'BREATH': 'breath', 'CAESURA': 'caesura'}
+        printed = next((e['printedText'] for e in mark.get('evidence', []) if e.get('printedText')), fallback.get(kind))
+        if printed is None:
+            measure.remove(direction)
+            return
+        element(type_node, 'words', printed)
+    element(direction, 'offset', offset)
+
+
 def emit_note(measure, duration, voice, event=None, chord=False, stop=False, start=False, flats=False,
-              gliss_start=False, gliss_stop=False):
+              gliss_start=False, gliss_stop=False, fragment_end=None, rest_symbols=()):
     node = element(measure, 'note')
     if chord:
         element(node, 'chord')
@@ -87,7 +124,9 @@ def emit_note(measure, duration, voice, event=None, chord=False, stop=False, sta
     element(node, 'voice', voice)
     note_type(node, duration, event)
     effect = event.get('guitarEffect') if event else None
-    if stop or start or effect or gliss_start or gliss_stop:
+    symbols = [mark for mark in (event.get('releaseSymbols', []) if event else rest_symbols)
+               if mark['release'] == fragment_end]
+    if stop or start or effect or symbols or gliss_start or gliss_stop:
         notation = element(node, 'notations')
         for active, kind in ((stop, 'stop'), (start, 'start')):
             if active:
@@ -104,13 +143,30 @@ def emit_note(measure, duration, voice, event=None, chord=False, stop=False, sta
             if effect.get('vibrato'):
                 description += ' vibrato'
             element(notation, 'other-notation', description, type='single')
+        for symbol in symbols:
+            kind = symbol['kind']
+            if kind == 'FERMATA':
+                element(notation, 'fermata', type='inverted' if symbol.get('inverted') else 'upright')
+            else:
+                articulations = notation.find('articulations')
+                if articulations is None:
+                    articulations = element(notation, 'articulations')
+                element(articulations, 'caesura' if kind == 'CAESURA' else 'breath-mark',
+                        None if kind == 'CAESURA' else symbol.get('value', 'comma'))
+
+
+def emit_rest_gap(measure, start, end, voice, symbols):
+    boundaries = sorted({start, end} | {value for s in symbols for value in (s['start'], s['release']) if start < value < end})
+    for a, b in zip(boundaries, boundaries[1:]):
+        emit_note(measure, b-a, voice, fragment_end=b, rest_symbols=symbols)
 
 
 def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
     """Write uncompressed .musicxml; each decoded staff becomes a concert-pitch part.
 
     Derived voices, gap rests and enharmonic spellings are reconstructed. Original
-    engraving, guitar string/fret placement and expressive playback are not reconstructed.
+    Engraving and guitar string/fret placement are reconstructed only where supported.
+    Expressive symbols preserve written evidence; preview holds never lengthen notation.
     """
     from .boundary_ties import resolve_boundary_ties
     document = resolve_boundary_ties(document)
@@ -121,10 +177,10 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
         raise ValueError('Invalid MusicXML initial meter')
     if not isinstance(key_fifths, int) or not -7 <= key_fifths <= 7 or not math.isfinite(bpm) or not 15 <= bpm <= 400:
         raise ValueError('Invalid MusicXML key or tempo')
-    bars, events = [], []
+    bars, events, expressions = [], [], []
     offset = 0
     current_meter, current_key = meter, key_fifths
-    for page in document['pages']:
+    for page_index, page in enumerate(document['pages']):
         score = page['score']
         local_start = 0
         for index, beats in enumerate(page['measureBeats']):
@@ -141,13 +197,44 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
                        tempos=[c for c in score.get('tempoChanges', []) if c['measureIndex'] == index])
             bars.append(bar)
             local_start += length
+        first_event = len(events)
         for n in page['events']:
             if not isinstance(n['midi'], int) or not 0 <= n['midi'] <= 127:
                 raise ValueError('MusicXML note pitch must be a MIDI integer in 0..127')
             start, duration = ticks(n['startBeat']), ticks(n['durationBeats'])
             if duration <= 0 or start + duration > local_start + 2:
                 raise ValueError('MusicXML note duration lies outside the page timeline')
-            events.append(dict(n, start=offset+start, end=offset+min(local_start,start+duration), tie_stop=False, tie_start=False))
+            events.append(dict(n, start=offset+start, end=offset+min(local_start,start+duration), tie_stop=False, tie_start=False,
+                               sourceIdentity=len(events)))
+        from .performance import _column_members, _rest_owned, _rest_span
+        def absolute(anchor):
+            if anchor is None:
+                return None
+            m, q = anchor['measureIndex'], anchor['quarterBeatOffset']
+            if not isinstance(m, int) or not 0 <= m <= len(page['measureBeats']):
+                raise ValueError('Expression anchor outside MusicXML page')
+            if not isinstance(q, (int, float)) or not math.isfinite(q) or q < 0 or q > (page['measureBeats'][m] if m < len(page['measureBeats']) else 0):
+                raise ValueError('Expression anchor outside MusicXML measure')
+            return offset+ticks(sum(page['measureBeats'][:m])+q)
+        for supplied in score.get('expressiveEvents', []):
+            mark = dict(supplied)
+            if _rest_owned(mark):
+                span = _rest_span(mark, page)
+                mark['start'], mark['end'] = span if span else (None, None)
+                mark['scope'] = 'REST' if span else 'UNRESOLVED'
+            mark['identity'] = f'page:{page_index}/'+mark['eventId']
+            mark['startTick'], mark['endTick'] = absolute(mark.get('start')), absolute(mark.get('end'))
+            members = _column_members(mark, page)
+            mark['ownerIds'] = [first_event+i for i in members]
+            owned = [events[first_event+i] for i in members]
+            if owned and all(not n.get('durationFallback', False) and n['start'] == owned[0]['start'] and n['end'] == owned[0]['end'] for n in owned):
+                mark['startTick'] = owned[0]['end'] if mark['kind'] in ('BREATH', 'CAESURA') else owned[0]['start']
+                if mark['kind'] == 'FERMATA':
+                    mark['endTick'] = owned[0]['end']
+            elif mark.get('scope') == 'UNRESOLVED':
+                mark['startTick'] = None
+            if mark['startTick'] is not None:
+                expressions.append(mark)
         offset += local_start
     if not bars:
         raise ValueError('No interpreted measures to export')
@@ -158,7 +245,8 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
     misc = element(identification, 'miscellaneous')
     element(misc, 'miscellaneous-field', 'Concert-pitch reconstruction; recognition and estimated timing require review.', name='interpretation')
     part_list = element(root, 'part-list')
-    staffs = sorted({n.get('staffIndex', 0) for n in events}) or [0]
+    staffs = sorted({n.get('staffIndex', 0) for n in events}
+                    | {m['staffIndex'] for m in expressions if m.get('scope') == 'REST'}) or [0]
     for staff in staffs:
         part_id = f'P{staff+1}'
         element(element(part_list, 'score-part', id=part_id), 'part-name', f'Staff {staff+1}')
@@ -175,6 +263,28 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
             if len(targets) == 1 and targets[0]['midi'] == gliss['targetMidi']:
                 n['gliss_start'] = index % 16 + 1
                 targets[0]['gliss_stop'] = n['gliss_start']
+        marks = [m for m in expressions if m.get('scope') == 'SCORE' or m['staffIndex'] == staff]
+        rendered, rest_symbols = set(), []
+        for mark in marks:
+            if mark['kind'] not in ('FERMATA', 'BREATH', 'CAESURA'):
+                continue
+            release = mark['endTick'] if mark['kind'] == 'FERMATA' else mark['startTick']
+            if release is None:
+                continue
+            symbol = dict(kind=mark['kind'], start=mark['startTick'], release=release,
+                          value='tick' if 'tick' in mark.get('qualifierText', '') else 'comma',
+                          inverted=mark.get('qualifierText') == 'fermata inverted')
+            if mark.get('scope') == 'REST' and mark['kind'] == 'FERMATA':
+                if release > mark['startTick'] and not any(n['start'] < release and n['end'] > mark['startTick'] for n in notes):
+                    rest_symbols.append(symbol)
+                    rendered.add(mark['identity'])
+                continue
+            eligible = [n for n in notes if n['end'] == release and not n.get('durationFallback', False)
+                        and (not mark['ownerIds'] or n['sourceIdentity'] in mark['ownerIds'])]
+            if eligible:
+                selected = (min if symbol['inverted'] else max)(eligible, key=lambda n: n['midi'])
+                selected.setdefault('releaseSymbols', []).append(symbol)
+                rendered.add(mark['identity'])
         previous = {}
         for n in notes:
             prior = previous.get(n['midi'])
@@ -220,6 +330,9 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
                 element(direction, 'offset', round(bar['length']*tempo['positionInMeasure']))
                 element(direction, 'sound', tempo=str(tempo['bpm']))
             a, b = bar['start'], bar['start']+bar['length']
+            for mark in marks:
+                if mark['identity'] not in rendered and a <= mark['startTick'] < b:
+                    expression_direction(measure, mark, mark['startTick']-a)
             present = [n for n in notes if n['start'] < b and n['end'] > a]
             voices = sorted({n['voice'] for n in present}) or [1]
             for vi, voice in enumerate(voices):
@@ -232,14 +345,14 @@ def write_musicxml(document, path, *, meter=(4, 4), key_fifths=0, bpm=None):
                         segments[max(a,n['start']),min(b,n['end'])].append(n)
                 for (start, end), chord in sorted(segments.items()):
                     if start > cursor:
-                        emit_note(measure, start-cursor, voice)
+                        emit_rest_gap(measure, cursor, start, voice, rest_symbols)
                     for ci, n in enumerate(chord):
                         emit_note(measure, end-start, voice, n, chord=ci>0,
                                   stop=n['start']<a or n['tie_stop'], start=n['end']>b or n['tie_start'], flats=bar['key']<0,
                                   gliss_start=end==n['end'] and 'gliss_start' in n,
-                                  gliss_stop=start==n['start'] and 'gliss_stop' in n)
+                                  gliss_stop=start==n['start'] and 'gliss_stop' in n, fragment_end=end)
                     cursor = end
                 if cursor < b:
-                    emit_note(measure, b-cursor, voice)
+                    emit_rest_gap(measure, cursor, b, voice, rest_symbols)
     ET.indent(root)
     ET.ElementTree(root).write(Path(path), encoding='utf-8', xml_declaration=True)

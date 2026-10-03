@@ -12,7 +12,9 @@ You do not need to publish your own code. Follow the [license and notice require
 
 - Multi-staff piano, 6- and 7 string guitar tabs, violin and ensemble pages, including independently barred staves.
 
-- Note-equals-number tempo marks. Note-equals-note isn't interpreted yet
+- Note-equals-number tempo marks and note-equals-note metric modulations, including dotted pulses.
+
+- Expressive previews: rit./rall. slowing, rite/ritenuto, fermata holds, breath pauses and sf/sfz/sfp attacks. See [the shared playback policy](docs/expressive-performance.md) for timing defaults and evidence requirements.
 
 - Tuning headers, detached tab stems, partial beams, rests, dots, triplets, grace frets, tied continuations, hammer-on, pull-off, tapping, slide, bend, vibrato, and harmonic symbols. Missing tab rhythm is estimated. Graphical bends, quarter-tone bends, whammy-bar directions and strum direction aren't supported.
 

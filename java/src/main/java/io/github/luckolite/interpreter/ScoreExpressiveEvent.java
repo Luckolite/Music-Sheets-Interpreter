@@ -36,7 +36,8 @@ public record ScoreExpressiveEvent(
         PEDAL_UP,
         ARPEGGIO,
         CRESCENDO,
-        DIMINUENDO
+        DIMINUENDO,
+        METRIC_MODULATION
     }
 
     public enum Scope {
@@ -97,6 +98,8 @@ public record ScoreExpressiveEvent(
             throw new IllegalArgumentException("Invalid expressive span");
         if (scope != Scope.UNRESOLVED && !start.isPresent())
             throw new IllegalArgumentException("Resolved scope needs a musical anchor");
+        if (kind == Kind.METRIC_MODULATION && MetricModulationText.decode(qualifierText).isEmpty())
+            throw new IllegalArgumentException("Metric modulation needs a validated pulse pair");
         if (kind == Kind.FERMATA
                 && scope != Scope.UNRESOLVED
                 && (!end.isPresent() || !targetEventId.isPresent()))

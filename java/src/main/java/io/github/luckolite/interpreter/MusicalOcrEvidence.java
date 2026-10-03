@@ -53,6 +53,18 @@ final class MusicalOcrEvidence {
                                         box.right / scale / width,
                                         (top + box.bottom / scale) / height));
                 }
+                if (!ExpressiveDirectionText.parse(line.getText()).isEmpty()) {
+                    var box = line.getBoundingBox();
+                    if (box != null)
+                        words.add(
+                                new PlayingTechniqueDetector.Word(
+                                        line.getText(),
+                                        box.left / scale / width,
+                                        (top + box.top / scale) / height,
+                                        box.right / scale / width,
+                                        (top + box.bottom / scale) / height));
+                    continue;
+                }
                 // Keep a compound dynamic/expression line at its printed starting slot.
                 // The expression element alone begins farther right than the affected head.
                 if (PlayingTechniqueDetector.technique(line.getText()) >= 0

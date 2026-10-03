@@ -24,7 +24,12 @@ def performance_events(document, bpm=120):
     document = resolve_boundary_ties(document)
     if not math.isfinite(bpm) or not 15 <= bpm <= 400:
         raise ValueError("Initial BPM must be 15..400 quarter notes per minute")
-    document = project_navigation(document, bpm)
+    from .performance import perform_expressions
+    expressive_document = perform_expressions(document, bpm)
+    if expressive_document is None:
+        document = project_navigation(document, bpm)
+    else:
+        document, bpm = expressive_document, 120
     ppq = 480
     tempo = round(60_000_000 / bpm)
     events = [(0, 0, b"\xff\x51\x03" + tempo.to_bytes(3, "big"))]
@@ -74,26 +79,26 @@ def performance_events(document, bpm=120):
                 previous_tone[1] = max(previous_tone[1], end)
                 previous[lane] = previous_tone
             else:
-                tone = [start, end, pitch, step, note.get("guitarEffect", {}), gliss]
+                tone = [start, end, pitch, step, note.get("guitarEffect", {}), gliss, note.get("performanceAttack")]
                 tones.append(tone)
                 previous[lane] = tone
         offset += page["totalBeats"]
     active = {}
     performed = []
-    for start, end, pitch, step, effect, gliss in tones:
+    for start, end, pitch, step, effect, gliss, attack in tones:
         if gliss is not None:
-            performed.extend((a, b, midi, effect) for a, b, midi in
+            performed.extend((a, b, midi, effect, attack if a == start else None) for a, b, midi in
                              white_key_gliss(start, end, pitch, gliss["targetMidi"]))
         elif step:
-            performed.extend((tick, min(end, tick + step), pitch, effect) for tick in range(start, end, step))
+            performed.extend((tick, min(end, tick + step), pitch, effect, attack if tick == start else None) for tick in range(start, end, step))
         else:
-            performed.append((start, end, pitch, effect))
-    for start, end, pitch, effect in sorted(performed, key=lambda n: (n[0], n[2])):
+            performed.append((start, end, pitch, effect, attack))
+    for start, end, pitch, effect, attack in sorted(performed, key=lambda n: (n[0], n[2])):
         kind = effect.get("type", "none")
         delta = effect.get("semitones", 0)
         if kind not in ("none", "slide", "hammer_on", "pull_off", "bend", "bend_release", "dead", "harmonic", "tap") or not isinstance(delta, (int, float)) or not math.isfinite(delta) or abs(delta) > 24:
             raise ValueError("Unsupported guitar performance effect")
-        expressive = kind in ("slide", "bend", "bend_release") or effect.get("vibrato", False)
+        expressive = kind in ("slide", "bend", "bend_release") or effect.get("vibrato", False) or attack is not None
         # Pitch bend is channel-wide. Isolate it from every overlapping note, including other pitches.
         channel = next((c for c in range(16) if c != 9 and all(
             stop <= start or (not expressive and not bent and other != pitch)
@@ -103,6 +108,19 @@ def performance_events(document, bpm=120):
         active[channel] = [(stop, other, bent) for stop, other, bent in active.get(channel, []) if stop > start]
         active[channel].append((end, pitch, expressive))
         velocity = 20 if kind == "dead" else 62 if kind in ("hammer_on", "pull_off", "tap") else 80
+        if attack is not None:
+            velocity = max(1, min(127, round(velocity*attack['gain'])))
+            ramp = max(1, round(attack['seconds']*ppq*bpm/60))
+            for index in range(7):
+                tick = start+round(ramp*index/6)
+                if tick >= end:
+                    break
+                gain = attack['gain']+(attack['settledGain']-attack['gain'])*index/6
+                expression = max(0, min(127, round(127*gain/attack['gain'])))
+                events.append((tick, 2, bytes([0xB0 | channel, 11, expression])))
+        elif expressive_document is not None:
+            # Exclusive attack channels may be reused after their release.
+            events.append((start, 2, bytes([0xB0 | channel, 11, 127])))
         sounding_end = start + max(1, round((end-start) * (.12 if kind == "dead" else .45 if effect.get("palmMute") else 1)))
         if expressive:
             # RPN 0: +/-24 semitones, confined to this note's exclusive channel.

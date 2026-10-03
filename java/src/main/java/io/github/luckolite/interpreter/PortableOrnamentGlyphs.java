@@ -71,6 +71,11 @@ final class PortableOrnamentGlyphs {
                 : original;
     }
 
+    /** Template-only comparison for other glyph families; excludes ornament-specific recovery. */
+    Match templateMatch(byte[] gray, int width, PortableNoteOrnaments.Bounds bounds) {
+        return match(gray, width, bounds, ornaments);
+    }
+
     private static int percentile(int[] tones, int count, double fraction) {
         int total = 0;
         for (int value = 0; value < tones.length; value++) {

@@ -12,6 +12,19 @@ Model lineage, evaluation and checksums are documented separately in
 
 ## Source map
 
+Expressive directions retain printed evidence and proved written ownership through
+the decoder, framed transport, performed clock and notation exports. Thirteen shared
+classes have full executable-token app parity after package adaptation; the standalone
+OCR adapter preserves caller-owned inference and the Python performance bridge uses
+the same Java clock. Rest holds require an exactly accounted silent slot. Guide 277
+adds the typed metric-modulation kind while retaining guide 276's explicit tuplet
+note layout; older headers reject the new kind. Android, desktop and standalone
+adapters are reviewed separately. Original generated controls and Bravura-derived
+glyph sprites cover the port. Template manifests retain the font checksum and SMuFL
+code points, with the complete SIL OFL notice beside the assets. No commercial score,
+private library, device log, signing material, model or new production dependency
+is included. See [expressive preview semantics](expressive-performance.md).
+
 Re-engraving preserves the printed metronome pulse and scales later tempo changes
 relative to the selected opening tempo, including changes within the opening bar.
 The pure-JDK tempo selection and printed-mark helpers have package-only app parity.

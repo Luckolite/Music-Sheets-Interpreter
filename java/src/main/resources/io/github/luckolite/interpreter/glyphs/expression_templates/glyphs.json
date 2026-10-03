@@ -1,0 +1,162 @@
+{
+  "license": "SIL-OFL-1.1",
+  "source": "https://github.com/steinbergmedia/bravura",
+  "smufl": [
+    "https://smufl.formats.music/latest/tables/metronome-marks.html",
+    "https://smufl.formats.music/latest/tables/holds-and-pauses.html"
+  ],
+  "font_sha256": "cdf0f893ee1fdb64b7f6713d71ee0dcfc349c0ac01429a8e451b01a9e79f5f3b",
+  "raster_sha256": "5010e7da35f63a159ea485ffc1d53c25312225d87e2c3b9ca1d0f8a76781c969",
+  "rendering": {
+    "fontSize": 256,
+    "height": 64,
+    "resize": "Pillow LANCZOS",
+    "grayscale": true
+  },
+  "glyphs": [
+    {
+      "kind": 1,
+      "codepoint": "U+ECA2",
+      "width": 108,
+      "height": 64
+    },
+    {
+      "kind": 3,
+      "codepoint": "U+ECA3",
+      "width": 27,
+      "height": 64
+    },
+    {
+      "kind": 4,
+      "codepoint": "U+ECA4",
+      "width": 27,
+      "height": 64
+    },
+    {
+      "kind": 5,
+      "codepoint": "U+ECA5",
+      "width": 26,
+      "height": 64
+    },
+    {
+      "kind": 6,
+      "codepoint": "U+ECA6",
+      "width": 26,
+      "height": 64
+    },
+    {
+      "kind": 7,
+      "codepoint": "U+ECA7",
+      "width": 41,
+      "height": 64
+    },
+    {
+      "kind": 8,
+      "codepoint": "U+ECA8",
+      "width": 25,
+      "height": 64
+    },
+    {
+      "kind": 9,
+      "codepoint": "U+ECA9",
+      "width": 40,
+      "height": 64
+    },
+    {
+      "kind": 10,
+      "codepoint": "U+ECAA",
+      "width": 25,
+      "height": 64
+    },
+    {
+      "kind": 11,
+      "codepoint": "U+ECAB",
+      "width": 32,
+      "height": 64
+    },
+    {
+      "kind": 12,
+      "codepoint": "U+ECAC",
+      "width": 21,
+      "height": 64
+    },
+    {
+      "kind": 1,
+      "codepoint": "U+E1D2",
+      "width": 108,
+      "height": 64
+    },
+    {
+      "kind": 3,
+      "codepoint": "U+E1D3",
+      "width": 22,
+      "height": 64
+    },
+    {
+      "kind": 4,
+      "codepoint": "U+E1D4",
+      "width": 22,
+      "height": 64
+    },
+    {
+      "kind": 5,
+      "codepoint": "U+E1D5",
+      "width": 21,
+      "height": 64
+    },
+    {
+      "kind": 6,
+      "codepoint": "U+E1D6",
+      "width": 21,
+      "height": 64
+    },
+    {
+      "kind": 7,
+      "codepoint": "U+E1D7",
+      "width": 36,
+      "height": 64
+    },
+    {
+      "kind": 8,
+      "codepoint": "U+E1D8",
+      "width": 21,
+      "height": 64
+    },
+    {
+      "kind": 9,
+      "codepoint": "U+E1D9",
+      "width": 37,
+      "height": 64
+    },
+    {
+      "kind": 10,
+      "codepoint": "U+E1DA",
+      "width": 21,
+      "height": 64
+    },
+    {
+      "kind": 11,
+      "codepoint": "U+E1DB",
+      "width": 31,
+      "height": 64
+    },
+    {
+      "kind": 12,
+      "codepoint": "U+E1DC",
+      "width": 18,
+      "height": 64
+    },
+    {
+      "kind": 13,
+      "codepoint": "U+E4CE",
+      "width": 39,
+      "height": 64
+    },
+    {
+      "kind": 14,
+      "codepoint": "U+E4CF",
+      "width": 64,
+      "height": 64
+    }
+  ]
+}
