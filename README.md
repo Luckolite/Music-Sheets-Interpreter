@@ -86,7 +86,9 @@ An optional [native Java decoding service](docs/native-decoder.md) supports
 bounded, source-matched geometry and analysis requests from local workers.
 The Python reader runs bundled-model OCR automatically on images and scanned PDFs.
 The separate [shared Java OCR pipeline](docs/portable-ocr.md) and optional ONNX
-binding remain available for cross-platform evaluation.
+binding remain available for cross-platform evaluation. The optional
+[desktop ONNX segmentation adapter](docs/portable-segmentation.md) uses the pinned
+v3 conversion without changing the default Python model.
 
 The bundled v4 model comes from our own synthetic training lineage, without pretrained
 weights or commercial score scans. See the [model card](models/MODEL_CARD.md), [evaluation](models/evaluation.json),

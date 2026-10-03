@@ -422,3 +422,14 @@ uses the same proofs, and its MusicXML writer already distinguishes actual bar
 span from printed meter. Original synthetic regressions now pin its partial-bar
 XML lengths, unchanged meter, MIDI attacks and final extent. All mapped shared
 sources remain unchanged; no provenance hashes or weights were relabeled.
+
+
+Optional desktop segmentation retains the existing pinned v3 ONNX conversion,
+model checksum, tile packing and merging. Its intra-operation thread cap matches
+managed processing: two to four threads according to available processors.
+The full helper is mapped separately from the pure Java core; its existing
+ExactWhiteTileInput dependency retains the reviewed core implementation. The
+original two-thread helper is preserved as a test-only reference. Six generated
+rasters compare complete labels, repeats and caller arrays. Model/runtime hashes
+and converter lineage are recorded in portable-segmentation.md. No private
+score, model binary, new mandatory dependency or framed record change is included.

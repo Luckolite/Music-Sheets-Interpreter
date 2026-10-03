@@ -1282,6 +1282,13 @@
       "reviewed_app_commit": "95271300e87f128ef5b0194d31a920a7a8b7a6cb",
       "reviewed_source_state": "Isolated pedal candidate on accepted872 manifest ede2c2383426167237cb4da5d19afeb2f923d5daa581726e930c37b4b710ec45",
       "review_note": "Whole-file package-only JDK port. Global continuous-rail geometry, persisted hook columns, musical anchors, navigation or rest-slot timing. Original synthetic regressions; no private score/model/log/library/signing data."
+    },
+    "NativeSegmentation.java": {
+      "source_path": "tools/native-worker/NativeSegmentation.java",
+      "source_sha256": "867011982a4472f9583fe2598e7ff7f7072a11d87bf4c9ea20b2cf203f53b50f",
+      "source_normalized_sha256": "867011982a4472f9583fe2598e7ff7f7072a11d87bf4c9ea20b2cf203f53b50f",
+      "reviewed_source_snapshot": "Accepted app874/1.18.401 native-only threadcap update; exactsame tested helper from872",
+      "review_note": "Full optional Java17 standalone port, executable tokens identical after package/license/format adaptation. Existing ExactWhiteTileInput dependency182mappedcheck reviewed separately. Six original generated fullmodel/repeat/caller controls use the previous two-thread source; no private pixels, weights/runtime changes or mandatory dependencies."
     }
   },
   "interpreter_speedup_review": {
