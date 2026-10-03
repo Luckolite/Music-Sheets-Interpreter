@@ -590,12 +590,29 @@ final class SixteenthRestDetector {
         if (last <= first) return new Detection(List.of(), List.of());
         int bandHeight = last - first;
         byte[] flat = new byte[width * bandHeight];
-        for (int x = 0; x < width; x++) {
-            float[] local = staff.pitchTrack().at(x);
+        if (width > 0 && height > 0 && gray != null && (long) width * height <= gray.length) {
+            float[] bottoms = new float[width];
+            for (int x = 0; x < width; x++) bottoms[x] = staff.pitchTrack().at(x)[0];
             for (int y = 0; y < bandHeight; y++) {
-                int sourceY = Math.round(local[0] + (first + y - staff.bottom()));
-                flat[y * width + x] =
-                        sourceY >= 0 && sourceY < height ? gray[sourceY * width + x] : (byte) 255;
+                int offset = y * width;
+                for (int x = 0; x < width; x++) {
+                    int sourceY = Math.round(bottoms[x] + (first + y - staff.bottom()));
+                    flat[offset + x] =
+                            sourceY >= 0 && sourceY < height
+                                    ? gray[sourceY * width + x]
+                                    : (byte) 255;
+                }
+            }
+        } else {
+            for (int x = 0; x < width; x++) {
+                float[] local = staff.pitchTrack().at(x);
+                for (int y = 0; y < bandHeight; y++) {
+                    int sourceY = Math.round(local[0] + (first + y - staff.bottom()));
+                    flat[y * width + x] =
+                            sourceY >= 0 && sourceY < height
+                                    ? gray[sourceY * width + x]
+                                    : (byte) 255;
+                }
             }
         }
         List<MeasureRegion> mappedMeasures = new ArrayList<>();

@@ -353,3 +353,10 @@ regressions cover threshold boundaries and changing caller-owned ink across
 erasure, restoration and interleaved detections. The standalone port preserves
 all existing arithmetic, thresholds and record layouts. Models and production
 dependencies are unchanged; no private score or device data is included.
+
+Curved-rest rectification reads and writes contiguous destination rows while
+retaining the exact per-column staff frames, float expressions, rounding and
+pixel bounds. Original generated regressions cover both slopes, half-pixel
+translations, augmentation dots and caller ink erasure/restoration. The original
+malformed-raster path remains in place. Models, dependencies and record layouts
+are unchanged.
