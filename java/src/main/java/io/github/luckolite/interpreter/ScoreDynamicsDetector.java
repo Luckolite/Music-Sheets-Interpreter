@@ -240,7 +240,7 @@ final class ScoreDynamicsDetector {
                 && text.trim()
                         .toLowerCase(Locale.ROOT)
                         .matches(
-                                "(?:(?:subito|sub|sempre|poco|a|piÃ¹|piu|cantabile|sostenuto|marcato|dolce|tranquillo|espressivo|crescendo|diminuendo|cresc|dim|decresc|ppp|pp|p|mp|m|mf|fff|ff|f)[.,:;]?\\s*)+");
+                                "(?:(?:subito|sub|sempre|poco|a|più|piu|cantabile|sostenuto|marcato|dolce|tranquillo|espressivo|crescendo|diminuendo|cresc|dim|decresc|ppp|pp|p|mp|m|mf|fff|ff|f)[.,:;]?\\s*)+");
     }
 
     static List<String> packedLevels(String text) {

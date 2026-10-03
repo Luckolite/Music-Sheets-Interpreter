@@ -329,7 +329,7 @@
     "ScoreDynamicsDetector.java": {
       "source_path": "app/src/main/java/com/musicsheets/app/pdf/ScoreDynamicsDetector.java",
       "source_sha256": "fde7403d7f4de3976efb05d6fd81a515faa029514215a78e96f79e856c57763d",
-      "source_normalized_sha256": "2e200c03de146cc0750cc81abf0d7c74593bb3e9eceb9bee559234f3bb01582b",
+      "source_normalized_sha256": "fde7403d7f4de3976efb05d6fd81a515faa029514215a78e96f79e856c57763d",
       "review_note": "Full package-only executable parity. Brace-proved keyboard dynamics below the owned lower staff use the part, with physical row/lane identity guarding other parts and later systems. Original generated ownership and detector controls; no private score, model or dependency changes.",
       "reviewed_app_base_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",
       "reviewed_app_commit": "650d1b3a312dcd7eb58f83945a6a3be321c9b4dd",

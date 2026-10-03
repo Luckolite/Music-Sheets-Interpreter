@@ -31,6 +31,13 @@ public class SubitoDynamicOcrTest {
     }
 
     @Test
+    public void accentedItalianQualifierKeepsItsUtf8Meaning() {
+        assertTrue(ScoreDynamicsDetector.dynamicLine("pi\u00f9 p"));
+        assertTrue(ScoreDynamicsDetector.dynamicLine("piu p"));
+        assertFalse(ScoreDynamicsDetector.dynamicLine("pi\u00f9 subscription p"));
+    }
+
+    @Test
     public void abbreviatedMergedInstructionKeepsLevel() {
         var words = read("subp", "subp");
         assertEquals(1, words.size());
