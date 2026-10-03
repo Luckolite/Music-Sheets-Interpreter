@@ -12,9 +12,9 @@ You do not need to publish your own code. Follow the [license and notice require
 
 - Multi-staff piano, 6- and 7 string guitar tabs, violin and ensemble pages, including independently barred staves.
 
-- Note-equals-number tempo marks. Note-equals-note metric modulations aren't interpreted yet
+- Note-equals-number tempo marks. Note-equals-note isn't interpreted yet
 
-- Tuning headers, detached tab stems, partial beams, rests, dots, triplets, grace frets and visible tied continuations. Hammer-on, pull-off, tapping, slide, bend, vibrato and harmonic symbols. Missing tab rhythm is estimated. Graphical bends, quarter-tone bends, whammy-bar directions and strum direction aren't supported.
+- Tuning headers, detached tab stems, partial beams, rests, dots, triplets, grace frets, tied continuations, hammer-on, pull-off, tapping, slide, bend, vibrato, and harmonic symbols. Missing tab rhythm is estimated. Graphical bends, quarter-tone bends, whammy-bar directions and strum direction aren't supported.
 
 - JSON for integration, MIDI/MP3 for preview, and MusicXML for editing in notation software.
 
@@ -58,8 +58,7 @@ Everything runs locally after installation; no account or server is required.
 
 ### MP3 audio previews
 
-MIDI contains note/performance instructions, not recorded audio. MP3 is playable
-audio. To export it, install FFmpeg on PATH or the optional bundled encoder:
+To export it, install FFmpeg on PATH or the optional bundled encoder:
 
 ```sh
 python -m pip install ".[audio]"
@@ -87,8 +86,7 @@ The separate [shared Java OCR pipeline](docs/portable-ocr.md) and optional ONNX
 binding remain available for cross-platform evaluation.
 
 The bundled v4 model comes from our own synthetic training lineage, without pretrained
-HOMR/oemer weights or commercial score scans. Tab and export improvements do not change
-the weights. See the [model card](models/MODEL_CARD.md), [evaluation](models/evaluation.json),
+weights or commercial score scans. See the [model card](models/MODEL_CARD.md), [evaluation](models/evaluation.json),
 [training guide](training/README.md) and [source origins](docs/source-provenance.md).
 
 ## Development
